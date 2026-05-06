@@ -10,6 +10,7 @@ import javax.sql.DataSource;
 import org.junit.jupiter.api.Test;
 import org.springframework.boot.jdbc.DataSourceBuilder;
 import org.springframework.jdbc.core.JdbcTemplate;
+import org.springframework.jdbc.datasource.DriverManagerDataSource;
 import org.testcontainers.containers.MySQLContainer;
 import org.testcontainers.junit.jupiter.Container;
 import org.testcontainers.junit.jupiter.Testcontainers;
@@ -42,6 +43,7 @@ class JdbcDistributedTaskLockIT {
 
     private DataSource dataSource() {
         return DataSourceBuilder.create()
+                .type(DriverManagerDataSource.class)
                 .url(mysql.getJdbcUrl())
                 .username(mysql.getUsername())
                 .password(mysql.getPassword())

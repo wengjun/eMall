@@ -10,6 +10,7 @@ import org.flywaydb.core.api.output.MigrateResult;
 import org.junit.jupiter.api.Test;
 import org.springframework.boot.jdbc.DataSourceBuilder;
 import org.springframework.jdbc.core.JdbcTemplate;
+import org.springframework.jdbc.datasource.DriverManagerDataSource;
 import org.testcontainers.containers.MySQLContainer;
 import org.testcontainers.junit.jupiter.Container;
 import org.testcontainers.junit.jupiter.Testcontainers;
@@ -19,7 +20,7 @@ class CoreFlywaySchemaIT {
     @Container
     static final MySQLContainer<?> mysql = new MySQLContainer<>("mysql:8.4")
             .withDatabaseName("emall_schema_it")
-            .withUsername("emall")
+            .withUsername("root")
             .withPassword("emall");
 
     private static final List<SchemaTarget> SCHEMAS = List.of(
@@ -68,6 +69,7 @@ class CoreFlywaySchemaIT {
 
     private DataSource dataSource(String databaseName) {
         return DataSourceBuilder.create()
+                .type(DriverManagerDataSource.class)
                 .url(jdbcUrl(databaseName))
                 .username(mysql.getUsername())
                 .password(mysql.getPassword())

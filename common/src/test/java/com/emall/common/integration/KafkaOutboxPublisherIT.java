@@ -13,6 +13,7 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import java.time.Clock;
 import java.time.Duration;
+import java.time.Instant;
 import java.util.List;
 import java.util.Map;
 import java.util.Properties;
@@ -35,7 +36,7 @@ import org.testcontainers.utility.DockerImageName;
 @Testcontainers(disabledWithoutDocker = true)
 class KafkaOutboxPublisherIT {
     private static final String TOPIC = "emall.outbox.it";
-    private static final ObjectMapper OBJECT_MAPPER = new ObjectMapper();
+    private static final ObjectMapper OBJECT_MAPPER = new ObjectMapper().findAndRegisterModules();
 
     @Container
     static final KafkaContainer kafka = new KafkaContainer(
@@ -47,16 +48,22 @@ class KafkaOutboxPublisherIT {
         OutboxEvent event = OutboxEvent.create("event-001", "Product", "30001",
                 EventTypes.PRODUCT_CHANGED, Map.of("skuId", 30001L));
         outboxRepository.save(event);
-        TestOutboxPublisher publisher = new TestOutboxPublisher(outboxRepository, kafkaTemplate());
+        KafkaTemplate<String, String> kafkaTemplate = kafkaTemplate();
+        try {
+            TestOutboxPublisher publisher = new TestOutboxPublisher(outboxRepository, kafkaTemplate);
 
-        int published = publisher.publishBatch(10);
-        JsonNode message = consumeOneMessage();
+            int published = publisher.publishBatch(10);
+            assertThat(published).isEqualTo(1);
+            assertThat(outboxRepository.event("event-001").status()).isEqualTo(OutboxStatus.PUBLISHED);
 
-        assertThat(published).isEqualTo(1);
-        assertThat(outboxRepository.event("event-001").status()).isEqualTo(OutboxStatus.PUBLISHED);
-        assertThat(message.path("eventId").asText()).isEqualTo("event-001");
-        assertThat(message.path("eventType").asText()).isEqualTo(EventTypes.PRODUCT_CHANGED);
-        assertThat(message.path("aggregateId").asText()).isEqualTo("30001");
+            JsonNode message = consumeOneMessage();
+
+            assertThat(message.path("eventId").asText()).isEqualTo("event-001");
+            assertThat(message.path("eventType").asText()).isEqualTo(EventTypes.PRODUCT_CHANGED);
+            assertThat(message.path("aggregateId").asText()).isEqualTo("30001");
+        } finally {
+            kafkaTemplate.destroy();
+        }
     }
 
     private KafkaTemplate<String, String> kafkaTemplate() {
@@ -73,13 +80,19 @@ class KafkaOutboxPublisherIT {
         properties.put(ConsumerConfig.BOOTSTRAP_SERVERS_CONFIG, kafka.getBootstrapServers());
         properties.put(ConsumerConfig.GROUP_ID_CONFIG, "emall-outbox-it");
         properties.put(ConsumerConfig.AUTO_OFFSET_RESET_CONFIG, "earliest");
+        properties.put(ConsumerConfig.ENABLE_AUTO_COMMIT_CONFIG, "false");
         properties.put(ConsumerConfig.KEY_DESERIALIZER_CLASS_CONFIG, StringDeserializer.class.getName());
         properties.put(ConsumerConfig.VALUE_DESERIALIZER_CLASS_CONFIG, StringDeserializer.class.getName());
         try (KafkaConsumer<String, String> consumer = new KafkaConsumer<>(properties)) {
             consumer.subscribe(List.of(TOPIC));
-            ConsumerRecords<String, String> records = consumer.poll(Duration.ofSeconds(10));
-            assertThat(records.count()).isGreaterThanOrEqualTo(1);
-            return OBJECT_MAPPER.readTree(records.iterator().next().value());
+            Instant deadline = Instant.now().plus(Duration.ofSeconds(30));
+            while (Instant.now().isBefore(deadline)) {
+                ConsumerRecords<String, String> records = consumer.poll(Duration.ofMillis(500));
+                if (!records.isEmpty()) {
+                    return OBJECT_MAPPER.readTree(records.iterator().next().value());
+                }
+            }
+            throw new AssertionError("No Kafka outbox message was consumed before timeout.");
         }
     }
 
