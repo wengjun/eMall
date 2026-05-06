@@ -1,4 +1,4 @@
-﻿# Java 分布式服务专家级面试逐题精讲
+# Java 分布式服务专家级面试逐题精讲
 
 [返回答案手册](../README.md) | [返回分类索引](../categories/README.md) | [返回面试题库](../../question-bank.md)
 
@@ -554,11 +554,6 @@
 | 539 | [设计灰度发布平台。](539-design-canary-release-platform.md) | 已完成 |
 | 540 | [设计日志采集和查询平台。](540-design-log-collection-query.md) | 已完成 |
 | 541 | [设计指标和告警平台。](541-design-metrics-alerting.md) | 已完成 |
-
-## 补充题目
-
-| 序号 | 问题 | 状态 |
-| --- | --- | --- |
 
 ## 补充题目
 
