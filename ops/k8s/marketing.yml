@@ -1,0 +1,102 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: marketing
+  labels:
+    app: marketing
+spec:
+  replicas: 3
+  selector:
+    matchLabels:
+      app: marketing
+  template:
+    metadata:
+      labels:
+        app: marketing
+    spec:
+      terminationGracePeriodSeconds: 45
+      serviceAccountName: marketing
+      securityContext:
+        runAsNonRoot: true
+        seccompProfile:
+          type: RuntimeDefault
+      containers:
+        - name: marketing
+          image: emall/marketing:0.1.0
+          imagePullPolicy: IfNotPresent
+          securityContext:
+            allowPrivilegeEscalation: false
+            capabilities:
+              drop:
+                - ALL
+          ports:
+            - containerPort: 8088
+          envFrom:
+            - configMapRef:
+                name: emall-runtime-config
+            - secretRef:
+                name: emall-runtime-secret
+          lifecycle:
+            preStop:
+              exec:
+                command: ["sh", "-c", "sleep 15"]
+          readinessProbe:
+            httpGet:
+              path: /actuator/health/readiness
+              port: 8088
+            initialDelaySeconds: 20
+            periodSeconds: 5
+          livenessProbe:
+            httpGet:
+              path: /actuator/health/liveness
+              port: 8088
+            initialDelaySeconds: 60
+            periodSeconds: 10
+          resources:
+            requests:
+              cpu: "500m"
+              memory: 768Mi
+            limits:
+              cpu: "2"
+              memory: 2Gi
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: marketing
+spec:
+  selector:
+    app: marketing
+  ports:
+    - name: http
+      port: 8088
+      targetPort: 8088
+---
+apiVersion: policy/v1
+kind: PodDisruptionBudget
+metadata:
+  name: marketing
+spec:
+  minAvailable: 2
+  selector:
+    matchLabels:
+      app: marketing
+---
+apiVersion: autoscaling/v2
+kind: HorizontalPodAutoscaler
+metadata:
+  name: marketing
+spec:
+  scaleTargetRef:
+    apiVersion: apps/v1
+    kind: Deployment
+    name: marketing
+  minReplicas: 3
+  maxReplicas: 150
+  metrics:
+    - type: Resource
+      resource:
+        name: cpu
+        target:
+          type: Utilization
+          averageUtilization: 60

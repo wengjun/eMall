@@ -1,0 +1,52 @@
+﻿<svg xmlns="http://www.w3.org/2000/svg" width="980" height="430" viewBox="0 0 980 430">
+    <defs>
+        <style>
+            .bg { fill: #fbfaf6; }
+            .box { fill: #ffffff; stroke: #1f2d3d; stroke-width: 2; rx: 14; }
+            .bucket { fill: #eef5ff; stroke: #285f9f; stroke-width: 2; rx: 14; }
+            .safe { fill: #eef9f0; stroke: #2f7d3b; stroke-width: 2; rx: 14; }
+            .warn { fill: #fff4e8; stroke: #a35f00; stroke-width: 2; rx: 14; }
+            .text { fill: #17202a; font-family: "Noto Sans SC", sans-serif; font-size: 18px; }
+            .small { fill: #34495e; font-family: "Noto Sans SC", sans-serif; font-size: 14px; }
+            .arrow { stroke: #17202a; stroke-width: 2.4; fill: none; marker-end: url(#arrow); }
+        </style>
+        <marker id="arrow" markerWidth="12" markerHeight="12" refX="9" refY="3" orient="auto">
+            <path d="M0,0 L0,6 L9,3 z" fill="#17202a"/>
+        </marker>
+    </defs>
+    <rect class="bg" width="980" height="430"/>
+    <text x="42" y="46" class="text" style="font-size:24px;font-weight:700">
+        库存桶降低热点行锁竞争
+    </text>
+
+    <rect x="65" y="120" width="150" height="86" class="box"/>
+    <text x="96" y="156" class="text">热点 SKU</text>
+    <text x="88" y="183" class="small">原来竞争一行</text>
+
+    <rect x="310" y="85" width="135" height="60" class="bucket"/>
+    <text x="345" y="121" class="small">bucket 0</text>
+    <rect x="310" y="165" width="135" height="60" class="bucket"/>
+    <text x="345" y="201" class="small">bucket 1</text>
+    <rect x="310" y="245" width="135" height="60" class="bucket"/>
+    <text x="345" y="281" class="small">bucket N</text>
+
+    <rect x="565" y="120" width="165" height="86" class="safe"/>
+    <text x="607" y="156" class="text">条件扣减</text>
+    <text x="592" y="183" class="small">available >= qty</text>
+
+    <rect x="805" y="120" width="125" height="86" class="warn"/>
+    <text x="843" y="156" class="text">对账</text>
+    <text x="830" y="183" class="small">总量校验</text>
+
+    <path d="M215 163 C260 120 275 115 310 115" class="arrow"/>
+    <path d="M215 163 H310" class="arrow"/>
+    <path d="M215 163 C260 250 275 275 310 275" class="arrow"/>
+    <path d="M445 115 C500 130 520 145 565 163" class="arrow"/>
+    <path d="M445 195 H565" class="arrow"/>
+    <path d="M445 275 C500 250 520 210 565 183" class="arrow"/>
+    <path d="M730 163 H805" class="arrow"/>
+
+    <text x="82" y="355" class="small">
+        核心取舍：吞吐提升来自行锁分散，复杂度增加来自库存汇总、换桶、释放和对账。
+    </text>
+</svg>

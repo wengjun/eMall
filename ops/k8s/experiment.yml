@@ -1,0 +1,98 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: experiment
+  labels:
+    app: experiment
+spec:
+  replicas: 3
+  selector:
+    matchLabels:
+      app: experiment
+  template:
+    metadata:
+      labels:
+        app: experiment
+    spec:
+      terminationGracePeriodSeconds: 45
+      serviceAccountName: experiment
+      securityContext:
+        runAsNonRoot: true
+        seccompProfile:
+          type: RuntimeDefault
+      containers:
+        - name: experiment
+          image: emall/experiment:0.1.0
+          imagePullPolicy: IfNotPresent
+          securityContext:
+            allowPrivilegeEscalation: false
+            capabilities:
+              drop:
+                - ALL
+          ports:
+            - containerPort: 8103
+          envFrom:
+            - configMapRef:
+                name: emall-runtime-config
+            - secretRef:
+                name: emall-runtime-secret
+          readinessProbe:
+            httpGet:
+              path: /actuator/health/readiness
+              port: 8103
+            initialDelaySeconds: 20
+            periodSeconds: 5
+          livenessProbe:
+            httpGet:
+              path: /actuator/health/liveness
+              port: 8103
+            initialDelaySeconds: 60
+            periodSeconds: 10
+          resources:
+            requests:
+              cpu: "500m"
+              memory: 512Mi
+            limits:
+              cpu: "2"
+              memory: 2Gi
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: experiment
+spec:
+  selector:
+    app: experiment
+  ports:
+    - name: http
+      port: 8103
+      targetPort: 8103
+---
+apiVersion: policy/v1
+kind: PodDisruptionBudget
+metadata:
+  name: experiment
+spec:
+  minAvailable: 2
+  selector:
+    matchLabels:
+      app: experiment
+---
+apiVersion: autoscaling/v2
+kind: HorizontalPodAutoscaler
+metadata:
+  name: experiment
+spec:
+  scaleTargetRef:
+    apiVersion: apps/v1
+    kind: Deployment
+    name: experiment
+  minReplicas: 3
+  maxReplicas: 80
+  metrics:
+    - type: Resource
+      resource:
+        name: cpu
+        target:
+          type: Utilization
+          averageUtilization: 60

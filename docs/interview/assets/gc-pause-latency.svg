@@ -1,0 +1,54 @@
+﻿<svg xmlns="http://www.w3.org/2000/svg" width="1080" height="540" viewBox="0 0 1080 540">
+    <defs>
+        <style>
+            .bg { fill: #f8fbfb; }
+            .box { fill: #ffffff; stroke: #1f2d3d; stroke-width: 2; rx: 14; }
+            .gc { fill: #fff1f1; stroke: #a33a3a; stroke-width: 2; rx: 14; }
+            .metric { fill: #eef5ff; stroke: #285f9f; stroke-width: 2; rx: 14; }
+            .ok { fill: #eef9f0; stroke: #2f7d3b; stroke-width: 2; rx: 14; }
+            .text { fill: #17202a; font-family: "Noto Sans SC", sans-serif; font-size: 18px; }
+            .small { fill: #34495e; font-family: "Noto Sans SC", sans-serif; font-size: 14px; }
+            .axis { stroke: #17202a; stroke-width: 2; fill: none; }
+            .line { stroke: #285f9f; stroke-width: 3; fill: none; }
+            .pause { stroke: #a33a3a; stroke-width: 8; fill: none; }
+            .arrow { stroke: #17202a; stroke-width: 2.4; fill: none; marker-end: url(#arrow); }
+        </style>
+        <marker id="arrow" markerWidth="12" markerHeight="12" refX="9" refY="3" orient="auto">
+            <path d="M0,0 L0,6 L9,3 z" fill="#17202a"/>
+        </marker>
+    </defs>
+    <rect class="bg" width="1080" height="540"/>
+    <text x="42" y="46" class="text" style="font-size:24px;font-weight:700">
+        GC 暂停与尾延迟放大
+    </text>
+
+    <rect x="70" y="95" width="260" height="120" class="metric"/>
+    <text x="132" y="130" class="text">请求延迟</text>
+    <text x="103" y="158" class="small">P50 可能正常</text>
+    <text x="103" y="180" class="small">P99/P999 被暂停拉高</text>
+
+    <rect x="410" y="95" width="260" height="120" class="gc"/>
+    <text x="488" y="130" class="text">STW GC</text>
+    <text x="443" y="158" class="small">应用线程暂停</text>
+    <text x="443" y="180" class="small">超时 / 重试 / 队列堆积</text>
+
+    <rect x="750" y="95" width="260" height="120" class="ok"/>
+    <text x="816" y="130" class="text">优化方向</text>
+    <text x="783" y="158" class="small">降低分配速率</text>
+    <text x="783" y="180" class="small">控制缓存队列和批量大小</text>
+
+    <path d="M330 155 H410" class="arrow"/>
+    <path d="M670 155 H750" class="arrow"/>
+
+    <path d="M105 430 H1000" class="axis"/>
+    <path d="M105 430 V270" class="axis"/>
+    <path d="M120 410 C220 405 290 398 360 390 C420 382 470 310 520 295
+             C580 370 650 398 740 405 C830 410 900 408 980 400" class="line"/>
+    <path d="M500 430 V285" class="pause"/>
+    <text x="482" y="460" class="small">GC pause</text>
+    <text x="110" y="258" class="small">latency</text>
+    <text x="955" y="460" class="small">time</text>
+    <text x="110" y="500" class="small">
+        排障重点：把 GC 日志时间点、P99 峰值、CPU、线程池队列和下游超时放到同一条时间线。
+    </text>
+</svg>

@@ -1,0 +1,30 @@
+﻿<svg xmlns="http://www.w3.org/2000/svg" width="1080" height="360" viewBox="0 0 1080 360">
+  <defs>
+    <marker id="arrow" markerWidth="10" markerHeight="10" refX="9" refY="3" orient="auto">
+      <path d="M0,0 L0,6 L9,3 z" fill="#334155"/>
+    </marker>
+    <style>
+      .title { font: 700 28px "Microsoft YaHei", "Noto Sans CJK SC", sans-serif; fill: #0f172a; }
+      .text { font: 15px "Microsoft YaHei", "Noto Sans CJK SC", sans-serif; fill: #0f172a; }
+      .box { fill: #f8fafc; stroke: #64748b; stroke-width: 1.4; rx: 14; }
+      .event { fill: #eff6ff; stroke: #2563eb; stroke-width: 1.4; rx: 14; }
+      .db { fill: #fefce8; stroke: #ca8a04; stroke-width: 1.4; rx: 14; }
+      .line { stroke: #334155; stroke-width: 1.7; fill: none; marker-end: url(#arrow); }
+    </style>
+  </defs>
+  <rect width="1080" height="360" fill="#fff"/>
+  <text x="40" y="50" class="title">商品到搜索同步数据流图</text>
+  <rect x="55" y="145" width="130" height="60" class="box"/><text x="120" y="181" class="text" text-anchor="middle">商品变更</text>
+  <rect x="245" y="85" width="135" height="60" class="db"/><text x="312" y="121" class="text" text-anchor="middle">商品库</text>
+  <rect x="245" y="205" width="135" height="60" class="event"/><text x="312" y="241" class="text" text-anchor="middle">商品 Outbox</text>
+  <rect x="440" y="205" width="120" height="60" class="event"/><text x="500" y="241" class="text" text-anchor="middle">Kafka</text>
+  <rect x="620" y="205" width="140" height="60" class="box"/><text x="690" y="241" class="text" text-anchor="middle">搜索消费者</text>
+  <rect x="820" y="135" width="150" height="60" class="db"/><text x="895" y="171" class="text" text-anchor="middle">消息去重</text>
+  <rect x="820" y="235" width="150" height="60" class="db"/><text x="895" y="271" class="text" text-anchor="middle">OpenSearch 索引</text>
+  <path d="M185 160 L245 115" class="line"/>
+  <path d="M185 190 L245 235" class="line"/>
+  <path d="M380 235 H440" class="line"/>
+  <path d="M560 235 H620" class="line"/>
+  <path d="M760 225 L820 165" class="line"/>
+  <path d="M760 245 L820 265" class="line"/>
+</svg>

@@ -1,0 +1,72 @@
+﻿<svg xmlns="http://www.w3.org/2000/svg" width="1080" height="540" viewBox="0 0 1080 540">
+    <defs>
+        <style>
+            .bg { fill: #f8fbfb; }
+            .box { fill: #ffffff; stroke: #1f2d3d; stroke-width: 2; rx: 14; }
+            .recall { fill: #eef5ff; stroke: #285f9f; stroke-width: 2; rx: 14; }
+            .rank { fill: #fff4e8; stroke: #a35f00; stroke-width: 2; rx: 14; }
+            .guard { fill: #eef9f0; stroke: #2f7d3b; stroke-width: 2; rx: 14; }
+            .text { fill: #17202a; font-family: "Noto Sans SC", sans-serif; font-size: 18px; }
+            .small { fill: #34495e; font-family: "Noto Sans SC", sans-serif; font-size: 14px; }
+            .arrow { stroke: #17202a; stroke-width: 2.4; fill: none; marker-end: url(#arrow); }
+            .dash { stroke: #7f8c8d; stroke-width: 2; fill: none; stroke-dasharray: 7 6; marker-end: url(#gray); }
+        </style>
+        <marker id="arrow" markerWidth="12" markerHeight="12" refX="9" refY="3" orient="auto">
+            <path d="M0,0 L0,6 L9,3 z" fill="#17202a"/>
+        </marker>
+        <marker id="gray" markerWidth="12" markerHeight="12" refX="9" refY="3" orient="auto">
+            <path d="M0,0 L0,6 L9,3 z" fill="#7f8c8d"/>
+        </marker>
+    </defs>
+    <rect class="bg" width="1080" height="540"/>
+    <text x="42" y="46" class="text" style="font-size:24px;font-weight:700">
+        推荐和广告在线决策链路
+    </text>
+
+    <rect x="50" y="115" width="150" height="116" class="box"/>
+    <text x="88" y="150" class="text">请求上下文</text>
+    <text x="82" y="178" class="small">用户/场景/设备</text>
+    <text x="82" y="200" class="small">实验桶/关键词</text>
+
+    <rect x="260" y="95" width="160" height="156" class="recall"/>
+    <text x="304" y="130" class="text">候选召回</text>
+    <text x="290" y="158" class="small">热门/协同过滤</text>
+    <text x="290" y="180" class="small">相似/定向广告</text>
+    <text x="290" y="202" class="small">实时行为召回</text>
+
+    <rect x="480" y="95" width="160" height="156" class="guard"/>
+    <text x="524" y="130" class="text">安全过滤</text>
+    <text x="510" y="158" class="small">下架/无库存/违规</text>
+    <text x="510" y="180" class="small">预算/频控/审核</text>
+    <text x="510" y="202" class="small">已购/低质内容</text>
+
+    <rect x="700" y="95" width="160" height="156" class="rank"/>
+    <text x="744" y="130" class="text">排序重排</text>
+    <text x="730" y="158" class="small">模型打分</text>
+    <text x="730" y="180" class="small">竞价/质量分</text>
+    <text x="730" y="202" class="small">多样性/混排</text>
+
+    <rect x="920" y="115" width="120" height="116" class="box"/>
+    <text x="946" y="150" class="text">结果返回</text>
+    <text x="948" y="178" class="small">商品列表</text>
+    <text x="948" y="200" class="small">广告创意</text>
+
+    <rect x="260" y="340" width="160" height="92" class="box"/>
+    <text x="304" y="375" class="text">特征服务</text>
+    <text x="290" y="403" class="small">用户/商品/实时行为</text>
+
+    <rect x="700" y="340" width="160" height="92" class="box"/>
+    <text x="744" y="375" class="text">指标回流</text>
+    <text x="730" y="403" class="small">曝光/点击/转化/计费</text>
+
+    <path d="M200 173 H260" class="arrow"/>
+    <path d="M420 173 H480" class="arrow"/>
+    <path d="M640 173 H700" class="arrow"/>
+    <path d="M860 173 H920" class="arrow"/>
+    <path d="M340 340 V251" class="dash"/>
+    <path d="M780 251 V340" class="dash"/>
+
+    <text x="78" y="490" class="small">
+        生产重点：推荐可以降级，安全过滤不能降级；广告还必须保证预算、频控、计费幂等和反作弊。
+    </text>
+</svg>

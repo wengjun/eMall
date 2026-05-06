@@ -1,0 +1,325 @@
+groups:
+  - name: emall-service-slo
+    interval: 30s
+    rules:
+      - alert: EmallServiceDown
+        expr: up{job="services"} == 0
+        for: 2m
+        labels:
+          severity: critical
+        annotations:
+          summary: "eMall service target is down"
+          description: "Prometheus target {{ $labels.instance }} has been unavailable for more than 2 minutes."
+
+      - alert: EmallHighHttp5xxRate
+        expr: |
+          sum by (application) (rate(http_server_requests_seconds_count{status=~"5.."}[5m]))
+          /
+          sum by (application) (rate(http_server_requests_seconds_count[5m]))
+          > 0.01
+        for: 5m
+        labels:
+          severity: critical
+        annotations:
+          summary: "High HTTP 5xx rate"
+          description: "{{ $labels.application }} has more than 1% HTTP 5xx responses for 5 minutes."
+
+      - alert: EmallHighHttpP95Latency
+        expr: |
+          histogram_quantile(
+            0.95,
+            sum by (application, le) (rate(http_server_requests_seconds_bucket[5m]))
+          ) > 0.5
+        for: 10m
+        labels:
+          severity: warning
+        annotations:
+          summary: "High HTTP P95 latency"
+          description: "{{ $labels.application }} P95 HTTP latency is above 500 ms for 10 minutes."
+
+      - alert: EmallJvmMemoryPressure
+        expr: |
+          sum by (application) (jvm_memory_used_bytes{area="heap"})
+          /
+          sum by (application) (jvm_memory_max_bytes{area="heap"})
+          > 0.85
+        for: 10m
+        labels:
+          severity: warning
+        annotations:
+          summary: "High JVM heap usage"
+          description: "{{ $labels.application }} heap usage is above 85% for 10 minutes."
+
+      - alert: EmallThreadPoolPressure
+        expr: jvm_threads_live_threads > 800
+        for: 10m
+        labels:
+          severity: warning
+        annotations:
+          summary: "High JVM live thread count"
+          description: "{{ $labels.application }} has more than 800 live JVM threads for 10 minutes."
+
+  - name: emall-capacity-risk
+    interval: 30s
+    rules:
+      - alert: EmallHpaNearMaxReplicas
+        expr: kube_horizontalpodautoscaler_status_current_replicas
+          / kube_horizontalpodautoscaler_spec_max_replicas > 0.8
+        for: 15m
+        labels:
+          severity: warning
+        annotations:
+          summary: "HPA is near max replicas"
+          description: "{{ $labels.horizontalpodautoscaler }} has used more than 80% of max replicas for 15 minutes."
+
+      - alert: EmallPodRestartingFrequently
+        expr: increase(kube_pod_container_status_restarts_total[15m]) > 3
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "Pod is restarting frequently"
+          description: "{{ $labels.pod }} has restarted more than 3 times in 15 minutes."
+
+      - alert: EmallKafkaConsumerLagHigh
+        expr: kafka_consumergroup_lag{consumergroup=~"search-indexer|fulfillment"} > 10000
+        for: 10m
+        labels:
+          severity: warning
+        annotations:
+          summary: "Kafka consumer lag is high"
+          description: "{{ $labels.consumergroup }} has more than 10000 pending messages for 10 minutes."
+
+      - alert: EmallKafkaDeadLetterGrowth
+        expr: increase(kafka_topic_partition_current_offset{topic=~".*\\.dlt"}[10m]) > 0
+        for: 1m
+        labels:
+          severity: warning
+        annotations:
+          summary: "Kafka dead-letter topic is receiving messages"
+          description: "Dead-letter topic {{ $labels.topic }} received messages in the last 10 minutes."
+
+  - name: emall-cost-governance
+    interval: 30s
+    rules:
+      - alert: EmallCacheHitRatioLow
+        expr: emall_cache_hit_ratio < 0.85
+        for: 10m
+        labels:
+          severity: warning
+        annotations:
+          summary: "Cache hit ratio is below target"
+          description: "{{ $labels.application }} cache hit ratio is below 85% for 10 minutes."
+
+      - alert: EmallIndexStorageHigh
+        expr: emall_index_storage_gb > 500
+        for: 30m
+        labels:
+          severity: warning
+        annotations:
+          summary: "Search index storage is high"
+          description: "{{ $labels.application }} index storage is above 500 GB for 30 minutes."
+
+      - alert: EmallHotStorageHigh
+        expr: emall_hot_storage_gb > 1000
+        for: 30m
+        labels:
+          severity: warning
+        annotations:
+          summary: "Hot storage usage is high"
+          description: "{{ $labels.application }} hot storage is above 1000 GB for 30 minutes."
+
+      - alert: EmallAsyncExportBacklogHigh
+        expr: emall_async_export_backlog > 100000
+        for: 15m
+        labels:
+          severity: warning
+        annotations:
+          summary: "Async export backlog is high"
+          description: "{{ $labels.application }} async export backlog is above 100000 items for 15 minutes."
+
+  - name: emall-trust-governance
+    interval: 30s
+    rules:
+      - alert: EmallRiskBlockDecisionSpike
+        expr: increase(emall_risk_decisions_total{level="BLOCK"}[5m]) > 1000
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "Risk block decisions are spiking"
+          description: "{{ $labels.application }} produced more than 1000 BLOCK decisions in 5 minutes."
+
+      - alert: EmallPendingApprovalsBacklogHigh
+        expr: emall_operations_pending_approvals > 500
+        for: 15m
+        labels:
+          severity: warning
+        annotations:
+          summary: "Pending approval backlog is high"
+          description: "{{ $labels.application }} has more than 500 pending approvals for 15 minutes."
+
+      - alert: EmallOpenApiQuotaRejectionsHigh
+        expr: increase(emall_openapi_quota_rejections_total[10m]) > 100
+        for: 10m
+        labels:
+          severity: warning
+        annotations:
+          summary: "OpenAPI quota rejections are high"
+          description: "{{ $labels.application }} rejected more than 100 OpenAPI requests in 10 minutes."
+
+  - name: emall-growth-platform
+    interval: 30s
+    rules:
+      - alert: EmallCatalogListingReviewBacklogHigh
+        expr: emall_catalog_review_backlog > 10000
+        for: 30m
+        labels:
+          severity: warning
+        annotations:
+          summary: "Catalog listing review backlog is high"
+          description: "{{ $labels.application }} has more than 10000 listings waiting for review."
+
+      - alert: EmallPromotionBudgetBurnHigh
+        expr: emall_promotion_budget_burn_ratio > 0.9
+        for: 10m
+        labels:
+          severity: warning
+        annotations:
+          summary: "Promotion budget burn is high"
+          description: "{{ $labels.application }} campaign budget burn ratio is above 90%."
+
+      - alert: EmallExperimentGuardrailBreach
+        expr: increase(emall_experiment_guardrail_breaches_total[10m]) > 0
+        for: 1m
+        labels:
+          severity: critical
+        annotations:
+          summary: "Experiment guardrail breached"
+          description: "{{ $labels.application }} reported an experiment guardrail breach."
+
+      - alert: EmallAdvertisingBudgetExhausted
+        expr: emall_advertising_budget_remaining_ratio < 0.05
+        for: 10m
+        labels:
+          severity: warning
+        annotations:
+          summary: "Advertising campaign budget is nearly exhausted"
+          description: "{{ $labels.application }} has less than 5% advertising budget remaining."
+
+  - name: emall-supply-finance-service
+    interval: 30s
+    rules:
+      - alert: EmallSupplyChainDeliveryExceptionHigh
+        expr: emall_supply_chain_open_delivery_exceptions > 1000
+        for: 15m
+        labels:
+          severity: warning
+        annotations:
+          summary: "Supply-chain delivery exceptions are high"
+          description: "{{ $labels.application }} has more than 1000 open delivery exceptions."
+
+      - alert: EmallFinanceOpenChargebacksHigh
+        expr: emall_finance_open_chargebacks > 500
+        for: 15m
+        labels:
+          severity: warning
+        annotations:
+          summary: "Finance open chargebacks are high"
+          description: "{{ $labels.application }} has more than 500 open chargebacks."
+
+      - alert: EmallCustomerServiceOpenTicketsHigh
+        expr: emall_customer_service_open_tickets > 10000
+        for: 30m
+        labels:
+          severity: warning
+        annotations:
+          summary: "Customer-service open ticket backlog is high"
+          description: "{{ $labels.application }} has more than 10000 open tickets."
+
+      - alert: EmallForecastingHighRiskCountHigh
+        expr: emall_forecasting_high_risk_count > 1000
+        for: 30m
+        labels:
+          severity: warning
+        annotations:
+          summary: "Forecasting high-risk signals are elevated"
+          description: "{{ $labels.application }} has more than 1000 high-risk forecast outputs."
+
+  - name: emall-data-ai-platform
+    interval: 30s
+    rules:
+      - alert: EmallEventPlatformLateEventsHigh
+        expr: emall_event_platform_late_events > 10000
+        for: 15m
+        labels:
+          severity: warning
+        annotations:
+          summary: "Event-platform late events are high"
+          description: "{{ $labels.application }} has more than 10000 late tracking events."
+
+      - alert: EmallDataWarehouseQualityFailuresHigh
+        expr: emall_data_warehouse_failed_checks > 100
+        for: 30m
+        labels:
+          severity: warning
+        annotations:
+          summary: "Data warehouse quality failures are high"
+          description: "{{ $labels.application }} has more than 100 failed quality checks."
+
+      - alert: EmallIntelligenceModelDeploymentGap
+        expr: emall_intelligence_deployed_models < 1
+        for: 30m
+        labels:
+          severity: warning
+        annotations:
+          summary: "No deployed intelligence model is available"
+          description: "{{ $labels.application }} has no deployed models for decision workloads."
+
+      - alert: EmallAnalyticsPrivacyBacklogHigh
+        expr: emall_analytics_open_privacy_requests > 1000
+        for: 30m
+        labels:
+          severity: warning
+        annotations:
+          summary: "Privacy request backlog is high"
+          description: "{{ $labels.application }} has more than 1000 open privacy requests."
+
+  - name: emall-production-scale-platform
+    interval: 30s
+    rules:
+      - alert: EmallTrafficIsolatedUnitsHigh
+        expr: emall_traffic_isolated_units > 0
+        for: 5m
+        labels:
+          severity: critical
+        annotations:
+          summary: "Traffic unit isolation is active"
+          description: "{{ $labels.application }} has one or more isolated traffic units."
+
+      - alert: EmallReliabilityBlockedReadinessGatesHigh
+        expr: emall_reliability_blocked_readiness_gates > 0
+        for: 10m
+        labels:
+          severity: warning
+        annotations:
+          summary: "Production readiness gate is blocked"
+          description: "{{ $labels.application }} has blocked production readiness gates."
+
+      - alert: EmallReleaseRunningRolloutsHigh
+        expr: emall_release_running_rollouts > 20
+        for: 15m
+        labels:
+          severity: warning
+        annotations:
+          summary: "Too many rollouts are running"
+          description: "{{ $labels.application }} has more than 20 concurrent running rollouts."
+
+      - alert: EmallPlatformOpsCriticalSecuritySignalsHigh
+        expr: emall_platform_ops_critical_security_signals > 0
+        for: 5m
+        labels:
+          severity: critical
+        annotations:
+          summary: "Critical security operation is open"
+          description: "{{ $labels.application }} has critical security signals that are not completed."

@@ -1,0 +1,46 @@
+﻿<svg xmlns="http://www.w3.org/2000/svg" width="1080" height="540" viewBox="0 0 1080 540">
+    <defs>
+        <style>
+            .bg { fill: #f8fbfb; }
+            .box { fill: #ffffff; stroke: #1f2d3d; stroke-width: 2; rx: 14; }
+            .web { fill: #eef5ff; stroke: #285f9f; stroke-width: 2; rx: 14; }
+            .svc { fill: #fff4e8; stroke: #a35f00; stroke-width: 2; rx: 14; }
+            .data { fill: #eef9f0; stroke: #2f7d3b; stroke-width: 2; rx: 14; }
+            .text { fill: #17202a; font-family: "Noto Sans SC", sans-serif; font-size: 18px; }
+            .small { fill: #34495e; font-family: "Noto Sans SC", sans-serif; font-size: 14px; }
+            .arrow { stroke: #17202a; stroke-width: 2.4; fill: none; marker-end: url(#arrow); }
+        </style>
+        <marker id="arrow" markerWidth="12" markerHeight="12" refX="9" refY="3" orient="auto">
+            <path d="M0,0 L0,6 L9,3 z" fill="#17202a"/>
+        </marker>
+    </defs>
+    <rect class="bg" width="1080" height="540"/>
+    <text x="42" y="46" class="text" style="font-size:24px;font-weight:700">
+        Spring 微服务调用栈和治理边界
+    </text>
+
+    <rect x="80" y="110" width="210" height="120" class="web"/>
+    <text x="132" y="145" class="text">接口层</text>
+    <text x="112" y="173" class="small">Controller / 参数校验</text>
+    <text x="112" y="195" class="small">错误码 / API 契约</text>
+
+    <rect x="435" y="110" width="210" height="120" class="svc"/>
+    <text x="487" y="145" class="text">业务层</text>
+    <text x="467" y="173" class="small">事务 / 领域服务</text>
+    <text x="467" y="195" class="small">幂等 / 事件 / 补偿</text>
+
+    <rect x="790" y="110" width="210" height="120" class="data"/>
+    <text x="842" y="145" class="text">数据层</text>
+    <text x="822" y="173" class="small">MyBatis Plus / SQL</text>
+    <text x="822" y="195" class="small">Redis / MQ / 下游</text>
+
+    <rect x="180" y="340" width="720" height="86" class="box"/>
+    <text x="230" y="375" class="text">治理横切面</text>
+    <text x="230" y="403" class="small">
+        配置、日志、指标、链路追踪、鉴权、限流、熔断和审计贯穿所有层。
+    </text>
+
+    <path d="M290 170 H435" class="arrow"/>
+    <path d="M645 170 H790" class="arrow"/>
+    <path d="M540 230 V340" class="arrow"/>
+</svg>

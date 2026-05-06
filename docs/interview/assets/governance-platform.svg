@@ -1,0 +1,52 @@
+﻿<svg xmlns="http://www.w3.org/2000/svg" width="1080" height="520" viewBox="0 0 1080 520">
+    <defs>
+        <style>
+            .bg { fill: #f8fbfb; }
+            .box { fill: #ffffff; stroke: #1f2d3d; stroke-width: 2; rx: 14; }
+            .control { fill: #eef5ff; stroke: #285f9f; stroke-width: 2; rx: 14; }
+            .runtime { fill: #fff4e8; stroke: #a35f00; stroke-width: 2; rx: 14; }
+            .observe { fill: #eef9f0; stroke: #2f7d3b; stroke-width: 2; rx: 14; }
+            .text { fill: #17202a; font-family: "Noto Sans SC", sans-serif; font-size: 18px; }
+            .small { fill: #34495e; font-family: "Noto Sans SC", sans-serif; font-size: 14px; }
+            .arrow { stroke: #17202a; stroke-width: 2.4; fill: none; marker-end: url(#arrow); }
+            .dash { stroke: #7f8c8d; stroke-width: 2; fill: none; stroke-dasharray: 7 6; marker-end: url(#gray); }
+        </style>
+        <marker id="arrow" markerWidth="12" markerHeight="12" refX="9" refY="3" orient="auto">
+            <path d="M0,0 L0,6 L9,3 z" fill="#17202a"/>
+        </marker>
+        <marker id="gray" markerWidth="12" markerHeight="12" refX="9" refY="3" orient="auto">
+            <path d="M0,0 L0,6 L9,3 z" fill="#7f8c8d"/>
+        </marker>
+    </defs>
+    <rect class="bg" width="1080" height="520"/>
+    <text x="42" y="46" class="text" style="font-size:24px;font-weight:700">限流、熔断、降级治理平台</text>
+
+    <rect x="70" y="110" width="200" height="104" class="control"/>
+    <text x="126" y="145" class="text">控制面</text>
+    <text x="102" y="173" class="small">规则版本/灰度</text>
+    <text x="102" y="195" class="small">审批/审计/回滚</text>
+
+    <rect x="440" y="90" width="210" height="144" class="runtime"/>
+    <text x="499" y="125" class="text">运行时 SDK</text>
+    <text x="472" y="153" class="small">限流、熔断、降级</text>
+    <text x="472" y="175" class="small">超时、重试、半开</text>
+    <text x="472" y="197" class="small">本地缓存规则</text>
+
+    <rect x="810" y="110" width="190" height="104" class="observe"/>
+    <text x="866" y="145" class="text">观测面</text>
+    <text x="842" y="173" class="small">指标/告警/看板</text>
+    <text x="842" y="195" class="small">误伤分析</text>
+
+    <rect x="440" y="330" width="210" height="82" class="box"/>
+    <text x="489" y="365" class="text">业务服务</text>
+    <text x="470" y="392" class="small">订单/库存/支付/搜索</text>
+
+    <path d="M270 162 H440" class="arrow"/>
+    <path d="M650 162 H810" class="arrow"/>
+    <path d="M545 234 V330" class="arrow"/>
+    <path d="M650 370 C760 365 820 280 880 214" class="dash"/>
+
+    <text x="92" y="285" class="small">控制面负责安全地下发策略，不直接参与请求链路</text>
+    <text x="92" y="315" class="small">运行时必须支持本地缓存和默认安全策略，避免配置中心故障导致链路不可用</text>
+    <text x="92" y="445" class="small">面试重点：平台不只是算法，还包括规则治理、观测、审计、回滚和误伤控制</text>
+</svg>

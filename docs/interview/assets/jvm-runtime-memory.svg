@@ -1,0 +1,66 @@
+﻿<svg xmlns="http://www.w3.org/2000/svg" width="1080" height="540" viewBox="0 0 1080 540">
+    <defs>
+        <style>
+            .bg { fill: #f8fbfb; }
+            .box { fill: #ffffff; stroke: #1f2d3d; stroke-width: 2; rx: 14; }
+            .heap { fill: #eef5ff; stroke: #285f9f; stroke-width: 2; rx: 14; }
+            .native { fill: #fff4e8; stroke: #a35f00; stroke-width: 2; rx: 14; }
+            .risk { fill: #fff1f1; stroke: #a33a3a; stroke-width: 2; rx: 14; }
+            .ok { fill: #eef9f0; stroke: #2f7d3b; stroke-width: 2; rx: 14; }
+            .text { fill: #17202a; font-family: "Noto Sans SC", sans-serif; font-size: 18px; }
+            .small { fill: #34495e; font-family: "Noto Sans SC", sans-serif; font-size: 14px; }
+            .arrow { stroke: #17202a; stroke-width: 2.4; fill: none; marker-end: url(#arrow); }
+            .dash { stroke: #7f8c8d; stroke-width: 2; fill: none; stroke-dasharray: 7 6; marker-end: url(#gray); }
+        </style>
+        <marker id="arrow" markerWidth="12" markerHeight="12" refX="9" refY="3" orient="auto">
+            <path d="M0,0 L0,6 L9,3 z" fill="#17202a"/>
+        </marker>
+        <marker id="gray" markerWidth="12" markerHeight="12" refX="9" refY="3" orient="auto">
+            <path d="M0,0 L0,6 L9,3 z" fill="#7f8c8d"/>
+        </marker>
+    </defs>
+    <rect class="bg" width="1080" height="540"/>
+    <text x="42" y="46" class="text" style="font-size:24px;font-weight:700">
+        Java 17 容器内 JVM 内存结构
+    </text>
+
+    <rect x="70" y="105" width="940" height="310" class="box"/>
+    <text x="100" y="138" class="text">Pod memory limit</text>
+
+    <rect x="120" y="170" width="210" height="150" class="heap"/>
+    <text x="190" y="205" class="text">Heap</text>
+    <text x="150" y="233" class="small">young / old</text>
+    <text x="150" y="255" class="small">业务对象 / 缓存 / 队列</text>
+    <text x="150" y="277" class="small">Java heap OOM</text>
+
+    <rect x="380" y="170" width="190" height="150" class="native"/>
+    <text x="432" y="205" class="text">Direct</text>
+    <text x="410" y="233" class="small">NIO / Netty</text>
+    <text x="410" y="255" class="small">ByteBuffer</text>
+    <text x="410" y="277" class="small">堆外 OOM</text>
+
+    <rect x="620" y="170" width="170" height="150" class="native"/>
+    <text x="670" y="205" class="text">Non-Heap</text>
+    <text x="650" y="233" class="small">Metaspace</text>
+    <text x="650" y="255" class="small">Code Cache</text>
+    <text x="650" y="277" class="small">JIT metadata</text>
+
+    <rect x="835" y="170" width="135" height="150" class="risk"/>
+    <text x="872" y="205" class="text">Threads</text>
+    <text x="860" y="233" class="small">stack</text>
+    <text x="860" y="255" class="small">native</text>
+    <text x="860" y="277" class="small">ulimit</text>
+
+    <rect x="120" y="455" width="210" height="58" class="ok"/>
+    <text x="150" y="490" class="small">MaxRAMPercentage 控制堆占比</text>
+
+    <rect x="380" y="455" width="250" height="58" class="risk"/>
+    <text x="405" y="490" class="small">Xmx 接近 limit 会挤压堆外空间</text>
+
+    <rect x="700" y="455" width="270" height="58" class="ok"/>
+    <text x="725" y="490" class="small">监控要同时看 heap 和 container memory</text>
+
+    <path d="M225 320 V455" class="dash"/>
+    <path d="M475 320 V455" class="dash"/>
+    <path d="M705 320 C725 380 805 410 835 455" class="dash"/>
+</svg>

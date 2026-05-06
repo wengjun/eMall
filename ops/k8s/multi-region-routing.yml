@@ -1,0 +1,39 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: emall-multi-region-routing
+data:
+  routing.yml: |
+    regions:
+      - code: us-east-1
+        priority: 10
+        status: ACTIVE
+      - code: us-west-2
+        priority: 20
+        status: ACTIVE
+    domains:
+      order:
+        writeStrategy: PARTITIONED_SINGLE_WRITER
+        primaryRegion: us-east-1
+        partitionCount: 1024
+        partitionKey: user_id
+        readPolicy: LOCAL_FIRST
+      inventory:
+        writeStrategy: PARTITIONED_SINGLE_WRITER
+        primaryRegion: us-east-1
+        partitionCount: 4096
+        partitionKey: sku_id
+        readPolicy: LOCAL_FIRST
+      payment:
+        writeStrategy: GLOBAL_SINGLE_WRITER
+        primaryRegion: us-east-1
+        partitionCount: 1
+        partitionKey: payment_id
+        readPolicy: OWNER_FIRST
+    failover:
+      globalSingleWriter:
+        allowManualPromotion: true
+        requireLedgerFreezeBeforePromotion: true
+      partitionedSingleWriter:
+        allowAutomaticOwnerMove: false
+        requireShardMigrationRunbook: true

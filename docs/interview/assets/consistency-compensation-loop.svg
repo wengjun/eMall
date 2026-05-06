@@ -1,0 +1,50 @@
+﻿<svg xmlns="http://www.w3.org/2000/svg" width="980" height="430" viewBox="0 0 980 430">
+    <defs>
+        <style>
+            .bg { fill: #fbfaf6; }
+            .box { fill: #ffffff; stroke: #1f2d3d; stroke-width: 2; rx: 14; }
+            .warn { fill: #fff4e8; stroke: #a35f00; stroke-width: 2; rx: 14; }
+            .fix { fill: #eef9f0; stroke: #2f7d3b; stroke-width: 2; rx: 14; }
+            .audit { fill: #eef5ff; stroke: #285f9f; stroke-width: 2; rx: 14; }
+            .text { fill: #17202a; font-family: "Noto Sans SC", sans-serif; font-size: 18px; }
+            .small { fill: #34495e; font-family: "Noto Sans SC", sans-serif; font-size: 14px; }
+            .arrow { stroke: #17202a; stroke-width: 2.4; fill: none; marker-end: url(#arrow); }
+            .dash { stroke: #7f8c8d; stroke-width: 2; fill: none; stroke-dasharray: 7 6; marker-end: url(#gray); }
+        </style>
+        <marker id="arrow" markerWidth="12" markerHeight="12" refX="9" refY="3" orient="auto">
+            <path d="M0,0 L0,6 L9,3 z" fill="#17202a"/>
+        </marker>
+        <marker id="gray" markerWidth="12" markerHeight="12" refX="9" refY="3" orient="auto">
+            <path d="M0,0 L0,6 L9,3 z" fill="#7f8c8d"/>
+        </marker>
+    </defs>
+    <rect class="bg" width="980" height="430"/>
+    <text x="42" y="46" class="text" style="font-size:24px;font-weight:700">
+        对账和补偿的一致性闭环
+    </text>
+
+    <rect x="65" y="115" width="150" height="82" class="box"/>
+    <text x="104" y="150" class="text">业务事实</text>
+    <text x="92" y="177" class="small">订单/支付/库存</text>
+
+    <rect x="295" y="115" width="150" height="82" class="warn"/>
+    <text x="334" y="150" class="text">差异发现</text>
+    <text x="322" y="177" class="small">对账/扫描/告警</text>
+
+    <rect x="525" y="115" width="150" height="82" class="fix"/>
+    <text x="564" y="150" class="text">补偿修复</text>
+    <text x="546" y="177" class="small">重试/推进/退款</text>
+
+    <rect x="755" y="115" width="150" height="82" class="audit"/>
+    <text x="794" y="150" class="text">再次验证</text>
+    <text x="784" y="177" class="small">状态收敛/审计</text>
+
+    <path d="M215 156 H295" class="arrow"/>
+    <path d="M445 156 H525" class="arrow"/>
+    <path d="M675 156 H755" class="arrow"/>
+    <path d="M830 197 V255 C830 320 170 320 140 197" class="dash"/>
+
+    <text x="86" y="265" class="small">对账负责发现：金额、状态、数量、流水是否一致</text>
+    <text x="86" y="295" class="small">补偿负责修复：推进状态、释放资源、重发事件、发起退款</text>
+    <text x="86" y="325" class="small">生产要求：幂等、审计、重试上限、人工兜底、修复后再次验证</text>
+</svg>

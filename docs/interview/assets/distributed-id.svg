@@ -1,0 +1,34 @@
+﻿<svg xmlns="http://www.w3.org/2000/svg" width="980" height="430" viewBox="0 0 980 430">
+    <defs>
+        <style>
+            .bg { fill: #fbfaf6; }
+            .part { fill: #eef5ff; stroke: #285f9f; stroke-width: 2; rx: 12; }
+            .warn { fill: #fff4e8; stroke: #a35f00; stroke-width: 2; rx: 12; }
+            .text { fill: #17202a; font-family: "Noto Sans SC", sans-serif; font-size: 18px; }
+            .small { fill: #34495e; font-family: "Noto Sans SC", sans-serif; font-size: 14px; }
+        </style>
+    </defs>
+    <rect class="bg" width="980" height="430"/>
+    <text x="42" y="46" class="text" style="font-size:24px;font-weight:700">
+        Snowflake 变体 ID 结构
+    </text>
+
+    <rect x="80" y="125" width="310" height="92" class="part"/>
+    <text x="178" y="162" class="text">时间戳</text>
+    <text x="132" y="190" class="small">保证趋势递增，支持粗略反查时间</text>
+
+    <rect x="390" y="125" width="190" height="92" class="part"/>
+    <text x="441" y="162" class="text">workerId</text>
+    <text x="424" y="190" class="small">机器或节点编号</text>
+
+    <rect x="580" y="125" width="190" height="92" class="part"/>
+    <text x="628" y="162" class="text">sequence</text>
+    <text x="618" y="190" class="small">同毫秒内递增</text>
+
+    <rect x="770" y="125" width="130" height="92" class="warn"/>
+    <text x="808" y="162" class="text">业务位</text>
+    <text x="795" y="190" class="small">可选：类型/区域</text>
+
+    <text x="92" y="295" class="small">核心风险：时钟回拨、workerId 冲突、同毫秒序列耗尽、对外 ID 暴露分片规则。</text>
+    <text x="92" y="330" class="small">工程取舍：内部主键服务数据库和路由，对外订单号服务用户、客服、财务和审计。</text>
+</svg>

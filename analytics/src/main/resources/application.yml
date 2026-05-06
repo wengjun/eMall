@@ -1,0 +1,28 @@
+server:
+  port: 8112
+
+spring:
+  application:
+    name: analytics
+  datasource:
+    url: ${EMALL_ANALYTICS_DB_URL:jdbc:mysql://localhost:3306/emall_analytics?useUnicode=true&characterEncoding=utf8&serverTimezone=UTC}
+    username: ${EMALL_DB_USERNAME:root}
+    password: ${EMALL_DB_PASSWORD:root}
+  flyway:
+    enabled: true
+
+emall:
+  storage: jdbc
+
+management:
+  metrics:
+    tags:
+      application: ${spring.application.name}
+  endpoint:
+    health:
+      probes:
+        enabled: true
+  endpoints:
+    web:
+      exposure:
+        include: health,info,metrics,prometheus

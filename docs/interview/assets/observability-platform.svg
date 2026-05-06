@@ -1,0 +1,57 @@
+﻿<svg xmlns="http://www.w3.org/2000/svg" width="1080" height="520" viewBox="0 0 1080 520">
+    <defs>
+        <style>
+            .bg { fill: #fbfaf6; }
+            .box { fill: #ffffff; stroke: #1f2d3d; stroke-width: 2; rx: 14; }
+            .log { fill: #eef5ff; stroke: #285f9f; stroke-width: 2; rx: 14; }
+            .metric { fill: #eef9f0; stroke: #2f7d3b; stroke-width: 2; rx: 14; }
+            .alert { fill: #fff4e8; stroke: #a35f00; stroke-width: 2; rx: 14; }
+            .risk { fill: #fff1f1; stroke: #a33a3a; stroke-width: 2; rx: 14; }
+            .text { fill: #17202a; font-family: "Noto Sans SC", sans-serif; font-size: 18px; }
+            .small { fill: #34495e; font-family: "Noto Sans SC", sans-serif; font-size: 14px; }
+            .arrow { stroke: #17202a; stroke-width: 2.4; fill: none; marker-end: url(#arrow); }
+        </style>
+        <marker id="arrow" markerWidth="12" markerHeight="12" refX="9" refY="3" orient="auto">
+            <path d="M0,0 L0,6 L9,3 z" fill="#17202a"/>
+        </marker>
+    </defs>
+    <rect class="bg" width="1080" height="520"/>
+    <text x="42" y="46" class="text" style="font-size:24px;font-weight:700">
+        日志、指标和告警平台
+    </text>
+
+    <rect x="60" y="115" width="160" height="82" class="box"/>
+    <text x="98" y="150" class="text">业务服务</text>
+    <text x="88" y="177" class="small">订单/支付/库存</text>
+
+    <rect x="305" y="70" width="170" height="82" class="log"/>
+    <text x="352" y="105" class="text">日志管道</text>
+    <text x="330" y="132" class="small">采集/脱敏/索引</text>
+
+    <rect x="305" y="220" width="170" height="82" class="metric"/>
+    <text x="352" y="255" class="text">指标管道</text>
+    <text x="330" y="282" class="small">采集/聚合/存储</text>
+
+    <rect x="560" y="70" width="170" height="82" class="log"/>
+    <text x="607" y="105" class="text">查询平台</text>
+    <text x="592" y="132" class="small">traceId/orderId</text>
+
+    <rect x="560" y="220" width="170" height="82" class="alert"/>
+    <text x="607" y="255" class="text">告警平台</text>
+    <text x="590" y="282" class="small">SLO/burn rate</text>
+
+    <rect x="815" y="145" width="170" height="102" class="risk"/>
+    <text x="862" y="180" class="text">事故响应</text>
+    <text x="844" y="207" class="small">Runbook/升级/复盘</text>
+
+    <path d="M220 156 C260 125 280 112 305 111" class="arrow"/>
+    <path d="M220 156 C260 210 280 258 305 261" class="arrow"/>
+    <path d="M475 111 H560" class="arrow"/>
+    <path d="M475 261 H560" class="arrow"/>
+    <path d="M730 261 C775 245 795 220 815 196" class="arrow"/>
+    <path d="M730 111 C780 115 805 145 815 170" class="arrow"/>
+
+    <text x="80" y="440" class="small">
+        日志回答“发生了什么”，指标回答“影响多大”，告警和 Runbook 指导“谁来恢复以及怎么恢复”。
+    </text>
+</svg>

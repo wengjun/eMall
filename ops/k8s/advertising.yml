@@ -1,0 +1,98 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: advertising
+  labels:
+    app: advertising
+spec:
+  replicas: 4
+  selector:
+    matchLabels:
+      app: advertising
+  template:
+    metadata:
+      labels:
+        app: advertising
+    spec:
+      terminationGracePeriodSeconds: 45
+      serviceAccountName: advertising
+      securityContext:
+        runAsNonRoot: true
+        seccompProfile:
+          type: RuntimeDefault
+      containers:
+        - name: advertising
+          image: emall/advertising:0.1.0
+          imagePullPolicy: IfNotPresent
+          securityContext:
+            allowPrivilegeEscalation: false
+            capabilities:
+              drop:
+                - ALL
+          ports:
+            - containerPort: 8104
+          envFrom:
+            - configMapRef:
+                name: emall-runtime-config
+            - secretRef:
+                name: emall-runtime-secret
+          readinessProbe:
+            httpGet:
+              path: /actuator/health/readiness
+              port: 8104
+            initialDelaySeconds: 20
+            periodSeconds: 5
+          livenessProbe:
+            httpGet:
+              path: /actuator/health/liveness
+              port: 8104
+            initialDelaySeconds: 60
+            periodSeconds: 10
+          resources:
+            requests:
+              cpu: "1"
+              memory: 1Gi
+            limits:
+              cpu: "4"
+              memory: 4Gi
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: advertising
+spec:
+  selector:
+    app: advertising
+  ports:
+    - name: http
+      port: 8104
+      targetPort: 8104
+---
+apiVersion: policy/v1
+kind: PodDisruptionBudget
+metadata:
+  name: advertising
+spec:
+  minAvailable: 3
+  selector:
+    matchLabels:
+      app: advertising
+---
+apiVersion: autoscaling/v2
+kind: HorizontalPodAutoscaler
+metadata:
+  name: advertising
+spec:
+  scaleTargetRef:
+    apiVersion: apps/v1
+    kind: Deployment
+    name: advertising
+  minReplicas: 4
+  maxReplicas: 200
+  metrics:
+    - type: Resource
+      resource:
+        name: cpu
+        target:
+          type: Utilization
+          averageUtilization: 60

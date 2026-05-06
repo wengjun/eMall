@@ -1,0 +1,55 @@
+﻿<svg xmlns="http://www.w3.org/2000/svg" width="980" height="450" viewBox="0 0 980 450">
+    <defs>
+        <style>
+            .bg { fill: #f8fbfb; }
+            .topic { fill: #eef5ff; stroke: #285f9f; stroke-width: 2; rx: 14; }
+            .retry { fill: #fff4e8; stroke: #a35f00; stroke-width: 2; rx: 14; }
+            .dlq { fill: #fff1f1; stroke: #a33a3a; stroke-width: 2; rx: 14; }
+            .ok { fill: #eef9f0; stroke: #2f7d3b; stroke-width: 2; rx: 14; }
+            .text { fill: #17202a; font-family: "Noto Sans SC", sans-serif; font-size: 18px; }
+            .small { fill: #34495e; font-family: "Noto Sans SC", sans-serif; font-size: 14px; }
+            .arrow { stroke: #17202a; stroke-width: 2.4; fill: none; marker-end: url(#arrow); }
+            .fail { stroke: #a33a3a; stroke-width: 2.4; fill: none; stroke-dasharray: 7 6; marker-end: url(#red); }
+        </style>
+        <marker id="arrow" markerWidth="12" markerHeight="12" refX="9" refY="3" orient="auto">
+            <path d="M0,0 L0,6 L9,3 z" fill="#17202a"/>
+        </marker>
+        <marker id="red" markerWidth="12" markerHeight="12" refX="9" refY="3" orient="auto">
+            <path d="M0,0 L0,6 L9,3 z" fill="#a33a3a"/>
+        </marker>
+    </defs>
+    <rect class="bg" width="980" height="450"/>
+    <text x="42" y="46" class="text" style="font-size:24px;font-weight:700">
+        Kafka 重试 Topic 和死信 Topic
+    </text>
+
+    <rect x="60" y="120" width="160" height="82" class="topic"/>
+    <text x="100" y="155" class="text">主 Topic</text>
+    <text x="88" y="182" class="small">正常消费链路</text>
+
+    <rect x="305" y="120" width="160" height="82" class="ok"/>
+    <text x="346" y="155" class="text">消费者</text>
+    <text x="330" y="182" class="small">业务处理/幂等</text>
+
+    <rect x="550" y="70" width="170" height="82" class="retry"/>
+    <text x="588" y="105" class="text">Retry Topic</text>
+    <text x="585" y="132" class="small">退避后再消费</text>
+
+    <rect x="550" y="230" width="170" height="82" class="dlq"/>
+    <text x="598" y="265" class="text">DLQ</text>
+    <text x="585" y="292" class="small">告警/修复/回放</text>
+
+    <rect x="795" y="230" width="130" height="82" class="topic"/>
+    <text x="833" y="265" class="text">回放</text>
+    <text x="820" y="292" class="small">人工或工具</text>
+
+    <path d="M220 161 H305" class="arrow"/>
+    <path d="M465 145 C500 120 515 112 550 111" class="fail"/>
+    <path d="M635 152 C635 190 505 205 465 177" class="arrow"/>
+    <path d="M465 177 C515 230 520 265 550 271" class="fail"/>
+    <path d="M720 271 H795" class="arrow"/>
+
+    <text x="76" y="380" class="small">
+        关键字段：原始 topic/partition/offset、eventId、retryCount、nextRetryAt、errorCode、traceId。
+    </text>
+</svg>

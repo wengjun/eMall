@@ -1,0 +1,60 @@
+apiVersion: argoproj.io/v1alpha1
+kind: AnalysisTemplate
+metadata:
+  name: emall-http-slo
+spec:
+  args:
+    - name: application
+    - name: max-error-ratio
+      value: "0.01"
+    - name: max-p95-latency
+      value: "0.5"
+  metrics:
+    - name: http-5xx-ratio
+      interval: 1m
+      count: 5
+      successCondition: result[0] <= asFloat(args.max-error-ratio)
+      provider:
+        prometheus:
+          address: http://prometheus:9090
+          query: |
+            sum(rate(http_server_requests_seconds_count{application="{{args.application}}",status=~"5.."}[5m]))
+            /
+            sum(rate(http_server_requests_seconds_count{application="{{args.application}}"}[5m]))
+    - name: http-p95-latency
+      interval: 1m
+      count: 5
+      successCondition: result[0] <= asFloat(args.max-p95-latency)
+      provider:
+        prometheus:
+          address: http://prometheus:9090
+          query: |
+            histogram_quantile(
+              0.95,
+              sum by (le) (rate(http_server_requests_seconds_bucket{application="{{args.application}}"}[5m]))
+            )
+---
+apiVersion: argoproj.io/v1alpha1
+kind: AnalysisTemplate
+metadata:
+  name: emall-payment-slo
+spec:
+  metrics:
+    - name: payment-callback-5xx-ratio
+      interval: 1m
+      count: 5
+      successCondition: result[0] <= 0.005
+      provider:
+        prometheus:
+          address: http://prometheus:9090
+          query: |
+            sum(rate(http_server_requests_seconds_count{
+              application="payment",
+              uri="/api/payments/{paymentId}/callbacks",
+              status=~"5.."
+            }[5m]))
+            /
+            sum(rate(http_server_requests_seconds_count{
+              application="payment",
+              uri="/api/payments/{paymentId}/callbacks"
+            }[5m]))

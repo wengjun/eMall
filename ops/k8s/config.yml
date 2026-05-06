@@ -1,0 +1,95 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: emall-runtime-config
+data:
+  EMALL_REDIS_HOST: redis
+  EMALL_REDIS_PORT: "6379"
+  EMALL_KAFKA_BOOTSTRAP_SERVERS: kafka:9092
+  EMALL_PRODUCT_EVENTS_TOPIC: emall.product.events
+  EMALL_PRODUCT_EVENTS_DLT_TOPIC: emall.product.events.dlt
+  EMALL_OTLP_TRACES_ENDPOINT: http://otel-collector:4318/v1/traces
+  EMALL_TRACING_SAMPLING_PROBABILITY: "0.1"
+  EMALL_USER_URL: http://user:8081
+  EMALL_PRODUCT_URL: http://product:8082
+  EMALL_INVENTORY_URL: http://inventory:8083
+  EMALL_ORDER_URL: http://order:8084
+  EMALL_CART_URL: http://cart:8085
+  EMALL_PAYMENT_URL: http://payment:8086
+  EMALL_PRICING_URL: http://pricing:8087
+  EMALL_MARKETING_URL: http://marketing:8088
+  EMALL_SEARCH_URL: http://search:8089
+  EMALL_FULFILLMENT_URL: http://fulfillment:8090
+  EMALL_REVIEW_URL: http://review:8091
+  EMALL_AFTER_SALES_URL: http://after-sales:8092
+  EMALL_MERCHANT_URL: http://merchant:8093
+  EMALL_FLASH_SALE_URL: http://flash-sale:8094
+  EMALL_RECOMMENDATION_URL: http://recommendation:8095
+  EMALL_COST_URL: http://cost:8096
+  EMALL_IDENTITY_URL: http://identity:8097
+  EMALL_RISK_URL: http://risk:8098
+  EMALL_OPERATIONS_URL: http://operations:8099
+  EMALL_OPENAPI_URL: http://openapi:8100
+  EMALL_CATALOG_URL: http://catalog:8101
+  EMALL_PROMOTION_URL: http://promotion:8102
+  EMALL_EXPERIMENT_URL: http://experiment:8103
+  EMALL_ADVERTISING_URL: http://advertising:8104
+  EMALL_SUPPLY_CHAIN_URL: http://supply-chain:8105
+  EMALL_FINANCE_URL: http://finance:8106
+  EMALL_CUSTOMER_SERVICE_URL: http://customer-service:8107
+  EMALL_FORECASTING_URL: http://forecasting:8108
+  EMALL_EVENT_PLATFORM_URL: http://event-platform:8109
+  EMALL_DATA_WAREHOUSE_URL: http://data-warehouse:8110
+  EMALL_INTELLIGENCE_URL: http://intelligence:8111
+  EMALL_ANALYTICS_URL: http://analytics:8112
+  EMALL_TRAFFIC_URL: http://traffic:8113
+  EMALL_RELIABILITY_URL: http://reliability:8114
+  EMALL_RELEASE_URL: http://release:8115
+  EMALL_PLATFORM_OPS_URL: http://platform-ops:8116
+  EMALL_USER_DB_URL: jdbc:mysql://mysql:3306/emall_user?useUnicode=true&characterEncoding=utf8&serverTimezone=UTC
+  EMALL_PRODUCT_DB_URL: jdbc:mysql://mysql:3306/emall_product?useUnicode=true&characterEncoding=utf8&serverTimezone=UTC
+  EMALL_INVENTORY_DB_URL: jdbc:mysql://mysql:3306/emall_inventory?useUnicode=true&characterEncoding=utf8&serverTimezone=UTC
+  EMALL_ORDER_DB_URL: jdbc:mysql://mysql:3306/emall_order?useUnicode=true&characterEncoding=utf8&serverTimezone=UTC
+  EMALL_CART_DB_URL: jdbc:mysql://mysql:3306/emall_cart?useUnicode=true&characterEncoding=utf8&serverTimezone=UTC
+  EMALL_PAYMENT_DB_URL: jdbc:mysql://mysql:3306/emall_payment?useUnicode=true&characterEncoding=utf8&serverTimezone=UTC
+  EMALL_PRICING_DB_URL: jdbc:mysql://mysql:3306/emall_pricing?useUnicode=true&characterEncoding=utf8&serverTimezone=UTC
+  EMALL_MARKETING_DB_URL: jdbc:mysql://mysql:3306/emall_marketing?useUnicode=true&characterEncoding=utf8&serverTimezone=UTC
+  EMALL_SEARCH_DB_URL: jdbc:mysql://mysql:3306/emall_search?useUnicode=true&characterEncoding=utf8&serverTimezone=UTC
+  EMALL_FULFILLMENT_DB_URL: jdbc:mysql://mysql:3306/emall_fulfillment?useUnicode=true&characterEncoding=utf8&serverTimezone=UTC
+  EMALL_REVIEW_DB_URL: jdbc:mysql://mysql:3306/emall_review?useUnicode=true&characterEncoding=utf8&serverTimezone=UTC
+  EMALL_AFTER_SALES_DB_URL: jdbc:mysql://mysql:3306/emall_after_sales?useUnicode=true&characterEncoding=utf8&serverTimezone=UTC
+  EMALL_MERCHANT_DB_URL: jdbc:mysql://mysql:3306/emall_merchant?useUnicode=true&characterEncoding=utf8&serverTimezone=UTC
+  EMALL_FLASH_SALE_DB_URL: jdbc:mysql://mysql:3306/emall_flash_sale?useUnicode=true&characterEncoding=utf8&serverTimezone=UTC
+  EMALL_RECOMMENDATION_DB_URL: jdbc:mysql://mysql:3306/emall_recommendation?useUnicode=true&characterEncoding=utf8&serverTimezone=UTC
+  EMALL_COST_DB_URL: jdbc:mysql://mysql:3306/emall_cost?useUnicode=true&characterEncoding=utf8&serverTimezone=UTC
+  EMALL_IDENTITY_DB_URL: jdbc:mysql://mysql:3306/emall_identity?useUnicode=true&characterEncoding=utf8&serverTimezone=UTC
+  EMALL_RISK_DB_URL: jdbc:mysql://mysql:3306/emall_risk?useUnicode=true&characterEncoding=utf8&serverTimezone=UTC
+  EMALL_OPERATIONS_DB_URL: jdbc:mysql://mysql:3306/emall_operations?useUnicode=true&characterEncoding=utf8&serverTimezone=UTC
+  EMALL_OPENAPI_DB_URL: jdbc:mysql://mysql:3306/emall_openapi?useUnicode=true&characterEncoding=utf8&serverTimezone=UTC
+  EMALL_CATALOG_DB_URL: jdbc:mysql://mysql:3306/emall_catalog?useUnicode=true&characterEncoding=utf8&serverTimezone=UTC
+  EMALL_PROMOTION_DB_URL: jdbc:mysql://mysql:3306/emall_promotion?useUnicode=true&characterEncoding=utf8&serverTimezone=UTC
+  EMALL_EXPERIMENT_DB_URL: jdbc:mysql://mysql:3306/emall_experiment?useUnicode=true&characterEncoding=utf8&serverTimezone=UTC
+  EMALL_ADVERTISING_DB_URL: jdbc:mysql://mysql:3306/emall_advertising?useUnicode=true&characterEncoding=utf8&serverTimezone=UTC
+  EMALL_SUPPLY_CHAIN_DB_URL: jdbc:mysql://mysql:3306/emall_supply_chain?useUnicode=true&characterEncoding=utf8&serverTimezone=UTC
+  EMALL_FINANCE_DB_URL: jdbc:mysql://mysql:3306/emall_finance?useUnicode=true&characterEncoding=utf8&serverTimezone=UTC
+  EMALL_CUSTOMER_SERVICE_DB_URL: jdbc:mysql://mysql:3306/emall_customer_service?useUnicode=true&characterEncoding=utf8&serverTimezone=UTC
+  EMALL_FORECASTING_DB_URL: jdbc:mysql://mysql:3306/emall_forecasting?useUnicode=true&characterEncoding=utf8&serverTimezone=UTC
+  EMALL_EVENT_PLATFORM_DB_URL: jdbc:mysql://mysql:3306/emall_event_platform?useUnicode=true&characterEncoding=utf8&serverTimezone=UTC
+  EMALL_DATA_WAREHOUSE_DB_URL: jdbc:mysql://mysql:3306/emall_data_warehouse?useUnicode=true&characterEncoding=utf8&serverTimezone=UTC
+  EMALL_INTELLIGENCE_DB_URL: jdbc:mysql://mysql:3306/emall_intelligence?useUnicode=true&characterEncoding=utf8&serverTimezone=UTC
+  EMALL_ANALYTICS_DB_URL: jdbc:mysql://mysql:3306/emall_analytics?useUnicode=true&characterEncoding=utf8&serverTimezone=UTC
+  EMALL_TRAFFIC_DB_URL: jdbc:mysql://mysql:3306/emall_traffic?useUnicode=true&characterEncoding=utf8&serverTimezone=UTC
+  EMALL_RELIABILITY_DB_URL: jdbc:mysql://mysql:3306/emall_reliability?useUnicode=true&characterEncoding=utf8&serverTimezone=UTC
+  EMALL_RELEASE_DB_URL: jdbc:mysql://mysql:3306/emall_release?useUnicode=true&characterEncoding=utf8&serverTimezone=UTC
+  EMALL_PLATFORM_OPS_DB_URL: jdbc:mysql://mysql:3306/emall_platform_ops?useUnicode=true&characterEncoding=utf8&serverTimezone=UTC
+---
+apiVersion: v1
+kind: Secret
+metadata:
+  name: emall-runtime-secret
+type: Opaque
+stringData:
+  EMALL_DB_USERNAME: root
+  EMALL_DB_PASSWORD: root
+  EMALL_FIELD_ENCRYPTION_KEY: replace-in-production
+  EMALL_INTERNAL_OPERATIONS_TOKEN: replace-in-production

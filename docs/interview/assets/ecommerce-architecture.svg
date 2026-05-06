@@ -1,0 +1,97 @@
+﻿<svg xmlns="http://www.w3.org/2000/svg" width="1180" height="720" viewBox="0 0 1180 720">
+    <defs>
+        <style>
+            .bg { fill: #fbfaf6; }
+            .layer { fill: #ffffff; stroke: #1f2d3d; stroke-width: 2; rx: 18; }
+            .edge { fill: #eef5ff; stroke: #285f9f; stroke-width: 2; rx: 14; }
+            .core { fill: #fff4e8; stroke: #a35f00; stroke-width: 2; rx: 14; }
+            .async { fill: #eef9f0; stroke: #2f7d3b; stroke-width: 2; rx: 14; }
+            .data { fill: #f5efff; stroke: #6b4aa0; stroke-width: 2; rx: 14; }
+            .gov { fill: #fff1f1; stroke: #a33a3a; stroke-width: 2; rx: 14; }
+            .text { fill: #17202a; font-family: "Noto Sans SC", sans-serif; font-size: 17px; }
+            .small { fill: #34495e; font-family: "Noto Sans SC", sans-serif; font-size: 13px; }
+            .arrow { stroke: #17202a; stroke-width: 2.2; fill: none; marker-end: url(#arrow); }
+            .dash { stroke: #6b4aa0; stroke-width: 2; fill: none; stroke-dasharray: 7 6; marker-end: url(#purple); }
+        </style>
+        <marker id="arrow" markerWidth="12" markerHeight="12" refX="9" refY="3" orient="auto">
+            <path d="M0,0 L0,6 L9,3 z" fill="#17202a"/>
+        </marker>
+        <marker id="purple" markerWidth="12" markerHeight="12" refX="9" refY="3" orient="auto">
+            <path d="M0,0 L0,6 L9,3 z" fill="#6b4aa0"/>
+        </marker>
+    </defs>
+    <rect class="bg" width="1180" height="720"/>
+    <text x="40" y="46" class="text" style="font-size:25px;font-weight:700">
+        京东/Amazon 类电商系统高层架构
+    </text>
+
+    <rect x="45" y="80" width="1090" height="82" class="layer"/>
+    <text x="70" y="113" class="text">入口层</text>
+    <rect x="170" y="98" width="135" height="42" class="edge"/>
+    <text x="206" y="124" class="small">CDN/WAF</text>
+    <rect x="330" y="98" width="160" height="42" class="edge"/>
+    <text x="365" y="124" class="small">API Gateway</text>
+    <rect x="515" y="98" width="120" height="42" class="edge"/>
+    <text x="552" y="124" class="small">BFF</text>
+    <rect x="660" y="98" width="180" height="42" class="edge"/>
+    <text x="696" y="124" class="small">认证/限流/灰度</text>
+    <rect x="865" y="98" width="160" height="42" class="edge"/>
+    <text x="909" y="124" class="small">Trace 路由</text>
+
+    <rect x="45" y="205" width="1090" height="170" class="layer"/>
+    <text x="70" y="238" class="text">业务服务层</text>
+    <rect x="165" y="230" width="120" height="42" class="core"/>
+    <text x="198" y="256" class="small">商品</text>
+    <rect x="305" y="230" width="120" height="42" class="core"/>
+    <text x="338" y="256" class="small">搜索</text>
+    <rect x="445" y="230" width="120" height="42" class="core"/>
+    <text x="478" y="256" class="small">购物车</text>
+    <rect x="585" y="230" width="120" height="42" class="core"/>
+    <text x="618" y="256" class="small">价格</text>
+    <rect x="725" y="230" width="120" height="42" class="core"/>
+    <text x="758" y="256" class="small">促销</text>
+    <rect x="165" y="300" width="120" height="42" class="core"/>
+    <text x="198" y="326" class="small">订单</text>
+    <rect x="305" y="300" width="120" height="42" class="core"/>
+    <text x="338" y="326" class="small">库存</text>
+    <rect x="445" y="300" width="120" height="42" class="core"/>
+    <text x="478" y="326" class="small">支付</text>
+    <rect x="585" y="300" width="120" height="42" class="core"/>
+    <text x="618" y="326" class="small">履约</text>
+    <rect x="725" y="300" width="120" height="42" class="core"/>
+    <text x="758" y="326" class="small">售后</text>
+    <rect x="865" y="265" width="170" height="42" class="async"/>
+    <text x="905" y="291" class="small">推荐/广告/风控</text>
+
+    <rect x="45" y="420" width="1090" height="92" class="layer"/>
+    <text x="70" y="453" class="text">数据和消息层</text>
+    <rect x="175" y="443" width="140" height="42" class="data"/>
+    <text x="205" y="469" class="small">MySQL 分片</text>
+    <rect x="345" y="443" width="120" height="42" class="data"/>
+    <text x="377" y="469" class="small">Redis</text>
+    <rect x="495" y="443" width="120" height="42" class="data"/>
+    <text x="531" y="469" class="small">Kafka</text>
+    <rect x="645" y="443" width="150" height="42" class="data"/>
+    <text x="682" y="469" class="small">OpenSearch</text>
+    <rect x="825" y="443" width="160" height="42" class="data"/>
+    <text x="861" y="469" class="small">数据仓库/湖</text>
+
+    <rect x="45" y="555" width="1090" height="82" class="layer"/>
+    <text x="70" y="588" class="text">治理和可靠性</text>
+    <rect x="190" y="573" width="125" height="42" class="gov"/>
+    <text x="221" y="599" class="small">可观测性</text>
+    <rect x="345" y="573" width="125" height="42" class="gov"/>
+    <text x="376" y="599" class="small">熔断降级</text>
+    <rect x="500" y="573" width="125" height="42" class="gov"/>
+    <text x="531" y="599" class="small">灰度发布</text>
+    <rect x="655" y="573" width="125" height="42" class="gov"/>
+    <text x="686" y="599" class="small">补偿对账</text>
+    <rect x="810" y="573" width="125" height="42" class="gov"/>
+    <text x="841" y="599" class="small">审计安全</text>
+
+    <path d="M575 140 V205" class="arrow"/>
+    <path d="M505 342 V420" class="arrow"/>
+    <path d="M555 375 V443" class="dash"/>
+    <path d="M840 307 C980 360 970 430 905 443" class="dash"/>
+    <text x="70" y="674" class="small">核心原则：读链路高吞吐，交易链路强正确，异步链路最终一致，治理层保障可恢复。</text>
+</svg>

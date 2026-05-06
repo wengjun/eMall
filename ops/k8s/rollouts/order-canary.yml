@@ -1,0 +1,99 @@
+apiVersion: argoproj.io/v1alpha1
+kind: Rollout
+metadata:
+  name: order-canary
+  labels:
+    app: order
+spec:
+  replicas: 6
+  revisionHistoryLimit: 5
+  selector:
+    matchLabels:
+      app: order
+  strategy:
+    canary:
+      stableService: order
+      canaryService: order-canary
+      trafficRouting:
+        nginx:
+          stableIngress: emall-gateway
+      steps:
+        - setWeight: 5
+        - pause:
+            duration: 10m
+        - analysis:
+            templates:
+              - templateName: emall-http-slo
+                args:
+                  - name: application
+                    value: order
+        - setWeight: 20
+        - pause:
+            duration: 20m
+        - setWeight: 50
+        - pause:
+            duration: 30m
+        - setWeight: 100
+      abortScaleDownDelaySeconds: 30
+  template:
+    metadata:
+      labels:
+        app: order
+    spec:
+      terminationGracePeriodSeconds: 45
+      serviceAccountName: order
+      securityContext:
+        runAsNonRoot: true
+        seccompProfile:
+          type: RuntimeDefault
+      containers:
+        - name: order
+          image: emall/order:0.1.0
+          imagePullPolicy: IfNotPresent
+          securityContext:
+            allowPrivilegeEscalation: false
+            capabilities:
+              drop:
+                - ALL
+          ports:
+            - containerPort: 8084
+          envFrom:
+            - configMapRef:
+                name: emall-runtime-config
+            - secretRef:
+                name: emall-runtime-secret
+          lifecycle:
+            preStop:
+              exec:
+                command: ["sh", "-c", "sleep 15"]
+          readinessProbe:
+            httpGet:
+              path: /actuator/health/readiness
+              port: 8084
+            initialDelaySeconds: 20
+            periodSeconds: 5
+          livenessProbe:
+            httpGet:
+              path: /actuator/health/liveness
+              port: 8084
+            initialDelaySeconds: 60
+            periodSeconds: 10
+          resources:
+            requests:
+              cpu: "1"
+              memory: 1Gi
+            limits:
+              cpu: "2"
+              memory: 2Gi
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: order-canary
+spec:
+  selector:
+    app: order
+  ports:
+    - name: http
+      port: 8084
+      targetPort: 8084

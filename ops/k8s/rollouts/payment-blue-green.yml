@@ -1,0 +1,99 @@
+apiVersion: argoproj.io/v1alpha1
+kind: Rollout
+metadata:
+  name: payment-blue-green
+  labels:
+    app: payment
+spec:
+  replicas: 4
+  revisionHistoryLimit: 5
+  selector:
+    matchLabels:
+      app: payment
+  strategy:
+    blueGreen:
+      activeService: payment
+      previewService: payment-preview
+      autoPromotionEnabled: false
+      scaleDownDelaySeconds: 300
+      prePromotionAnalysis:
+        templates:
+          - templateName: payment-preview-smoke
+          - templateName: emall-payment-slo
+  template:
+    metadata:
+      labels:
+        app: payment
+    spec:
+      terminationGracePeriodSeconds: 45
+      serviceAccountName: payment
+      securityContext:
+        runAsNonRoot: true
+        seccompProfile:
+          type: RuntimeDefault
+      containers:
+        - name: payment
+          image: emall/payment:0.1.0
+          imagePullPolicy: IfNotPresent
+          securityContext:
+            allowPrivilegeEscalation: false
+            capabilities:
+              drop:
+                - ALL
+          ports:
+            - containerPort: 8086
+          envFrom:
+            - configMapRef:
+                name: emall-runtime-config
+            - secretRef:
+                name: emall-runtime-secret
+          lifecycle:
+            preStop:
+              exec:
+                command: ["sh", "-c", "sleep 15"]
+          readinessProbe:
+            httpGet:
+              path: /actuator/health/readiness
+              port: 8086
+            initialDelaySeconds: 20
+            periodSeconds: 5
+          livenessProbe:
+            httpGet:
+              path: /actuator/health/liveness
+              port: 8086
+            initialDelaySeconds: 60
+            periodSeconds: 10
+          resources:
+            requests:
+              cpu: "1"
+              memory: 1Gi
+            limits:
+              cpu: "3"
+              memory: 3Gi
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: payment-preview
+spec:
+  selector:
+    app: payment
+  ports:
+    - name: http
+      port: 8086
+      targetPort: 8086
+---
+apiVersion: argoproj.io/v1alpha1
+kind: AnalysisTemplate
+metadata:
+  name: payment-preview-smoke
+spec:
+  metrics:
+    - name: payment-preview-health
+      interval: 30s
+      count: 3
+      successCondition: result == "UP"
+      provider:
+        web:
+          url: http://payment-preview:8086/actuator/health/readiness
+          jsonPath: "{$.status}"

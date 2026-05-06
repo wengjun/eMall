@@ -1,0 +1,44 @@
+apiVersion: chaos-mesh.org/v1alpha1
+kind: NetworkChaos
+metadata:
+  name: redis-failure
+spec:
+  action: partition
+  mode: one
+  selector:
+    namespaces:
+      - default
+    labelSelectors:
+      app: redis
+  duration: 10m
+  direction: both
+  target:
+    mode: all
+    selector:
+      namespaces:
+        - default
+      labelSelectors:
+        app: gateway
+---
+apiVersion: chaos-mesh.org/v1alpha1
+kind: Schedule
+metadata:
+  name: redis-failure-window
+spec:
+  schedule: "@once"
+  type: NetworkChaos
+  historyLimit: 1
+  concurrencyPolicy: Forbid
+  networkChaos:
+    action: delay
+    mode: one
+    selector:
+      namespaces:
+        - default
+      labelSelectors:
+        app: redis
+    duration: 10m
+    delay:
+      latency: 800ms
+      correlation: "50"
+      jitter: 100ms

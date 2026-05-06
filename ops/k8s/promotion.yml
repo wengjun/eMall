@@ -1,0 +1,98 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: promotion
+  labels:
+    app: promotion
+spec:
+  replicas: 4
+  selector:
+    matchLabels:
+      app: promotion
+  template:
+    metadata:
+      labels:
+        app: promotion
+    spec:
+      terminationGracePeriodSeconds: 45
+      serviceAccountName: promotion
+      securityContext:
+        runAsNonRoot: true
+        seccompProfile:
+          type: RuntimeDefault
+      containers:
+        - name: promotion
+          image: emall/promotion:0.1.0
+          imagePullPolicy: IfNotPresent
+          securityContext:
+            allowPrivilegeEscalation: false
+            capabilities:
+              drop:
+                - ALL
+          ports:
+            - containerPort: 8102
+          envFrom:
+            - configMapRef:
+                name: emall-runtime-config
+            - secretRef:
+                name: emall-runtime-secret
+          readinessProbe:
+            httpGet:
+              path: /actuator/health/readiness
+              port: 8102
+            initialDelaySeconds: 20
+            periodSeconds: 5
+          livenessProbe:
+            httpGet:
+              path: /actuator/health/liveness
+              port: 8102
+            initialDelaySeconds: 60
+            periodSeconds: 10
+          resources:
+            requests:
+              cpu: "1"
+              memory: 1Gi
+            limits:
+              cpu: "4"
+              memory: 4Gi
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: promotion
+spec:
+  selector:
+    app: promotion
+  ports:
+    - name: http
+      port: 8102
+      targetPort: 8102
+---
+apiVersion: policy/v1
+kind: PodDisruptionBudget
+metadata:
+  name: promotion
+spec:
+  minAvailable: 3
+  selector:
+    matchLabels:
+      app: promotion
+---
+apiVersion: autoscaling/v2
+kind: HorizontalPodAutoscaler
+metadata:
+  name: promotion
+spec:
+  scaleTargetRef:
+    apiVersion: apps/v1
+    kind: Deployment
+    name: promotion
+  minReplicas: 4
+  maxReplicas: 200
+  metrics:
+    - type: Resource
+      resource:
+        name: cpu
+        target:
+          type: Utilization
+          averageUtilization: 60

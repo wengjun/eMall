@@ -1,0 +1,60 @@
+﻿<svg xmlns="http://www.w3.org/2000/svg" width="1080" height="520" viewBox="0 0 1080 520">
+    <defs>
+        <style>
+            .bg { fill: #fbfaf6; }
+            .box { fill: #ffffff; stroke: #1f2d3d; stroke-width: 2; rx: 14; }
+            .data { fill: #eef5ff; stroke: #285f9f; stroke-width: 2; rx: 14; }
+            .move { fill: #fff4e8; stroke: #a35f00; stroke-width: 2; rx: 14; }
+            .ok { fill: #eef9f0; stroke: #2f7d3b; stroke-width: 2; rx: 14; }
+            .text { fill: #17202a; font-family: "Noto Sans SC", sans-serif; font-size: 18px; }
+            .small { fill: #34495e; font-family: "Noto Sans SC", sans-serif; font-size: 14px; }
+            .arrow { stroke: #17202a; stroke-width: 2.4; fill: none; marker-end: url(#arrow); }
+            .dash { stroke: #7f8c8d; stroke-width: 2; fill: none; stroke-dasharray: 7 6; marker-end: url(#gray); }
+        </style>
+        <marker id="arrow" markerWidth="12" markerHeight="12" refX="9" refY="3" orient="auto">
+            <path d="M0,0 L0,6 L9,3 z" fill="#17202a"/>
+        </marker>
+        <marker id="gray" markerWidth="12" markerHeight="12" refX="9" refY="3" orient="auto">
+            <path d="M0,0 L0,6 L9,3 z" fill="#7f8c8d"/>
+        </marker>
+    </defs>
+    <rect class="bg" width="1080" height="520"/>
+    <text x="42" y="46" class="text" style="font-size:24px;font-weight:700">
+        分库分表和数据库扩容迁移流程
+    </text>
+
+    <rect x="70" y="110" width="150" height="82" class="box"/>
+    <text x="109" y="145" class="text">访问路径</text>
+    <text x="96" y="172" class="small">查询/写入/事务</text>
+
+    <rect x="285" y="110" width="150" height="82" class="data"/>
+    <text x="324" y="145" class="text">分片键</text>
+    <text x="310" y="172" class="small">均匀/单分片</text>
+
+    <rect x="500" y="110" width="150" height="82" class="move"/>
+    <text x="539" y="145" class="text">全量迁移</text>
+    <text x="530" y="172" class="small">历史数据复制</text>
+
+    <rect x="715" y="110" width="150" height="82" class="move"/>
+    <text x="754" y="145" class="text">增量同步</text>
+    <text x="740" y="172" class="small">CDC/双写/校验</text>
+
+    <rect x="450" y="300" width="180" height="82" class="ok"/>
+    <text x="498" y="335" class="text">灰度切流</text>
+    <text x="480" y="362" class="small">读写路由和回滚窗口</text>
+
+    <rect x="715" y="300" width="150" height="82" class="ok"/>
+    <text x="754" y="335" class="text">完成扩容</text>
+    <text x="744" y="362" class="small">监控和归档</text>
+
+    <path d="M220 151 H285" class="arrow"/>
+    <path d="M435 151 H500" class="arrow"/>
+    <path d="M650 151 H715" class="arrow"/>
+    <path d="M790 192 V300" class="arrow"/>
+    <path d="M715 341 H630" class="arrow"/>
+    <path d="M540 300 C510 250 485 215 435 172" class="dash"/>
+
+    <text x="80" y="445" class="small">
+        面试重点：分片键先服务核心访问路径；扩容迁移必须有全量、增量、校验、灰度和回滚。
+    </text>
+</svg>

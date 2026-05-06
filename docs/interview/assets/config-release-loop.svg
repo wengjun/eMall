@@ -1,0 +1,56 @@
+﻿<svg xmlns="http://www.w3.org/2000/svg" width="1080" height="500" viewBox="0 0 1080 500">
+    <defs>
+        <style>
+            .bg { fill: #f8fbfb; }
+            .box { fill: #ffffff; stroke: #1f2d3d; stroke-width: 2; rx: 14; }
+            .control { fill: #eef5ff; stroke: #285f9f; stroke-width: 2; rx: 14; }
+            .release { fill: #fff4e8; stroke: #a35f00; stroke-width: 2; rx: 14; }
+            .ok { fill: #eef9f0; stroke: #2f7d3b; stroke-width: 2; rx: 14; }
+            .risk { fill: #fff1f1; stroke: #a33a3a; stroke-width: 2; rx: 14; }
+            .text { fill: #17202a; font-family: "Noto Sans SC", sans-serif; font-size: 18px; }
+            .small { fill: #34495e; font-family: "Noto Sans SC", sans-serif; font-size: 14px; }
+            .arrow { stroke: #17202a; stroke-width: 2.4; fill: none; marker-end: url(#arrow); }
+            .back { stroke: #a33a3a; stroke-width: 2.4; fill: none; stroke-dasharray: 7 6; marker-end: url(#red); }
+        </style>
+        <marker id="arrow" markerWidth="12" markerHeight="12" refX="9" refY="3" orient="auto">
+            <path d="M0,0 L0,6 L9,3 z" fill="#17202a"/>
+        </marker>
+        <marker id="red" markerWidth="12" markerHeight="12" refX="9" refY="3" orient="auto">
+            <path d="M0,0 L0,6 L9,3 z" fill="#a33a3a"/>
+        </marker>
+    </defs>
+    <rect class="bg" width="1080" height="500"/>
+    <text x="42" y="46" class="text" style="font-size:24px;font-weight:700">
+        配置中心和灰度发布闭环
+    </text>
+
+    <rect x="70" y="120" width="150" height="82" class="control"/>
+    <text x="110" y="155" class="text">变更申请</text>
+    <text x="98" y="182" class="small">diff/原因/审批</text>
+
+    <rect x="285" y="120" width="150" height="82" class="release"/>
+    <text x="324" y="155" class="text">灰度发布</text>
+    <text x="310" y="182" class="small">实例/用户/比例</text>
+
+    <rect x="500" y="120" width="150" height="82" class="ok"/>
+    <text x="539" y="155" class="text">指标门禁</text>
+    <text x="530" y="182" class="small">错误率/P99/业务</text>
+
+    <rect x="715" y="120" width="150" height="82" class="ok"/>
+    <text x="754" y="155" class="text">继续放量</text>
+    <text x="742" y="182" class="small">批次推进</text>
+
+    <rect x="500" y="300" width="150" height="82" class="risk"/>
+    <text x="548" y="335" class="text">回滚</text>
+    <text x="530" y="362" class="small">保留旧版本/审计</text>
+
+    <path d="M220 161 H285" class="arrow"/>
+    <path d="M435 161 H500" class="arrow"/>
+    <path d="M650 161 H715" class="arrow"/>
+    <path d="M575 202 V300" class="back"/>
+    <path d="M500 341 C330 345 220 260 145 202" class="back"/>
+
+    <text x="80" y="440" class="small">
+        生产原则：配置变更和代码发布一样需要版本、审批、灰度、指标门禁、审计和回滚。
+    </text>
+</svg>

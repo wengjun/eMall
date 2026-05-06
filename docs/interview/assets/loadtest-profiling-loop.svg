@@ -1,0 +1,58 @@
+﻿<svg xmlns="http://www.w3.org/2000/svg" width="1080" height="540" viewBox="0 0 1080 540">
+    <defs>
+        <style>
+            .bg { fill: #f8fbfb; }
+            .box { fill: #ffffff; stroke: #1f2d3d; stroke-width: 2; rx: 14; }
+            .plan { fill: #eef5ff; stroke: #285f9f; stroke-width: 2; rx: 14; }
+            .run { fill: #fff4e8; stroke: #a35f00; stroke-width: 2; rx: 14; }
+            .obs { fill: #eef9f0; stroke: #2f7d3b; stroke-width: 2; rx: 14; }
+            .risk { fill: #fff1f1; stroke: #a33a3a; stroke-width: 2; rx: 14; }
+            .text { fill: #17202a; font-family: "Noto Sans SC", sans-serif; font-size: 18px; }
+            .small { fill: #34495e; font-family: "Noto Sans SC", sans-serif; font-size: 14px; }
+            .arrow { stroke: #17202a; stroke-width: 2.4; fill: none; marker-end: url(#arrow); }
+            .loop { stroke: #7f8c8d; stroke-width: 2; fill: none; stroke-dasharray: 7 6; marker-end: url(#gray); }
+        </style>
+        <marker id="arrow" markerWidth="12" markerHeight="12" refX="9" refY="3" orient="auto">
+            <path d="M0,0 L0,6 L9,3 z" fill="#17202a"/>
+        </marker>
+        <marker id="gray" markerWidth="12" markerHeight="12" refX="9" refY="3" orient="auto">
+            <path d="M0,0 L0,6 L9,3 z" fill="#7f8c8d"/>
+        </marker>
+    </defs>
+    <rect class="bg" width="1080" height="540"/>
+    <text x="42" y="46" class="text" style="font-size:24px;font-weight:700">
+        Java 服务压测和性能剖析闭环
+    </text>
+
+    <rect x="70" y="130" width="185" height="110" class="plan"/>
+    <text x="122" y="165" class="text">目标场景</text>
+    <text x="100" y="193" class="small">SLO / QPS / 混合流量</text>
+
+    <rect x="315" y="130" width="185" height="110" class="run"/>
+    <text x="367" y="165" class="text">执行压测</text>
+    <text x="345" y="193" class="small">预热 / 阶梯 / 长稳</text>
+
+    <rect x="560" y="130" width="185" height="110" class="obs"/>
+    <text x="612" y="165" class="text">采集指标</text>
+    <text x="590" y="193" class="small">业务 / JVM / 依赖</text>
+
+    <rect x="805" y="130" width="185" height="110" class="risk"/>
+    <text x="857" y="165" class="text">定位瓶颈</text>
+    <text x="835" y="193" class="small">JFR / 火焰图 / Trace</text>
+
+    <rect x="315" y="340" width="430" height="90" class="box"/>
+    <text x="470" y="375" class="text">优化验证</text>
+    <text x="350" y="403" class="small">
+        最小改动、重新压测、对比基线，形成容量和风险结论。
+    </text>
+
+    <path d="M255 185 H315" class="arrow"/>
+    <path d="M500 185 H560" class="arrow"/>
+    <path d="M745 185 H805" class="arrow"/>
+    <path d="M897 240 C850 330 765 380 745 385" class="loop"/>
+    <path d="M315 385 C230 370 160 300 162 240" class="loop"/>
+
+    <text x="90" y="490" class="small">
+        面试重点：压测不是打一个最大 QPS，而是验证 SLO、容量、瓶颈、故障降级和恢复能力。
+    </text>
+</svg>

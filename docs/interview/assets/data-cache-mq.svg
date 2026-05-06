@@ -1,0 +1,52 @@
+﻿<svg xmlns="http://www.w3.org/2000/svg" width="1080" height="540" viewBox="0 0 1080 540">
+    <defs>
+        <style>
+            .bg { fill: #f8fbfb; }
+            .box { fill: #ffffff; stroke: #1f2d3d; stroke-width: 2; rx: 14; }
+            .db { fill: #eef5ff; stroke: #285f9f; stroke-width: 2; rx: 14; }
+            .cache { fill: #fff4e8; stroke: #a35f00; stroke-width: 2; rx: 14; }
+            .mq { fill: #eef9f0; stroke: #2f7d3b; stroke-width: 2; rx: 14; }
+            .risk { fill: #fff1f1; stroke: #a33a3a; stroke-width: 2; rx: 14; }
+            .text { fill: #17202a; font-family: "Noto Sans SC", sans-serif; font-size: 18px; }
+            .small { fill: #34495e; font-family: "Noto Sans SC", sans-serif; font-size: 14px; }
+            .arrow { stroke: #17202a; stroke-width: 2.4; fill: none; marker-end: url(#arrow); }
+        </style>
+        <marker id="arrow" markerWidth="12" markerHeight="12" refX="9" refY="3" orient="auto">
+            <path d="M0,0 L0,6 L9,3 z" fill="#17202a"/>
+        </marker>
+    </defs>
+    <rect class="bg" width="1080" height="540"/>
+    <text x="42" y="46" class="text" style="font-size:24px;font-weight:700">
+        数据库、缓存和消息一致性链路
+    </text>
+
+    <rect x="70" y="120" width="185" height="120" class="db"/>
+    <text x="120" y="155" class="text">数据库</text>
+    <text x="102" y="183" class="small">事务 / 索引 / 锁</text>
+    <text x="102" y="205" class="small">分片 / 扩容 / 对账</text>
+
+    <rect x="325" y="120" width="185" height="120" class="cache"/>
+    <text x="375" y="155" class="text">缓存</text>
+    <text x="357" y="183" class="small">命中率 / TTL / 穿透</text>
+    <text x="357" y="205" class="small">一致性 / 热点 / 淘汰</text>
+
+    <rect x="580" y="120" width="185" height="120" class="mq"/>
+    <text x="630" y="155" class="text">消息</text>
+    <text x="612" y="183" class="small">重试 / 顺序 / 幂等</text>
+    <text x="612" y="205" class="small">Outbox / DLQ / 回放</text>
+
+    <rect x="835" y="120" width="170" height="120" class="risk"/>
+    <text x="884" y="155" class="text">风险</text>
+    <text x="867" y="183" class="small">脏读 / 击穿</text>
+    <text x="867" y="205" class="small">重复消费 / 积压</text>
+
+    <rect x="160" y="345" width="760" height="82" class="box"/>
+    <text x="210" y="380" class="text">生产原则</text>
+    <text x="210" y="408" class="small">
+        先定义事实来源，再用缓存和消息提升性能；最终一致必须有对账和补偿闭环。
+    </text>
+
+    <path d="M255 180 H325" class="arrow"/>
+    <path d="M510 180 H580" class="arrow"/>
+    <path d="M765 180 H835" class="arrow"/>
+</svg>

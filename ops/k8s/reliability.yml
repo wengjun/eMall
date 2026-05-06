@@ -1,0 +1,98 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: reliability
+  labels:
+    app: reliability
+spec:
+  replicas: 3
+  selector:
+    matchLabels:
+      app: reliability
+  template:
+    metadata:
+      labels:
+        app: reliability
+    spec:
+      terminationGracePeriodSeconds: 45
+      serviceAccountName: reliability
+      securityContext:
+        runAsNonRoot: true
+        seccompProfile:
+          type: RuntimeDefault
+      containers:
+        - name: reliability
+          image: emall/reliability:0.1.0
+          imagePullPolicy: IfNotPresent
+          securityContext:
+            allowPrivilegeEscalation: false
+            capabilities:
+              drop:
+                - ALL
+          ports:
+            - containerPort: 8114
+          envFrom:
+            - configMapRef:
+                name: emall-runtime-config
+            - secretRef:
+                name: emall-runtime-secret
+          readinessProbe:
+            httpGet:
+              path: /actuator/health/readiness
+              port: 8114
+            initialDelaySeconds: 20
+            periodSeconds: 5
+          livenessProbe:
+            httpGet:
+              path: /actuator/health/liveness
+              port: 8114
+            initialDelaySeconds: 60
+            periodSeconds: 10
+          resources:
+            requests:
+              cpu: 500m
+              memory: 512Mi
+            limits:
+              cpu: "2"
+              memory: 2Gi
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: reliability
+spec:
+  selector:
+    app: reliability
+  ports:
+    - name: http
+      port: 8114
+      targetPort: 8114
+---
+apiVersion: policy/v1
+kind: PodDisruptionBudget
+metadata:
+  name: reliability
+spec:
+  minAvailable: 2
+  selector:
+    matchLabels:
+      app: reliability
+---
+apiVersion: autoscaling/v2
+kind: HorizontalPodAutoscaler
+metadata:
+  name: reliability
+spec:
+  scaleTargetRef:
+    apiVersion: apps/v1
+    kind: Deployment
+    name: reliability
+  minReplicas: 3
+  maxReplicas: 80
+  metrics:
+    - type: Resource
+      resource:
+        name: cpu
+        target:
+          type: Utilization
+          averageUtilization: 60

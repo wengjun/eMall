@@ -1,0 +1,51 @@
+﻿<svg xmlns="http://www.w3.org/2000/svg" width="1080" height="540" viewBox="0 0 1080 540">
+    <defs>
+        <style>
+            .bg { fill: #f8fbfb; }
+            .box { fill: #ffffff; stroke: #1f2d3d; stroke-width: 2; rx: 14; }
+            .thread { fill: #eef5ff; stroke: #285f9f; stroke-width: 2; rx: 14; }
+            .guard { fill: #fff4e8; stroke: #a35f00; stroke-width: 2; rx: 14; }
+            .risk { fill: #fff1f1; stroke: #a33a3a; stroke-width: 2; rx: 14; }
+            .text { fill: #17202a; font-family: "Noto Sans SC", sans-serif; font-size: 18px; }
+            .small { fill: #34495e; font-family: "Noto Sans SC", sans-serif; font-size: 14px; }
+            .arrow { stroke: #17202a; stroke-width: 2.4; fill: none; marker-end: url(#arrow); }
+        </style>
+        <marker id="arrow" markerWidth="12" markerHeight="12" refX="9" refY="3" orient="auto">
+            <path d="M0,0 L0,6 L9,3 z" fill="#17202a"/>
+        </marker>
+    </defs>
+    <rect class="bg" width="1080" height="540"/>
+    <text x="42" y="46" class="text" style="font-size:24px;font-weight:700">
+        Java 并发从线程安全到容量保护
+    </text>
+
+    <rect x="70" y="120" width="190" height="120" class="thread"/>
+    <text x="118" y="155" class="text">并发原语</text>
+    <text x="102" y="183" class="small">锁 / volatile / CAS</text>
+    <text x="102" y="205" class="small">线程状态 / JMM</text>
+
+    <rect x="325" y="120" width="190" height="120" class="guard"/>
+    <text x="373" y="155" class="text">资源隔离</text>
+    <text x="357" y="183" class="small">线程池 / 队列 / 超时</text>
+    <text x="357" y="205" class="small">舱壁 / 拒绝 / 降级</text>
+
+    <rect x="580" y="120" width="190" height="120" class="box"/>
+    <text x="628" y="155" class="text">分布式并发</text>
+    <text x="612" y="183" class="small">幂等 / 唯一键 / 锁</text>
+    <text x="612" y="205" class="small">跨实例一致性</text>
+
+    <rect x="835" y="120" width="170" height="120" class="risk"/>
+    <text x="884" y="155" class="text">风险</text>
+    <text x="867" y="183" class="small">死锁 / 雪崩</text>
+    <text x="867" y="205" class="small">队列膨胀 / 重试风暴</text>
+
+    <rect x="170" y="345" width="740" height="82" class="box"/>
+    <text x="220" y="380" class="text">生产原则</text>
+    <text x="220" y="408" class="small">
+        线程安全只保护内存正确性，限流、隔离、超时和幂等才保护分布式系统稳定性。
+    </text>
+
+    <path d="M260 180 H325" class="arrow"/>
+    <path d="M515 180 H580" class="arrow"/>
+    <path d="M770 180 H835" class="arrow"/>
+</svg>

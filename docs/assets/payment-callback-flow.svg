@@ -1,0 +1,36 @@
+﻿<svg xmlns="http://www.w3.org/2000/svg" width="1100" height="480" viewBox="0 0 1100 480">
+  <defs>
+    <marker id="arrow" markerWidth="10" markerHeight="10" refX="9" refY="3" orient="auto">
+      <path d="M0,0 L0,6 L9,3 z" fill="#334155"/>
+    </marker>
+    <style>
+      .title { font: 700 28px "Microsoft YaHei", "Noto Sans CJK SC", sans-serif; fill: #0f172a; }
+      .text { font: 15px "Microsoft YaHei", "Noto Sans CJK SC", sans-serif; fill: #0f172a; }
+      .box { fill: #f8fafc; stroke: #64748b; stroke-width: 1.4; rx: 14; }
+      .ok { fill: #ecfdf5; stroke: #059669; stroke-width: 1.4; rx: 14; }
+      .warn { fill: #fff7ed; stroke: #ea580c; stroke-width: 1.4; rx: 14; }
+      .line { stroke: #334155; stroke-width: 1.7; fill: none; marker-end: url(#arrow); }
+    </style>
+  </defs>
+  <rect width="1100" height="480" fill="#fff"/>
+  <text x="40" y="50" class="title">支付回调数据流图</text>
+  <rect x="55" y="140" width="140" height="64" class="box"/><text x="125" y="178" class="text" text-anchor="middle">支付渠道回调</text>
+  <rect x="255" y="140" width="140" height="64" class="box"/><text x="325" y="178" class="text" text-anchor="middle">支付服务</text>
+  <rect x="455" y="95" width="150" height="64" class="box"/><text x="530" y="133" class="text" text-anchor="middle">交易号去重</text>
+  <rect x="455" y="185" width="150" height="64" class="box"/><text x="530" y="223" class="text" text-anchor="middle">追加支付流水</text>
+  <rect x="670" y="140" width="140" height="64" class="box"/><text x="740" y="178" class="text" text-anchor="middle">确认订单支付</text>
+  <rect x="865" y="95" width="150" height="64" class="ok"/><text x="940" y="133" class="text" text-anchor="middle">确认成功</text>
+  <rect x="865" y="185" width="150" height="64" class="warn"/><text x="940" y="223" class="text" text-anchor="middle">保留重试状态</text>
+  <rect x="455" y="315" width="150" height="64" class="box"/><text x="530" y="353" class="text" text-anchor="middle">Outbox 事件</text>
+  <rect x="670" y="315" width="140" height="64" class="box"/><text x="740" y="353" class="text" text-anchor="middle">Kafka</text>
+  <rect x="865" y="315" width="150" height="64" class="warn"/><text x="940" y="353" class="text" text-anchor="middle">内部运维重试</text>
+  <path d="M195 172 H255" class="line"/>
+  <path d="M395 160 L455 127" class="line"/>
+  <path d="M395 184 L455 217" class="line"/>
+  <path d="M605 217 C640 205 650 185 670 172" class="line"/>
+  <path d="M810 160 L865 127" class="line"/>
+  <path d="M810 184 L865 217" class="line"/>
+  <path d="M940 249 V315" class="line"/>
+  <path d="M325 204 C340 300 400 345 455 347" class="line"/>
+  <path d="M605 347 H670" class="line"/>
+</svg>

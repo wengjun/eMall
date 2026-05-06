@@ -1,0 +1,98 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: event-platform
+  labels:
+    app: event-platform
+spec:
+  replicas: 4
+  selector:
+    matchLabels:
+      app: event-platform
+  template:
+    metadata:
+      labels:
+        app: event-platform
+    spec:
+      terminationGracePeriodSeconds: 45
+      serviceAccountName: event-platform
+      securityContext:
+        runAsNonRoot: true
+        seccompProfile:
+          type: RuntimeDefault
+      containers:
+        - name: event-platform
+          image: emall/event-platform:0.1.0
+          imagePullPolicy: IfNotPresent
+          securityContext:
+            allowPrivilegeEscalation: false
+            capabilities:
+              drop:
+                - ALL
+          ports:
+            - containerPort: 8109
+          envFrom:
+            - configMapRef:
+                name: emall-runtime-config
+            - secretRef:
+                name: emall-runtime-secret
+          readinessProbe:
+            httpGet:
+              path: /actuator/health/readiness
+              port: 8109
+            initialDelaySeconds: 20
+            periodSeconds: 5
+          livenessProbe:
+            httpGet:
+              path: /actuator/health/liveness
+              port: 8109
+            initialDelaySeconds: 60
+            periodSeconds: 10
+          resources:
+            requests:
+              cpu: "1"
+              memory: 1Gi
+            limits:
+              cpu: "4"
+              memory: 4Gi
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: event-platform
+spec:
+  selector:
+    app: event-platform
+  ports:
+    - name: http
+      port: 8109
+      targetPort: 8109
+---
+apiVersion: policy/v1
+kind: PodDisruptionBudget
+metadata:
+  name: event-platform
+spec:
+  minAvailable: 3
+  selector:
+    matchLabels:
+      app: event-platform
+---
+apiVersion: autoscaling/v2
+kind: HorizontalPodAutoscaler
+metadata:
+  name: event-platform
+spec:
+  scaleTargetRef:
+    apiVersion: apps/v1
+    kind: Deployment
+    name: event-platform
+  minReplicas: 4
+  maxReplicas: 200
+  metrics:
+    - type: Resource
+      resource:
+        name: cpu
+        target:
+          type: Utilization
+          averageUtilization: 60

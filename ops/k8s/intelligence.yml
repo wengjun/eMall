@@ -1,0 +1,98 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: intelligence
+  labels:
+    app: intelligence
+spec:
+  replicas: 4
+  selector:
+    matchLabels:
+      app: intelligence
+  template:
+    metadata:
+      labels:
+        app: intelligence
+    spec:
+      terminationGracePeriodSeconds: 45
+      serviceAccountName: intelligence
+      securityContext:
+        runAsNonRoot: true
+        seccompProfile:
+          type: RuntimeDefault
+      containers:
+        - name: intelligence
+          image: emall/intelligence:0.1.0
+          imagePullPolicy: IfNotPresent
+          securityContext:
+            allowPrivilegeEscalation: false
+            capabilities:
+              drop:
+                - ALL
+          ports:
+            - containerPort: 8111
+          envFrom:
+            - configMapRef:
+                name: emall-runtime-config
+            - secretRef:
+                name: emall-runtime-secret
+          readinessProbe:
+            httpGet:
+              path: /actuator/health/readiness
+              port: 8111
+            initialDelaySeconds: 20
+            periodSeconds: 5
+          livenessProbe:
+            httpGet:
+              path: /actuator/health/liveness
+              port: 8111
+            initialDelaySeconds: 60
+            periodSeconds: 10
+          resources:
+            requests:
+              cpu: "1"
+              memory: 1Gi
+            limits:
+              cpu: "4"
+              memory: 4Gi
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: intelligence
+spec:
+  selector:
+    app: intelligence
+  ports:
+    - name: http
+      port: 8111
+      targetPort: 8111
+---
+apiVersion: policy/v1
+kind: PodDisruptionBudget
+metadata:
+  name: intelligence
+spec:
+  minAvailable: 3
+  selector:
+    matchLabels:
+      app: intelligence
+---
+apiVersion: autoscaling/v2
+kind: HorizontalPodAutoscaler
+metadata:
+  name: intelligence
+spec:
+  scaleTargetRef:
+    apiVersion: apps/v1
+    kind: Deployment
+    name: intelligence
+  minReplicas: 4
+  maxReplicas: 200
+  metrics:
+    - type: Resource
+      resource:
+        name: cpu
+        target:
+          type: Utilization
+          averageUtilization: 60

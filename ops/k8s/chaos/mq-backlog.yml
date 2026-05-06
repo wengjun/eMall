@@ -1,0 +1,32 @@
+apiVersion: chaos-mesh.org/v1alpha1
+kind: PodChaos
+metadata:
+  name: fulfillment-consumer-pause
+spec:
+  action: pod-failure
+  mode: fixed-percent
+  value: "50"
+  duration: 15m
+  selector:
+    namespaces:
+      - default
+    labelSelectors:
+      app: fulfillment
+---
+apiVersion: chaos-mesh.org/v1alpha1
+kind: NetworkChaos
+metadata:
+  name: kafka-slow-consumer
+spec:
+  action: delay
+  mode: all
+  selector:
+    namespaces:
+      - default
+    labelSelectors:
+      app: kafka
+  duration: 15m
+  delay:
+    latency: 500ms
+    correlation: "50"
+    jitter: 100ms

@@ -1,0 +1,60 @@
+﻿<svg xmlns="http://www.w3.org/2000/svg" width="1080" height="500" viewBox="0 0 1080 500">
+    <defs>
+        <style>
+            .bg { fill: #fbfaf6; }
+            .box { fill: #ffffff; stroke: #1f2d3d; stroke-width: 2; rx: 14; }
+            .source { fill: #eef5ff; stroke: #285f9f; stroke-width: 2; rx: 14; }
+            .event { fill: #fff4e8; stroke: #a35f00; stroke-width: 2; rx: 14; }
+            .index { fill: #eef9f0; stroke: #2f7d3b; stroke-width: 2; rx: 14; }
+            .text { fill: #17202a; font-family: "Noto Sans SC", sans-serif; font-size: 18px; }
+            .small { fill: #34495e; font-family: "Noto Sans SC", sans-serif; font-size: 14px; }
+            .arrow { stroke: #17202a; stroke-width: 2.4; fill: none; marker-end: url(#arrow); }
+            .dash { stroke: #7f8c8d; stroke-width: 2; fill: none; stroke-dasharray: 7 6; marker-end: url(#gray); }
+        </style>
+        <marker id="arrow" markerWidth="12" markerHeight="12" refX="9" refY="3" orient="auto">
+            <path d="M0,0 L0,6 L9,3 z" fill="#17202a"/>
+        </marker>
+        <marker id="gray" markerWidth="12" markerHeight="12" refX="9" refY="3" orient="auto">
+            <path d="M0,0 L0,6 L9,3 z" fill="#7f8c8d"/>
+        </marker>
+    </defs>
+    <rect class="bg" width="1080" height="500"/>
+    <text x="42" y="46" class="text" style="font-size:24px;font-weight:700">
+        搜索索引作为可重建读模型
+    </text>
+
+    <rect x="60" y="110" width="160" height="82" class="source"/>
+    <text x="100" y="145" class="text">商品库</text>
+    <text x="86" y="172" class="small">事实来源</text>
+
+    <rect x="305" y="110" width="165" height="82" class="event"/>
+    <text x="350" y="145" class="text">变更事件</text>
+    <text x="330" y="172" class="small">Kafka/Outbox</text>
+
+    <rect x="555" y="110" width="165" height="82" class="index"/>
+    <text x="600" y="145" class="text">索引写入</text>
+    <text x="588" y="172" class="small">重试/死信/版本</text>
+
+    <rect x="805" y="110" width="170" height="82" class="index"/>
+    <text x="850" y="145" class="text">搜索索引</text>
+    <text x="836" y="172" class="small">最终一致读模型</text>
+
+    <rect x="305" y="300" width="165" height="82" class="box"/>
+    <text x="350" y="335" class="text">全量重建</text>
+    <text x="328" y="362" class="small">记录水位/追增量</text>
+
+    <rect x="555" y="300" width="165" height="82" class="box"/>
+    <text x="600" y="335" class="text">校验灰度</text>
+    <text x="586" y="362" class="small">数量/字段/查询</text>
+
+    <path d="M220 151 H305" class="arrow"/>
+    <path d="M470 151 H555" class="arrow"/>
+    <path d="M720 151 H805" class="arrow"/>
+    <path d="M140 192 C150 300 230 341 305 341" class="dash"/>
+    <path d="M470 341 H555" class="arrow"/>
+    <path d="M720 341 C800 335 850 270 890 192" class="dash"/>
+
+    <text x="78" y="440" class="small">
+        交易正确性不能依赖搜索索引；详情页和下单链路必须回源校验上下架、价格和库存。
+    </text>
+</svg>

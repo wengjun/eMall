@@ -1,0 +1,57 @@
+﻿<svg xmlns="http://www.w3.org/2000/svg" width="960" height="420" viewBox="0 0 960 420">
+    <defs>
+        <style>
+            .bg { fill: #fbfaf6; }
+            .box { fill: #ffffff; stroke: #22313f; stroke-width: 2; rx: 14; }
+            .store { fill: #f2f7ff; stroke: #2d5f9a; stroke-width: 2; rx: 14; }
+            .mq { fill: #fff4e5; stroke: #a35f00; stroke-width: 2; rx: 14; }
+            .consumer { fill: #eef8ef; stroke: #2f7d3b; stroke-width: 2; rx: 14; }
+            .text { fill: #17202a; font-family: "Noto Sans SC", sans-serif; font-size: 18px; }
+            .small { fill: #34495e; font-family: "Noto Sans SC", sans-serif; font-size: 14px; }
+            .arrow { stroke: #17202a; stroke-width: 2.5; fill: none; marker-end: url(#arrow); }
+            .dash { stroke: #7f8c8d; stroke-width: 2; fill: none; stroke-dasharray: 7 6; marker-end: url(#arrow-gray); }
+        </style>
+        <marker id="arrow" markerWidth="12" markerHeight="12" refX="9" refY="3" orient="auto">
+            <path d="M0,0 L0,6 L9,3 z" fill="#17202a"/>
+        </marker>
+        <marker id="arrow-gray" markerWidth="12" markerHeight="12" refX="9" refY="3" orient="auto">
+            <path d="M0,0 L0,6 L9,3 z" fill="#7f8c8d"/>
+        </marker>
+    </defs>
+    <rect class="bg" width="960" height="420"/>
+    <text x="40" y="46" class="text" style="font-size:24px;font-weight:700">
+        本地事务加 Outbox 的可靠事件发布流程
+    </text>
+
+    <rect x="50" y="105" width="160" height="86" class="box"/>
+    <text x="86" y="142" class="text">业务服务</text>
+    <text x="74" y="169" class="small">创建订单/支付单</text>
+
+    <rect x="285" y="90" width="180" height="120" class="store"/>
+    <text x="335" y="128" class="text">本地事务</text>
+    <text x="314" y="157" class="small">写业务表</text>
+    <text x="314" y="181" class="small">写 outbox 表</text>
+
+    <rect x="545" y="105" width="150" height="86" class="box"/>
+    <text x="584" y="142" class="text">投递器</text>
+    <text x="573" y="169" class="small">扫描/CDC</text>
+
+    <rect x="760" y="105" width="140" height="86" class="mq"/>
+    <text x="812" y="142" class="text">MQ</text>
+    <text x="786" y="169" class="small">可靠投递</text>
+
+    <rect x="760" y="270" width="140" height="86" class="consumer"/>
+    <text x="795" y="307" class="text">消费者</text>
+    <text x="780" y="334" class="small">幂等处理</text>
+
+    <path d="M210 148 H285" class="arrow"/>
+    <path d="M465 148 H545" class="arrow"/>
+    <path d="M695 148 H760" class="arrow"/>
+    <path d="M830 191 V270" class="arrow"/>
+
+    <path d="M620 191 V240 C620 285 705 313 760 313" class="dash"/>
+    <text x="414" y="262" class="small">发送成功后标记 sent，失败重试并告警</text>
+
+    <text x="72" y="245" class="small">关键点：业务数据和事件记录同库同事务提交</text>
+    <text x="72" y="274" class="small">不承诺消费者一定成功，因此消费端仍要幂等、死信、补偿和对账</text>
+</svg>

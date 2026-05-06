@@ -1,0 +1,98 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: operations
+  labels:
+    app: operations
+spec:
+  replicas: 3
+  selector:
+    matchLabels:
+      app: operations
+  template:
+    metadata:
+      labels:
+        app: operations
+    spec:
+      terminationGracePeriodSeconds: 45
+      serviceAccountName: operations
+      securityContext:
+        runAsNonRoot: true
+        seccompProfile:
+          type: RuntimeDefault
+      containers:
+        - name: operations
+          image: emall/operations:0.1.0
+          imagePullPolicy: IfNotPresent
+          securityContext:
+            allowPrivilegeEscalation: false
+            capabilities:
+              drop:
+                - ALL
+          ports:
+            - containerPort: 8099
+          envFrom:
+            - configMapRef:
+                name: emall-runtime-config
+            - secretRef:
+                name: emall-runtime-secret
+          readinessProbe:
+            httpGet:
+              path: /actuator/health/readiness
+              port: 8099
+            initialDelaySeconds: 20
+            periodSeconds: 5
+          livenessProbe:
+            httpGet:
+              path: /actuator/health/liveness
+              port: 8099
+            initialDelaySeconds: 60
+            periodSeconds: 10
+          resources:
+            requests:
+              cpu: "500m"
+              memory: 512Mi
+            limits:
+              cpu: "2"
+              memory: 2Gi
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: operations
+spec:
+  selector:
+    app: operations
+  ports:
+    - name: http
+      port: 8099
+      targetPort: 8099
+---
+apiVersion: policy/v1
+kind: PodDisruptionBudget
+metadata:
+  name: operations
+spec:
+  minAvailable: 2
+  selector:
+    matchLabels:
+      app: operations
+---
+apiVersion: autoscaling/v2
+kind: HorizontalPodAutoscaler
+metadata:
+  name: operations
+spec:
+  scaleTargetRef:
+    apiVersion: apps/v1
+    kind: Deployment
+    name: operations
+  minReplicas: 3
+  maxReplicas: 80
+  metrics:
+    - type: Resource
+      resource:
+        name: cpu
+        target:
+          type: Utilization
+          averageUtilization: 60

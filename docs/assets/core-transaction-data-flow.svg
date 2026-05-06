@@ -1,0 +1,70 @@
+﻿<svg xmlns="http://www.w3.org/2000/svg" width="1280" height="620" viewBox="0 0 1280 620">
+  <defs>
+    <marker id="arrow" markerWidth="10" markerHeight="10" refX="9" refY="3" orient="auto">
+      <path d="M0,0 L0,6 L9,3 z" fill="#334155"/>
+    </marker>
+    <style>
+      .title { font: 700 30px "Microsoft YaHei", "Noto Sans CJK SC", sans-serif; fill: #0f172a; }
+      .label { font: 16px "Microsoft YaHei", "Noto Sans CJK SC", sans-serif; fill: #0f172a; }
+      .small { font: 13px "Microsoft YaHei", "Noto Sans CJK SC", sans-serif; fill: #475569; }
+      .box { fill: #f8fafc; stroke: #64748b; stroke-width: 1.5; rx: 14; }
+      .service { fill: #ecfdf5; stroke: #059669; stroke-width: 1.5; rx: 14; }
+      .db { fill: #fefce8; stroke: #ca8a04; stroke-width: 1.5; rx: 14; }
+      .event { fill: #eff6ff; stroke: #2563eb; stroke-width: 1.5; rx: 14; }
+      .line { stroke: #334155; stroke-width: 1.8; fill: none; marker-end: url(#arrow); }
+      .dash { stroke: #64748b; stroke-width: 1.6; stroke-dasharray: 6 5; fill: none; marker-end: url(#arrow); }
+    </style>
+  </defs>
+  <rect width="1280" height="620" fill="#fff"/>
+  <text x="40" y="52" class="title">核心交易数据流图</text>
+  <text x="40" y="82" class="small">订单、库存、支付通过本地事务、Outbox、事件和补偿协作，不使用长事务</text>
+
+  <rect x="60" y="155" width="120" height="60" class="box"/>
+  <text x="120" y="190" class="label" text-anchor="middle">下单请求</text>
+  <rect x="230" y="155" width="120" height="60" class="service"/>
+  <text x="290" y="190" class="label" text-anchor="middle">网关</text>
+  <rect x="400" y="155" width="130" height="60" class="service"/>
+  <text x="465" y="190" class="label" text-anchor="middle">订单服务</text>
+
+  <rect x="395" y="285" width="140" height="65" class="db"/>
+  <text x="465" y="312" class="label" text-anchor="middle">订单库</text>
+  <text x="465" y="334" class="small" text-anchor="middle">订单和快照</text>
+
+  <rect x="600" y="80" width="125" height="60" class="service"/>
+  <text x="662" y="115" class="label" text-anchor="middle">价格服务</text>
+  <rect x="600" y="165" width="125" height="60" class="service"/>
+  <text x="662" y="200" class="label" text-anchor="middle">营销服务</text>
+  <rect x="600" y="250" width="125" height="60" class="service"/>
+  <text x="662" y="285" class="label" text-anchor="middle">库存服务</text>
+  <rect x="600" y="335" width="125" height="60" class="service"/>
+  <text x="662" y="370" class="label" text-anchor="middle">支付服务</text>
+
+  <rect x="795" y="250" width="130" height="60" class="db"/>
+  <text x="860" y="285" class="label" text-anchor="middle">库存库</text>
+  <rect x="795" y="335" width="130" height="60" class="db"/>
+  <text x="860" y="370" class="label" text-anchor="middle">支付库</text>
+
+  <rect x="615" y="445" width="130" height="60" class="event"/>
+  <text x="680" y="480" class="label" text-anchor="middle">Outbox</text>
+  <rect x="805" y="445" width="130" height="60" class="event"/>
+  <text x="870" y="480" class="label" text-anchor="middle">Kafka</text>
+  <rect x="1010" y="360" width="140" height="60" class="service"/>
+  <text x="1080" y="395" class="label" text-anchor="middle">履约服务</text>
+  <rect x="1010" y="445" width="140" height="60" class="service"/>
+  <text x="1080" y="480" class="label" text-anchor="middle">通知 / 任务</text>
+
+  <path d="M180 185 H230" class="line"/>
+  <path d="M350 185 H400" class="line"/>
+  <path d="M530 185 H600" class="line"/>
+  <path d="M530 185 C560 120 570 110 600 110" class="line"/>
+  <path d="M530 185 C560 260 570 280 600 280" class="line"/>
+  <path d="M725 280 H795" class="line"/>
+  <path d="M530 185 C570 330 580 365 600 365" class="line"/>
+  <path d="M725 365 H795" class="line"/>
+  <path d="M465 215 V285" class="line"/>
+  <path d="M535 318 C580 380 610 420 650 445" class="line"/>
+  <path d="M745 475 H805" class="line"/>
+  <path d="M935 475 H1010" class="line"/>
+  <path d="M935 475 C970 420 990 390 1010 390" class="line"/>
+  <path d="M600 365 C560 385 540 250 530 205" class="dash"/>
+</svg>

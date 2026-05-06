@@ -1,0 +1,58 @@
+﻿<svg xmlns="http://www.w3.org/2000/svg" width="980" height="430" viewBox="0 0 980 430">
+    <defs>
+        <style>
+            .bg { fill: #f8fbfb; }
+            .state { fill: #ffffff; stroke: #1f2d3d; stroke-width: 2; rx: 16; }
+            .guard { fill: #fff1f1; stroke: #a33a3a; stroke-width: 2; rx: 16; }
+            .probe { fill: #eef5ff; stroke: #285f9f; stroke-width: 2; rx: 16; }
+            .warm { fill: #fff8e6; stroke: #9a6900; stroke-width: 2; rx: 16; }
+            .ok { fill: #eef9f0; stroke: #2f7d3b; stroke-width: 2; rx: 16; }
+            .text { fill: #17202a; font-family: "Noto Sans SC", sans-serif; font-size: 18px; }
+            .small { fill: #34495e; font-family: "Noto Sans SC", sans-serif; font-size: 14px; }
+            .arrow { stroke: #17202a; stroke-width: 2.5; fill: none; marker-end: url(#arrow); }
+            .back { stroke: #a33a3a; stroke-width: 2.5; fill: none; stroke-dasharray: 7 6; marker-end: url(#red); }
+        </style>
+        <marker id="arrow" markerWidth="12" markerHeight="12" refX="9" refY="3" orient="auto">
+            <path d="M0,0 L0,6 L9,3 z" fill="#17202a"/>
+        </marker>
+        <marker id="red" markerWidth="12" markerHeight="12" refX="9" refY="3" orient="auto">
+            <path d="M0,0 L0,6 L9,3 z" fill="#a33a3a"/>
+        </marker>
+    </defs>
+    <rect class="bg" width="980" height="430"/>
+    <text x="42" y="46" class="text" style="font-size:24px;font-weight:700">
+        下游自动平滑恢复状态机
+    </text>
+
+    <rect x="55" y="118" width="150" height="84" class="guard"/>
+    <text x="94" y="153" class="text">OPEN</text>
+    <text x="83" y="180" class="small">熔断保护</text>
+
+    <rect x="285" y="118" width="160" height="84" class="probe"/>
+    <text x="313" y="153" class="text">HALF_OPEN</text>
+    <text x="306" y="180" class="small">小流量探测</text>
+
+    <rect x="525" y="118" width="160" height="84" class="warm"/>
+    <text x="562" y="153" class="text">WARMUP</text>
+    <text x="551" y="180" class="small">连接/缓存预热</text>
+
+    <rect x="765" y="118" width="150" height="84" class="ok"/>
+    <text x="802" y="153" class="text">CLOSED</text>
+    <text x="798" y="180" class="small">正常放量</text>
+
+    <path d="M205 160 H285" class="arrow"/>
+    <path d="M445 160 H525" class="arrow"/>
+    <path d="M685 160 H765" class="arrow"/>
+
+    <path d="M365 202 C350 292 160 292 130 202" class="back"/>
+    <path d="M605 202 C590 335 165 335 130 202" class="back"/>
+    <path d="M840 202 C830 378 165 378 130 202" class="back"/>
+
+    <text x="292" y="82" class="small">冷却窗口结束</text>
+    <text x="520" y="82" class="small">成功率和 P99 达标</text>
+    <text x="740" y="82" class="small">逐步放量完成</text>
+
+    <text x="80" y="270" class="small">指标恶化时回退：错误率升高、P99 超阈值、连接池耗尽、CPU 饱和</text>
+    <text x="80" y="302" class="small">恢复限速：半开探测、令牌桶放量、积压重试限速、低优先级任务暂停</text>
+    <text x="80" y="334" class="small">面试重点：健康检查成功不等于可以承载全量生产流量</text>
+</svg>

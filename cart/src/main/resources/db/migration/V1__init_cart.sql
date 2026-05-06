@@ -1,0 +1,9 @@
+CREATE TABLE cart_item (
+    user_id BIGINT NOT NULL,
+    sku_id BIGINT NOT NULL,
+    quantity INT NOT NULL,
+    selected BOOLEAN NOT NULL,
+    updated_at TIMESTAMP(6) NOT NULL,
+    PRIMARY KEY (user_id, sku_id),
+    KEY idx_cart_user_updated (user_id, updated_at)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;

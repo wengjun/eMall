@@ -1,0 +1,39 @@
+﻿<svg xmlns="http://www.w3.org/2000/svg" width="1160" height="540" viewBox="0 0 1160 540">
+  <defs>
+    <marker id="arrow" markerWidth="10" markerHeight="10" refX="9" refY="3" orient="auto">
+      <path d="M0,0 L0,6 L9,3 z" fill="#334155"/>
+    </marker>
+    <style>
+      .title { font: 700 28px "Microsoft YaHei", "Noto Sans CJK SC", sans-serif; fill: #0f172a; }
+      .text { font: 15px "Microsoft YaHei", "Noto Sans CJK SC", sans-serif; fill: #0f172a; }
+      .small { font: 13px "Microsoft YaHei", "Noto Sans CJK SC", sans-serif; fill: #475569; }
+      .state { fill: #ecfdf5; stroke: #059669; stroke-width: 1.4; rx: 18; }
+      .box { fill: #f8fafc; stroke: #64748b; stroke-width: 1.4; rx: 14; }
+      .line { stroke: #334155; stroke-width: 1.7; fill: none; marker-end: url(#arrow); }
+    </style>
+  </defs>
+  <rect width="1160" height="540" fill="#fff"/>
+  <text x="40" y="50" class="title">库存预占和释放流程图</text>
+  <text x="55" y="95" class="small">状态流转</text>
+  <rect x="70" y="125" width="110" height="58" class="state"/><text x="125" y="160" class="text" text-anchor="middle">可售</text>
+  <rect x="270" y="125" width="110" height="58" class="state"/><text x="325" y="160" class="text" text-anchor="middle">已预占</text>
+  <rect x="470" y="85" width="110" height="58" class="state"/><text x="525" y="120" class="text" text-anchor="middle">已确认</text>
+  <rect x="470" y="165" width="110" height="58" class="state"/><text x="525" y="200" class="text" text-anchor="middle">已释放</text>
+  <path d="M180 154 H270" class="line"/><text x="205" y="145" class="small">reserve</text>
+  <path d="M380 145 L470 115" class="line"/><text x="400" y="120" class="small">confirm</text>
+  <path d="M380 165 L470 195" class="line"/><text x="400" y="197" class="small">release / expire</text>
+
+  <text x="55" y="280" class="small">服务调用</text>
+  <rect x="70" y="315" width="120" height="58" class="box"/><text x="130" y="350" class="text" text-anchor="middle">订单服务</text>
+  <rect x="250" y="315" width="120" height="58" class="box"/><text x="310" y="350" class="text" text-anchor="middle">库存服务</text>
+  <rect x="430" y="315" width="120" height="58" class="box"/><text x="490" y="350" class="text" text-anchor="middle">幂等检查</text>
+  <rect x="610" y="315" width="120" height="58" class="box"/><text x="670" y="350" class="text" text-anchor="middle">库存桶</text>
+  <rect x="790" y="315" width="120" height="58" class="box"/><text x="850" y="350" class="text" text-anchor="middle">库存库</text>
+  <rect x="970" y="315" width="120" height="58" class="box"/><text x="1030" y="350" class="text" text-anchor="middle">过期释放任务</text>
+  <path d="M190 344 H250" class="line"/>
+  <path d="M370 344 H430" class="line"/>
+  <path d="M550 344 H610" class="line"/>
+  <path d="M730 344 H790" class="line"/>
+  <path d="M1030 315 C990 260 870 260 850 315" class="line"/>
+  <text x="250" y="430" class="small">requestId 保证重复预占、确认、释放不会造成二次扣减或二次加库存</text>
+</svg>

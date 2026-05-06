@@ -1,0 +1,43 @@
+﻿<svg xmlns="http://www.w3.org/2000/svg" width="980" height="430" viewBox="0 0 980 430">
+    <defs>
+        <style>
+            .bg { fill: #fbfaf6; }
+            .box { fill: #ffffff; stroke: #1f2d3d; stroke-width: 2; rx: 14; }
+            .query { fill: #eef5ff; stroke: #285f9f; stroke-width: 2; rx: 14; }
+            .idx { fill: #fff4e8; stroke: #a35f00; stroke-width: 2; rx: 14; }
+            .risk { fill: #fff1f1; stroke: #a33a3a; stroke-width: 2; rx: 14; }
+            .text { fill: #17202a; font-family: "Noto Sans SC", sans-serif; font-size: 18px; }
+            .small { fill: #34495e; font-family: "Noto Sans SC", sans-serif; font-size: 14px; }
+            .arrow { stroke: #17202a; stroke-width: 2.4; fill: none; marker-end: url(#arrow); }
+        </style>
+        <marker id="arrow" markerWidth="12" markerHeight="12" refX="9" refY="3" orient="auto">
+            <path d="M0,0 L0,6 L9,3 z" fill="#17202a"/>
+        </marker>
+    </defs>
+    <rect class="bg" width="980" height="430"/>
+    <text x="42" y="46" class="text" style="font-size:24px;font-weight:700">索引设计从访问路径出发</text>
+
+    <rect x="60" y="115" width="170" height="90" class="query"/>
+    <text x="101" y="150" class="text">访问路径</text>
+    <text x="88" y="177" class="small">where/order/limit</text>
+
+    <rect x="305" y="115" width="170" height="90" class="idx"/>
+    <text x="346" y="150" class="text">联合索引</text>
+    <text x="330" y="177" class="small">等值、范围、排序</text>
+
+    <rect x="550" y="115" width="170" height="90" class="box"/>
+    <text x="591" y="150" class="text">执行计划</text>
+    <text x="582" y="177" class="small">rows/key/extra</text>
+
+    <rect x="795" y="115" width="130" height="90" class="risk"/>
+    <text x="833" y="150" class="text">成本</text>
+    <text x="818" y="177" class="small">写放大/锁竞争</text>
+
+    <path d="M230 160 H305" class="arrow"/>
+    <path d="M475 160 H550" class="arrow"/>
+    <path d="M720 160 H795" class="arrow"/>
+
+    <text x="82" y="275" class="small">订单表：用户列表、商家列表、支付回调、状态扫描是不同访问路径</text>
+    <text x="82" y="305" class="small">Outbox：投递器按 status、next_retry_at、id 扫描，索引要服务批量投递</text>
+    <text x="82" y="335" class="small">MyBatis Plus：简单 CRUD 可用，核心 SQL 必须明确索引、锁范围和执行计划</text>
+</svg>

@@ -1,0 +1,115 @@
+server:
+  port: 8084
+
+logging:
+  pattern:
+    console: '{"timestamp":"%d{yyyy-MM-dd''T''HH:mm:ss.SSSXXX}","level":"%level","service":"${spring.application.name}","traceId":"%X{traceId:-}","spanId":"%X{spanId:-}","requestId":"%X{requestId:-}","userId":"%X{userId:-}","orderId":"%X{orderId:-}","route":"%X{route:-}","status":"%X{status:-}","latencyMs":"%X{latencyMs:-}","thread":"%thread","logger":"%logger{40}","message":"%replace(%msg){''"'',''\"''}","exception":"%replace(%ex{short}){''"'',''\"''}"}%n'
+
+spring:
+  application:
+    name: order
+  datasource:
+    url: ${EMALL_ORDER_DB_URL:jdbc:mysql://localhost:3306/emall_order?useUnicode=true&characterEncoding=utf8&serverTimezone=UTC}
+    username: ${EMALL_DB_USERNAME:root}
+    password: ${EMALL_DB_PASSWORD:root}
+  flyway:
+    enabled: true
+  kafka:
+    bootstrap-servers: ${EMALL_KAFKA_BOOTSTRAP_SERVERS:localhost:9092}
+    producer:
+      key-serializer: org.apache.kafka.common.serialization.StringSerializer
+      value-serializer: org.apache.kafka.common.serialization.StringSerializer
+
+emall:
+  storage: jdbc
+  internal:
+    operations-token: ${EMALL_INTERNAL_OPERATIONS_TOKEN:local-dev-token}
+  events:
+    topic: emall.order.events
+  downstream:
+    inventory-url: ${EMALL_INVENTORY_URL:http://localhost:8083}
+    pricing-url: ${EMALL_PRICING_URL:http://localhost:8087}
+    marketing-url: ${EMALL_MARKETING_URL:http://localhost:8088}
+
+management:
+  metrics:
+    tags:
+      application: ${spring.application.name}
+  tracing:
+    sampling:
+      probability: ${EMALL_TRACING_SAMPLING_PROBABILITY:0.1}
+  otlp:
+    tracing:
+      endpoint: ${EMALL_OTLP_TRACES_ENDPOINT:http://localhost:4318/v1/traces}
+  endpoint:
+    health:
+      probes:
+        enabled: true
+  endpoints:
+    web:
+      exposure:
+        include: health,info,metrics,prometheus
+
+resilience4j:
+  circuitbreaker:
+    instances:
+      inventoryService:
+        slidingWindowType: COUNT_BASED
+        slidingWindowSize: 100
+        minimumNumberOfCalls: 50
+        failureRateThreshold: 50
+        waitDurationInOpenState: 30s
+        permittedNumberOfCallsInHalfOpenState: 20
+        automaticTransitionFromOpenToHalfOpenEnabled: true
+      pricingService:
+        slidingWindowType: COUNT_BASED
+        slidingWindowSize: 100
+        minimumNumberOfCalls: 20
+        failureRateThreshold: 50
+        waitDurationInOpenState: 10s
+        permittedNumberOfCallsInHalfOpenState: 10
+        automaticTransitionFromOpenToHalfOpenEnabled: true
+      marketingService:
+        slidingWindowType: COUNT_BASED
+        slidingWindowSize: 100
+        minimumNumberOfCalls: 20
+        failureRateThreshold: 50
+        waitDurationInOpenState: 10s
+        permittedNumberOfCallsInHalfOpenState: 10
+        automaticTransitionFromOpenToHalfOpenEnabled: true
+  retry:
+    instances:
+      inventoryService:
+        maxAttempts: 2
+        waitDuration: 50ms
+      pricingService:
+        maxAttempts: 2
+        waitDuration: 30ms
+      marketingService:
+        maxAttempts: 1
+        waitDuration: 20ms
+  ratelimiter:
+    instances:
+      inventoryService:
+        limitForPeriod: 5000
+        limitRefreshPeriod: 1s
+        timeoutDuration: 20ms
+      pricingService:
+        limitForPeriod: 5000
+        limitRefreshPeriod: 1s
+        timeoutDuration: 20ms
+      marketingService:
+        limitForPeriod: 3000
+        limitRefreshPeriod: 1s
+        timeoutDuration: 20ms
+  bulkhead:
+    instances:
+      inventoryService:
+        maxConcurrentCalls: 200
+        maxWaitDuration: 20ms
+      pricingService:
+        maxConcurrentCalls: 200
+        maxWaitDuration: 20ms
+      marketingService:
+        maxConcurrentCalls: 120
+        maxWaitDuration: 20ms

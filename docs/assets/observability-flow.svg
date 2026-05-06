@@ -1,0 +1,35 @@
+﻿<svg xmlns="http://www.w3.org/2000/svg" width="1160" height="460" viewBox="0 0 1160 460">
+  <defs>
+    <marker id="arrow" markerWidth="10" markerHeight="10" refX="9" refY="3" orient="auto">
+      <path d="M0,0 L0,6 L9,3 z" fill="#334155"/>
+    </marker>
+    <style>
+      .title { font: 700 28px "Microsoft YaHei", "Noto Sans CJK SC", sans-serif; fill: #0f172a; }
+      .text { font: 15px "Microsoft YaHei", "Noto Sans CJK SC", sans-serif; fill: #0f172a; }
+      .box { fill: #f8fafc; stroke: #64748b; stroke-width: 1.4; rx: 14; }
+      .obs { fill: #f5f3ff; stroke: #7c3aed; stroke-width: 1.4; rx: 14; }
+      .line { stroke: #334155; stroke-width: 1.7; fill: none; marker-end: url(#arrow); }
+    </style>
+  </defs>
+  <rect width="1160" height="460" fill="#fff"/>
+  <text x="40" y="50" class="title">可观测数据流图</text>
+  <rect x="60" y="155" width="120" height="60" class="box"/><text x="120" y="191" class="text" text-anchor="middle">用户请求</text>
+  <rect x="245" y="155" width="120" height="60" class="box"/><text x="305" y="191" class="text" text-anchor="middle">网关</text>
+  <rect x="430" y="155" width="130" height="60" class="box"/><text x="495" y="191" class="text" text-anchor="middle">业务服务</text>
+  <rect x="625" y="155" width="130" height="60" class="box"/><text x="690" y="191" class="text" text-anchor="middle">下游服务</text>
+  <rect x="245" y="295" width="120" height="60" class="obs"/><text x="305" y="331" class="text" text-anchor="middle">Trace ID</text>
+  <rect x="430" y="295" width="130" height="60" class="obs"/><text x="495" y="331" class="text" text-anchor="middle">Prometheus</text>
+  <rect x="625" y="295" width="130" height="60" class="obs"/><text x="690" y="331" class="text" text-anchor="middle">结构化日志</text>
+  <rect x="820" y="95" width="145" height="60" class="obs"/><text x="892" y="131" class="text" text-anchor="middle">OpenTelemetry</text>
+  <rect x="820" y="205" width="145" height="60" class="obs"/><text x="892" y="241" class="text" text-anchor="middle">Grafana 看板</text>
+  <rect x="820" y="315" width="145" height="60" class="obs"/><text x="892" y="351" class="text" text-anchor="middle">日志检索</text>
+  <path d="M180 185 H245" class="line"/>
+  <path d="M365 185 H430" class="line"/>
+  <path d="M560 185 H625" class="line"/>
+  <path d="M305 215 V295" class="line"/>
+  <path d="M495 215 V295" class="line"/>
+  <path d="M690 215 V295" class="line"/>
+  <path d="M365 325 C560 110 700 125 820 125" class="line"/>
+  <path d="M560 325 C650 250 720 235 820 235" class="line"/>
+  <path d="M755 325 H820" class="line"/>
+</svg>

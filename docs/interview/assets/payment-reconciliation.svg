@@ -1,0 +1,56 @@
+﻿<svg xmlns="http://www.w3.org/2000/svg" width="1060" height="500" viewBox="0 0 1060 500">
+    <defs>
+        <style>
+            .bg { fill: #f8fbfb; }
+            .box { fill: #ffffff; stroke: #1f2d3d; stroke-width: 2; rx: 14; }
+            .channel { fill: #eef5ff; stroke: #285f9f; stroke-width: 2; rx: 14; }
+            .diff { fill: #fff4e8; stroke: #a35f00; stroke-width: 2; rx: 14; }
+            .risk { fill: #fff1f1; stroke: #a33a3a; stroke-width: 2; rx: 14; }
+            .ok { fill: #eef9f0; stroke: #2f7d3b; stroke-width: 2; rx: 14; }
+            .text { fill: #17202a; font-family: "Noto Sans SC", sans-serif; font-size: 18px; }
+            .small { fill: #34495e; font-family: "Noto Sans SC", sans-serif; font-size: 14px; }
+            .arrow { stroke: #17202a; stroke-width: 2.4; fill: none; marker-end: url(#arrow); }
+        </style>
+        <marker id="arrow" markerWidth="12" markerHeight="12" refX="9" refY="3" orient="auto">
+            <path d="M0,0 L0,6 L9,3 z" fill="#17202a"/>
+        </marker>
+    </defs>
+    <rect class="bg" width="1060" height="500"/>
+    <text x="42" y="46" class="text" style="font-size:24px;font-weight:700">
+        支付渠道对账系统数据流
+    </text>
+
+    <rect x="60" y="110" width="160" height="82" class="channel"/>
+    <text x="100" y="145" class="text">渠道账单</text>
+    <text x="86" y="172" class="small">下载/验签/归档</text>
+
+    <rect x="60" y="280" width="160" height="82" class="box"/>
+    <text x="100" y="315" class="text">本地流水</text>
+    <text x="86" y="342" class="small">支付/退款/手续费</text>
+
+    <rect x="330" y="195" width="170" height="82" class="diff"/>
+    <text x="377" y="230" class="text">标准化</text>
+    <text x="354" y="257" class="small">统一账单模型</text>
+
+    <rect x="600" y="195" width="170" height="82" class="diff"/>
+    <text x="647" y="230" class="text">双向匹配</text>
+    <text x="624" y="257" class="small">金额/状态/单号</text>
+
+    <rect x="845" y="110" width="160" height="82" class="risk"/>
+    <text x="885" y="145" class="text">差异单</text>
+    <text x="875" y="172" class="small">补单/冲正/审核</text>
+
+    <rect x="845" y="280" width="160" height="82" class="ok"/>
+    <text x="885" y="315" class="text">处理闭环</text>
+    <text x="875" y="342" class="small">审计/再次验证</text>
+
+    <path d="M220 151 C270 165 300 190 330 215" class="arrow"/>
+    <path d="M220 321 C270 305 300 270 330 255" class="arrow"/>
+    <path d="M500 236 H600" class="arrow"/>
+    <path d="M770 220 C810 185 825 160 845 151" class="arrow"/>
+    <path d="M925 192 V280" class="arrow"/>
+
+    <text x="75" y="430" class="small">
+        金额差异不能自动覆盖；系统要保留原始账单、匹配证据、处理记录和人工审批。
+    </text>
+</svg>

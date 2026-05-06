@@ -1,0 +1,11 @@
+package com.emall.cost.domain;
+
+public enum CostActionType {
+    INCREASE_CACHE_TTL,
+    REVIEW_CACHE_KEY,
+    ROLLOVER_INDEX,
+    MOVE_TO_COLD_STORAGE,
+    TIGHTEN_RETENTION_POLICY,
+    THROTTLE_EXPORT,
+    SCALE_EXPORT_WORKERS
+}

@@ -1,0 +1,98 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: forecasting
+  labels:
+    app: forecasting
+spec:
+  replicas: 3
+  selector:
+    matchLabels:
+      app: forecasting
+  template:
+    metadata:
+      labels:
+        app: forecasting
+    spec:
+      terminationGracePeriodSeconds: 45
+      serviceAccountName: forecasting
+      securityContext:
+        runAsNonRoot: true
+        seccompProfile:
+          type: RuntimeDefault
+      containers:
+        - name: forecasting
+          image: emall/forecasting:0.1.0
+          imagePullPolicy: IfNotPresent
+          securityContext:
+            allowPrivilegeEscalation: false
+            capabilities:
+              drop:
+                - ALL
+          ports:
+            - containerPort: 8108
+          envFrom:
+            - configMapRef:
+                name: emall-runtime-config
+            - secretRef:
+                name: emall-runtime-secret
+          readinessProbe:
+            httpGet:
+              path: /actuator/health/readiness
+              port: 8108
+            initialDelaySeconds: 20
+            periodSeconds: 5
+          livenessProbe:
+            httpGet:
+              path: /actuator/health/liveness
+              port: 8108
+            initialDelaySeconds: 60
+            periodSeconds: 10
+          resources:
+            requests:
+              cpu: "500m"
+              memory: 512Mi
+            limits:
+              cpu: "2"
+              memory: 2Gi
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: forecasting
+spec:
+  selector:
+    app: forecasting
+  ports:
+    - name: http
+      port: 8108
+      targetPort: 8108
+---
+apiVersion: policy/v1
+kind: PodDisruptionBudget
+metadata:
+  name: forecasting
+spec:
+  minAvailable: 2
+  selector:
+    matchLabels:
+      app: forecasting
+---
+apiVersion: autoscaling/v2
+kind: HorizontalPodAutoscaler
+metadata:
+  name: forecasting
+spec:
+  scaleTargetRef:
+    apiVersion: apps/v1
+    kind: Deployment
+    name: forecasting
+  minReplicas: 3
+  maxReplicas: 80
+  metrics:
+    - type: Resource
+      resource:
+        name: cpu
+        target:
+          type: Utilization
+          averageUtilization: 60

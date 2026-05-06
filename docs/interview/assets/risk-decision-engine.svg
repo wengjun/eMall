@@ -1,0 +1,67 @@
+﻿<svg xmlns="http://www.w3.org/2000/svg" width="1080" height="540" viewBox="0 0 1080 540">
+    <defs>
+        <style>
+            .bg { fill: #f8fbfb; }
+            .box { fill: #ffffff; stroke: #1f2d3d; stroke-width: 2; rx: 14; }
+            .data { fill: #eef5ff; stroke: #285f9f; stroke-width: 2; rx: 14; }
+            .engine { fill: #fff4e8; stroke: #a35f00; stroke-width: 2; rx: 14; }
+            .action { fill: #eef9f0; stroke: #2f7d3b; stroke-width: 2; rx: 14; }
+            .risk { fill: #fff1f1; stroke: #a33a3a; stroke-width: 2; rx: 14; }
+            .text { fill: #17202a; font-family: "Noto Sans SC", sans-serif; font-size: 18px; }
+            .small { fill: #34495e; font-family: "Noto Sans SC", sans-serif; font-size: 14px; }
+            .arrow { stroke: #17202a; stroke-width: 2.4; fill: none; marker-end: url(#arrow); }
+            .back { stroke: #7f8c8d; stroke-width: 2; fill: none; stroke-dasharray: 7 6; marker-end: url(#gray); }
+        </style>
+        <marker id="arrow" markerWidth="12" markerHeight="12" refX="9" refY="3" orient="auto">
+            <path d="M0,0 L0,6 L9,3 z" fill="#17202a"/>
+        </marker>
+        <marker id="gray" markerWidth="12" markerHeight="12" refX="9" refY="3" orient="auto">
+            <path d="M0,0 L0,6 L9,3 z" fill="#7f8c8d"/>
+        </marker>
+    </defs>
+    <rect class="bg" width="1080" height="540"/>
+    <text x="42" y="46" class="text" style="font-size:24px;font-weight:700">
+        风控实时决策和规则灰度闭环
+    </text>
+
+    <rect x="60" y="112" width="180" height="126" class="data"/>
+    <text x="105" y="147" class="text">风险事件</text>
+    <text x="90" y="175" class="small">登录/下单/支付/领券</text>
+    <text x="90" y="197" class="small">开放 API/售后/退款</text>
+
+    <rect x="310" y="95" width="180" height="160" class="data"/>
+    <text x="354" y="130" class="text">特征层</text>
+    <text x="340" y="158" class="small">实时特征</text>
+    <text x="340" y="180" class="small">离线画像</text>
+    <text x="340" y="202" class="small">名单/设备/IP</text>
+
+    <rect x="560" y="95" width="190" height="160" class="engine"/>
+    <text x="612" y="130" class="text">决策引擎</text>
+    <text x="590" y="158" class="small">规则 + 模型 + 策略</text>
+    <text x="590" y="180" class="small">版本/影子/灰度</text>
+    <text x="590" y="202" class="small">可解释命中原因</text>
+
+    <rect x="835" y="112" width="165" height="126" class="action"/>
+    <text x="882" y="147" class="text">处置动作</text>
+    <text x="865" y="175" class="small">放行/验证码/审核</text>
+    <text x="865" y="197" class="small">拒绝/冻结/限流</text>
+
+    <rect x="310" y="338" width="180" height="96" class="risk"/>
+    <text x="354" y="373" class="text">灰度治理</text>
+    <text x="340" y="401" class="small">回放/影子/一键回滚</text>
+
+    <rect x="560" y="338" width="190" height="96" class="box"/>
+    <text x="612" y="373" class="text">效果评估</text>
+    <text x="590" y="401" class="small">误杀率/投诉/转化率</text>
+
+    <path d="M240 175 H310" class="arrow"/>
+    <path d="M490 175 H560" class="arrow"/>
+    <path d="M750 175 H835" class="arrow"/>
+    <path d="M655 255 V338" class="back"/>
+    <path d="M560 386 H490" class="back"/>
+    <path d="M400 338 V255" class="back"/>
+
+    <text x="78" y="490" class="small">
+        生产重点：风控不能只看拦截率，必须同时管理误杀、可解释、灰度、审计和业务转化。
+    </text>
+</svg>

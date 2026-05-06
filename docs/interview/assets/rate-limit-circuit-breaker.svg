@@ -1,0 +1,63 @@
+﻿<svg xmlns="http://www.w3.org/2000/svg" width="980" height="500" viewBox="0 0 980 500">
+    <defs>
+        <style>
+            .bg { fill: #fbfaf6; }
+            .box { fill: #ffffff; stroke: #1f2d3d; stroke-width: 2; rx: 14; }
+            .limit { fill: #eef5ff; stroke: #285f9f; stroke-width: 2; rx: 14; }
+            .break { fill: #fff1f1; stroke: #a33a3a; stroke-width: 2; rx: 14; }
+            .ok { fill: #eef9f0; stroke: #2f7d3b; stroke-width: 2; rx: 14; }
+            .text { fill: #17202a; font-family: "Noto Sans SC", sans-serif; font-size: 18px; }
+            .small { fill: #34495e; font-family: "Noto Sans SC", sans-serif; font-size: 14px; }
+            .arrow { stroke: #17202a; stroke-width: 2.4; fill: none; marker-end: url(#arrow); }
+            .deny { stroke: #a33a3a; stroke-width: 2.4; fill: none; stroke-dasharray: 7 6; marker-end: url(#red); }
+        </style>
+        <marker id="arrow" markerWidth="12" markerHeight="12" refX="9" refY="3" orient="auto">
+            <path d="M0,0 L0,6 L9,3 z" fill="#17202a"/>
+        </marker>
+        <marker id="red" markerWidth="12" markerHeight="12" refX="9" refY="3" orient="auto">
+            <path d="M0,0 L0,6 L9,3 z" fill="#a33a3a"/>
+        </marker>
+    </defs>
+    <rect class="bg" width="980" height="500"/>
+    <text x="42" y="46" class="text" style="font-size:24px;font-weight:700">
+        限流和熔断在调用链中的位置
+    </text>
+
+    <rect x="55" y="110" width="145" height="82" class="box"/>
+    <text x="90" y="145" class="text">客户端</text>
+    <text x="80" y="172" class="small">用户/IP/appKey</text>
+
+    <rect x="275" y="95" width="170" height="112" class="limit"/>
+    <text x="322" y="132" class="text">入口限流</text>
+    <text x="302" y="160" class="small">保护网关和服务</text>
+    <text x="300" y="184" class="small">超量快速拒绝</text>
+
+    <rect x="525" y="95" width="170" height="112" class="limit"/>
+    <text x="564" y="132" class="text">业务限流</text>
+    <text x="552" y="160" class="small">按 SKU/商家/API</text>
+    <text x="557" y="184" class="small">保护热点资源</text>
+
+    <rect x="775" y="95" width="150" height="112" class="break"/>
+    <text x="812" y="132" class="text">熔断器</text>
+    <text x="797" y="160" class="small">下游慢/失败</text>
+    <text x="805" y="184" class="small">快速失败</text>
+
+    <rect x="775" y="305" width="150" height="82" class="ok"/>
+    <text x="812" y="340" class="text">下游服务</text>
+    <text x="808" y="367" class="small">支付/库存/搜索</text>
+
+    <rect x="525" y="305" width="170" height="82" class="box"/>
+    <text x="564" y="340" class="text">降级结果</text>
+    <text x="548" y="367" class="small">缓存/默认值/排队</text>
+
+    <path d="M200 151 H275" class="arrow"/>
+    <path d="M445 151 H525" class="arrow"/>
+    <path d="M695 151 H775" class="arrow"/>
+    <path d="M850 207 V305" class="arrow"/>
+    <path d="M775 163 C710 225 690 275 657 305" class="deny"/>
+    <path d="M275 178 C230 245 230 310 275 360" class="deny"/>
+
+    <text x="80" y="250" class="small">限流：流量超过系统承载能力时，主动、有序、快速拒绝</text>
+    <text x="80" y="282" class="small">熔断：下游已经异常时，调用方停止继续请求，防止级联故障</text>
+    <text x="80" y="430" class="small">面试重点：限流防止流量进入，熔断防止故障扩散，两者都要配合监控和动态阈值。</text>
+</svg>

@@ -1,0 +1,102 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: flash-sale
+  labels:
+    app: flash-sale
+spec:
+  replicas: 6
+  selector:
+    matchLabels:
+      app: flash-sale
+  template:
+    metadata:
+      labels:
+        app: flash-sale
+    spec:
+      terminationGracePeriodSeconds: 45
+      serviceAccountName: flash-sale
+      securityContext:
+        runAsNonRoot: true
+        seccompProfile:
+          type: RuntimeDefault
+      containers:
+        - name: flash-sale
+          image: emall/flash-sale:0.1.0
+          imagePullPolicy: IfNotPresent
+          securityContext:
+            allowPrivilegeEscalation: false
+            capabilities:
+              drop:
+                - ALL
+          ports:
+            - containerPort: 8094
+          envFrom:
+            - configMapRef:
+                name: emall-runtime-config
+            - secretRef:
+                name: emall-runtime-secret
+          lifecycle:
+            preStop:
+              exec:
+                command: ["sh", "-c", "sleep 15"]
+          readinessProbe:
+            httpGet:
+              path: /actuator/health/readiness
+              port: 8094
+            initialDelaySeconds: 20
+            periodSeconds: 5
+          livenessProbe:
+            httpGet:
+              path: /actuator/health/liveness
+              port: 8094
+            initialDelaySeconds: 60
+            periodSeconds: 10
+          resources:
+            requests:
+              cpu: "1"
+              memory: 1Gi
+            limits:
+              cpu: "4"
+              memory: 4Gi
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: flash-sale
+spec:
+  selector:
+    app: flash-sale
+  ports:
+    - name: http
+      port: 8094
+      targetPort: 8094
+---
+apiVersion: policy/v1
+kind: PodDisruptionBudget
+metadata:
+  name: flash-sale
+spec:
+  minAvailable: 4
+  selector:
+    matchLabels:
+      app: flash-sale
+---
+apiVersion: autoscaling/v2
+kind: HorizontalPodAutoscaler
+metadata:
+  name: flash-sale
+spec:
+  scaleTargetRef:
+    apiVersion: apps/v1
+    kind: Deployment
+    name: flash-sale
+  minReplicas: 6
+  maxReplicas: 300
+  metrics:
+    - type: Resource
+      resource:
+        name: cpu
+        target:
+          type: Utilization
+          averageUtilization: 55

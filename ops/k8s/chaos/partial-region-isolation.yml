@@ -1,0 +1,21 @@
+apiVersion: chaos-mesh.org/v1alpha1
+kind: NetworkChaos
+metadata:
+  name: partial-region-isolation
+spec:
+  action: partition
+  mode: all
+  selector:
+    namespaces:
+      - default
+    labelSelectors:
+      topology.kubernetes.io/region: us-west-2
+  duration: 20m
+  direction: both
+  target:
+    mode: all
+    selector:
+      namespaces:
+        - default
+      labelSelectors:
+        topology.kubernetes.io/region: us-east-1

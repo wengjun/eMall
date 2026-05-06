@@ -1,0 +1,65 @@
+﻿<svg xmlns="http://www.w3.org/2000/svg" width="1080" height="540" viewBox="0 0 1080 540">
+    <defs>
+        <style>
+            .bg { fill: #f8fbfb; }
+            .box { fill: #ffffff; stroke: #1f2d3d; stroke-width: 2; rx: 14; }
+            .edge { fill: #eef5ff; stroke: #285f9f; stroke-width: 2; rx: 14; }
+            .safe { fill: #eef9f0; stroke: #2f7d3b; stroke-width: 2; rx: 14; }
+            .risk { fill: #fff1f1; stroke: #a33a3a; stroke-width: 2; rx: 14; }
+            .text { fill: #17202a; font-family: "Noto Sans SC", sans-serif; font-size: 18px; }
+            .small { fill: #34495e; font-family: "Noto Sans SC", sans-serif; font-size: 14px; }
+            .arrow { stroke: #17202a; stroke-width: 2.4; fill: none; marker-end: url(#arrow); }
+            .dash { stroke: #7f8c8d; stroke-width: 2; fill: none; stroke-dasharray: 7 6; marker-end: url(#gray); }
+        </style>
+        <marker id="arrow" markerWidth="12" markerHeight="12" refX="9" refY="3" orient="auto">
+            <path d="M0,0 L0,6 L9,3 z" fill="#17202a"/>
+        </marker>
+        <marker id="gray" markerWidth="12" markerHeight="12" refX="9" refY="3" orient="auto">
+            <path d="M0,0 L0,6 L9,3 z" fill="#7f8c8d"/>
+        </marker>
+    </defs>
+    <rect class="bg" width="1080" height="540"/>
+    <text x="42" y="46" class="text" style="font-size:24px;font-weight:700">
+        开放平台 API 安全链路
+    </text>
+
+    <rect x="60" y="110" width="190" height="112" class="edge"/>
+    <text x="112" y="145" class="text">外部应用</text>
+    <text x="92" y="173" class="small">appKey + secret</text>
+    <text x="92" y="195" class="small">timestamp + nonce</text>
+
+    <rect x="330" y="90" width="200" height="154" class="safe"/>
+    <text x="382" y="125" class="text">API Gateway</text>
+    <text x="360" y="153" class="small">HMAC 验签</text>
+    <text x="360" y="175" class="small">防重放/限流/IP 白名单</text>
+    <text x="360" y="197" class="small">认证身份上下文</text>
+
+    <rect x="610" y="90" width="190" height="154" class="box"/>
+    <text x="662" y="125" class="text">授权中心</text>
+    <text x="642" y="153" class="small">应用状态</text>
+    <text x="642" y="175" class="small">接口范围</text>
+    <text x="642" y="197" class="small">租户/商家资源</text>
+
+    <rect x="870" y="110" width="150" height="112" class="box"/>
+    <text x="918" y="145" class="text">业务服务</text>
+    <text x="902" y="173" class="small">订单/商品/售后</text>
+    <text x="902" y="195" class="small">服务层资源校验</text>
+
+    <rect x="330" y="330" width="200" height="102" class="risk"/>
+    <text x="382" y="365" class="text">安全审计</text>
+    <text x="360" y="393" class="small">签名失败/越权/异常流量</text>
+
+    <rect x="610" y="330" width="190" height="102" class="safe"/>
+    <text x="662" y="365" class="text">密钥治理</text>
+    <text x="642" y="393" class="small">加密存储/轮换/禁用</text>
+
+    <path d="M250 166 H330" class="arrow"/>
+    <path d="M530 166 H610" class="arrow"/>
+    <path d="M800 166 H870" class="arrow"/>
+    <path d="M430 244 V330" class="dash"/>
+    <path d="M705 244 V330" class="dash"/>
+
+    <text x="78" y="490" class="small">
+        生产重点：认证证明调用方身份，授权判断能否访问资源，HMAC 防篡改但不能替代权限和审计。
+    </text>
+</svg>

@@ -1,0 +1,63 @@
+﻿<svg xmlns="http://www.w3.org/2000/svg" width="1080" height="540" viewBox="0 0 1080 540">
+    <defs>
+        <style>
+            .bg { fill: #f8fbfb; }
+            .box { fill: #ffffff; stroke: #1f2d3d; stroke-width: 2; rx: 14; }
+            .safe { fill: #eef9f0; stroke: #2f7d3b; stroke-width: 2; rx: 14; }
+            .release { fill: #fff4e8; stroke: #a35f00; stroke-width: 2; rx: 14; }
+            .risk { fill: #fff1f1; stroke: #a33a3a; stroke-width: 2; rx: 14; }
+            .text { fill: #17202a; font-family: "Noto Sans SC", sans-serif; font-size: 18px; }
+            .small { fill: #34495e; font-family: "Noto Sans SC", sans-serif; font-size: 14px; }
+            .arrow { stroke: #17202a; stroke-width: 2.4; fill: none; marker-end: url(#arrow); }
+            .back { stroke: #a33a3a; stroke-width: 2.4; fill: none; stroke-dasharray: 7 6; marker-end: url(#red); }
+        </style>
+        <marker id="arrow" markerWidth="12" markerHeight="12" refX="9" refY="3" orient="auto">
+            <path d="M0,0 L0,6 L9,3 z" fill="#17202a"/>
+        </marker>
+        <marker id="red" markerWidth="12" markerHeight="12" refX="9" refY="3" orient="auto">
+            <path d="M0,0 L0,6 L9,3 z" fill="#a33a3a"/>
+        </marker>
+    </defs>
+    <rect class="bg" width="1080" height="540"/>
+    <text x="42" y="46" class="text" style="font-size:24px;font-weight:700">
+        蓝绿、金丝雀和数据库兼容发布
+    </text>
+
+    <rect x="70" y="110" width="175" height="116" class="box"/>
+    <text x="112" y="145" class="text">蓝色旧版本</text>
+    <text x="102" y="173" class="small">稳定承载全量</text>
+    <text x="102" y="195" class="small">可作为回滚目标</text>
+
+    <rect x="315" y="110" width="175" height="116" class="release"/>
+    <text x="360" y="145" class="text">绿色新版本</text>
+    <text x="347" y="173" class="small">金丝雀小流量</text>
+    <text x="347" y="195" class="small">指标门禁放量</text>
+
+    <rect x="560" y="110" width="175" height="116" class="safe"/>
+    <text x="604" y="145" class="text">兼容 Schema</text>
+    <text x="592" y="173" class="small">新增字段/双写</text>
+    <text x="592" y="195" class="small">新旧版本可读</text>
+
+    <rect x="805" y="110" width="175" height="116" class="risk"/>
+    <text x="850" y="145" class="text">Contract</text>
+    <text x="837" y="173" class="small">确认旧依赖消失</text>
+    <text x="837" y="195" class="small">再删除旧字段</text>
+
+    <rect x="315" y="340" width="175" height="96" class="risk"/>
+    <text x="360" y="375" class="text">回滚风险</text>
+    <text x="347" y="403" class="small">旧代码不能理解新数据</text>
+
+    <rect x="560" y="340" width="175" height="96" class="safe"/>
+    <text x="604" y="375" class="text">安全原则</text>
+    <text x="592" y="403" class="small">先 expand，再迁移，后 contract</text>
+
+    <path d="M245 168 H315" class="arrow"/>
+    <path d="M490 168 H560" class="arrow"/>
+    <path d="M735 168 H805" class="arrow"/>
+    <path d="M402 226 V340" class="back"/>
+    <path d="M560 388 H490" class="arrow"/>
+
+    <text x="78" y="490" class="small">
+        生产重点：发布回滚不是只切代码，数据库、消息、缓存和外部 API contract 都必须兼容。
+    </text>
+</svg>

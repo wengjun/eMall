@@ -1,0 +1,102 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: after-sales
+  labels:
+    app: after-sales
+spec:
+  replicas: 3
+  selector:
+    matchLabels:
+      app: after-sales
+  template:
+    metadata:
+      labels:
+        app: after-sales
+    spec:
+      terminationGracePeriodSeconds: 45
+      serviceAccountName: after-sales
+      securityContext:
+        runAsNonRoot: true
+        seccompProfile:
+          type: RuntimeDefault
+      containers:
+        - name: after-sales
+          image: emall/after-sales:0.1.0
+          imagePullPolicy: IfNotPresent
+          securityContext:
+            allowPrivilegeEscalation: false
+            capabilities:
+              drop:
+                - ALL
+          ports:
+            - containerPort: 8092
+          envFrom:
+            - configMapRef:
+                name: emall-runtime-config
+            - secretRef:
+                name: emall-runtime-secret
+          lifecycle:
+            preStop:
+              exec:
+                command: ["sh", "-c", "sleep 15"]
+          readinessProbe:
+            httpGet:
+              path: /actuator/health/readiness
+              port: 8092
+            initialDelaySeconds: 20
+            periodSeconds: 5
+          livenessProbe:
+            httpGet:
+              path: /actuator/health/liveness
+              port: 8092
+            initialDelaySeconds: 60
+            periodSeconds: 10
+          resources:
+            requests:
+              cpu: "500m"
+              memory: 768Mi
+            limits:
+              cpu: "2"
+              memory: 2Gi
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: after-sales
+spec:
+  selector:
+    app: after-sales
+  ports:
+    - name: http
+      port: 8092
+      targetPort: 8092
+---
+apiVersion: policy/v1
+kind: PodDisruptionBudget
+metadata:
+  name: after-sales
+spec:
+  minAvailable: 2
+  selector:
+    matchLabels:
+      app: after-sales
+---
+apiVersion: autoscaling/v2
+kind: HorizontalPodAutoscaler
+metadata:
+  name: after-sales
+spec:
+  scaleTargetRef:
+    apiVersion: apps/v1
+    kind: Deployment
+    name: after-sales
+  minReplicas: 3
+  maxReplicas: 120
+  metrics:
+    - type: Resource
+      resource:
+        name: cpu
+        target:
+          type: Utilization
+          averageUtilization: 60

@@ -1,0 +1,52 @@
+﻿<svg xmlns="http://www.w3.org/2000/svg" width="1080" height="540" viewBox="0 0 1080 540">
+    <defs>
+        <style>
+            .bg { fill: #f8fbfb; }
+            .box { fill: #ffffff; stroke: #1f2d3d; stroke-width: 2; rx: 14; }
+            .deploy { fill: #eef5ff; stroke: #285f9f; stroke-width: 2; rx: 14; }
+            .runtime { fill: #fff4e8; stroke: #a35f00; stroke-width: 2; rx: 14; }
+            .obs { fill: #eef9f0; stroke: #2f7d3b; stroke-width: 2; rx: 14; }
+            .risk { fill: #fff1f1; stroke: #a33a3a; stroke-width: 2; rx: 14; }
+            .text { fill: #17202a; font-family: "Noto Sans SC", sans-serif; font-size: 18px; }
+            .small { fill: #34495e; font-family: "Noto Sans SC", sans-serif; font-size: 14px; }
+            .arrow { stroke: #17202a; stroke-width: 2.4; fill: none; marker-end: url(#arrow); }
+        </style>
+        <marker id="arrow" markerWidth="12" markerHeight="12" refX="9" refY="3" orient="auto">
+            <path d="M0,0 L0,6 L9,3 z" fill="#17202a"/>
+        </marker>
+    </defs>
+    <rect class="bg" width="1080" height="540"/>
+    <text x="42" y="46" class="text" style="font-size:24px;font-weight:700">
+        Kubernetes 生产运行和故障治理
+    </text>
+
+    <rect x="70" y="120" width="190" height="120" class="deploy"/>
+    <text x="118" y="155" class="text">部署对象</text>
+    <text x="102" y="183" class="small">Deployment / Service</text>
+    <text x="102" y="205" class="small">Ingress / ConfigMap</text>
+
+    <rect x="325" y="120" width="190" height="120" class="runtime"/>
+    <text x="373" y="155" class="text">运行资源</text>
+    <text x="357" y="183" class="small">requests / limits</text>
+    <text x="357" y="205" class="small">probe / HPA / PDB</text>
+
+    <rect x="580" y="120" width="190" height="120" class="obs"/>
+    <text x="628" y="155" class="text">观测响应</text>
+    <text x="612" y="183" class="small">日志 / 指标 / Trace</text>
+    <text x="612" y="205" class="small">告警 / Runbook</text>
+
+    <rect x="835" y="120" width="170" height="120" class="risk"/>
+    <text x="884" y="155" class="text">变更风险</text>
+    <text x="867" y="183" class="small">灰度 / 回滚</text>
+    <text x="867" y="205" class="small">兼容 / 容量</text>
+
+    <rect x="170" y="345" width="740" height="82" class="box"/>
+    <text x="220" y="380" class="text">生产原则</text>
+    <text x="220" y="408" class="small">
+        K8s 只提供调度和编排，稳定性还要靠容量、探针、发布门禁和可观测闭环。
+    </text>
+
+    <path d="M260 180 H325" class="arrow"/>
+    <path d="M515 180 H580" class="arrow"/>
+    <path d="M770 180 H835" class="arrow"/>
+</svg>

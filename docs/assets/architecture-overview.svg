@@ -1,0 +1,94 @@
+﻿<svg xmlns="http://www.w3.org/2000/svg" width="1280" height="760" viewBox="0 0 1280 760">
+  <defs>
+    <marker id="arrow" markerWidth="10" markerHeight="10" refX="9" refY="3" orient="auto">
+      <path d="M0,0 L0,6 L9,3 z" fill="#334155"/>
+    </marker>
+    <style>
+      .title { font: 700 30px "Microsoft YaHei", "Noto Sans CJK SC", sans-serif; fill: #0f172a; }
+      .layer { font: 700 18px "Microsoft YaHei", "Noto Sans CJK SC", sans-serif; fill: #1e293b; }
+      .text { font: 15px "Microsoft YaHei", "Noto Sans CJK SC", sans-serif; fill: #0f172a; }
+      .small { font: 13px "Microsoft YaHei", "Noto Sans CJK SC", sans-serif; fill: #475569; }
+      .box { fill: #f8fafc; stroke: #94a3b8; stroke-width: 1.5; rx: 14; }
+      .edge { fill: #e0f2fe; stroke: #0284c7; stroke-width: 1.5; rx: 14; }
+      .core { fill: #ecfdf5; stroke: #059669; stroke-width: 1.5; rx: 14; }
+      .biz { fill: #fff7ed; stroke: #ea580c; stroke-width: 1.5; rx: 14; }
+      .platform { fill: #f5f3ff; stroke: #7c3aed; stroke-width: 1.5; rx: 14; }
+      .data { fill: #fefce8; stroke: #ca8a04; stroke-width: 1.5; rx: 14; }
+      .ops { fill: #f1f5f9; stroke: #475569; stroke-width: 1.5; rx: 14; }
+      .line { stroke: #334155; stroke-width: 1.8; fill: none; marker-end: url(#arrow); }
+    </style>
+  </defs>
+
+  <rect x="0" y="0" width="1280" height="760" fill="#ffffff"/>
+  <text x="40" y="52" class="title">eMall 总体架构图</text>
+  <text x="40" y="82" class="small">从用户入口到核心交易、平台能力、数据中间件和运维观测的整体关系</text>
+
+  <rect x="40" y="115" width="170" height="510" class="box"/>
+  <text x="78" y="150" class="layer">用户和外部入口</text>
+  <rect x="70" y="180" width="110" height="54" class="box"/>
+  <text x="112" y="213" class="text" text-anchor="middle">App</text>
+  <rect x="70" y="255" width="110" height="54" class="box"/>
+  <text x="112" y="288" class="text" text-anchor="middle">Web</text>
+  <rect x="70" y="330" width="110" height="54" class="box"/>
+  <text x="112" y="363" class="text" text-anchor="middle">商家 / ISV</text>
+
+  <rect x="260" y="115" width="170" height="510" class="edge"/>
+  <text x="318" y="150" class="layer">接入层</text>
+  <rect x="290" y="180" width="110" height="54" class="edge"/>
+  <text x="345" y="213" class="text" text-anchor="middle">CDN</text>
+  <rect x="290" y="255" width="110" height="54" class="edge"/>
+  <text x="345" y="288" class="text" text-anchor="middle">WAF / 防刷</text>
+  <rect x="290" y="330" width="110" height="64" class="edge"/>
+  <text x="345" y="358" class="text" text-anchor="middle">Gateway</text>
+  <text x="345" y="378" class="small" text-anchor="middle">限流 / 路由</text>
+
+  <rect x="480" y="115" width="255" height="510" class="core"/>
+  <text x="566" y="150" class="layer">核心交易层</text>
+  <g class="text" text-anchor="middle">
+    <rect x="510" y="180" width="88" height="48" class="core"/><text x="554" y="210">用户</text>
+    <rect x="618" y="180" width="88" height="48" class="core"/><text x="662" y="210">商品</text>
+    <rect x="510" y="248" width="88" height="48" class="core"/><text x="554" y="278">价格</text>
+    <rect x="618" y="248" width="88" height="48" class="core"/><text x="662" y="278">营销</text>
+    <rect x="510" y="316" width="88" height="48" class="core"/><text x="554" y="346">库存</text>
+    <rect x="618" y="316" width="88" height="48" class="core"/><text x="662" y="346">订单</text>
+    <rect x="510" y="384" width="88" height="48" class="core"/><text x="554" y="414">支付</text>
+    <rect x="618" y="384" width="88" height="48" class="core"/><text x="662" y="414">购物车</text>
+  </g>
+
+  <rect x="785" y="115" width="205" height="510" class="biz"/>
+  <text x="828" y="150" class="layer">业务扩展层</text>
+  <g class="text" text-anchor="middle">
+    <rect x="815" y="180" width="70" height="44" class="biz"/><text x="850" y="207">类目</text>
+    <rect x="895" y="180" width="70" height="44" class="biz"/><text x="930" y="207">促销</text>
+    <rect x="815" y="240" width="70" height="44" class="biz"/><text x="850" y="267">搜索</text>
+    <rect x="895" y="240" width="70" height="44" class="biz"/><text x="930" y="267">履约</text>
+    <rect x="815" y="300" width="70" height="44" class="biz"/><text x="850" y="327">评价</text>
+    <rect x="895" y="300" width="70" height="44" class="biz"/><text x="930" y="327">售后</text>
+    <rect x="815" y="360" width="70" height="44" class="biz"/><text x="850" y="387">商家</text>
+    <rect x="895" y="360" width="70" height="44" class="biz"/><text x="930" y="387">秒杀</text>
+  </g>
+
+  <rect x="1030" y="115" width="210" height="250" class="platform"/>
+  <text x="1072" y="150" class="layer">平台能力层</text>
+  <text x="1060" y="190" class="text">身份 / 风控 / 开放平台</text>
+  <text x="1060" y="225" class="text">运营 / 流量 / 发布</text>
+  <text x="1060" y="260" class="text">可靠性 / 平台运维</text>
+
+  <rect x="1030" y="390" width="210" height="235" class="data"/>
+  <text x="1060" y="425" class="layer">数据和中间件</text>
+  <text x="1060" y="465" class="text">MySQL / Redis</text>
+  <text x="1060" y="500" class="text">Kafka / OpenSearch</text>
+  <text x="1060" y="535" class="text">对象存储 / 数仓</text>
+
+  <rect x="260" y="655" width="980" height="70" class="ops"/>
+  <text x="292" y="697" class="layer">运维观测层：Kubernetes / Prometheus / Grafana / OpenTelemetry / 日志 / 告警</text>
+
+  <path d="M180 207 H290" class="line"/>
+  <path d="M180 282 H290" class="line"/>
+  <path d="M180 357 H290" class="line"/>
+  <path d="M400 362 H510" class="line"/>
+  <path d="M706 340 H815" class="line"/>
+  <path d="M965 330 H1030" class="line"/>
+  <path d="M706 408 C770 500 930 500 1030 500" class="line"/>
+  <path d="M750 625 V655" class="line"/>
+</svg>

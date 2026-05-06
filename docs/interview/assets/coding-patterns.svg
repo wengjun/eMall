@@ -1,0 +1,45 @@
+﻿<svg xmlns="http://www.w3.org/2000/svg" width="1080" height="540" viewBox="0 0 1080 540">
+    <defs>
+        <style>
+            .bg { fill: #f8fbfb; }
+            .box { fill: #ffffff; stroke: #1f2d3d; stroke-width: 2; rx: 14; }
+            .model { fill: #eef5ff; stroke: #285f9f; stroke-width: 2; rx: 14; }
+            .algo { fill: #fff4e8; stroke: #a35f00; stroke-width: 2; rx: 14; }
+            .test { fill: #eef9f0; stroke: #2f7d3b; stroke-width: 2; rx: 14; }
+            .text { fill: #17202a; font-family: "Noto Sans SC", sans-serif; font-size: 18px; }
+            .small { fill: #34495e; font-family: "Noto Sans SC", sans-serif; font-size: 14px; }
+            .arrow { stroke: #17202a; stroke-width: 2.4; fill: none; marker-end: url(#arrow); }
+        </style>
+        <marker id="arrow" markerWidth="12" markerHeight="12" refX="9" refY="3" orient="auto">
+            <path d="M0,0 L0,6 L9,3 z" fill="#17202a"/>
+        </marker>
+    </defs>
+    <rect class="bg" width="1080" height="540"/>
+    <text x="42" y="46" class="text" style="font-size:24px;font-weight:700">
+        现场编码题的工程化解法
+    </text>
+
+    <rect x="85" y="120" width="210" height="120" class="model"/>
+    <text x="145" y="155" class="text">建模</text>
+    <text x="117" y="183" class="small">输入 / 输出 / 状态</text>
+    <text x="117" y="205" class="small">边界 / 异常 / 并发</text>
+
+    <rect x="435" y="120" width="210" height="120" class="algo"/>
+    <text x="495" y="155" class="text">实现</text>
+    <text x="467" y="183" class="small">清晰算法 / 数据结构</text>
+    <text x="467" y="205" class="small">复杂度 / 可读性</text>
+
+    <rect x="785" y="120" width="210" height="120" class="test"/>
+    <text x="845" y="155" class="text">验证</text>
+    <text x="817" y="183" class="small">单元测试 / 边界用例</text>
+    <text x="817" y="205" class="small">性能 / 线程安全</text>
+
+    <rect x="195" y="345" width="690" height="82" class="box"/>
+    <text x="245" y="380" class="text">面试原则</text>
+    <text x="245" y="408" class="small">
+        先讲约束和边界，再写可测试代码，最后说明复杂度和生产化改造。
+    </text>
+
+    <path d="M295 180 H435" class="arrow"/>
+    <path d="M645 180 H785" class="arrow"/>
+</svg>
