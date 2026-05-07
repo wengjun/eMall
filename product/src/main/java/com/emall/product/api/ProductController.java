@@ -35,8 +35,8 @@ public class ProductController {
     @PostMapping
     @ResponseStatus(HttpStatus.CREATED)
     public ApiResponse<Product> create(@Valid @RequestBody CreateProductRequest request) {
-        return ApiResponse.ok(productService.create(
-                request.spuId(), request.title(), request.category(), request.price()));
+        return ApiResponse
+                .ok(productService.create(request.spuId(), request.title(), request.category(), request.price()));
     }
 
     @GetMapping("/{skuId}")
@@ -46,7 +46,7 @@ public class ProductController {
 
     @GetMapping
     public ApiResponse<List<Product>> search(@RequestParam(defaultValue = "") String keyword,
-                                             @RequestParam(defaultValue = "20") int limit) {
+            @RequestParam(defaultValue = "20") int limit) {
         return ApiResponse.ok(productService.search(keyword, limit));
     }
 
@@ -57,7 +57,7 @@ public class ProductController {
 
     @PatchMapping("/{skuId}/status")
     public ApiResponse<Product> changeStatus(@PathVariable long skuId,
-                                             @Valid @RequestBody ChangeStatusRequest request) {
+            @Valid @RequestBody ChangeStatusRequest request) {
         return ApiResponse.ok(productService.changeStatus(skuId, request.status()));
     }
 
@@ -66,12 +66,8 @@ public class ProductController {
         return ApiResponse.ok(productService.rename(skuId, request.title()));
     }
 
-    public record CreateProductRequest(
-            @Positive long spuId,
-            @NotBlank @Size(max = 120) String title,
-            @NotBlank @Size(max = 60) String category,
-            @NotNull @DecimalMin("0.01") BigDecimal price
-    ) {
+    public record CreateProductRequest(@Positive long spuId, @NotBlank @Size(max = 120) String title,
+            @NotBlank @Size(max = 60) String category, @NotNull @DecimalMin("0.01") BigDecimal price) {
     }
 
     public record ChangePriceRequest(@NotNull @DecimalMin("0.01") BigDecimal price) {

@@ -33,8 +33,7 @@ public class JdbcDistributedTaskLock implements DistributedTaskLock {
                     update scheduled_task_lock
                     set owner_id = ?, locked_until = ?, updated_at = ?
                     where lock_name = ? and locked_until <= ?
-                    """, ownerId, Timestamp.from(lockedUntil), Timestamp.from(now),
-                    lockName, Timestamp.from(now)) == 1;
+                    """, ownerId, Timestamp.from(lockedUntil), Timestamp.from(now), lockName, Timestamp.from(now)) == 1;
         }
     }
 

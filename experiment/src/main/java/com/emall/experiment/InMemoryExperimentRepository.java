@@ -28,11 +28,9 @@ class InMemoryExperimentRepository implements ExperimentRepository {
 
     @Override
     public List<ExperimentDefinition> findActiveByScene(String scene) {
-        return experiments.values().stream()
-                .filter(experiment -> experiment.scene().equals(scene))
+        return experiments.values().stream().filter(experiment -> experiment.scene().equals(scene))
                 .filter(experiment -> experiment.status() == ExperimentStatus.ACTIVE)
-                .sorted(Comparator.comparing(ExperimentDefinition::updatedAt).reversed())
-                .toList();
+                .sorted(Comparator.comparing(ExperimentDefinition::updatedAt).reversed()).toList();
     }
 
     @Override

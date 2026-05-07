@@ -19,12 +19,8 @@ public abstract class OutboxPublisherSupport {
     private final String topic;
     private final DistributedTaskLock taskLock;
 
-    protected OutboxPublisherSupport(OutboxRepository outboxRepository,
-                                     KafkaTemplate<String, String> kafkaTemplate,
-                                     ObjectMapper objectMapper,
-                                     String serviceName,
-                                     String topic,
-                                     DistributedTaskLock taskLock) {
+    protected OutboxPublisherSupport(OutboxRepository outboxRepository, KafkaTemplate<String, String> kafkaTemplate,
+            ObjectMapper objectMapper, String serviceName, String topic, DistributedTaskLock taskLock) {
         this.log = LoggerFactory.getLogger(getClass());
         this.outboxRepository = outboxRepository;
         this.kafkaTemplate = kafkaTemplate;
@@ -39,8 +35,8 @@ public abstract class OutboxPublisherSupport {
     }
 
     public int publishBatch(int limit) {
-        return taskLock.executeIfAcquired(serviceName + ".outbox.publish",
-                Duration.ofSeconds(30), () -> publishBatchUnlocked(limit));
+        return taskLock.executeIfAcquired(serviceName + ".outbox.publish", Duration.ofSeconds(30),
+                () -> publishBatchUnlocked(limit));
     }
 
     private int publishBatchUnlocked(int limit) {
@@ -48,13 +44,12 @@ public abstract class OutboxPublisherSupport {
         for (OutboxEvent event : outboxRepository.findPublishable(Instant.now(), limit)) {
             try {
                 kafkaTemplate.send(topic, event.aggregateId(), serialize(event)).get();
-                log.info("publish {} outbox event type={} aggregateType={} aggregateId={}",
-                        serviceName, event.eventType(), event.aggregateType(), event.aggregateId());
+                log.info("publish {} outbox event type={} aggregateType={} aggregateId={}", serviceName,
+                        event.eventType(), event.aggregateType(), event.aggregateId());
                 outboxRepository.save(event.published());
                 published++;
             } catch (Exception ex) {
-                Instant nextRetryAt = Instant.now()
-                        .plus(Duration.ofSeconds(Math.min(60, event.retryCount() + 1L)));
+                Instant nextRetryAt = Instant.now().plus(Duration.ofSeconds(Math.min(60, event.retryCount() + 1L)));
                 outboxRepository.save(event.failed(nextRetryAt));
             }
         }

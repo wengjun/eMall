@@ -35,8 +35,8 @@ public class MerchantService {
     @Transactional
     public Merchant registerMerchant(String name, String contactEmail) {
         Instant now = Instant.now();
-        return merchantRepository.saveMerchant(new Merchant(idGenerator.nextId(), name, contactEmail,
-                MerchantStatus.PENDING_REVIEW, now, now));
+        return merchantRepository.saveMerchant(
+                new Merchant(idGenerator.nextId(), name, contactEmail, MerchantStatus.PENDING_REVIEW, now, now));
     }
 
     public Merchant getMerchant(long merchantId) {
@@ -60,8 +60,8 @@ public class MerchantService {
             throw new BusinessException(ErrorCode.CONFLICT, "merchant must be active before creating stores");
         }
         Instant now = Instant.now();
-        return merchantRepository.saveStore(new Store(idGenerator.nextId(), merchantId, name, description,
-                StoreStatus.DRAFT, now, now));
+        return merchantRepository
+                .saveStore(new Store(idGenerator.nextId(), merchantId, name, description, StoreStatus.DRAFT, now, now));
     }
 
     public List<Store> findStores(long merchantId) {
@@ -88,8 +88,8 @@ public class MerchantService {
     }
 
     @Transactional
-    public Settlement createSettlement(long merchantId, BigDecimal grossAmount,
-                                       Instant periodStart, Instant periodEnd) {
+    public Settlement createSettlement(long merchantId, BigDecimal grossAmount, Instant periodStart,
+            Instant periodEnd) {
         Merchant merchant = getMerchant(merchantId);
         if (merchant.status() == MerchantStatus.CLOSED) {
             throw new BusinessException(ErrorCode.CONFLICT, "closed merchant cannot be settled");
@@ -100,15 +100,14 @@ public class MerchantService {
         if (!periodStart.isBefore(periodEnd)) {
             throw new BusinessException(ErrorCode.BAD_REQUEST, "settlement period is invalid");
         }
-        BigDecimal rate = merchantRepository.findActiveCommissionRule(merchantId)
-                .map(CommissionRule::rate)
+        BigDecimal rate = merchantRepository.findActiveCommissionRule(merchantId).map(CommissionRule::rate)
                 .orElse(DEFAULT_COMMISSION_RATE);
         BigDecimal commission = grossAmount.multiply(rate).setScale(2, RoundingMode.HALF_UP);
         BigDecimal netAmount = grossAmount.subtract(commission).setScale(2, RoundingMode.HALF_UP);
         Instant now = Instant.now();
-        return merchantRepository.saveSettlement(new Settlement(idGenerator.nextId(), merchantId,
-                grossAmount.setScale(2, RoundingMode.HALF_UP), commission, netAmount, SettlementStatus.CREATED,
-                periodStart, periodEnd, now, now));
+        return merchantRepository.saveSettlement(
+                new Settlement(idGenerator.nextId(), merchantId, grossAmount.setScale(2, RoundingMode.HALF_UP),
+                        commission, netAmount, SettlementStatus.CREATED, periodStart, periodEnd, now, now));
     }
 
     public List<Settlement> findSettlements(long merchantId) {

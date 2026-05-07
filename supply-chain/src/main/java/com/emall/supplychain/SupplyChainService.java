@@ -20,8 +20,7 @@ class SupplyChainService {
     }
 
     @Transactional
-    WarehouseReceipt receiveStock(long skuId, String warehouseCode, String batchNo, int quantity,
-                                  LocalDate expiresOn) {
+    WarehouseReceipt receiveStock(long skuId, String warehouseCode, String batchNo, int quantity, LocalDate expiresOn) {
         requirePositive(quantity, "receipt quantity must be positive");
         Instant now = Instant.now();
         WarehouseReceipt receipt = new WarehouseReceipt(idGenerator.nextId(), skuId, normalize(warehouseCode),
@@ -80,8 +79,7 @@ class SupplyChainService {
         int transfers = repository.findTransfers(normalize(warehouseCode)).size();
         int waybills = repository.findWaybills().size();
         int exceptions = (int) repository.findWaybills().stream()
-                .filter(waybill -> waybill.status() == WaybillStatus.EXCEPTION)
-                .count();
+                .filter(waybill -> waybill.status() == WaybillStatus.EXCEPTION).count();
         return new SupplyChainSummary(receipts, transfers, waybills, exceptions);
     }
 

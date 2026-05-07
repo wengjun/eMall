@@ -24,11 +24,8 @@ public class PricingClient {
     @Bulkhead(name = "pricingService")
     @CircuitBreaker(name = "pricingService", fallbackMethod = "fallbackQuote")
     public PriceQuote quote(long skuId, int quantity) {
-        PriceQuoteResponse response = pricingRestClient.post()
-                .uri("/api/prices/quotes")
-                .body(new QuoteRequest(skuId, quantity))
-                .retrieve()
-                .body(PriceQuoteResponse.class);
+        PriceQuoteResponse response = pricingRestClient.post().uri("/api/prices/quotes")
+                .body(new QuoteRequest(skuId, quantity)).retrieve().body(PriceQuoteResponse.class);
         PriceQuote result = response == null ? null : response.data();
         if (result == null) {
             throw new BusinessException(ErrorCode.CONFLICT, "price quote returned empty response");
@@ -43,23 +40,10 @@ public class PricingClient {
     public record QuoteRequest(long skuId, int quantity) {
     }
 
-    public record PriceQuote(
-            long skuId,
-            BigDecimal unitPrice,
-            int quantity,
-            BigDecimal subtotal,
-            String currency,
-            long priceVersion,
-            Instant quotedAt
-    ) {
+    public record PriceQuote(long skuId, BigDecimal unitPrice, int quantity, BigDecimal subtotal, String currency,
+            long priceVersion, Instant quotedAt) {
     }
 
-    public record PriceQuoteResponse(
-            boolean success,
-            String code,
-            String message,
-            PriceQuote data,
-            Instant timestamp
-    ) {
+    public record PriceQuoteResponse(boolean success, String code, String message, PriceQuote data, Instant timestamp) {
     }
 }

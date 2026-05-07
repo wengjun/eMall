@@ -52,14 +52,14 @@ public class MerchantController {
 
     @PatchMapping("/{merchantId}/status")
     public ApiResponse<Merchant> changeMerchantStatus(@PathVariable long merchantId,
-                                                      @Valid @RequestBody ChangeMerchantStatusRequest request) {
+            @Valid @RequestBody ChangeMerchantStatusRequest request) {
         return ApiResponse.ok(merchantService.changeMerchantStatus(merchantId, request.status()));
     }
 
     @PostMapping("/{merchantId}/stores")
     @ResponseStatus(HttpStatus.CREATED)
     public ApiResponse<Store> createStore(@PathVariable long merchantId,
-                                          @Valid @RequestBody CreateStoreRequest request) {
+            @Valid @RequestBody CreateStoreRequest request) {
         return ApiResponse.ok(merchantService.createStore(merchantId, request.name(), request.description()));
     }
 
@@ -70,25 +70,24 @@ public class MerchantController {
 
     @PatchMapping("/stores/{storeId}/status")
     public ApiResponse<Store> changeStoreStatus(@PathVariable long storeId,
-                                                @Valid @RequestBody ChangeStoreStatusRequest request) {
+            @Valid @RequestBody ChangeStoreStatusRequest request) {
         return ApiResponse.ok(merchantService.changeStoreStatus(storeId, request.status()));
     }
 
     @PostMapping("/{merchantId}/commission-rules")
     @ResponseStatus(HttpStatus.CREATED)
-    public ApiResponse<CommissionRule> createCommissionRule(
-            @PathVariable long merchantId,
+    public ApiResponse<CommissionRule> createCommissionRule(@PathVariable long merchantId,
             @Valid @RequestBody CreateCommissionRuleRequest request) {
-        return ApiResponse.ok(merchantService.createCommissionRule(
-                merchantId, request.rate(), request.effectiveFrom()));
+        return ApiResponse
+                .ok(merchantService.createCommissionRule(merchantId, request.rate(), request.effectiveFrom()));
     }
 
     @PostMapping("/{merchantId}/settlements")
     @ResponseStatus(HttpStatus.CREATED)
     public ApiResponse<Settlement> createSettlement(@PathVariable long merchantId,
-                                                    @Valid @RequestBody CreateSettlementRequest request) {
-        return ApiResponse.ok(merchantService.createSettlement(
-                merchantId, request.grossAmount(), request.periodStart(), request.periodEnd()));
+            @Valid @RequestBody CreateSettlementRequest request) {
+        return ApiResponse.ok(merchantService.createSettlement(merchantId, request.grossAmount(), request.periodStart(),
+                request.periodEnd()));
     }
 
     @GetMapping("/{merchantId}/settlements")
@@ -104,7 +103,7 @@ public class MerchantController {
     @PostMapping("/settlements/{settlementId}/invoices")
     @ResponseStatus(HttpStatus.CREATED)
     public ApiResponse<Invoice> issueInvoice(@PathVariable long settlementId,
-                                             @Valid @RequestBody IssueInvoiceRequest request) {
+            @Valid @RequestBody IssueInvoiceRequest request) {
         return ApiResponse.ok(merchantService.issueInvoice(settlementId, request.invoiceTitle()));
     }
 
@@ -113,35 +112,26 @@ public class MerchantController {
         return ApiResponse.ok(merchantService.findInvoices(merchantId));
     }
 
-    public record RegisterMerchantRequest(
-            @NotBlank @Size(max = 80) String name,
-            @NotBlank @Email @Size(max = 180) String contactEmail
-    ) {
+    public record RegisterMerchantRequest(@NotBlank @Size(max = 80) String name,
+            @NotBlank @Email @Size(max = 180) String contactEmail) {
     }
 
     public record ChangeMerchantStatusRequest(@NotNull MerchantStatus status) {
     }
 
-    public record CreateStoreRequest(
-            @NotBlank @Size(max = 80) String name,
-            @NotBlank @Size(max = 300) String description
-    ) {
+    public record CreateStoreRequest(@NotBlank @Size(max = 80) String name,
+            @NotBlank @Size(max = 300) String description) {
     }
 
     public record ChangeStoreStatusRequest(@NotNull StoreStatus status) {
     }
 
-    public record CreateCommissionRuleRequest(
-            @NotNull @DecimalMin("0.000000") @DecimalMax("1.000000") BigDecimal rate,
-            @NotNull Instant effectiveFrom
-    ) {
+    public record CreateCommissionRuleRequest(@NotNull @DecimalMin("0.000000") @DecimalMax("1.000000") BigDecimal rate,
+            @NotNull Instant effectiveFrom) {
     }
 
-    public record CreateSettlementRequest(
-            @NotNull @DecimalMin("0.01") BigDecimal grossAmount,
-            @NotNull Instant periodStart,
-            @NotNull Instant periodEnd
-    ) {
+    public record CreateSettlementRequest(@NotNull @DecimalMin("0.01") BigDecimal grossAmount,
+            @NotNull Instant periodStart, @NotNull Instant periodEnd) {
     }
 
     public record IssueInvoiceRequest(@NotBlank @Size(max = 120) String invoiceTitle) {

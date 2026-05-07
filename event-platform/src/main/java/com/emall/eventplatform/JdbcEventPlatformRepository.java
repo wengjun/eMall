@@ -91,8 +91,8 @@ class JdbcEventPlatformRepository implements EventPlatformRepository {
                 INSERT INTO metric_materialization
                     (materialization_id, metric_name, window_key, event_count, late_event_count, materialized_at)
                 VALUES (?, ?, ?, ?, ?, ?)
-                """, materialization.materializationId(), materialization.metricName(),
-                materialization.windowKey(), materialization.eventCount(), materialization.lateEventCount(),
+                """, materialization.materializationId(), materialization.metricName(), materialization.windowKey(),
+                materialization.eventCount(), materialization.lateEventCount(),
                 Timestamp.from(materialization.materializedAt()));
         return materialization;
     }

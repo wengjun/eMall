@@ -47,7 +47,7 @@ public class CostController {
 
     @GetMapping("/services/{serviceName}/signals")
     public ApiResponse<List<CostSignal>> findSignals(@PathVariable String serviceName,
-                                                     @RequestParam(defaultValue = "50") int limit) {
+            @RequestParam(defaultValue = "50") int limit) {
         return ApiResponse.ok(costGovernanceService.findSignals(serviceName, limit));
     }
 
@@ -63,8 +63,7 @@ public class CostController {
     }
 
     @PatchMapping("/actions/{actionId}/status")
-    public ApiResponse<CostOptimizationAction> changeActionStatus(
-            @PathVariable long actionId,
+    public ApiResponse<CostOptimizationAction> changeActionStatus(@PathVariable long actionId,
             @Valid @RequestBody ChangeActionStatusRequest request) {
         return ApiResponse.ok(costGovernanceService.changeActionStatus(actionId, request.status()));
     }
@@ -74,28 +73,16 @@ public class CostController {
         return ApiResponse.ok(costGovernanceService.summary(serviceName));
     }
 
-    public record RecordSignalRequest(
-            @NotBlank String serviceName,
-            @NotNull CostSignalType signalType,
-            @NotNull
-            @DecimalMin("0.000000") BigDecimal metricValue,
-            @NotNull
-            @DecimalMin("0.000000") BigDecimal thresholdValue,
-            @NotNull
-            @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) Instant observedAt
-    ) {
+    public record RecordSignalRequest(@NotBlank String serviceName, @NotNull CostSignalType signalType,
+            @NotNull @DecimalMin("0.000000") BigDecimal metricValue,
+            @NotNull @DecimalMin("0.000000") BigDecimal thresholdValue,
+            @NotNull @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) Instant observedAt) {
     }
 
-    public record UpsertBudgetRequest(
-            @NotBlank String serviceName,
-            @NotNull
-            @DecimalMin("0.000000") BigDecimal monthlyBudget,
-            @NotNull
-            @DecimalMin("0.000000") BigDecimal currentSpend,
-            @NotBlank String currency,
-            @Min(1) @Max(100) int alertThresholdPercent,
-            boolean active
-    ) {
+    public record UpsertBudgetRequest(@NotBlank String serviceName,
+            @NotNull @DecimalMin("0.000000") BigDecimal monthlyBudget,
+            @NotNull @DecimalMin("0.000000") BigDecimal currentSpend, @NotBlank String currency,
+            @Min(1) @Max(100) int alertThresholdPercent, boolean active) {
     }
 
     public record ChangeActionStatusRequest(@NotNull CostActionStatus status) {

@@ -23,11 +23,11 @@ public class AfterSalesService {
     }
 
     @Transactional
-    public AfterSalesRequest create(long orderId, long userId, long skuId, int quantity,
-                                    BigDecimal refundAmount, AfterSalesType type, String reason) {
+    public AfterSalesRequest create(long orderId, long userId, long skuId, int quantity, BigDecimal refundAmount,
+            AfterSalesType type, String reason) {
         Instant now = Instant.now();
-        return afterSalesRepository.save(new AfterSalesRequest(idGenerator.nextId(), orderId, userId, skuId,
-                quantity, refundAmount, type, AfterSalesStatus.REQUESTED, reason, now, now));
+        return afterSalesRepository.save(new AfterSalesRequest(idGenerator.nextId(), orderId, userId, skuId, quantity,
+                refundAmount, type, AfterSalesStatus.REQUESTED, reason, now, now));
     }
 
     public AfterSalesRequest get(long requestId) {

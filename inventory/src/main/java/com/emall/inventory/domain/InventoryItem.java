@@ -2,13 +2,7 @@ package com.emall.inventory.domain;
 
 import java.time.Instant;
 
-public record InventoryItem(
-        long skuId,
-        int total,
-        int reserved,
-        int sold,
-        Instant updatedAt
-) {
+public record InventoryItem(long skuId, int total, int reserved, int sold, Instant updatedAt) {
     public int available() {
         return total - reserved - sold;
     }

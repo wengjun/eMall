@@ -40,28 +40,27 @@ class IdentityController {
 
     @PostMapping("/accounts/{accountId}/permissions")
     ApiResponse<PermissionGrant> grantPermission(@PathVariable long accountId,
-                                                 @Valid @RequestBody GrantPermissionRequest request) {
+            @Valid @RequestBody GrantPermissionRequest request) {
         return ApiResponse.ok(identityService.grantPermission(accountId, request.scope(), request.resource()));
     }
 
     @GetMapping("/access")
     ApiResponse<AccessDecision> checkAccess(@RequestParam long accountId, @RequestParam String scope,
-                                            @RequestParam String resource) {
+            @RequestParam String resource) {
         return ApiResponse.ok(identityService.checkAccess(accountId, scope, resource));
     }
 
     @PostMapping("/service-clients")
     ApiResponse<ServiceClient> registerServiceClient(@Valid @RequestBody RegisterServiceClientRequest request) {
-        return ApiResponse.ok(identityService.registerServiceClient(request.clientKey(), request.clientSecret(),
-                request.scopes()));
+        return ApiResponse.ok(
+                identityService.registerServiceClient(request.clientKey(), request.clientSecret(), request.scopes()));
     }
 
     @PostMapping("/merchants/{merchantId}/sub-accounts")
-    ApiResponse<MerchantSubAccount> createMerchantSubAccount(
-            @PathVariable long merchantId,
+    ApiResponse<MerchantSubAccount> createMerchantSubAccount(@PathVariable long merchantId,
             @Valid @RequestBody CreateMerchantSubAccountRequest request) {
-        return ApiResponse.ok(identityService.createMerchantSubAccount(merchantId, request.accountId(),
-                request.roleCode()));
+        return ApiResponse
+                .ok(identityService.createMerchantSubAccount(merchantId, request.accountId(), request.roleCode()));
     }
 
     record CreateAccountRequest(@NotNull IdentityType type, @NotBlank String subject, @NotBlank String displayName) {
@@ -73,11 +72,8 @@ class IdentityController {
     record GrantPermissionRequest(@NotBlank String scope, @NotBlank String resource) {
     }
 
-    record RegisterServiceClientRequest(
-            @NotBlank String clientKey,
-            @NotBlank String clientSecret,
-            @NotBlank String scopes
-    ) {
+    record RegisterServiceClientRequest(@NotBlank String clientKey, @NotBlank String clientSecret,
+            @NotBlank String scopes) {
     }
 
     record CreateMerchantSubAccountRequest(@Positive long accountId, @NotBlank String roleCode) {

@@ -31,20 +31,19 @@ class PlatformOpsController {
 
     @PatchMapping("/backups/{planId}/status")
     ApiResponse<BackupPlan> changeBackupStatus(@PathVariable long planId,
-                                               @Valid @RequestBody ChangeStatusRequest request) {
+            @Valid @RequestBody ChangeStatusRequest request) {
         return ApiResponse.ok(platformOpsService.changeBackupStatus(planId, request.status()));
     }
 
     @PostMapping("/database-operations")
-    ApiResponse<DatabaseOperation> createDatabaseOperation(
-            @Valid @RequestBody CreateDatabaseOperationRequest request) {
+    ApiResponse<DatabaseOperation> createDatabaseOperation(@Valid @RequestBody CreateDatabaseOperationRequest request) {
         return ApiResponse.ok(platformOpsService.createDatabaseOperation(request.databaseName(),
                 request.operationType(), request.riskLevel(), request.detail()));
     }
 
     @PatchMapping("/database-operations/{operationId}/status")
     ApiResponse<DatabaseOperation> changeDatabaseOperationStatus(@PathVariable long operationId,
-                                                                 @Valid @RequestBody ChangeStatusRequest request) {
+            @Valid @RequestBody ChangeStatusRequest request) {
         return ApiResponse.ok(platformOpsService.changeDatabaseOperationStatus(operationId, request.status()));
     }
 
@@ -60,15 +59,14 @@ class PlatformOpsController {
     }
 
     @PostMapping("/security-operations")
-    ApiResponse<SecurityOperation> createSecurityOperation(
-            @Valid @RequestBody CreateSecurityOperationRequest request) {
+    ApiResponse<SecurityOperation> createSecurityOperation(@Valid @RequestBody CreateSecurityOperationRequest request) {
         return ApiResponse.ok(platformOpsService.createSecurityOperation(request.serviceName(), request.signalType(),
                 request.riskLevel()));
     }
 
     @PatchMapping("/security-operations/{operationId}/status")
     ApiResponse<SecurityOperation> changeSecurityStatus(@PathVariable long operationId,
-                                                        @Valid @RequestBody ChangeStatusRequest request) {
+            @Valid @RequestBody ChangeStatusRequest request) {
         return ApiResponse.ok(platformOpsService.changeSecurityStatus(operationId, request.status()));
     }
 
@@ -78,21 +76,21 @@ class PlatformOpsController {
     }
 
     record CreateBackupPlanRequest(@NotBlank String databaseName, @NotBlank String backupType,
-                                   @Positive int retentionDays) {
+            @Positive int retentionDays) {
     }
 
     record ChangeStatusRequest(OpsStatus status) {
     }
 
     record CreateDatabaseOperationRequest(@NotBlank String databaseName, @NotBlank String operationType,
-                                          RiskLevel riskLevel, @NotBlank String detail) {
+            RiskLevel riskLevel, @NotBlank String detail) {
     }
 
     record CreateFinOpsActionRequest(@NotBlank String serviceName, @NotBlank String actionType,
-                                     @PositiveOrZero BigDecimal estimatedSaving) {
+            @PositiveOrZero BigDecimal estimatedSaving) {
     }
 
     record CreateSecurityOperationRequest(@NotBlank String serviceName, @NotBlank String signalType,
-                                          RiskLevel riskLevel) {
+            RiskLevel riskLevel) {
     }
 }

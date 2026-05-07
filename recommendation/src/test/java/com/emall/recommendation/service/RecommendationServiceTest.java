@@ -30,8 +30,7 @@ class RecommendationServiceTest {
         assertThat(balanced.get(0).experimentBucket()).isEqualTo("control");
         assertThat(balanced.get(0).strategyCode()).isEqualTo("balanced");
 
-        Experiment experiment = service.createExperiment("home", "popularity ranking", 100,
-                "balanced", "popularity");
+        Experiment experiment = service.createExperiment("home", "popularity ranking", 100, "balanced", "popularity");
         service.changeExperimentStatus(experiment.experimentId(), ExperimentStatus.ACTIVE);
 
         List<RecommendationItem> treatment = service.recommend(2001L, "home", 2);

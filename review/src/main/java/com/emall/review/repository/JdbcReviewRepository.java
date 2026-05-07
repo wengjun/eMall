@@ -28,8 +28,7 @@ public class JdbcReviewRepository implements ReviewRepository {
                 VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
                 ON DUPLICATE KEY UPDATE content = VALUES(content), status = VALUES(status),
                     updated_at = VALUES(updated_at)
-                """,
-                review.reviewId(), review.orderId(), review.skuId(), review.userId(), review.rating(),
+                """, review.reviewId(), review.orderId(), review.skuId(), review.userId(), review.rating(),
                 review.content(), review.status().name(), Timestamp.from(review.createdAt()),
                 Timestamp.from(review.updatedAt()));
         return review;
@@ -37,8 +36,7 @@ public class JdbcReviewRepository implements ReviewRepository {
 
     @Override
     public Optional<ProductReview> findById(long reviewId) {
-        return jdbcTemplate.query("SELECT * FROM product_review WHERE review_id = ?", this::map, reviewId)
-                .stream()
+        return jdbcTemplate.query("SELECT * FROM product_review WHERE review_id = ?", this::map, reviewId).stream()
                 .findFirst();
     }
 
@@ -53,15 +51,9 @@ public class JdbcReviewRepository implements ReviewRepository {
     }
 
     private ProductReview map(ResultSet rs, int rowNum) throws SQLException {
-        return new ProductReview(
-                rs.getLong("review_id"),
-                rs.getLong("order_id"),
-                rs.getLong("sku_id"),
-                rs.getLong("user_id"),
-                rs.getInt("rating"),
-                rs.getString("content"),
-                ReviewStatus.valueOf(rs.getString("status")),
-                rs.getTimestamp("created_at").toInstant(),
+        return new ProductReview(rs.getLong("review_id"), rs.getLong("order_id"), rs.getLong("sku_id"),
+                rs.getLong("user_id"), rs.getInt("rating"), rs.getString("content"),
+                ReviewStatus.valueOf(rs.getString("status")), rs.getTimestamp("created_at").toInstant(),
                 rs.getTimestamp("updated_at").toInstant());
     }
 }

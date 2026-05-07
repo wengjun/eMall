@@ -8,16 +8,16 @@ import org.junit.jupiter.api.Test;
 
 class CustomerServiceServiceTest {
     private final InMemoryCustomerServiceRepository repository = new InMemoryCustomerServiceRepository();
-    private final CustomerServiceService service = new CustomerServiceService(repository,
-            new SnowflakeIdGenerator(43L));
+    private final CustomerServiceService service =
+            new CustomerServiceService(repository, new SnowflakeIdGenerator(43L));
 
     @Test
     void handlesTicketArbitrationCompensationAndReview() {
         ServiceTicket ticket = service.createTicket(1001L, 9001L, "refund", "high");
         ServiceTicket routed = service.routeTicket(ticket.ticketId(), "agent-a");
         ArbitrationCase arbitration = service.openArbitration(ticket.ticketId(), 2001L, "refund dispute");
-        CompensationRecord compensation = service.grantCompensation(ticket.ticketId(), 1001L,
-                new BigDecimal("10.00"), "service recovery");
+        CompensationRecord compensation =
+                service.grantCompensation(ticket.ticketId(), 1001L, new BigDecimal("10.00"), "service recovery");
         service.publishArticle("refund", "Refund policy", "Policy content");
         ServiceQualityReview review = service.reviewService(ticket.ticketId(), 5, "resolved quickly");
 

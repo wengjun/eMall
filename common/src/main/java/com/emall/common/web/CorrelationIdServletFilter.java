@@ -10,11 +10,8 @@ import org.springframework.web.filter.OncePerRequestFilter;
 
 public class CorrelationIdServletFilter extends OncePerRequestFilter {
     @Override
-    protected void doFilterInternal(
-            HttpServletRequest request,
-            HttpServletResponse response,
-            FilterChain filterChain
-    ) throws ServletException, IOException {
+    protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response, FilterChain filterChain)
+            throws ServletException, IOException {
         String previousTraceId = MDC.get(TraceHeaders.TRACE_ID_MDC_KEY);
         String traceId = TraceHeaders.normalizeOrCreate(request.getHeader(TraceHeaders.TRACE_ID_HEADER));
         MDC.put(TraceHeaders.TRACE_ID_MDC_KEY, traceId);

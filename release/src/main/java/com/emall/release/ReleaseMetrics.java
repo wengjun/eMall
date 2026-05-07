@@ -12,10 +12,10 @@ class ReleaseMetrics {
         return registry -> {
             Gauge.builder("emall_release_running_rollouts", releaseService,
                     service -> service.summary().runningRollouts()).register(registry);
-            Gauge.builder("emall_release_enabled_flags", releaseService,
-                    service -> service.summary().enabledFlags()).register(registry);
-            Gauge.builder("emall_release_open_replays", releaseService,
-                    service -> service.summary().openReplays()).register(registry);
+            Gauge.builder("emall_release_enabled_flags", releaseService, service -> service.summary().enabledFlags())
+                    .register(registry);
+            Gauge.builder("emall_release_open_replays", releaseService, service -> service.summary().openReplays())
+                    .register(registry);
         };
     }
 }

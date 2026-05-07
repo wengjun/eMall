@@ -28,20 +28,20 @@ class CatalogController {
 
     @PostMapping("/categories")
     ApiResponse<CategoryNode> createCategory(@Valid @RequestBody CreateCategoryRequest request) {
-        return ApiResponse.ok(catalogService.createCategory(request.parentId(), request.categoryCode(),
-                request.name(), request.leaf()));
+        return ApiResponse.ok(catalogService.createCategory(request.parentId(), request.categoryCode(), request.name(),
+                request.leaf()));
     }
 
     @PostMapping("/categories/{categoryId}/templates")
     ApiResponse<AttributeTemplate> upsertTemplate(@PathVariable long categoryId,
-                                                  @Valid @RequestBody UpsertTemplateRequest request) {
-        return ApiResponse.ok(catalogService.upsertTemplate(categoryId, request.requiredAttributes(),
-                request.optionalAttributes()));
+            @Valid @RequestBody UpsertTemplateRequest request) {
+        return ApiResponse.ok(
+                catalogService.upsertTemplate(categoryId, request.requiredAttributes(), request.optionalAttributes()));
     }
 
     @PostMapping("/merchants/{merchantId}/brand-authorizations")
     ApiResponse<BrandAuthorization> authorizeBrand(@PathVariable long merchantId,
-                                                   @Valid @RequestBody AuthorizeBrandRequest request) {
+            @Valid @RequestBody AuthorizeBrandRequest request) {
         return ApiResponse.ok(catalogService.authorizeBrand(merchantId, request.brandCode()));
     }
 
@@ -53,15 +53,15 @@ class CatalogController {
 
     @PostMapping("/spus/{spuId}/skus")
     ApiResponse<Sku> createSku(@PathVariable long spuId, @Valid @RequestBody CreateSkuRequest request) {
-        return ApiResponse.ok(catalogService.createSku(spuId, request.skuCode(), request.price(),
-                request.attributes()));
+        return ApiResponse
+                .ok(catalogService.createSku(spuId, request.skuCode(), request.price(), request.attributes()));
     }
 
     @PatchMapping("/spus/{spuId}/review")
     ApiResponse<ListingReview> reviewListing(@PathVariable long spuId,
-                                             @Valid @RequestBody ReviewListingRequest request) {
-        return ApiResponse.ok(catalogService.reviewListing(spuId, request.approved(), request.qualityScore(),
-                request.reason()));
+            @Valid @RequestBody ReviewListingRequest request) {
+        return ApiResponse
+                .ok(catalogService.reviewListing(spuId, request.approved(), request.qualityScore(), request.reason()));
     }
 
     @PatchMapping("/spus/{spuId}/publish")
@@ -93,19 +93,12 @@ class CatalogController {
     record AuthorizeBrandRequest(@NotBlank String brandCode) {
     }
 
-    record CreateSpuRequest(
-            @Positive long merchantId,
-            @NotBlank String title,
-            @Positive long categoryId,
-            @NotBlank String brandCode
-    ) {
+    record CreateSpuRequest(@Positive long merchantId, @NotBlank String title, @Positive long categoryId,
+            @NotBlank String brandCode) {
     }
 
-    record CreateSkuRequest(
-            @NotBlank String skuCode,
-            @DecimalMin("0.01") BigDecimal price,
-            @NotBlank String attributes
-    ) {
+    record CreateSkuRequest(@NotBlank String skuCode, @DecimalMin("0.01") BigDecimal price,
+            @NotBlank String attributes) {
     }
 
     record ReviewListingRequest(boolean approved, @Min(0) @Max(100) int qualityScore, @NotBlank String reason) {

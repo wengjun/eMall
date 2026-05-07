@@ -31,13 +31,8 @@ public class SearchController {
 
     @PostMapping("/documents")
     public ApiResponse<SearchDocument> index(@Valid @RequestBody IndexDocumentRequest request) {
-        return ApiResponse.ok(searchService.index(
-                request.skuId(),
-                request.title(),
-                request.category(),
-                request.price(),
-                request.tags(),
-                request.saleable()));
+        return ApiResponse.ok(searchService.index(request.skuId(), request.title(), request.category(), request.price(),
+                request.tags(), request.saleable()));
     }
 
     @GetMapping("/documents/{skuId}")
@@ -47,7 +42,7 @@ public class SearchController {
 
     @GetMapping
     public ApiResponse<SearchResult> search(@RequestParam(defaultValue = "") String keyword,
-                                            @RequestParam(defaultValue = "20") int limit) {
+            @RequestParam(defaultValue = "20") int limit) {
         return ApiResponse.ok(searchService.search(keyword, limit));
     }
 
@@ -57,13 +52,7 @@ public class SearchController {
         return ApiResponse.ok(null);
     }
 
-    public record IndexDocumentRequest(
-            @Positive long skuId,
-            @NotBlank String title,
-            @NotBlank String category,
-            @NotNull @DecimalMin("0.01") BigDecimal price,
-            Set<String> tags,
-            boolean saleable
-    ) {
+    public record IndexDocumentRequest(@Positive long skuId, @NotBlank String title, @NotBlank String category,
+            @NotNull @DecimalMin("0.01") BigDecimal price, Set<String> tags, boolean saleable) {
     }
 }

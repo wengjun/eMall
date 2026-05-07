@@ -35,8 +35,8 @@ class JdbcDataWarehouseRepository implements DataWarehouseRepository {
 
     @Override
     public Optional<DatasetDefinition> findDataset(long datasetId) {
-        return jdbcTemplate.query("SELECT * FROM dataset_definition WHERE dataset_id = ?", this::mapDataset,
-                datasetId).stream().findFirst();
+        return jdbcTemplate.query("SELECT * FROM dataset_definition WHERE dataset_id = ?", this::mapDataset, datasetId)
+                .stream().findFirst();
     }
 
     @Override
@@ -58,8 +58,7 @@ class JdbcDataWarehouseRepository implements DataWarehouseRepository {
 
     @Override
     public List<TablePartition> findPartitions(long datasetId) {
-        return jdbcTemplate.query("SELECT * FROM table_partition WHERE dataset_id = ?", this::mapPartition,
-                datasetId);
+        return jdbcTemplate.query("SELECT * FROM table_partition WHERE dataset_id = ?", this::mapPartition, datasetId);
     }
 
     @Override
@@ -101,9 +100,9 @@ class JdbcDataWarehouseRepository implements DataWarehouseRepository {
     }
 
     private TablePartition mapPartition(ResultSet rs, int rowNum) throws SQLException {
-        return new TablePartition(rs.getLong("partition_id"), rs.getLong("dataset_id"),
-                rs.getString("partition_key"), rs.getDate("partition_date").toLocalDate(),
-                rs.getLong("row_count"), rs.getLong("storage_bytes"), rs.getTimestamp("created_at").toInstant());
+        return new TablePartition(rs.getLong("partition_id"), rs.getLong("dataset_id"), rs.getString("partition_key"),
+                rs.getDate("partition_date").toLocalDate(), rs.getLong("row_count"), rs.getLong("storage_bytes"),
+                rs.getTimestamp("created_at").toInstant());
     }
 
     private QualityCheck mapQualityCheck(ResultSet rs, int rowNum) throws SQLException {

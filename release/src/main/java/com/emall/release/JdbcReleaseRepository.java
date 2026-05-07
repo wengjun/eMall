@@ -82,8 +82,8 @@ class JdbcReleaseRepository implements ReleaseRepository {
 
     @Override
     public Optional<MessageTopicGovernance> findTopic(long topicId) {
-        return jdbcTemplate.query("SELECT * FROM message_topic_governance WHERE topic_id = ?", this::mapTopic,
-                topicId).stream().findFirst();
+        return jdbcTemplate.query("SELECT * FROM message_topic_governance WHERE topic_id = ?", this::mapTopic, topicId)
+                .stream().findFirst();
     }
 
     @Override
@@ -106,8 +106,8 @@ class JdbcReleaseRepository implements ReleaseRepository {
 
     @Override
     public Optional<ReplayPlan> findReplay(long replayId) {
-        return jdbcTemplate.query("SELECT * FROM replay_plan WHERE replay_id = ?", this::mapReplay, replayId)
-                .stream().findFirst();
+        return jdbcTemplate.query("SELECT * FROM replay_plan WHERE replay_id = ?", this::mapReplay, replayId).stream()
+                .findFirst();
     }
 
     @Override
@@ -123,16 +123,14 @@ class JdbcReleaseRepository implements ReleaseRepository {
 
     private RolloutPlan mapRollout(ResultSet rs, int rowNum) throws SQLException {
         return new RolloutPlan(rs.getLong("rollout_id"), rs.getString("service_name"), rs.getString("version"),
-                rs.getString("strategy"), rs.getInt("current_percent"),
-                RolloutStatus.valueOf(rs.getString("status")), rs.getTimestamp("created_at").toInstant(),
-                rs.getTimestamp("updated_at").toInstant());
+                rs.getString("strategy"), rs.getInt("current_percent"), RolloutStatus.valueOf(rs.getString("status")),
+                rs.getTimestamp("created_at").toInstant(), rs.getTimestamp("updated_at").toInstant());
     }
 
     private MessageTopicGovernance mapTopic(ResultSet rs, int rowNum) throws SQLException {
-        return new MessageTopicGovernance(rs.getLong("topic_id"), rs.getString("topic_name"),
-                rs.getString("owner"), rs.getString("schema_version"), rs.getLong("lag_budget"),
-                TopicStatus.valueOf(rs.getString("status")), rs.getTimestamp("created_at").toInstant(),
-                rs.getTimestamp("updated_at").toInstant());
+        return new MessageTopicGovernance(rs.getLong("topic_id"), rs.getString("topic_name"), rs.getString("owner"),
+                rs.getString("schema_version"), rs.getLong("lag_budget"), TopicStatus.valueOf(rs.getString("status")),
+                rs.getTimestamp("created_at").toInstant(), rs.getTimestamp("updated_at").toInstant());
     }
 
     private ReplayPlan mapReplay(ResultSet rs, int rowNum) throws SQLException {

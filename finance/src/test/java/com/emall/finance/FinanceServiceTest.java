@@ -16,8 +16,8 @@ class FinanceServiceTest {
         FinanceAccount account = service.createAccount(AccountType.MERCHANT, 1001L, "usd");
         service.postEntry(account.accountId(), "order", "order-1", BigDecimal.ZERO, new BigDecimal("100.00"));
         FinanceAccount frozen = service.freezeFunds(account.accountId(), new BigDecimal("20.00"));
-        SettlementBatch batch = service.createSettlementBatch(1001L, new BigDecimal("80.00"),
-                new BigDecimal("5.00"), LocalDate.now());
+        SettlementBatch batch =
+                service.createSettlementBatch(1001L, new BigDecimal("80.00"), new BigDecimal("5.00"), LocalDate.now());
         InvoiceDocument invoice = service.issueInvoice(1001L, new BigDecimal("80.00"), "tax-1");
         service.recordClearingFile("card", LocalDate.now(), new BigDecimal("100.00"), true);
         service.openChargeback(9001L, new BigDecimal("10.00"), "customer dispute");

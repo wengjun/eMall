@@ -13,8 +13,8 @@ class PlatformOpsServiceTest {
     @Test
     void managesBackupDatabaseFinOpsAndSecurityOperations() {
         service.createBackupPlan("order", "pitr", 30);
-        DatabaseOperation operation = service.createDatabaseOperation("order", "online-ddl", RiskLevel.HIGH,
-                "add covering index");
+        DatabaseOperation operation =
+                service.createDatabaseOperation("order", "online-ddl", RiskLevel.HIGH, "add covering index");
         service.changeDatabaseOperationStatus(operation.operationId(), OpsStatus.BLOCKED);
         FinOpsAction action = service.createFinOpsAction("search", "right-size-index", new BigDecimal("1200.00"));
         service.approveFinOpsAction(action.actionId());

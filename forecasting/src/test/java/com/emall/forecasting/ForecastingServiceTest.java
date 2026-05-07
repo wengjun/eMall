@@ -15,10 +15,9 @@ class ForecastingServiceTest {
         service.recordDemandSignal(1001L, "east", 100, 1000, LocalDate.now().minusDays(1));
         service.recordDemandSignal(1001L, "east", 120, 1200, LocalDate.now());
         DemandForecast forecast = service.buildDemandForecast(1001L, "east", 30, LocalDate.now().plusDays(1));
-        ReplenishmentPlan plan = service.createReplenishmentPlan(1001L, "WH-EAST",
-                forecast.forecastQuantity(), 30, LocalDate.now().plusDays(1));
-        CapacityForecast capacity = service.createCapacityForecast("WH-EAST", 1000, 20,
+        ReplenishmentPlan plan = service.createReplenishmentPlan(1001L, "WH-EAST", forecast.forecastQuantity(), 30,
                 LocalDate.now().plusDays(1));
+        CapacityForecast capacity = service.createCapacityForecast("WH-EAST", 1000, 20, LocalDate.now().plusDays(1));
 
         assertThat(forecast.stockoutRisk()).isEqualTo(ForecastRiskLevel.HIGH);
         assertThat(plan.priority()).isEqualTo(ForecastRiskLevel.HIGH);

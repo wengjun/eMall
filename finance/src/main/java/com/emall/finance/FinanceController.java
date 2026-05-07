@@ -26,8 +26,8 @@ class FinanceController {
 
     @PostMapping("/accounts")
     ApiResponse<FinanceAccount> createAccount(@Valid @RequestBody CreateAccountRequest request) {
-        return ApiResponse.ok(financeService.createAccount(request.accountType(), request.ownerId(),
-                request.currency()));
+        return ApiResponse
+                .ok(financeService.createAccount(request.accountType(), request.ownerId(), request.currency()));
     }
 
     @PostMapping("/ledger-entries")
@@ -38,7 +38,7 @@ class FinanceController {
 
     @PostMapping("/accounts/{accountId}/freeze")
     ApiResponse<FinanceAccount> freezeFunds(@PathVariable long accountId,
-                                            @Valid @RequestBody FreezeFundsRequest request) {
+            @Valid @RequestBody FreezeFundsRequest request) {
         return ApiResponse.ok(financeService.freezeFunds(accountId, request.amount()));
     }
 
@@ -50,7 +50,7 @@ class FinanceController {
 
     @PatchMapping("/settlement-batches/{batchId}/status")
     ApiResponse<SettlementBatch> changeSettlementStatus(@PathVariable long batchId,
-                                                        @Valid @RequestBody ChangeSettlementStatusRequest request) {
+            @Valid @RequestBody ChangeSettlementStatusRequest request) {
         return ApiResponse.ok(financeService.changeSettlementStatus(batchId, request.status()));
     }
 
@@ -61,7 +61,7 @@ class FinanceController {
 
     @PatchMapping("/invoices/{invoiceId}/status")
     ApiResponse<InvoiceDocument> reconcileInvoice(@PathVariable long invoiceId,
-                                                  @Valid @RequestBody ReconcileInvoiceRequest request) {
+            @Valid @RequestBody ReconcileInvoiceRequest request) {
         return ApiResponse.ok(financeService.reconcileInvoice(invoiceId, request.status()));
     }
 
@@ -73,8 +73,7 @@ class FinanceController {
 
     @PostMapping("/chargebacks")
     ApiResponse<ChargebackCase> openChargeback(@Valid @RequestBody OpenChargebackRequest request) {
-        return ApiResponse.ok(financeService.openChargeback(request.paymentId(), request.amount(),
-                request.reason()));
+        return ApiResponse.ok(financeService.openChargeback(request.paymentId(), request.amount(), request.reason()));
     }
 
     @GetMapping("/summary")
@@ -85,33 +84,31 @@ class FinanceController {
     record CreateAccountRequest(AccountType accountType, @Positive long ownerId, @NotBlank String currency) {
     }
 
-    record PostLedgerEntryRequest(@Positive long accountId, @NotBlank String businessType,
-                                  @NotBlank String businessNo, BigDecimal debitAmount, BigDecimal creditAmount) {
+    record PostLedgerEntryRequest(@Positive long accountId, @NotBlank String businessType, @NotBlank String businessNo,
+            BigDecimal debitAmount, BigDecimal creditAmount) {
     }
 
     record FreezeFundsRequest(@DecimalMin("0.01") BigDecimal amount) {
     }
 
     record CreateSettlementBatchRequest(@Positive long merchantId, @DecimalMin("0.01") BigDecimal amount,
-                                        @DecimalMin("0.00") BigDecimal commissionAmount,
-                                        LocalDate settlementDate) {
+            @DecimalMin("0.00") BigDecimal commissionAmount, LocalDate settlementDate) {
     }
 
     record ChangeSettlementStatusRequest(SettlementStatus status) {
     }
 
-    record IssueInvoiceRequest(@Positive long ownerId, @DecimalMin("0.01") BigDecimal amount,
-                               @NotBlank String taxNo) {
+    record IssueInvoiceRequest(@Positive long ownerId, @DecimalMin("0.01") BigDecimal amount, @NotBlank String taxNo) {
     }
 
     record ReconcileInvoiceRequest(InvoiceStatus status) {
     }
 
     record RecordClearingFileRequest(@NotBlank String channel, LocalDate clearingDate,
-                                     @DecimalMin("0.01") BigDecimal amount, boolean balanced) {
+            @DecimalMin("0.01") BigDecimal amount, boolean balanced) {
     }
 
     record OpenChargebackRequest(@Positive long paymentId, @DecimalMin("0.01") BigDecimal amount,
-                                 @NotBlank String reason) {
+            @NotBlank String reason) {
     }
 }

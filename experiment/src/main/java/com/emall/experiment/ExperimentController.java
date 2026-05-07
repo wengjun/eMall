@@ -28,22 +28,22 @@ class ExperimentController {
 
     @PostMapping
     ApiResponse<ExperimentDefinition> createExperiment(@Valid @RequestBody CreateExperimentRequest request) {
-        return ApiResponse.ok(experimentService.createExperiment(request.scene(), request.name(),
-                request.mutualExclusionGroup(), request.trafficPercent(), request.controlVariant(),
-                request.treatmentVariant()));
+        return ApiResponse
+                .ok(experimentService.createExperiment(request.scene(), request.name(), request.mutualExclusionGroup(),
+                        request.trafficPercent(), request.controlVariant(), request.treatmentVariant()));
     }
 
     @PatchMapping("/{experimentId}/status")
     ApiResponse<ExperimentDefinition> changeStatus(@PathVariable long experimentId,
-                                                   @Valid @RequestBody ChangeStatusRequest request) {
+            @Valid @RequestBody ChangeStatusRequest request) {
         return ApiResponse.ok(experimentService.changeStatus(experimentId, request.status()));
     }
 
     @PostMapping("/{experimentId}/guardrails")
     ApiResponse<GuardrailMetric> addGuardrail(@PathVariable long experimentId,
-                                              @Valid @RequestBody AddGuardrailRequest request) {
-        return ApiResponse.ok(experimentService.addGuardrail(experimentId, request.metricName(),
-                request.direction(), request.threshold()));
+            @Valid @RequestBody AddGuardrailRequest request) {
+        return ApiResponse.ok(experimentService.addGuardrail(experimentId, request.metricName(), request.direction(),
+                request.threshold()));
     }
 
     @GetMapping("/assign")
@@ -53,9 +53,9 @@ class ExperimentController {
 
     @PostMapping("/{experimentId}/metrics")
     ApiResponse<ExperimentMetric> recordMetric(@PathVariable long experimentId,
-                                               @Valid @RequestBody RecordMetricRequest request) {
-        return ApiResponse.ok(experimentService.recordMetric(experimentId, request.variant(), request.metricName(),
-                request.value()));
+            @Valid @RequestBody RecordMetricRequest request) {
+        return ApiResponse.ok(
+                experimentService.recordMetric(experimentId, request.variant(), request.metricName(), request.value()));
     }
 
     @GetMapping("/{experimentId}/report")
@@ -63,19 +63,18 @@ class ExperimentController {
         return ApiResponse.ok(experimentService.report(experimentId, metricName));
     }
 
-    record CreateExperimentRequest(@NotBlank String scene, @NotBlank String name,
-                                   @NotBlank String mutualExclusionGroup, @Min(0) @Max(100) int trafficPercent,
-                                   @NotBlank String controlVariant, @NotBlank String treatmentVariant) {
+    record CreateExperimentRequest(@NotBlank String scene, @NotBlank String name, @NotBlank String mutualExclusionGroup,
+            @Min(0) @Max(100) int trafficPercent, @NotBlank String controlVariant, @NotBlank String treatmentVariant) {
     }
 
     record ChangeStatusRequest(@NotNull ExperimentStatus status) {
     }
 
     record AddGuardrailRequest(@NotBlank String metricName, @NotNull GuardrailDirection direction,
-                               @NotNull @DecimalMin("0.000000") BigDecimal threshold) {
+            @NotNull @DecimalMin("0.000000") BigDecimal threshold) {
     }
 
     record RecordMetricRequest(@NotBlank String variant, @NotBlank String metricName,
-                               @NotNull @DecimalMin("0.000000") BigDecimal value) {
+            @NotNull @DecimalMin("0.000000") BigDecimal value) {
     }
 }

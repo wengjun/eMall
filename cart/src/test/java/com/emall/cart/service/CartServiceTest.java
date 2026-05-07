@@ -31,8 +31,7 @@ class CartServiceTest {
 
     @Test
     void shouldRejectMissingCartItemUpdate() {
-        assertThatThrownBy(() -> cartService.update(70001L, 30001L, 1, true))
-                .isInstanceOf(BusinessException.class)
+        assertThatThrownBy(() -> cartService.update(70001L, 30001L, 1, true)).isInstanceOf(BusinessException.class)
                 .hasMessageContaining("cart item not found");
     }
 }

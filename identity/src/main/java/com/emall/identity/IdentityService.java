@@ -67,8 +67,8 @@ class IdentityService {
         requireAccount(accountId);
         String normalizedScope = normalize(scope);
         String normalizedResource = normalizeResource(resource);
-        boolean allowed = repository.findGrants(accountId).stream()
-                .anyMatch(grant -> grant.scope().equals(normalizedScope)
+        boolean allowed =
+                repository.findGrants(accountId).stream().anyMatch(grant -> grant.scope().equals(normalizedScope)
                         && ("*".equals(grant.resource()) || grant.resource().equals(normalizedResource)));
         return new AccessDecision(accountId, normalizedScope, normalizedResource, allowed);
     }

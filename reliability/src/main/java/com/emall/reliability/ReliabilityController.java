@@ -34,7 +34,7 @@ class ReliabilityController {
 
     @PatchMapping("/capacity-rehearsals/{rehearsalId}/status")
     ApiResponse<CapacityRehearsal> changeRehearsalStatus(@PathVariable long rehearsalId,
-                                                         @Valid @RequestBody ChangeGateStatusRequest request) {
+            @Valid @RequestBody ChangeGateStatusRequest request) {
         return ApiResponse.ok(reliabilityService.changeRehearsalStatus(rehearsalId, request.status()));
     }
 
@@ -67,21 +67,21 @@ class ReliabilityController {
     }
 
     record CreateRehearsalRequest(@NotBlank String serviceName, @Positive int targetQps,
-                                  @Positive int peakConcurrency) {
+            @Positive int peakConcurrency) {
     }
 
     record ChangeGateStatusRequest(GateStatus status) {
     }
 
     record DefineSloRequest(@NotBlank String serviceName, @DecimalMin("0.0") BigDecimal availabilityTarget,
-                            @Positive int latencyP95Ms, @DecimalMin("0.0") BigDecimal errorBudgetPercent) {
+            @Positive int latencyP95Ms, @DecimalMin("0.0") BigDecimal errorBudgetPercent) {
     }
 
     record ScheduleChaosRequest(@NotBlank String serviceName, @NotBlank String drillType,
-                                @Min(0) @Max(100) int blastRadiusPercent, Instant scheduledAt) {
+            @Min(0) @Max(100) int blastRadiusPercent, Instant scheduledAt) {
     }
 
     record EvaluateReadinessRequest(@NotBlank String serviceName, boolean runbookReady, boolean dashboardReady,
-                                    boolean rollbackReady) {
+            boolean rollbackReady) {
     }
 }

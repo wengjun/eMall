@@ -22,15 +22,15 @@ class ExperimentService {
     }
 
     @Transactional
-    ExperimentDefinition createExperiment(String scene, String name, String mutualExclusionGroup,
-                                          int trafficPercent, String controlVariant, String treatmentVariant) {
+    ExperimentDefinition createExperiment(String scene, String name, String mutualExclusionGroup, int trafficPercent,
+            String controlVariant, String treatmentVariant) {
         if (trafficPercent < 0 || trafficPercent > 100) {
             throw new BusinessException(ErrorCode.BAD_REQUEST, "traffic percent must be 0-100");
         }
         Instant now = Instant.now();
         return repository.saveExperiment(new ExperimentDefinition(idGenerator.nextId(), normalize(scene), name,
-                normalize(mutualExclusionGroup), trafficPercent, normalize(controlVariant),
-                normalize(treatmentVariant), ExperimentStatus.DRAFT, now, now));
+                normalize(mutualExclusionGroup), trafficPercent, normalize(controlVariant), normalize(treatmentVariant),
+                ExperimentStatus.DRAFT, now, now));
     }
 
     @Transactional
@@ -41,10 +41,10 @@ class ExperimentService {
 
     @Transactional
     GuardrailMetric addGuardrail(long experimentId, String metricName, GuardrailDirection direction,
-                                 BigDecimal threshold) {
+            BigDecimal threshold) {
         requireExperiment(experimentId);
-        return repository.saveGuardrail(new GuardrailMetric(idGenerator.nextId(), experimentId,
-                normalize(metricName), direction, threshold, Instant.now()));
+        return repository.saveGuardrail(new GuardrailMetric(idGenerator.nextId(), experimentId, normalize(metricName),
+                direction, threshold, Instant.now()));
     }
 
     ExperimentAssignment assign(String scene, String userKey) {
@@ -54,9 +54,8 @@ class ExperimentService {
         }
         ExperimentDefinition experiment = experiments.get(0);
         int bucketValue = Math.floorMod((experiment.mutualExclusionGroup() + ":" + userKey).hashCode(), 100);
-        String variant = bucketValue < experiment.trafficPercent()
-                ? experiment.treatmentVariant()
-                : experiment.controlVariant();
+        String variant =
+                bucketValue < experiment.trafficPercent() ? experiment.treatmentVariant() : experiment.controlVariant();
         return new ExperimentAssignment(experiment.experimentId(), experiment.scene(), userKey, variant,
                 "bucket-" + bucketValue);
     }
@@ -72,8 +71,7 @@ class ExperimentService {
     ExperimentReport report(long experimentId, String metricName) {
         ExperimentDefinition experiment = requireExperiment(experimentId);
         List<ExperimentMetric> metrics = repository.findMetrics(experimentId).stream()
-                .filter(metric -> metric.metricName().equals(normalize(metricName)))
-                .toList();
+                .filter(metric -> metric.metricName().equals(normalize(metricName))).toList();
         BigDecimal control = average(metrics, experiment.controlVariant());
         BigDecimal treatment = average(metrics, experiment.treatmentVariant());
         boolean breached = guardrailBreached(experimentId, normalize(metricName), treatment);
@@ -92,10 +90,8 @@ class ExperimentService {
     }
 
     private BigDecimal average(List<ExperimentMetric> metrics, String variant) {
-        List<BigDecimal> values = metrics.stream()
-                .filter(metric -> metric.variant().equals(variant))
-                .map(ExperimentMetric::value)
-                .toList();
+        List<BigDecimal> values = metrics.stream().filter(metric -> metric.variant().equals(variant))
+                .map(ExperimentMetric::value).toList();
         if (values.isEmpty()) {
             return BigDecimal.ZERO;
         }

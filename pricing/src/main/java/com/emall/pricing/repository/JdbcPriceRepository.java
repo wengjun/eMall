@@ -26,27 +26,19 @@ public class JdbcPriceRepository implements PriceRepository {
                 ON DUPLICATE KEY UPDATE list_price = VALUES(list_price), sale_price = VALUES(sale_price),
                     currency = VALUES(currency), version = VALUES(version), active = VALUES(active),
                     updated_at = VALUES(updated_at)
-                """,
-                priceBook.skuId(), priceBook.listPrice(), priceBook.salePrice(), priceBook.currency(),
+                """, priceBook.skuId(), priceBook.listPrice(), priceBook.salePrice(), priceBook.currency(),
                 priceBook.version(), priceBook.active(), Timestamp.from(priceBook.updatedAt()));
         return priceBook;
     }
 
     @Override
     public Optional<PriceBook> findBySkuId(long skuId) {
-        return jdbcTemplate.query("SELECT * FROM price_book WHERE sku_id = ?", this::map, skuId)
-                .stream()
-                .findFirst();
+        return jdbcTemplate.query("SELECT * FROM price_book WHERE sku_id = ?", this::map, skuId).stream().findFirst();
     }
 
     private PriceBook map(ResultSet rs, int rowNum) throws SQLException {
-        return new PriceBook(
-                rs.getLong("sku_id"),
-                rs.getBigDecimal("list_price"),
-                rs.getBigDecimal("sale_price"),
-                rs.getString("currency"),
-                rs.getLong("version"),
-                rs.getBoolean("active"),
+        return new PriceBook(rs.getLong("sku_id"), rs.getBigDecimal("list_price"), rs.getBigDecimal("sale_price"),
+                rs.getString("currency"), rs.getLong("version"), rs.getBoolean("active"),
                 rs.getTimestamp("updated_at").toInstant());
     }
 }

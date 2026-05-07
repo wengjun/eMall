@@ -31,7 +31,7 @@ public class CostGovernanceService {
 
     @Transactional
     public CostSignal recordSignal(String serviceName, CostSignalType signalType, BigDecimal metricValue,
-                                   BigDecimal thresholdValue, Instant observedAt) {
+            BigDecimal thresholdValue, Instant observedAt) {
         CostSignal signal = repository.saveSignal(new CostSignal(idGenerator.nextId(), normalizeService(serviceName),
                 signalType, normalize(metricValue), normalize(thresholdValue), observedAt, Instant.now()));
         if (breaches(signal)) {
@@ -46,20 +46,22 @@ public class CostGovernanceService {
 
     @Transactional
     public CostBudget upsertBudget(String serviceName, BigDecimal monthlyBudget, BigDecimal currentSpend,
-                                   String currency, int alertThresholdPercent, boolean active) {
+            String currency, int alertThresholdPercent, boolean active) {
         if (alertThresholdPercent < 1 || alertThresholdPercent > 100) {
             throw new BusinessException(ErrorCode.BAD_REQUEST, "budget alert threshold percent must be 1-100");
         }
         String normalizedService = normalizeService(serviceName);
         String normalizedCurrency = currency.toUpperCase(Locale.ROOT);
-        CostBudget budget = repository.findActiveBudget(normalizedService)
-                .map(existing -> existing.update(normalize(monthlyBudget), normalize(currentSpend),
-                        normalizedCurrency, alertThresholdPercent, active))
-                .orElseGet(() -> {
-                    Instant now = Instant.now();
-                    return new CostBudget(idGenerator.nextId(), normalizedService, normalize(monthlyBudget),
-                            normalize(currentSpend), normalizedCurrency, alertThresholdPercent, active, now, now);
-                });
+        CostBudget budget =
+                repository
+                        .findActiveBudget(normalizedService).map(existing -> existing.update(normalize(monthlyBudget),
+                                normalize(currentSpend), normalizedCurrency, alertThresholdPercent, active))
+                        .orElseGet(() -> {
+                            Instant now = Instant.now();
+                            return new CostBudget(idGenerator.nextId(), normalizedService, normalize(monthlyBudget),
+                                    normalize(currentSpend), normalizedCurrency, alertThresholdPercent, active, now,
+                                    now);
+                        });
         return repository.saveBudget(budget);
     }
 
@@ -76,9 +78,8 @@ public class CostGovernanceService {
 
     public CostSummary summary(String serviceName) {
         String normalizedService = normalizeService(serviceName);
-        CostBudget budget = repository.findActiveBudget(normalizedService)
-                .orElse(new CostBudget(0L, normalizedService, BigDecimal.ZERO, BigDecimal.ZERO, "USD", 100,
-                        false, Instant.EPOCH, Instant.EPOCH));
+        CostBudget budget = repository.findActiveBudget(normalizedService).orElse(new CostBudget(0L, normalizedService,
+                BigDecimal.ZERO, BigDecimal.ZERO, "USD", 100, false, Instant.EPOCH, Instant.EPOCH));
         return new CostSummary(normalizedService, budget.monthlyBudget(), budget.currentSpend(), budget.currency(),
                 budget.alertThresholdPercent(), budget.active() && budget.overAlertThreshold(),
                 repository.findSignalsByService(normalizedService, 50).size(),

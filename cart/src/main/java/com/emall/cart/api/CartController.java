@@ -37,7 +37,7 @@ public class CartController {
 
     @PutMapping("/{userId}/items/{skuId}")
     public ApiResponse<CartItem> update(@PathVariable long userId, @PathVariable long skuId,
-                                        @Valid @RequestBody UpdateCartItemRequest request) {
+            @Valid @RequestBody UpdateCartItemRequest request) {
         return ApiResponse.ok(cartService.update(userId, skuId, request.quantity(), request.selected()));
     }
 

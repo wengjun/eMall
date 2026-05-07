@@ -20,9 +20,8 @@ enum PromotionType {
 }
 
 record PromotionCampaign(long campaignId, String name, PromotionType type, BigDecimal thresholdAmount,
-                         BigDecimal benefitValue, BigDecimal budgetAmount, BigDecimal usedBudget,
-                         int priority, boolean stackable, CampaignStatus status, Instant startsAt,
-                         Instant endsAt, Instant createdAt, Instant updatedAt) {
+        BigDecimal benefitValue, BigDecimal budgetAmount, BigDecimal usedBudget, int priority, boolean stackable,
+        CampaignStatus status, Instant startsAt, Instant endsAt, Instant createdAt, Instant updatedAt) {
     PromotionCampaign changeStatus(CampaignStatus nextStatus) {
         return new PromotionCampaign(campaignId, name, type, thresholdAmount, benefitValue, budgetAmount, usedBudget,
                 priority, stackable, nextStatus, startsAt, endsAt, createdAt, Instant.now());
@@ -35,7 +34,7 @@ record PromotionCampaign(long campaignId, String name, PromotionType type, BigDe
 }
 
 record PromotionQuote(long userId, BigDecimal orderAmount, BigDecimal discountAmount, BigDecimal payableAmount,
-                      List<Long> campaignIds) {
+        List<Long> campaignIds) {
 }
 
 record CampaignCalendar(String month, int activeCampaigns, BigDecimal totalBudget, BigDecimal usedBudget) {

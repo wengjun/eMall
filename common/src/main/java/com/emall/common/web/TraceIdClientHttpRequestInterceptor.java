@@ -8,11 +8,8 @@ import org.springframework.http.client.ClientHttpResponse;
 
 public class TraceIdClientHttpRequestInterceptor implements ClientHttpRequestInterceptor {
     @Override
-    public ClientHttpResponse intercept(
-            HttpRequest request,
-            byte[] body,
-            ClientHttpRequestExecution execution
-    ) throws IOException {
+    public ClientHttpResponse intercept(HttpRequest request, byte[] body, ClientHttpRequestExecution execution)
+            throws IOException {
         String traceId = TraceHeaders.currentTraceId();
         if (traceId != null && !traceId.isBlank()) {
             request.getHeaders().set(TraceHeaders.TRACE_ID_HEADER, traceId);

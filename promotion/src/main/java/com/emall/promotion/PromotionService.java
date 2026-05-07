@@ -24,15 +24,15 @@ class PromotionService {
 
     @Transactional
     PromotionCampaign createCampaign(String name, PromotionType type, BigDecimal thresholdAmount,
-                                      BigDecimal benefitValue, BigDecimal budgetAmount, int priority,
-                                      boolean stackable, Instant startsAt, Instant endsAt) {
+            BigDecimal benefitValue, BigDecimal budgetAmount, int priority, boolean stackable, Instant startsAt,
+            Instant endsAt) {
         if (!endsAt.isAfter(startsAt)) {
             throw new BusinessException(ErrorCode.BAD_REQUEST, "campaign end time must be after start time");
         }
         Instant now = Instant.now();
-        return repository.saveCampaign(new PromotionCampaign(idGenerator.nextId(), name, type, thresholdAmount,
-                benefitValue, budgetAmount, BigDecimal.ZERO, priority, stackable, CampaignStatus.DRAFT,
-                startsAt, endsAt, now, now));
+        return repository.saveCampaign(
+                new PromotionCampaign(idGenerator.nextId(), name, type, thresholdAmount, benefitValue, budgetAmount,
+                        BigDecimal.ZERO, priority, stackable, CampaignStatus.DRAFT, startsAt, endsAt, now, now));
     }
 
     @Transactional
@@ -72,12 +72,10 @@ class PromotionService {
     CampaignCalendar calendar(String month) {
         YearMonth.parse(month);
         List<PromotionCampaign> campaigns = repository.findCampaigns();
-        BigDecimal totalBudget = campaigns.stream()
-                .map(PromotionCampaign::budgetAmount)
-                .reduce(BigDecimal.ZERO, BigDecimal::add);
-        BigDecimal usedBudget = campaigns.stream()
-                .map(PromotionCampaign::usedBudget)
-                .reduce(BigDecimal.ZERO, BigDecimal::add);
+        BigDecimal totalBudget =
+                campaigns.stream().map(PromotionCampaign::budgetAmount).reduce(BigDecimal.ZERO, BigDecimal::add);
+        BigDecimal usedBudget =
+                campaigns.stream().map(PromotionCampaign::usedBudget).reduce(BigDecimal.ZERO, BigDecimal::add);
         int active = (int) campaigns.stream().filter(campaign -> campaign.status() == CampaignStatus.ACTIVE).count();
         return new CampaignCalendar(month, active, totalBudget, usedBudget);
     }
@@ -89,8 +87,8 @@ class PromotionService {
     private BigDecimal benefit(PromotionCampaign campaign, BigDecimal orderAmount) {
         return switch (campaign.type()) {
             case AMOUNT_OFF, GIFT, BUNDLE, COUPON_PACKAGE -> campaign.benefitValue();
-            case PERCENT_OFF -> orderAmount.multiply(campaign.benefitValue())
-                    .divide(new BigDecimal("100"), 2, RoundingMode.HALF_UP);
+            case PERCENT_OFF ->
+                orderAmount.multiply(campaign.benefitValue()).divide(new BigDecimal("100"), 2, RoundingMode.HALF_UP);
         };
     }
 }

@@ -26,9 +26,8 @@ public class ProductService {
     private final OutboxRepository outboxRepository;
     private final SnowflakeIdGenerator idGenerator;
 
-    public ProductService(ProductRepository productRepository,
-                          OutboxRepository outboxRepository,
-                          SnowflakeIdGenerator idGenerator) {
+    public ProductService(ProductRepository productRepository, OutboxRepository outboxRepository,
+            SnowflakeIdGenerator idGenerator) {
         this.productRepository = productRepository;
         this.outboxRepository = outboxRepository;
         this.idGenerator = idGenerator;
@@ -38,8 +37,8 @@ public class ProductService {
     @Transactional
     public Product create(long spuId, String title, String category, BigDecimal price) {
         Instant now = Instant.now();
-        Product product = new Product(idGenerator.nextId(), spuId, title, category, price,
-                ProductStatus.DRAFT, now, now);
+        Product product =
+                new Product(idGenerator.nextId(), spuId, title, category, price, ProductStatus.DRAFT, now, now);
         Product saved = productRepository.save(product);
         appendProductChanged(saved);
         return saved;
@@ -57,10 +56,8 @@ public class ProductService {
         return productRepository.search(keyword, safeLimit);
     }
 
-    @Caching(
-            put = @CachePut(value = "products", key = "#skuId"),
-            evict = @CacheEvict(value = "productSearch", allEntries = true)
-    )
+    @Caching(put = @CachePut(value = "products", key = "#skuId"),
+            evict = @CacheEvict(value = "productSearch", allEntries = true))
     @Transactional
     public Product changePrice(long skuId, BigDecimal price) {
         if (price.signum() <= 0) {
@@ -71,10 +68,8 @@ public class ProductService {
         return saved;
     }
 
-    @Caching(
-            put = @CachePut(value = "products", key = "#skuId"),
-            evict = @CacheEvict(value = "productSearch", allEntries = true)
-    )
+    @Caching(put = @CachePut(value = "products", key = "#skuId"),
+            evict = @CacheEvict(value = "productSearch", allEntries = true))
     @Transactional
     public Product changeStatus(long skuId, ProductStatus status) {
         Product saved = productRepository.save(get(skuId).changeStatus(status));
@@ -82,10 +77,8 @@ public class ProductService {
         return saved;
     }
 
-    @Caching(
-            put = @CachePut(value = "products", key = "#skuId"),
-            evict = @CacheEvict(value = "productSearch", allEntries = true)
-    )
+    @Caching(put = @CachePut(value = "products", key = "#skuId"),
+            evict = @CacheEvict(value = "productSearch", allEntries = true))
     @Transactional
     public Product rename(long skuId, String title) {
         Product saved = productRepository.save(get(skuId).rename(title));
@@ -94,19 +87,10 @@ public class ProductService {
     }
 
     private void appendProductChanged(Product product) {
-        outboxRepository.save(OutboxEvent.create(
-                "product-event-" + idGenerator.nextId(),
-                "Product",
-                String.valueOf(product.skuId()),
-                EventTypes.PRODUCT_CHANGED,
-                Map.of(
-                        "skuId", product.skuId(),
-                        "spuId", product.spuId(),
-                        "title", product.title(),
-                        "category", product.category(),
-                        "price", product.price(),
-                        "status", product.status().name(),
-                        "saleable", product.status() == ProductStatus.ON_SALE
-                )));
+        outboxRepository.save(OutboxEvent.create("product-event-" + idGenerator.nextId(), "Product",
+                String.valueOf(product.skuId()), EventTypes.PRODUCT_CHANGED,
+                Map.of("skuId", product.skuId(), "spuId", product.spuId(), "title", product.title(), "category",
+                        product.category(), "price", product.price(), "status", product.status().name(), "saleable",
+                        product.status() == ProductStatus.ON_SALE)));
     }
 }

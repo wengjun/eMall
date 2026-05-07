@@ -28,11 +28,9 @@ class InMemoryRiskRepository implements RiskRepository {
 
     @Override
     public List<RiskRule> findActiveRules(RiskScene scene) {
-        return rules.values().stream()
-                .filter(rule -> rule.scene() == scene)
+        return rules.values().stream().filter(rule -> rule.scene() == scene)
                 .filter(rule -> rule.status() == RuleStatus.ACTIVE)
-                .sorted(Comparator.comparing(RiskRule::updatedAt).reversed())
-                .toList();
+                .sorted(Comparator.comparing(RiskRule::updatedAt).reversed()).toList();
     }
 
     @Override
@@ -54,9 +52,7 @@ class InMemoryRiskRepository implements RiskRepository {
 
     @Override
     public List<RiskEvent> findEvents(String subjectId) {
-        return events.values().stream()
-                .filter(event -> event.subjectId().equals(subjectId))
-                .sorted(Comparator.comparing(RiskEvent::occurredAt).reversed())
-                .toList();
+        return events.values().stream().filter(event -> event.subjectId().equals(subjectId))
+                .sorted(Comparator.comparing(RiskEvent::occurredAt).reversed()).toList();
     }
 }

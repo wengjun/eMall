@@ -25,25 +25,25 @@ class TrafficController {
 
     @PostMapping("/units")
     ApiResponse<UnitCell> registerUnit(@Valid @RequestBody RegisterUnitRequest request) {
-        return ApiResponse.ok(trafficService.registerUnit(request.unitCode(), request.regionCode(),
-                request.capacityWeight()));
+        return ApiResponse
+                .ok(trafficService.registerUnit(request.unitCode(), request.regionCode(), request.capacityWeight()));
     }
 
     @PostMapping("/shard-routes")
     ApiResponse<ShardRoute> routeShard(@Valid @RequestBody RouteShardRequest request) {
-        return ApiResponse.ok(trafficService.routeShard(request.domainName(), request.shardNo(),
-                request.unitCode(), request.databaseKey()));
+        return ApiResponse.ok(trafficService.routeShard(request.domainName(), request.shardNo(), request.unitCode(),
+                request.databaseKey()));
     }
 
     @PostMapping("/shifts")
     ApiResponse<TrafficShift> planShift(@Valid @RequestBody PlanShiftRequest request) {
-        return ApiResponse.ok(trafficService.planShift(request.sourceUnit(), request.targetUnit(),
-                request.percent(), request.reason()));
+        return ApiResponse.ok(trafficService.planShift(request.sourceUnit(), request.targetUnit(), request.percent(),
+                request.reason()));
     }
 
     @PatchMapping("/shifts/{shiftId}/status")
     ApiResponse<TrafficShift> changeShiftStatus(@PathVariable long shiftId,
-                                                @Valid @RequestBody ChangeShiftStatusRequest request) {
+            @Valid @RequestBody ChangeShiftStatusRequest request) {
         return ApiResponse.ok(trafficService.changeShiftStatus(shiftId, request.status()));
     }
 
@@ -57,16 +57,15 @@ class TrafficController {
         return ApiResponse.ok(trafficService.summary());
     }
 
-    record RegisterUnitRequest(@NotBlank String unitCode, @NotBlank String regionCode,
-                               @Positive int capacityWeight) {
+    record RegisterUnitRequest(@NotBlank String unitCode, @NotBlank String regionCode, @Positive int capacityWeight) {
     }
 
     record RouteShardRequest(@NotBlank String domainName, @Min(0) int shardNo, @NotBlank String unitCode,
-                             @NotBlank String databaseKey) {
+            @NotBlank String databaseKey) {
     }
 
-    record PlanShiftRequest(@NotBlank String sourceUnit, @NotBlank String targetUnit,
-                            @Min(0) @Max(100) int percent, @NotBlank String reason) {
+    record PlanShiftRequest(@NotBlank String sourceUnit, @NotBlank String targetUnit, @Min(0) @Max(100) int percent,
+            @NotBlank String reason) {
     }
 
     record ChangeShiftStatusRequest(ShiftStatus status) {

@@ -19,9 +19,8 @@ public class ProductEventConsumer {
     private final SearchService searchService;
     private final ProcessedMessageRepository processedMessageRepository;
 
-    public ProductEventConsumer(ObjectMapper objectMapper,
-                                SearchService searchService,
-                                ProcessedMessageRepository processedMessageRepository) {
+    public ProductEventConsumer(ObjectMapper objectMapper, SearchService searchService,
+            ProcessedMessageRepository processedMessageRepository) {
         this.objectMapper = objectMapper;
         this.searchService = searchService;
         this.processedMessageRepository = processedMessageRepository;
@@ -39,13 +38,8 @@ public class ProductEventConsumer {
         }
         Map<String, Object> payload = event.payload();
         String category = stringValue(payload.get("category"));
-        searchService.index(
-                longValue(payload.get("skuId")),
-                stringValue(payload.get("title")),
-                category,
-                decimalValue(payload.get("price")),
-                Set.of(category),
-                booleanValue(payload.get("saleable")));
+        searchService.index(longValue(payload.get("skuId")), stringValue(payload.get("title")), category,
+                decimalValue(payload.get("price")), Set.of(category), booleanValue(payload.get("saleable")));
     }
 
     private long longValue(Object value) {

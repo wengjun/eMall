@@ -37,13 +37,13 @@ class OpenApiService {
         String appKey = "ak_" + UUID.randomUUID().toString().replace("-", "");
         String appSecret = "sk_" + UUID.randomUUID().toString().replace("-", "");
         Instant now = Instant.now();
-        OpenApiApp app = repository.saveApp(new OpenApiApp(idGenerator.nextId(), merchantId, appKey,
-                sha256(appSecret), name, scopes, dailyQuota, true, now, now));
+        OpenApiApp app = repository.saveApp(new OpenApiApp(idGenerator.nextId(), merchantId, appKey, sha256(appSecret),
+                name, scopes, dailyQuota, true, now, now));
         return new AppRegistration(app, appSecret);
     }
 
     ApiSignatureVerification verifySignature(String appKey, String appSecret, String requestPath, String nonce,
-                                             long timestamp, String signature) {
+            long timestamp, String signature) {
         OpenApiApp app = requireActiveApp(appKey);
         if (!sha256(appSecret).equals(app.secretHash())) {
             return new ApiSignatureVerification(appKey, requestPath, nonce, timestamp, false, "invalid-secret");
@@ -62,8 +62,8 @@ class OpenApiService {
     ApiQuotaUsage consumeQuota(String appKey) {
         OpenApiApp app = requireActiveApp(appKey);
         LocalDate today = LocalDate.now();
-        ApiQuotaUsage current = repository.findQuota(appKey, today)
-                .orElse(new ApiQuotaUsage(appKey, today, 0, app.dailyQuota(), true));
+        ApiQuotaUsage current =
+                repository.findQuota(appKey, today).orElse(new ApiQuotaUsage(appKey, today, 0, app.dailyQuota(), true));
         int nextCount = current.usedCount() + 1;
         boolean allowed = nextCount <= app.dailyQuota();
         return repository.saveQuota(new ApiQuotaUsage(appKey, today, nextCount, app.dailyQuota(), allowed));
@@ -87,8 +87,8 @@ class OpenApiService {
         repository.findSubscription(subscriptionId)
                 .orElseThrow(() -> new BusinessException(ErrorCode.NOT_FOUND, "webhook subscription not found"));
         Instant now = Instant.now();
-        return repository.saveDelivery(new WebhookDelivery(idGenerator.nextId(), subscriptionId, normalize(eventId),
-                status, 0, now, now));
+        return repository.saveDelivery(
+                new WebhookDelivery(idGenerator.nextId(), subscriptionId, normalize(eventId), status, 0, now, now));
     }
 
     String signatureFixture(String appSecret, String appKey, String requestPath, String nonce, long timestamp) {

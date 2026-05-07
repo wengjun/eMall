@@ -47,9 +47,8 @@ class InMemoryCatalogRepository implements CatalogRepository {
 
     @Override
     public boolean hasBrandAuthorization(long merchantId, String brandCode) {
-        return authorizations.values().stream()
-                .anyMatch(item -> item.merchantId() == merchantId && item.brandCode().equals(brandCode)
-                        && item.active());
+        return authorizations.values().stream().anyMatch(
+                item -> item.merchantId() == merchantId && item.brandCode().equals(brandCode) && item.active());
     }
 
     @Override

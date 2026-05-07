@@ -26,8 +26,7 @@ public class CartService {
         if (lines >= MAX_CART_LINES && cartRepository.find(userId, skuId).isEmpty()) {
             throw new BusinessException(ErrorCode.CONFLICT, "cart line limit exceeded");
         }
-        CartItem item = cartRepository.find(userId, skuId)
-                .map(existing -> existing.add(quantity))
+        CartItem item = cartRepository.find(userId, skuId).map(existing -> existing.add(quantity))
                 .orElse(new CartItem(userId, skuId, quantity, true, Instant.now()));
         if (item.quantity() > MAX_ITEM_QUANTITY) {
             throw new BusinessException(ErrorCode.BAD_REQUEST, "item quantity limit exceeded");
@@ -39,8 +38,7 @@ public class CartService {
     public CartItem update(long userId, long skuId, int quantity, boolean selected) {
         CartItem item = cartRepository.find(userId, skuId)
                 .orElseThrow(() -> new BusinessException(ErrorCode.NOT_FOUND, "cart item not found"))
-                .changeQuantity(quantity)
-                .select(selected);
+                .changeQuantity(quantity).select(selected);
         return cartRepository.save(item);
     }
 

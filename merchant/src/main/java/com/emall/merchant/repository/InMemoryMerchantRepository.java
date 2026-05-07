@@ -46,10 +46,8 @@ public class InMemoryMerchantRepository implements MerchantRepository {
 
     @Override
     public List<Store> findStoresByMerchant(long merchantId) {
-        return stores.values().stream()
-                .filter(store -> store.merchantId() == merchantId)
-                .sorted(Comparator.comparing(Store::createdAt).reversed())
-                .toList();
+        return stores.values().stream().filter(store -> store.merchantId() == merchantId)
+                .sorted(Comparator.comparing(Store::createdAt).reversed()).toList();
     }
 
     @Override
@@ -60,8 +58,7 @@ public class InMemoryMerchantRepository implements MerchantRepository {
 
     @Override
     public Optional<CommissionRule> findActiveCommissionRule(long merchantId) {
-        return commissionRules.values().stream()
-                .filter(rule -> rule.merchantId() == merchantId && rule.active())
+        return commissionRules.values().stream().filter(rule -> rule.merchantId() == merchantId && rule.active())
                 .max(Comparator.comparing(CommissionRule::effectiveFrom));
     }
 
@@ -78,10 +75,8 @@ public class InMemoryMerchantRepository implements MerchantRepository {
 
     @Override
     public List<Settlement> findSettlementsByMerchant(long merchantId) {
-        return settlements.values().stream()
-                .filter(settlement -> settlement.merchantId() == merchantId)
-                .sorted(Comparator.comparing(Settlement::createdAt).reversed())
-                .toList();
+        return settlements.values().stream().filter(settlement -> settlement.merchantId() == merchantId)
+                .sorted(Comparator.comparing(Settlement::createdAt).reversed()).toList();
     }
 
     @Override
@@ -92,9 +87,7 @@ public class InMemoryMerchantRepository implements MerchantRepository {
 
     @Override
     public List<Invoice> findInvoicesByMerchant(long merchantId) {
-        return invoices.values().stream()
-                .filter(invoice -> invoice.merchantId() == merchantId)
-                .sorted(Comparator.comparing(Invoice::createdAt).reversed())
-                .toList();
+        return invoices.values().stream().filter(invoice -> invoice.merchantId() == merchantId)
+                .sorted(Comparator.comparing(Invoice::createdAt).reversed()).toList();
     }
 }

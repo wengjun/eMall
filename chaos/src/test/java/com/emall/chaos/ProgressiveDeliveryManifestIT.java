@@ -16,25 +16,13 @@ class ProgressiveDeliveryManifestIT {
         String paymentBlueGreen = Files.readString(ROLLOUT_DIR.resolve("payment-blue-green.yml"));
         String sloTemplates = Files.readString(ROLLOUT_DIR.resolve("slo-analysis-templates.yml"));
 
-        assertThat(orderCanary)
-                .contains("kind: Rollout")
-                .contains("canary:")
-                .contains("setWeight: 5")
-                .contains("setWeight: 20")
-                .contains("setWeight: 50")
-                .contains("templateName: emall-http-slo")
+        assertThat(orderCanary).contains("kind: Rollout").contains("canary:").contains("setWeight: 5")
+                .contains("setWeight: 20").contains("setWeight: 50").contains("templateName: emall-http-slo")
                 .contains("abortScaleDownDelaySeconds: 30");
-        assertThat(paymentBlueGreen)
-                .contains("blueGreen:")
-                .contains("autoPromotionEnabled: false")
-                .contains("prePromotionAnalysis:")
-                .contains("templateName: payment-preview-smoke")
+        assertThat(paymentBlueGreen).contains("blueGreen:").contains("autoPromotionEnabled: false")
+                .contains("prePromotionAnalysis:").contains("templateName: payment-preview-smoke")
                 .contains("templateName: emall-payment-slo");
-        assertThat(sloTemplates)
-                .contains("name: emall-http-slo")
-                .contains("name: emall-payment-slo")
-                .contains("provider:")
-                .contains("prometheus:")
-                .contains("successCondition:");
+        assertThat(sloTemplates).contains("name: emall-http-slo").contains("name: emall-payment-slo")
+                .contains("provider:").contains("prometheus:").contains("successCondition:");
     }
 }

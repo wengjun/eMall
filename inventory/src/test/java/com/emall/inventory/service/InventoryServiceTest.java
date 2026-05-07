@@ -12,10 +12,8 @@ import org.junit.jupiter.api.Test;
 
 class InventoryServiceTest {
     private final InMemoryOutboxRepository outboxRepository = new InMemoryOutboxRepository();
-    private final InventoryService inventoryService = new InventoryService(
-            new InMemoryInventoryRepository(),
-            outboxRepository,
-            new SnowflakeIdGenerator(2));
+    private final InventoryService inventoryService =
+            new InventoryService(new InMemoryInventoryRepository(), outboxRepository, new SnowflakeIdGenerator(2));
 
     @Test
     void shouldReserveAndConfirmBucketedInventory() {

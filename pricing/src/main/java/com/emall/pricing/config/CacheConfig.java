@@ -18,14 +18,10 @@ import org.springframework.data.redis.serializer.RedisSerializationContext;
 public class CacheConfig {
     @Bean
     RedisCacheManager redisCacheManager(RedisConnectionFactory connectionFactory,
-                                        @Value("${emall.cache.ttl}") Duration ttl) {
-        RedisCacheConfiguration configuration = RedisCacheConfiguration.defaultCacheConfig()
-                .entryTtl(ttl)
-                .disableCachingNullValues()
-                .serializeValuesWith(RedisSerializationContext.SerializationPair.fromSerializer(
-                        new GenericJackson2JsonRedisSerializer()));
-        return RedisCacheManager.builder(connectionFactory)
-                .cacheDefaults(configuration)
-                .build();
+            @Value("${emall.cache.ttl}") Duration ttl) {
+        RedisCacheConfiguration configuration = RedisCacheConfiguration.defaultCacheConfig().entryTtl(ttl)
+                .disableCachingNullValues().serializeValuesWith(RedisSerializationContext.SerializationPair
+                        .fromSerializer(new GenericJackson2JsonRedisSerializer()));
+        return RedisCacheManager.builder(connectionFactory).cacheDefaults(configuration).build();
     }
 }

@@ -27,9 +27,7 @@ public class InMemoryCouponRepository implements CouponRepository {
 
     @Override
     public List<Coupon> findByUserId(long userId) {
-        return coupons.values().stream()
-                .filter(coupon -> coupon.userId() == userId)
-                .sorted(Comparator.comparing(Coupon::updatedAt).reversed())
-                .toList();
+        return coupons.values().stream().filter(coupon -> coupon.userId() == userId)
+                .sorted(Comparator.comparing(Coupon::updatedAt).reversed()).toList();
     }
 }

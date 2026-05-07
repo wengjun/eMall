@@ -34,10 +34,7 @@ public final class CheckoutLoadTestApplication {
     private CheckoutLoadTestApplication(LoadTestOptions options) {
         this.options = options;
         this.executor = Executors.newFixedThreadPool(options.maxConcurrency());
-        this.httpClient = HttpClient.newBuilder()
-                .connectTimeout(Duration.ofSeconds(5))
-                .executor(executor)
-                .build();
+        this.httpClient = HttpClient.newBuilder().connectTimeout(Duration.ofSeconds(5)).executor(executor).build();
     }
 
     public static void main(String[] args) throws Exception {
@@ -68,27 +65,17 @@ public final class CheckoutLoadTestApplication {
             sleepUntil(nextNanos);
         }
 
-        List<Result> results = futures.stream()
-                .map(CompletableFuture::join)
-                .toList();
+        List<Result> results = futures.stream().map(CompletableFuture::join).toList();
         printReport(results, Duration.ofNanos(System.nanoTime() - startNanos));
     }
 
     private void bootstrapData() {
-        post("/api/prices", Map.of(
-                "skuId", options.skuId(),
-                "listPrice", options.listPrice(),
-                "salePrice", options.salePrice(),
-                "currency", options.currency(),
-                "active", true));
+        post("/api/prices", Map.of("skuId", options.skuId(), "listPrice", options.listPrice(), "salePrice",
+                options.salePrice(), "currency", options.currency(), "active", true));
         post("/api/inventory/" + options.skuId() + "/stock", Map.of("quantity", options.bootstrapStock()));
-        post("/api/search/documents", Map.of(
-                "skuId", options.skuId(),
-                "title", "loadtest flagship phone",
-                "category", "digital",
-                "price", options.salePrice(),
-                "tags", List.of("phone", "loadtest", "hot"),
-                "saleable", true));
+        post("/api/search/documents",
+                Map.of("skuId", options.skuId(), "title", "loadtest flagship phone", "category", "digital", "price",
+                        options.salePrice(), "tags", List.of("phone", "loadtest", "hot"), "saleable", true));
     }
 
     private CompletableFuture<Result> sendScenarioRequest(int requestNo) {
@@ -105,13 +92,11 @@ public final class CheckoutLoadTestApplication {
         long started = System.nanoTime();
         String requestId = "loadtest-" + started + "-" + requestNo;
         String path = hotSku ? "/api/orders?skuId=" + options.skuId() : "/api/orders";
-        return sendAsync(started, request(path)
-                .header("X-Device-Id", deviceId(requestNo))
-                .POST(jsonBody(Map.of(
-                        "requestId", requestId,
-                        "userId", hotSku ? options.userId() : options.userId() + requestNo,
-                        "skuId", options.skuId(),
-                        "quantity", options.quantity()))));
+        return sendAsync(started,
+                request(path).header("X-Device-Id", deviceId(requestNo))
+                        .POST(jsonBody(Map.of("requestId", requestId, "userId",
+                                hotSku ? options.userId() : options.userId() + requestNo, "skuId", options.skuId(),
+                                "quantity", options.quantity()))));
     }
 
     private CompletableFuture<Result> sendReadHeavy(int requestNo) {
@@ -124,41 +109,33 @@ public final class CheckoutLoadTestApplication {
             case 3 -> "/api/inventory/" + options.skuId();
             default -> "/api/prices/" + options.skuId();
         };
-        return sendAsync(started, request(path)
-                .header("X-Device-Id", deviceId(requestNo))
-                .GET());
+        return sendAsync(started, request(path).header("X-Device-Id", deviceId(requestNo)).GET());
     }
 
     private CompletableFuture<Result> sendPaymentCallback(int requestNo) {
         long started = System.nanoTime();
         String requestId = "payment-loadtest-" + started + "-" + requestNo;
-        HttpRequest createRequest = request("/api/payments")
-                .header("X-Device-Id", deviceId(requestNo))
-                .POST(jsonBody(Map.of(
-                        "requestId", requestId,
-                        "orderId", options.orderIdBase() + requestNo,
-                        "userId", options.userId() + requestNo,
-                        "amount", options.salePrice(),
-                        "channel", options.paymentChannel())))
+        HttpRequest createRequest = request("/api/payments").header("X-Device-Id", deviceId(requestNo))
+                .POST(jsonBody(Map.of("requestId", requestId, "orderId", options.orderIdBase() + requestNo, "userId",
+                        options.userId() + requestNo, "amount", options.salePrice(), "channel",
+                        options.paymentChannel())))
                 .build();
         return httpClient.sendAsync(createRequest, HttpResponse.BodyHandlers.ofString())
                 .thenCompose(response -> sendCallbackIfCreated(started, requestNo, response))
                 .exceptionally(error -> Result.failed(elapsedMillis(started)));
     }
 
-    private CompletableFuture<Result> sendCallbackIfCreated(long started,
-                                                            int requestNo,
-                                                            HttpResponse<String> response) {
+    private CompletableFuture<Result> sendCallbackIfCreated(long started, int requestNo,
+            HttpResponse<String> response) {
         if (!isSuccess(response.statusCode())) {
             return CompletableFuture.completedFuture(Result.failed(elapsedMillis(started)));
         }
         long paymentId = paymentId(response.body());
-        HttpRequest callbackRequest = request("/api/payments/" + paymentId + "/callbacks")
-                .header("X-Device-Id", deviceId(requestNo))
-                .POST(jsonBody(Map.of(
-                        "channelTradeNo", "loadtest-trade-" + started + "-" + requestNo,
-                        "paidAmount", options.salePrice())))
-                .build();
+        HttpRequest callbackRequest =
+                request("/api/payments/" + paymentId + "/callbacks")
+                        .header("X-Device-Id", deviceId(requestNo)).POST(jsonBody(Map.of("channelTradeNo",
+                                "loadtest-trade-" + started + "-" + requestNo, "paidAmount", options.salePrice())))
+                        .build();
         return httpClient.sendAsync(callbackRequest, HttpResponse.BodyHandlers.discarding())
                 .<Result>handle((callbackResponse, error) -> toResult(started, callbackResponse, error));
     }
@@ -167,13 +144,11 @@ public final class CheckoutLoadTestApplication {
         long started = System.nanoTime();
         String title = "loadtest product title " + requestNo;
         return sendAsync(started, request("/api/products/" + options.skuId() + "/title")
-                .header("X-Device-Id", deviceId(requestNo))
-                .method("PATCH", jsonBody(Map.of("title", title))));
+                .header("X-Device-Id", deviceId(requestNo)).method("PATCH", jsonBody(Map.of("title", title))));
     }
 
     private HttpRequest.Builder request(String path) {
-        return HttpRequest.newBuilder(URI.create(options.baseUrl() + path))
-                .timeout(Duration.ofSeconds(10))
+        return HttpRequest.newBuilder(URI.create(options.baseUrl() + path)).timeout(Duration.ofSeconds(10))
                 .header("Content-Type", "application/json");
     }
 
@@ -192,10 +167,8 @@ public final class CheckoutLoadTestApplication {
 
     private void post(String path, Object body) {
         try {
-            HttpRequest request = request(path)
-                    .header("X-Device-Id", "loadtest-bootstrap")
-                    .POST(jsonBody(body))
-                    .build();
+            HttpRequest request =
+                    request(path).header("X-Device-Id", "loadtest-bootstrap").POST(jsonBody(body)).build();
             HttpResponse<String> response = httpClient.send(request, HttpResponse.BodyHandlers.ofString());
             if (!isSuccess(response.statusCode())) {
                 throw new IllegalStateException("POST " + path + " failed with HTTP " + response.statusCode());
@@ -230,18 +203,15 @@ public final class CheckoutLoadTestApplication {
     }
 
     private void printReport(List<Result> results, Duration elapsed) {
-        List<Long> latencies = results.stream()
-                .map(Result::latencyMillis)
-                .sorted(Comparator.naturalOrder())
-                .toList();
+        List<Long> latencies = results.stream().map(Result::latencyMillis).sorted(Comparator.naturalOrder()).toList();
         long total = results.size();
         long success = results.stream().filter(Result::success).count();
         long failed = total - success;
         double errorRate = total == 0 ? 0.0 : (double) failed / total;
         System.out.printf("%s load test completed in %d ms%n", options.scenario().cliName(), elapsed.toMillis());
         System.out.printf("requests=%d, success=%d, failed=%d, errorRate=%.4f%n", total, success, failed, errorRate);
-        System.out.printf("p50=%d ms, p95=%d ms, p99=%d ms%n",
-                percentile(latencies, 50), percentile(latencies, 95), percentile(latencies, 99));
+        System.out.printf("p50=%d ms, p95=%d ms, p99=%d ms%n", percentile(latencies, 50), percentile(latencies, 95),
+                percentile(latencies, 99));
         if (errorRate > options.maxErrorRate()) {
             throw new IllegalStateException("error rate exceeded threshold " + options.maxErrorRate());
         }
@@ -315,28 +285,12 @@ public final class CheckoutLoadTestApplication {
         }
     }
 
-    private record LoadTestOptions(
-            String baseUrl,
-            int ratePerSecond,
-            Duration duration,
-            int maxConcurrency,
-            LoadScenario scenario,
-            long userId,
-            long skuId,
-            long orderIdBase,
-            int quantity,
-            double maxErrorRate,
-            boolean bootstrapData,
-            int bootstrapStock,
-            BigDecimal listPrice,
-            BigDecimal salePrice,
-            String currency,
-            String keyword,
-            String paymentChannel
-    ) {
+    private record LoadTestOptions(String baseUrl, int ratePerSecond, Duration duration, int maxConcurrency,
+            LoadScenario scenario, long userId, long skuId, long orderIdBase, int quantity, double maxErrorRate,
+            boolean bootstrapData, int bootstrapStock, BigDecimal listPrice, BigDecimal salePrice, String currency,
+            String keyword, String paymentChannel) {
         static LoadTestOptions from(String[] args) {
-            return new LoadTestOptions(
-                    value(args, 0, env("EMALL_BASE_URL", "http://localhost:8080")),
+            return new LoadTestOptions(value(args, 0, env("EMALL_BASE_URL", "http://localhost:8080")),
                     integer(args, 1, env("EMALL_LOAD_RATE", "100")),
                     Duration.ofSeconds(integer(args, 2, env("EMALL_LOAD_DURATION_SECONDS", "60"))),
                     integer(args, 3, env("EMALL_LOAD_MAX_CONCURRENCY", "200")),
@@ -349,10 +303,8 @@ public final class CheckoutLoadTestApplication {
                     Boolean.parseBoolean(env("EMALL_LOAD_BOOTSTRAP_DATA", "true")),
                     Integer.parseInt(env("EMALL_LOAD_BOOTSTRAP_STOCK", "1000000")),
                     new BigDecimal(env("EMALL_LOAD_LIST_PRICE", "3999.00")),
-                    new BigDecimal(env("EMALL_LOAD_SALE_PRICE", "3799.00")),
-                    env("EMALL_LOAD_CURRENCY", "CNY"),
-                    env("EMALL_LOAD_KEYWORD", "phone"),
-                    env("EMALL_LOAD_PAYMENT_CHANNEL", "loadtest"));
+                    new BigDecimal(env("EMALL_LOAD_SALE_PRICE", "3799.00")), env("EMALL_LOAD_CURRENCY", "CNY"),
+                    env("EMALL_LOAD_KEYWORD", "phone"), env("EMALL_LOAD_PAYMENT_CHANNEL", "loadtest"));
         }
 
         private static String value(String[] args, int index, String defaultValue) {

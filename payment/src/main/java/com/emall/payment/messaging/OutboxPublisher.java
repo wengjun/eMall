@@ -11,11 +11,8 @@ import org.springframework.stereotype.Component;
 
 @Component
 public class OutboxPublisher extends OutboxPublisherSupport {
-    public OutboxPublisher(OutboxRepository outboxRepository,
-                           KafkaTemplate<String, String> kafkaTemplate,
-                           ObjectMapper objectMapper,
-                           @Value("${emall.events.topic}") String topic,
-                           DistributedTaskLock taskLock) {
+    public OutboxPublisher(OutboxRepository outboxRepository, KafkaTemplate<String, String> kafkaTemplate,
+            ObjectMapper objectMapper, @Value("${emall.events.topic}") String topic, DistributedTaskLock taskLock) {
         super(outboxRepository, kafkaTemplate, objectMapper, "payment", topic, taskLock);
     }
 

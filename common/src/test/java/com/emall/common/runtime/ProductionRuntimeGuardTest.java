@@ -11,8 +11,7 @@ import org.springframework.mock.env.MockEnvironment;
 class ProductionRuntimeGuardTest {
     @Test
     void shouldRejectUnsafeProductionDefaults() {
-        MockEnvironment environment = new MockEnvironment()
-                .withProperty("emall.runtime.guard.enabled", "true")
+        MockEnvironment environment = new MockEnvironment().withProperty("emall.runtime.guard.enabled", "true")
                 .withProperty("spring.datasource.url", "jdbc:mysql://db/emall_order")
                 .withProperty("spring.datasource.username", "emall")
                 .withProperty("spring.datasource.password", "secret")
@@ -20,15 +19,13 @@ class ProductionRuntimeGuardTest {
 
         ProductionRuntimeGuard guard = new ProductionRuntimeGuard(environment, List.of());
 
-        assertThatThrownBy(() -> guard.run(new DefaultApplicationArguments()))
-                .isInstanceOf(IllegalStateException.class)
+        assertThatThrownBy(() -> guard.run(new DefaultApplicationArguments())).isInstanceOf(IllegalStateException.class)
                 .hasMessageContaining("emall.internal.operations-token");
     }
 
     @Test
     void shouldAllowCompleteProductionConfiguration() {
-        MockEnvironment environment = new MockEnvironment()
-                .withProperty("emall.runtime.guard.enabled", "true")
+        MockEnvironment environment = new MockEnvironment().withProperty("emall.runtime.guard.enabled", "true")
                 .withProperty("spring.datasource.url", "jdbc:mysql://db/emall_order")
                 .withProperty("spring.datasource.username", "emall")
                 .withProperty("spring.datasource.password", "secret")

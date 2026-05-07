@@ -20,10 +20,10 @@ public class InMemoryProductRepository implements ProductRepository {
 
     public InMemoryProductRepository() {
         Instant now = Instant.now();
-        save(new Product(10001L, 90001L, "flagship phone", "digital",
-                BigDecimal.valueOf(399900, 2), ProductStatus.ON_SALE, now, now));
-        save(new Product(10002L, 90002L, "thin laptop", "computer",
-                BigDecimal.valueOf(699900, 2), ProductStatus.ON_SALE, now, now));
+        save(new Product(10001L, 90001L, "flagship phone", "digital", BigDecimal.valueOf(399900, 2),
+                ProductStatus.ON_SALE, now, now));
+        save(new Product(10002L, 90002L, "thin laptop", "computer", BigDecimal.valueOf(699900, 2),
+                ProductStatus.ON_SALE, now, now));
     }
 
     @Override
@@ -40,13 +40,9 @@ public class InMemoryProductRepository implements ProductRepository {
     @Override
     public List<Product> search(String keyword, int limit) {
         String normalized = keyword == null ? "" : keyword.toLowerCase(Locale.ROOT);
-        return products.values().stream()
-                .filter(product -> product.status() == ProductStatus.ON_SALE)
-                .filter(product -> normalized.isBlank()
-                        || product.title().toLowerCase(Locale.ROOT).contains(normalized)
+        return products.values().stream().filter(product -> product.status() == ProductStatus.ON_SALE)
+                .filter(product -> normalized.isBlank() || product.title().toLowerCase(Locale.ROOT).contains(normalized)
                         || product.category().toLowerCase(Locale.ROOT).contains(normalized))
-                .sorted(Comparator.comparing(Product::updatedAt).reversed())
-                .limit(limit)
-                .toList();
+                .sorted(Comparator.comparing(Product::updatedAt).reversed()).limit(limit).toList();
     }
 }

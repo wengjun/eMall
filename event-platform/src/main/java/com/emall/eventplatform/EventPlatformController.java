@@ -46,8 +46,8 @@ class EventPlatformController {
 
     @PostMapping("/materializations")
     ApiResponse<MetricMaterialization> materializeMetric(@Valid @RequestBody MaterializeMetricRequest request) {
-        return ApiResponse.ok(eventPlatformService.materializeMetric(request.eventName(), request.metricName(),
-                request.windowKey()));
+        return ApiResponse.ok(
+                eventPlatformService.materializeMetric(request.eventName(), request.metricName(), request.windowKey()));
     }
 
     @GetMapping("/summary")
@@ -56,21 +56,21 @@ class EventPlatformController {
     }
 
     record RegisterSchemaRequest(@NotBlank String eventName, @Min(1) int version, @NotBlank String owner,
-                                 @NotBlank String jsonSchema) {
+            @NotBlank String jsonSchema) {
     }
 
     record ActivateSchemaRequest(@NotBlank String eventName, @Min(1) int version) {
     }
 
     record IngestEventRequest(@NotBlank String eventName, @Min(1) int version, @NotBlank String eventKey,
-                              @NotBlank String userKey, @NotBlank String payload, Instant occurredAt) {
+            @NotBlank String userKey, @NotBlank String payload, Instant occurredAt) {
     }
 
     record CommitOffsetRequest(@NotBlank String consumerGroup, @NotBlank String topicName,
-                               @Min(0) long processedOffset) {
+            @Min(0) long processedOffset) {
     }
 
     record MaterializeMetricRequest(@NotBlank String eventName, @NotBlank String metricName,
-                                    @NotBlank String windowKey) {
+            @NotBlank String windowKey) {
     }
 }

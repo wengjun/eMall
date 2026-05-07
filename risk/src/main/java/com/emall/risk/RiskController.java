@@ -35,14 +35,13 @@ class RiskController {
 
     @PatchMapping("/rules/{ruleId}/status")
     ApiResponse<RiskRule> changeRuleStatus(@PathVariable long ruleId,
-                                           @Valid @RequestBody ChangeRuleStatusRequest request) {
+            @Valid @RequestBody ChangeRuleStatusRequest request) {
         return ApiResponse.ok(riskService.changeRuleStatus(ruleId, request.status()));
     }
 
     @PostMapping("/devices")
     ApiResponse<DeviceReputation> upsertDevice(@Valid @RequestBody UpsertDeviceRequest request) {
-        return ApiResponse.ok(riskService.upsertDevice(request.deviceId(), request.reputationScore(),
-                request.risky()));
+        return ApiResponse.ok(riskService.upsertDevice(request.deviceId(), request.reputationScore(), request.risky()));
     }
 
     @PostMapping("/evaluate")
@@ -56,14 +55,9 @@ class RiskController {
         return ApiResponse.ok(riskService.findEvents(subjectId));
     }
 
-    record CreateRuleRequest(
-            @NotNull RiskScene scene,
-            @NotBlank String ruleCode,
-            @NotBlank String fieldName,
-            @NotNull RuleOperator operator,
-            @NotNull @DecimalMin("0.000000") BigDecimal threshold,
-            @NotNull RiskLevel level
-    ) {
+    record CreateRuleRequest(@NotNull RiskScene scene, @NotBlank String ruleCode, @NotBlank String fieldName,
+            @NotNull RuleOperator operator, @NotNull @DecimalMin("0.000000") BigDecimal threshold,
+            @NotNull RiskLevel level) {
     }
 
     record ChangeRuleStatusRequest(@NotNull RuleStatus status) {
@@ -72,13 +66,7 @@ class RiskController {
     record UpsertDeviceRequest(@NotBlank String deviceId, @Min(0) @Max(100) int reputationScore, boolean risky) {
     }
 
-    record EvaluateRiskRequest(
-            @NotNull RiskScene scene,
-            @NotBlank String subjectId,
-            @NotBlank String deviceId,
-            @NotBlank String ip,
-            @NotNull @DecimalMin("0.000000") BigDecimal amount,
-            @Min(0) int velocity
-    ) {
+    record EvaluateRiskRequest(@NotNull RiskScene scene, @NotBlank String subjectId, @NotBlank String deviceId,
+            @NotBlank String ip, @NotNull @DecimalMin("0.000000") BigDecimal amount, @Min(0) int velocity) {
     }
 }

@@ -35,8 +35,7 @@ public class JdbcFlashSaleRepository implements FlashSaleRepository {
                     ends_at = VALUES(ends_at), per_user_limit = VALUES(per_user_limit),
                     token_ttl_seconds = VALUES(token_ttl_seconds), queue_capacity = VALUES(queue_capacity),
                     status = VALUES(status), updated_at = VALUES(updated_at)
-                """,
-                campaign.campaignId(), campaign.skuId(), campaign.name(), Timestamp.from(campaign.startsAt()),
+                """, campaign.campaignId(), campaign.skuId(), campaign.name(), Timestamp.from(campaign.startsAt()),
                 Timestamp.from(campaign.endsAt()), campaign.perUserLimit(), campaign.tokenTtlSeconds(),
                 campaign.queueCapacity(), campaign.status().name(), Timestamp.from(campaign.createdAt()),
                 Timestamp.from(campaign.updatedAt()));
@@ -45,8 +44,9 @@ public class JdbcFlashSaleRepository implements FlashSaleRepository {
 
     @Override
     public Optional<FlashSaleCampaign> findCampaign(long campaignId) {
-        return jdbcTemplate.query("SELECT * FROM flash_sale_campaign WHERE campaign_id = ?",
-                this::mapCampaign, campaignId).stream().findFirst();
+        return jdbcTemplate
+                .query("SELECT * FROM flash_sale_campaign WHERE campaign_id = ?", this::mapCampaign, campaignId)
+                .stream().findFirst();
     }
 
     @Override
@@ -60,8 +60,7 @@ public class JdbcFlashSaleRepository implements FlashSaleRepository {
                     available_stock = VALUES(available_stock), token_reserved_stock = VALUES(token_reserved_stock),
                     queued_stock = VALUES(queued_stock), sold_stock = VALUES(sold_stock),
                     updated_at = VALUES(updated_at)
-                """,
-                stock.campaignId(), stock.skuId(), stock.totalStock(), stock.availableStock(),
+                """, stock.campaignId(), stock.skuId(), stock.totalStock(), stock.availableStock(),
                 stock.tokenReservedStock(), stock.queuedStock(), stock.soldStock(), Timestamp.from(stock.updatedAt()));
         return stock;
     }
@@ -69,8 +68,7 @@ public class JdbcFlashSaleRepository implements FlashSaleRepository {
     @Override
     public Optional<FlashSaleStock> findStock(long campaignId) {
         return jdbcTemplate.query("SELECT * FROM flash_sale_stock WHERE campaign_id = ?", this::mapStock, campaignId)
-                .stream()
-                .findFirst();
+                .stream().findFirst();
     }
 
     @Override
@@ -105,17 +103,15 @@ public class JdbcFlashSaleRepository implements FlashSaleRepository {
                     updated_at)
                 VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
                 ON DUPLICATE KEY UPDATE used = VALUES(used), updated_at = VALUES(updated_at)
-                """,
-                token.tokenId(), token.campaignId(), token.userId(), token.skuId(), token.quantity(), token.token(),
-                Timestamp.from(token.expiresAt()), token.used(), Timestamp.from(token.createdAt()),
+                """, token.tokenId(), token.campaignId(), token.userId(), token.skuId(), token.quantity(),
+                token.token(), Timestamp.from(token.expiresAt()), token.used(), Timestamp.from(token.createdAt()),
                 Timestamp.from(token.updatedAt()));
         return token;
     }
 
     @Override
     public Optional<FlashSaleToken> findToken(String token) {
-        return jdbcTemplate.query("SELECT * FROM flash_sale_token WHERE token = ?", this::mapToken, token)
-                .stream()
+        return jdbcTemplate.query("SELECT * FROM flash_sale_token WHERE token = ?", this::mapToken, token).stream()
                 .findFirst();
     }
 
@@ -136,8 +132,7 @@ public class JdbcFlashSaleRepository implements FlashSaleRepository {
                     (request_id, campaign_id, user_id, sku_id, quantity, token, status, created_at, updated_at)
                 VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
                 ON DUPLICATE KEY UPDATE status = VALUES(status), updated_at = VALUES(updated_at)
-                """,
-                request.requestId(), request.campaignId(), request.userId(), request.skuId(), request.quantity(),
+                """, request.requestId(), request.campaignId(), request.userId(), request.skuId(), request.quantity(),
                 request.token(), request.status().name(), Timestamp.from(request.createdAt()),
                 Timestamp.from(request.updatedAt()));
         return request;
@@ -145,8 +140,9 @@ public class JdbcFlashSaleRepository implements FlashSaleRepository {
 
     @Override
     public Optional<FlashSaleOrderRequest> findOrderRequest(long requestId) {
-        return jdbcTemplate.query("SELECT * FROM flash_sale_order_request WHERE request_id = ?",
-                this::mapOrderRequest, requestId).stream().findFirst();
+        return jdbcTemplate
+                .query("SELECT * FROM flash_sale_order_request WHERE request_id = ?", this::mapOrderRequest, requestId)
+                .stream().findFirst();
     }
 
     @Override
@@ -170,56 +166,30 @@ public class JdbcFlashSaleRepository implements FlashSaleRepository {
     }
 
     private FlashSaleCampaign mapCampaign(ResultSet rs, int rowNum) throws SQLException {
-        return new FlashSaleCampaign(
-                rs.getLong("campaign_id"),
-                rs.getLong("sku_id"),
-                rs.getString("name"),
-                rs.getTimestamp("starts_at").toInstant(),
-                rs.getTimestamp("ends_at").toInstant(),
-                rs.getInt("per_user_limit"),
-                rs.getInt("token_ttl_seconds"),
-                rs.getInt("queue_capacity"),
-                CampaignStatus.valueOf(rs.getString("status")),
-                rs.getTimestamp("created_at").toInstant(),
+        return new FlashSaleCampaign(rs.getLong("campaign_id"), rs.getLong("sku_id"), rs.getString("name"),
+                rs.getTimestamp("starts_at").toInstant(), rs.getTimestamp("ends_at").toInstant(),
+                rs.getInt("per_user_limit"), rs.getInt("token_ttl_seconds"), rs.getInt("queue_capacity"),
+                CampaignStatus.valueOf(rs.getString("status")), rs.getTimestamp("created_at").toInstant(),
                 rs.getTimestamp("updated_at").toInstant());
     }
 
     private FlashSaleStock mapStock(ResultSet rs, int rowNum) throws SQLException {
-        return new FlashSaleStock(
-                rs.getLong("campaign_id"),
-                rs.getLong("sku_id"),
-                rs.getInt("total_stock"),
-                rs.getInt("available_stock"),
-                rs.getInt("token_reserved_stock"),
-                rs.getInt("queued_stock"),
-                rs.getInt("sold_stock"),
-                rs.getTimestamp("updated_at").toInstant());
+        return new FlashSaleStock(rs.getLong("campaign_id"), rs.getLong("sku_id"), rs.getInt("total_stock"),
+                rs.getInt("available_stock"), rs.getInt("token_reserved_stock"), rs.getInt("queued_stock"),
+                rs.getInt("sold_stock"), rs.getTimestamp("updated_at").toInstant());
     }
 
     private FlashSaleToken mapToken(ResultSet rs, int rowNum) throws SQLException {
-        return new FlashSaleToken(
-                rs.getLong("token_id"),
-                rs.getLong("campaign_id"),
-                rs.getLong("user_id"),
-                rs.getLong("sku_id"),
-                rs.getInt("quantity"),
-                rs.getString("token"),
-                rs.getTimestamp("expires_at").toInstant(),
-                rs.getBoolean("used"),
-                rs.getTimestamp("created_at").toInstant(),
-                rs.getTimestamp("updated_at").toInstant());
+        return new FlashSaleToken(rs.getLong("token_id"), rs.getLong("campaign_id"), rs.getLong("user_id"),
+                rs.getLong("sku_id"), rs.getInt("quantity"), rs.getString("token"),
+                rs.getTimestamp("expires_at").toInstant(), rs.getBoolean("used"),
+                rs.getTimestamp("created_at").toInstant(), rs.getTimestamp("updated_at").toInstant());
     }
 
     private FlashSaleOrderRequest mapOrderRequest(ResultSet rs, int rowNum) throws SQLException {
-        return new FlashSaleOrderRequest(
-                rs.getLong("request_id"),
-                rs.getLong("campaign_id"),
-                rs.getLong("user_id"),
-                rs.getLong("sku_id"),
-                rs.getInt("quantity"),
-                rs.getString("token"),
-                FlashSaleRequestStatus.valueOf(rs.getString("status")),
-                rs.getTimestamp("created_at").toInstant(),
+        return new FlashSaleOrderRequest(rs.getLong("request_id"), rs.getLong("campaign_id"), rs.getLong("user_id"),
+                rs.getLong("sku_id"), rs.getInt("quantity"), rs.getString("token"),
+                FlashSaleRequestStatus.valueOf(rs.getString("status")), rs.getTimestamp("created_at").toInstant(),
                 rs.getTimestamp("updated_at").toInstant());
     }
 }

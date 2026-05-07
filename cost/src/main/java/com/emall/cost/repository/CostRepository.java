@@ -22,7 +22,7 @@ public interface CostRepository {
     Optional<CostOptimizationAction> findAction(long actionId);
 
     Optional<CostOptimizationAction> findActiveAction(String serviceName, CostSignalType signalType,
-                                                      CostActionType actionType);
+            CostActionType actionType);
 
     List<CostOptimizationAction> findActiveActionsByService(String serviceName);
 }

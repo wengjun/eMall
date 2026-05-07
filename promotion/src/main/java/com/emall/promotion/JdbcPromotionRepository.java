@@ -37,8 +37,9 @@ class JdbcPromotionRepository implements PromotionRepository {
 
     @Override
     public Optional<PromotionCampaign> findCampaign(long campaignId) {
-        return jdbcTemplate.query("SELECT * FROM promotion_campaign WHERE campaign_id = ?", this::mapCampaign,
-                campaignId).stream().findFirst();
+        return jdbcTemplate
+                .query("SELECT * FROM promotion_campaign WHERE campaign_id = ?", this::mapCampaign, campaignId).stream()
+                .findFirst();
     }
 
     @Override
@@ -58,10 +59,9 @@ class JdbcPromotionRepository implements PromotionRepository {
     private PromotionCampaign mapCampaign(ResultSet rs, int rowNum) throws SQLException {
         return new PromotionCampaign(rs.getLong("campaign_id"), rs.getString("name"),
                 PromotionType.valueOf(rs.getString("promotion_type")), rs.getBigDecimal("threshold_amount"),
-                rs.getBigDecimal("benefit_value"), rs.getBigDecimal("budget_amount"),
-                rs.getBigDecimal("used_budget"), rs.getInt("priority"), rs.getBoolean("stackable"),
-                CampaignStatus.valueOf(rs.getString("status")), rs.getTimestamp("starts_at").toInstant(),
-                rs.getTimestamp("ends_at").toInstant(), rs.getTimestamp("created_at").toInstant(),
-                rs.getTimestamp("updated_at").toInstant());
+                rs.getBigDecimal("benefit_value"), rs.getBigDecimal("budget_amount"), rs.getBigDecimal("used_budget"),
+                rs.getInt("priority"), rs.getBoolean("stackable"), CampaignStatus.valueOf(rs.getString("status")),
+                rs.getTimestamp("starts_at").toInstant(), rs.getTimestamp("ends_at").toInstant(),
+                rs.getTimestamp("created_at").toInstant(), rs.getTimestamp("updated_at").toInstant());
     }
 }

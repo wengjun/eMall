@@ -20,8 +20,8 @@ public class SearchService {
     }
 
     @Transactional
-    public SearchDocument index(long skuId, String title, String category, BigDecimal price,
-                                Set<String> tags, boolean saleable) {
+    public SearchDocument index(long skuId, String title, String category, BigDecimal price, Set<String> tags,
+            boolean saleable) {
         return searchRepository.save(new SearchDocument(skuId, title, category, price, tags, saleable, Instant.now()));
     }
 

@@ -48,13 +48,13 @@ public class FlashSaleController {
 
     @PatchMapping("/campaigns/{campaignId}/status")
     public ApiResponse<FlashSaleCampaign> changeCampaignStatus(@PathVariable long campaignId,
-                                                               @Valid @RequestBody ChangeStatusRequest request) {
+            @Valid @RequestBody ChangeStatusRequest request) {
         return ApiResponse.ok(flashSaleService.changeCampaignStatus(campaignId, request.status()));
     }
 
     @PostMapping("/campaigns/{campaignId}/stock")
     public ApiResponse<FlashSaleStock> preallocateStock(@PathVariable long campaignId,
-                                                        @Valid @RequestBody PreallocateStockRequest request) {
+            @Valid @RequestBody PreallocateStockRequest request) {
         return ApiResponse.ok(flashSaleService.preallocateStock(campaignId, request.totalStock()));
     }
 
@@ -66,7 +66,7 @@ public class FlashSaleController {
     @PostMapping("/campaigns/{campaignId}/tokens")
     @ResponseStatus(HttpStatus.CREATED)
     public ApiResponse<FlashSaleToken> issueToken(@PathVariable long campaignId,
-                                                  @Valid @RequestBody IssueTokenRequest request) {
+            @Valid @RequestBody IssueTokenRequest request) {
         return ApiResponse.ok(flashSaleService.issueToken(campaignId, request.userId(), request.quantity()));
     }
 
@@ -83,21 +83,14 @@ public class FlashSaleController {
 
     @GetMapping("/campaigns/{campaignId}/queue")
     public ApiResponse<List<FlashSaleOrderRequest>> findQueuedRequests(@PathVariable long campaignId,
-                                                                       @RequestParam(defaultValue = "100") int limit) {
+            @RequestParam(defaultValue = "100") int limit) {
         return ApiResponse.ok(flashSaleService.findQueuedRequests(campaignId, limit));
     }
 
-    public record CreateCampaignRequest(
-            @Positive long skuId,
-            @NotBlank String name,
-            @NotNull
-            @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) Instant startsAt,
-            @NotNull
-            @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) Instant endsAt,
-            @Positive int perUserLimit,
-            @Positive int tokenTtlSeconds,
-            @Positive int queueCapacity
-    ) {
+    public record CreateCampaignRequest(@Positive long skuId, @NotBlank String name,
+            @NotNull @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) Instant startsAt,
+            @NotNull @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) Instant endsAt, @Positive int perUserLimit,
+            @Positive int tokenTtlSeconds, @Positive int queueCapacity) {
     }
 
     public record ChangeStatusRequest(@NotNull CampaignStatus status) {

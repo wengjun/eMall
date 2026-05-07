@@ -21,10 +21,10 @@ class CostGovernanceServiceTest {
 
     @Test
     void opensActionWhenCacheHitRatioFallsBelowThreshold() {
-        service.recordSignal("search", CostSignalType.CACHE_HIT_RATIO, new BigDecimal("0.72"),
-                new BigDecimal("0.85"), Instant.now());
-        service.recordSignal("search", CostSignalType.CACHE_HIT_RATIO, new BigDecimal("0.70"),
-                new BigDecimal("0.85"), Instant.now());
+        service.recordSignal("search", CostSignalType.CACHE_HIT_RATIO, new BigDecimal("0.72"), new BigDecimal("0.85"),
+                Instant.now());
+        service.recordSignal("search", CostSignalType.CACHE_HIT_RATIO, new BigDecimal("0.70"), new BigDecimal("0.85"),
+                Instant.now());
 
         List<CostOptimizationAction> actions = service.findActiveActions("search");
 
@@ -35,8 +35,8 @@ class CostGovernanceServiceTest {
 
     @Test
     void opensActionWhenIndexStorageExceedsThreshold() {
-        service.recordSignal("search", CostSignalType.INDEX_STORAGE_GB, new BigDecimal("650"),
-                new BigDecimal("500"), Instant.now());
+        service.recordSignal("search", CostSignalType.INDEX_STORAGE_GB, new BigDecimal("650"), new BigDecimal("500"),
+                Instant.now());
 
         List<CostOptimizationAction> actions = service.findActiveActions("search");
 
@@ -46,8 +46,8 @@ class CostGovernanceServiceTest {
 
     @Test
     void budgetSummaryFlagsAlertThreshold() {
-        CostBudget budget = service.upsertBudget("export", new BigDecimal("10000"), new BigDecimal("8500"),
-                "usd", 80, true);
+        CostBudget budget =
+                service.upsertBudget("export", new BigDecimal("10000"), new BigDecimal("8500"), "usd", 80, true);
 
         CostSummary summary = service.summary("export");
 

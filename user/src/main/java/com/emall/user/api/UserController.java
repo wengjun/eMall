@@ -46,14 +46,12 @@ public class UserController {
 
     @PatchMapping("/{userId}/status")
     public ApiResponse<UserAccount> changeStatus(@PathVariable long userId,
-                                                 @Valid @RequestBody ChangeUserStatusRequest request) {
+            @Valid @RequestBody ChangeUserStatusRequest request) {
         return ApiResponse.ok(userService.changeStatus(userId, request.status()));
     }
 
-    public record RegisterUserRequest(
-            @NotBlank @Pattern(regexp = "^1[3-9]\\d{9}$") String mobile,
-            @NotBlank @Size(max = 40) String nickname
-    ) {
+    public record RegisterUserRequest(@NotBlank @Pattern(regexp = "^1[3-9]\\d{9}$") String mobile,
+            @NotBlank @Size(max = 40) String nickname) {
     }
 
     public record RenameUserRequest(@NotBlank @Size(max = 40) String nickname) {

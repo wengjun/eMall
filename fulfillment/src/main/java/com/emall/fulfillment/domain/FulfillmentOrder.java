@@ -2,25 +2,12 @@ package com.emall.fulfillment.domain;
 
 import java.time.Instant;
 
-public record FulfillmentOrder(
-        long fulfillmentId,
-        long orderId,
-        long userId,
-        long skuId,
-        int quantity,
-        String destinationRegionCode,
-        String warehouseCode,
-        String plannedCarrier,
-        int estimatedSlaHours,
-        String carrier,
-        String trackingNo,
-        ShipmentStatus status,
-        Instant createdAt,
-        Instant updatedAt
-) {
+public record FulfillmentOrder(long fulfillmentId, long orderId, long userId, long skuId, int quantity,
+        String destinationRegionCode, String warehouseCode, String plannedCarrier, int estimatedSlaHours,
+        String carrier, String trackingNo, ShipmentStatus status, Instant createdAt, Instant updatedAt) {
     public static FulfillmentOrder allocated(long fulfillmentId, long orderId, long userId, long skuId, int quantity,
-                                             String destinationRegionCode, String warehouseCode,
-                                             String plannedCarrier, int estimatedSlaHours, Instant now) {
+            String destinationRegionCode, String warehouseCode, String plannedCarrier, int estimatedSlaHours,
+            Instant now) {
         return new FulfillmentOrder(fulfillmentId, orderId, userId, skuId, quantity, destinationRegionCode,
                 warehouseCode, plannedCarrier, estimatedSlaHours, null, null, ShipmentStatus.ALLOCATED, now, now);
     }

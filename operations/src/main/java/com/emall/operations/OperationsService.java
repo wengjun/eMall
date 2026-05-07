@@ -21,11 +21,11 @@ class OperationsService {
 
     @Transactional
     ApprovalRequest createApproval(String workflowType, String resourceType, String resourceId, String requester,
-                                   String reason) {
+            String reason) {
         Instant now = Instant.now();
-        return repository.saveApproval(new ApprovalRequest(idGenerator.nextId(), normalize(workflowType),
-                normalize(resourceType), normalize(resourceId), normalize(requester), "", reason,
-                ApprovalStatus.PENDING, now, now));
+        return repository.saveApproval(
+                new ApprovalRequest(idGenerator.nextId(), normalize(workflowType), normalize(resourceType),
+                        normalize(resourceId), normalize(requester), "", reason, ApprovalStatus.PENDING, now, now));
     }
 
     @Transactional
@@ -47,11 +47,11 @@ class OperationsService {
 
     @Transactional
     OperationTask createTask(String taskType, String resourceType, String resourceId, String owner, int priority,
-                             String summary) {
+            String summary) {
         Instant now = Instant.now();
-        return repository.saveTask(new OperationTask(idGenerator.nextId(), normalize(taskType),
-                normalize(resourceType), normalize(resourceId), normalize(owner), TaskStatus.OPEN,
-                Math.max(1, Math.min(priority, 5)), summary, now, now));
+        return repository.saveTask(new OperationTask(idGenerator.nextId(), normalize(taskType), normalize(resourceType),
+                normalize(resourceId), normalize(owner), TaskStatus.OPEN, Math.max(1, Math.min(priority, 5)), summary,
+                now, now));
     }
 
     @Transactional
@@ -67,7 +67,7 @@ class OperationsService {
 
     @Transactional
     ComplianceEvidence recordEvidence(String evidenceType, String resourceType, String resourceId, String owner,
-                                      String summary) {
+            String summary) {
         return repository.saveEvidence(new ComplianceEvidence(idGenerator.nextId(), normalize(evidenceType),
                 normalize(resourceType), normalize(resourceId), normalize(owner), summary, Instant.now()));
     }
@@ -79,8 +79,8 @@ class OperationsService {
     @Transactional
     SecurityIncident openIncident(String severity, String owner, String summary) {
         Instant now = Instant.now();
-        return repository.saveIncident(new SecurityIncident(idGenerator.nextId(), normalize(severity),
-                normalize(owner), summary, IncidentStatus.OPEN, now, now));
+        return repository.saveIncident(new SecurityIncident(idGenerator.nextId(), normalize(severity), normalize(owner),
+                summary, IncidentStatus.OPEN, now, now));
     }
 
     @Transactional

@@ -25,7 +25,7 @@ public class InventoryService {
     private final SnowflakeIdGenerator idGenerator;
 
     public InventoryService(InventoryRepository inventoryRepository, OutboxRepository outboxRepository,
-                            SnowflakeIdGenerator idGenerator) {
+            SnowflakeIdGenerator idGenerator) {
         this.inventoryRepository = inventoryRepository;
         this.outboxRepository = outboxRepository;
         this.idGenerator = idGenerator;
@@ -38,8 +38,8 @@ public class InventoryService {
 
     @Transactional
     public synchronized InventoryItem addStock(long skuId, int quantity) {
-        InventoryItem item = inventoryRepository.findItem(skuId)
-                .orElse(new InventoryItem(skuId, 0, 0, 0, Instant.now()));
+        InventoryItem item =
+                inventoryRepository.findItem(skuId).orElse(new InventoryItem(skuId, 0, 0, 0, Instant.now()));
         return inventoryRepository.saveItem(item.add(quantity));
     }
 
@@ -66,8 +66,7 @@ public class InventoryService {
 
     @Transactional
     public synchronized InventoryReservation reserve(String requestId, long skuId, int quantity) {
-        return inventoryRepository.findReservation(requestId)
-                .orElseGet(() -> reserveOnce(requestId, skuId, quantity));
+        return inventoryRepository.findReservation(requestId).orElseGet(() -> reserveOnce(requestId, skuId, quantity));
     }
 
     @Transactional
@@ -123,13 +122,12 @@ public class InventoryService {
         }
         InventoryItem item = get(skuId);
         if (item.available() < quantity) {
-            return inventoryRepository.saveReservation(
-                    InventoryReservation.rejected(requestId, skuId, quantity, "INSUFFICIENT_STOCK"));
+            return inventoryRepository
+                    .saveReservation(InventoryReservation.rejected(requestId, skuId, quantity, "INSUFFICIENT_STOCK"));
         }
         inventoryRepository.saveItem(item.reserve(quantity));
-        InventoryReservation reservation = inventoryRepository.saveReservation(
-                InventoryReservation.reserved(
-                        requestId, skuId, quantity, null, Instant.now().plus(Duration.ofMinutes(15))));
+        InventoryReservation reservation = inventoryRepository.saveReservation(InventoryReservation.reserved(requestId,
+                skuId, quantity, null, Instant.now().plus(Duration.ofMinutes(15))));
         appendEvent(reservation, EventTypes.INVENTORY_RESERVED);
         return reservation;
     }
@@ -141,9 +139,8 @@ public class InventoryService {
                     InventoryReservation.rejected(requestId, skuId, quantity, "INSUFFICIENT_BUCKET_STOCK"));
         }
         inventoryRepository.saveBucket(bucket.reserve(quantity));
-        InventoryReservation reservation = inventoryRepository.saveReservation(
-                InventoryReservation.reserved(
-                        requestId, skuId, quantity, bucket.bucketNo(), Instant.now().plus(Duration.ofMinutes(15))));
+        InventoryReservation reservation = inventoryRepository.saveReservation(InventoryReservation.reserved(requestId,
+                skuId, quantity, bucket.bucketNo(), Instant.now().plus(Duration.ofMinutes(15))));
         appendEvent(reservation, EventTypes.INVENTORY_RESERVED);
         return reservation;
     }
@@ -159,17 +156,11 @@ public class InventoryService {
     }
 
     private void appendEvent(InventoryReservation reservation, String eventType) {
-        outboxRepository.save(OutboxEvent.create(
-                "inventory-event-" + idGenerator.nextId(),
-                "InventoryReservation",
-                reservation.requestId(),
-                eventType,
-                Map.of(
-                        "requestId", reservation.requestId(),
-                        "skuId", reservation.skuId(),
-                        "quantity", reservation.quantity(),
-                        "bucketNo", reservation.bucketNo() == null ? "" : reservation.bucketNo(),
-                        "status", reservation.status().name()
-                )));
+        outboxRepository.save(OutboxEvent.create("inventory-event-" + idGenerator.nextId(), "InventoryReservation",
+                reservation.requestId(), eventType,
+                Map.of("requestId", reservation.requestId(), "skuId", reservation.skuId(), "quantity",
+                        reservation.quantity(), "bucketNo",
+                        reservation.bucketNo() == null ? "" : reservation.bucketNo(), "status",
+                        reservation.status().name())));
     }
 }

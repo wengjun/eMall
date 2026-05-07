@@ -29,8 +29,8 @@ public class MarketingService {
         if (discountAmount.signum() <= 0 || thresholdAmount.signum() < 0) {
             throw new BusinessException(ErrorCode.BAD_REQUEST, "invalid coupon amounts");
         }
-        Coupon coupon = new Coupon("coupon-" + idGenerator.nextId(), userId, thresholdAmount,
-                discountAmount, CouponStatus.AVAILABLE, expiresAt, Instant.now());
+        Coupon coupon = new Coupon("coupon-" + idGenerator.nextId(), userId, thresholdAmount, discountAmount,
+                CouponStatus.AVAILABLE, expiresAt, Instant.now());
         return couponRepository.save(coupon);
     }
 
@@ -41,8 +41,7 @@ public class MarketingService {
     public PromotionQuote quote(long userId, BigDecimal orderAmount) {
         return couponRepository.findByUserId(userId).stream()
                 .filter(coupon -> coupon.usable(orderAmount, Instant.now()))
-                .max(Comparator.comparing(Coupon::discountAmount))
-                .map(coupon -> quoteWithCoupon(coupon, orderAmount))
+                .max(Comparator.comparing(Coupon::discountAmount)).map(coupon -> quoteWithCoupon(coupon, orderAmount))
                 .orElseGet(() -> PromotionQuote.none(userId, orderAmount));
     }
 
@@ -58,7 +57,7 @@ public class MarketingService {
 
     private PromotionQuote quoteWithCoupon(Coupon coupon, BigDecimal orderAmount) {
         BigDecimal discount = coupon.discountAmount().min(orderAmount);
-        return new PromotionQuote(coupon.userId(), orderAmount, discount,
-                orderAmount.subtract(discount), coupon.couponId(), Instant.now());
+        return new PromotionQuote(coupon.userId(), orderAmount, discount, orderAmount.subtract(discount),
+                coupon.couponId(), Instant.now());
     }
 }

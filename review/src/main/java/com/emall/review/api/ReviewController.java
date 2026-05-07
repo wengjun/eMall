@@ -31,8 +31,8 @@ public class ReviewController {
     @PostMapping
     @ResponseStatus(HttpStatus.CREATED)
     public ApiResponse<ProductReview> create(@Valid @RequestBody CreateReviewRequest request) {
-        return ApiResponse.ok(reviewService.create(
-                request.orderId(), request.skuId(), request.userId(), request.rating(), request.content()));
+        return ApiResponse.ok(reviewService.create(request.orderId(), request.skuId(), request.userId(),
+                request.rating(), request.content()));
     }
 
     @GetMapping("/{reviewId}")
@@ -42,7 +42,7 @@ public class ReviewController {
 
     @GetMapping("/products/{skuId}")
     public ApiResponse<List<ProductReview>> listBySku(@PathVariable long skuId,
-                                                      @RequestParam(defaultValue = "20") int limit) {
+            @RequestParam(defaultValue = "20") int limit) {
         return ApiResponse.ok(reviewService.listBySku(skuId, limit));
     }
 
@@ -56,12 +56,7 @@ public class ReviewController {
         return ApiResponse.ok(reviewService.reject(reviewId));
     }
 
-    public record CreateReviewRequest(
-            @Positive long orderId,
-            @Positive long skuId,
-            @Positive long userId,
-            @Min(1) @Max(5) int rating,
-            @NotBlank String content
-    ) {
+    public record CreateReviewRequest(@Positive long orderId, @Positive long skuId, @Positive long userId,
+            @Min(1) @Max(5) int rating, @NotBlank String content) {
     }
 }

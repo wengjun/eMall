@@ -30,16 +30,14 @@ public class JdbcUserRepository implements UserRepository {
                 UPDATE user_account
                 SET mobile = ?, mobile_ciphertext = ?, mobile_hash = ?, nickname = ?, status = ?, updated_at = ?
                 WHERE user_id = ?
-                """,
-                mobileHash, encryptedMobile, mobileHash, user.nickname(), user.status().name(),
+                """, mobileHash, encryptedMobile, mobileHash, user.nickname(), user.status().name(),
                 Timestamp.from(user.updatedAt()), user.userId());
         if (updated == 0) {
             jdbcTemplate.update("""
                     INSERT INTO user_account
                         (user_id, mobile, mobile_ciphertext, mobile_hash, nickname, status, created_at, updated_at)
                     VALUES (?, ?, ?, ?, ?, ?, ?, ?)
-                    """,
-                    user.userId(), mobileHash, encryptedMobile, mobileHash, user.nickname(), user.status().name(),
+                    """, user.userId(), mobileHash, encryptedMobile, mobileHash, user.nickname(), user.status().name(),
                     Timestamp.from(user.createdAt()), Timestamp.from(user.updatedAt()));
         }
         return user;
@@ -47,8 +45,7 @@ public class JdbcUserRepository implements UserRepository {
 
     @Override
     public Optional<UserAccount> findById(long userId) {
-        return jdbcTemplate.query("SELECT * FROM user_account WHERE user_id = ?", this::map, userId)
-                .stream()
+        return jdbcTemplate.query("SELECT * FROM user_account WHERE user_id = ?", this::map, userId).stream()
                 .findFirst();
     }
 
@@ -58,9 +55,7 @@ public class JdbcUserRepository implements UserRepository {
         return jdbcTemplate.query("""
                 SELECT * FROM user_account
                 WHERE mobile_hash = ? OR mobile = ?
-                """, this::map, mobileHash, mobile)
-                .stream()
-                .findFirst();
+                """, this::map, mobileHash, mobile).stream().findFirst();
     }
 
     private UserAccount map(ResultSet rs, int rowNum) throws SQLException {
@@ -68,12 +63,8 @@ public class JdbcUserRepository implements UserRepository {
         String mobile = encryptedMobile == null || encryptedMobile.isBlank()
                 ? rs.getString("mobile")
                 : fieldEncryptor.decrypt(encryptedMobile);
-        return new UserAccount(
-                rs.getLong("user_id"),
-                mobile,
-                rs.getString("nickname"),
-                UserStatus.valueOf(rs.getString("status")),
-                rs.getTimestamp("created_at").toInstant(),
+        return new UserAccount(rs.getLong("user_id"), mobile, rs.getString("nickname"),
+                UserStatus.valueOf(rs.getString("status")), rs.getTimestamp("created_at").toInstant(),
                 rs.getTimestamp("updated_at").toInstant());
     }
 }

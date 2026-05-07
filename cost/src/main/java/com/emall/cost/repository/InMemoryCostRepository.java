@@ -29,11 +29,8 @@ public class InMemoryCostRepository implements CostRepository {
 
     @Override
     public List<CostSignal> findSignalsByService(String serviceName, int limit) {
-        return signals.values().stream()
-                .filter(signal -> signal.serviceName().equals(serviceName))
-                .sorted(Comparator.comparing(CostSignal::observedAt).reversed())
-                .limit(limit)
-                .toList();
+        return signals.values().stream().filter(signal -> signal.serviceName().equals(serviceName))
+                .sorted(Comparator.comparing(CostSignal::observedAt).reversed()).limit(limit).toList();
     }
 
     @Override
@@ -60,21 +57,16 @@ public class InMemoryCostRepository implements CostRepository {
 
     @Override
     public Optional<CostOptimizationAction> findActiveAction(String serviceName, CostSignalType signalType,
-                                                            CostActionType actionType) {
-        return actions.values().stream()
-                .filter(action -> action.serviceName().equals(serviceName))
-                .filter(action -> action.signalType() == signalType)
-                .filter(action -> action.actionType() == actionType)
-                .filter(this::isActive)
-                .max(Comparator.comparing(CostOptimizationAction::updatedAt));
+            CostActionType actionType) {
+        return actions.values().stream().filter(action -> action.serviceName().equals(serviceName))
+                .filter(action -> action.signalType() == signalType).filter(action -> action.actionType() == actionType)
+                .filter(this::isActive).max(Comparator.comparing(CostOptimizationAction::updatedAt));
     }
 
     @Override
     public List<CostOptimizationAction> findActiveActionsByService(String serviceName) {
-        return actions.values().stream()
-                .filter(action -> action.serviceName().equals(serviceName))
-                .filter(this::isActive)
-                .sorted(Comparator.comparingInt(CostOptimizationAction::priority)
+        return actions.values().stream().filter(action -> action.serviceName().equals(serviceName))
+                .filter(this::isActive).sorted(Comparator.comparingInt(CostOptimizationAction::priority)
                         .thenComparing(Comparator.comparing(CostOptimizationAction::updatedAt).reversed()))
                 .toList();
     }

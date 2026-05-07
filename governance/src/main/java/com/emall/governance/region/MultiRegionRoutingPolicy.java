@@ -24,8 +24,8 @@ public class MultiRegionRoutingPolicy {
                 ? writeEndpoint(rule, ownerRegion)
                 : readEndpoint(rule, callerRegion, ownerRegion);
         boolean crossRegion = !target.regionCode().equals(callerRegion);
-        return new RoutingDecision(domain, intent, ownerRegion, target.regionCode(), target.serviceUrl(),
-                crossRegion, reason(intent, target.regionCode(), ownerRegion, callerRegion));
+        return new RoutingDecision(domain, intent, ownerRegion, target.regionCode(), target.serviceUrl(), crossRegion,
+                reason(intent, target.regionCode(), ownerRegion, callerRegion));
     }
 
     private DomainOwnershipRule rule(DomainType domain) {
@@ -49,10 +49,8 @@ public class MultiRegionRoutingPolicy {
     }
 
     private RegionEndpoint writeEndpoint(DomainOwnershipRule rule, String ownerRegion) {
-        return rule.endpoints().stream()
-                .filter(endpoint -> endpoint.regionCode().equals(ownerRegion))
-                .filter(RegionEndpoint::canServeWrite)
-                .findFirst()
+        return rule.endpoints().stream().filter(endpoint -> endpoint.regionCode().equals(ownerRegion))
+                .filter(RegionEndpoint::canServeWrite).findFirst()
                 .orElseGet(() -> failoverWriteEndpoint(rule, ownerRegion));
     }
 
@@ -60,40 +58,32 @@ public class MultiRegionRoutingPolicy {
         if (rule.writeStrategy() != WriteStrategy.GLOBAL_SINGLE_WRITER) {
             throw new IllegalStateException("owner region is unavailable for " + rule.domain());
         }
-        return activeEndpoints(rule).stream()
-                .min(Comparator.comparingInt(RegionEndpoint::priority))
+        return activeEndpoints(rule).stream().min(Comparator.comparingInt(RegionEndpoint::priority))
                 .orElseThrow(() -> new IllegalStateException("no active region available for " + rule.domain()));
     }
 
     private RegionEndpoint readEndpoint(DomainOwnershipRule rule, String callerRegion, String ownerRegion) {
-        Optional<RegionEndpoint> local = rule.endpoints().stream()
-                .filter(endpoint -> endpoint.regionCode().equals(callerRegion))
-                .filter(RegionEndpoint::canServeRead)
-                .findFirst();
+        Optional<RegionEndpoint> local =
+                rule.endpoints().stream().filter(endpoint -> endpoint.regionCode().equals(callerRegion))
+                        .filter(RegionEndpoint::canServeRead).findFirst();
         if (local.isPresent()) {
             return local.get();
         }
-        return rule.endpoints().stream()
-                .filter(endpoint -> endpoint.regionCode().equals(ownerRegion))
-                .filter(RegionEndpoint::canServeRead)
-                .findFirst()
-                .orElseGet(() -> activeEndpoints(rule).stream()
-                        .min(Comparator.comparingInt(RegionEndpoint::priority))
+        return rule.endpoints().stream().filter(endpoint -> endpoint.regionCode().equals(ownerRegion))
+                .filter(RegionEndpoint::canServeRead).findFirst()
+                .orElseGet(() -> activeEndpoints(rule).stream().min(Comparator.comparingInt(RegionEndpoint::priority))
                         .orElseThrow(() -> new IllegalStateException("no readable region available")));
     }
 
     private List<RegionEndpoint> activeEndpoints(DomainOwnershipRule rule) {
-        return rule.endpoints().stream()
-                .filter(RegionEndpoint::canServeWrite)
-                .sorted(Comparator.comparingInt(RegionEndpoint::priority)
-                        .thenComparing(RegionEndpoint::regionCode))
+        return rule.endpoints().stream().filter(RegionEndpoint::canServeWrite)
+                .sorted(Comparator.comparingInt(RegionEndpoint::priority).thenComparing(RegionEndpoint::regionCode))
                 .toList();
     }
 
     private List<RegionEndpoint> ownershipEndpoints(DomainOwnershipRule rule) {
         return rule.endpoints().stream()
-                .sorted(Comparator.comparingInt(RegionEndpoint::priority)
-                        .thenComparing(RegionEndpoint::regionCode))
+                .sorted(Comparator.comparingInt(RegionEndpoint::priority).thenComparing(RegionEndpoint::regionCode))
                 .toList();
     }
 

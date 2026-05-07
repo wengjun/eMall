@@ -34,10 +34,8 @@ class InMemoryAdvertisingRepository implements AdvertisingRepository {
 
     @Override
     public List<AdCreative> findCreatives(long campaignId) {
-        return creatives.values().stream()
-                .filter(creative -> creative.campaignId() == campaignId)
-                .filter(AdCreative::active)
-                .toList();
+        return creatives.values().stream().filter(creative -> creative.campaignId() == campaignId)
+                .filter(AdCreative::active).toList();
     }
 
     @Override
@@ -48,10 +46,8 @@ class InMemoryAdvertisingRepository implements AdvertisingRepository {
 
     @Override
     public List<KeywordTarget> findTargets(String keyword) {
-        return targets.values().stream()
-                .filter(target -> target.keyword().equals(keyword))
-                .filter(KeywordTarget::active)
-                .toList();
+        return targets.values().stream().filter(target -> target.keyword().equals(keyword))
+                .filter(KeywordTarget::active).toList();
     }
 
     @Override

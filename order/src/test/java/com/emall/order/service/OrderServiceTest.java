@@ -21,13 +21,8 @@ import org.junit.jupiter.api.Test;
 class OrderServiceTest {
     private final InMemoryOutboxRepository outboxRepository = new InMemoryOutboxRepository();
     private final FakeInventoryClient inventoryClient = new FakeInventoryClient();
-    private final OrderService orderService = new OrderService(
-            new InMemoryOrderRepository(),
-            outboxRepository,
-            new SnowflakeIdGenerator(3),
-            inventoryClient,
-            new FakePricingClient(),
-            new FakeMarketingClient());
+    private final OrderService orderService = new OrderService(new InMemoryOrderRepository(), outboxRepository,
+            new SnowflakeIdGenerator(3), inventoryClient, new FakePricingClient(), new FakeMarketingClient());
 
     @Test
     void shouldCreateAndPayOrderWithDownstreamClients() {
@@ -53,8 +48,8 @@ class OrderServiceTest {
         @Override
         public InventoryReservation reserve(ReserveInventoryRequest request) {
             Instant now = Instant.now();
-            return new InventoryReservation(request.requestId(), request.skuId(), request.quantity(),
-                    "RESERVED", null, now.plusSeconds(900), now, now);
+            return new InventoryReservation(request.requestId(), request.skuId(), request.quantity(), "RESERVED", null,
+                    now.plusSeconds(900), now, now);
         }
 
         @Override
@@ -73,8 +68,8 @@ class OrderServiceTest {
         @Override
         public PriceQuote quote(long skuId, int quantity) {
             BigDecimal unitPrice = new BigDecimal("100.00");
-            return new PriceQuote(skuId, unitPrice, quantity,
-                    unitPrice.multiply(BigDecimal.valueOf(quantity)), "CNY", 1L, Instant.now());
+            return new PriceQuote(skuId, unitPrice, quantity, unitPrice.multiply(BigDecimal.valueOf(quantity)), "CNY",
+                    1L, Instant.now());
         }
     }
 

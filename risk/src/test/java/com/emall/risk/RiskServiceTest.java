@@ -16,8 +16,8 @@ class RiskServiceTest {
                 RuleOperator.GREATER_THAN, new BigDecimal("20"), RiskLevel.BLOCK);
         service.changeRuleStatus(rule.ruleId(), RuleStatus.ACTIVE);
 
-        RiskDecision decision = service.evaluate(RiskScene.COUPON_CLAIM, "user-1", "device-1", "127.0.0.1",
-                BigDecimal.ZERO, 30);
+        RiskDecision decision =
+                service.evaluate(RiskScene.COUPON_CLAIM, "user-1", "device-1", "127.0.0.1", BigDecimal.ZERO, 30);
 
         assertThat(decision.level()).isEqualTo(RiskLevel.BLOCK);
         assertThat(service.findEvents("user-1")).hasSize(1);
@@ -27,8 +27,8 @@ class RiskServiceTest {
     void reviewsRiskyDeviceEvenWithoutMatchingRule() {
         service.upsertDevice("device-1", 85, true);
 
-        RiskDecision decision = service.evaluate(RiskScene.ACCOUNT_LOGIN, "user-1", "device-1", "127.0.0.1",
-                BigDecimal.ZERO, 1);
+        RiskDecision decision =
+                service.evaluate(RiskScene.ACCOUNT_LOGIN, "user-1", "device-1", "127.0.0.1", BigDecimal.ZERO, 1);
 
         assertThat(decision.score()).isEqualTo(85);
         assertThat(decision.level()).isEqualTo(RiskLevel.REVIEW);

@@ -18,25 +18,19 @@ public class OrderConfig {
 
     @Bean
     RestClient inventoryRestClient(@Value("${emall.downstream.inventory-url}") String inventoryUrl) {
-        return RestClient.builder()
-                .baseUrl(inventoryUrl)
-                .requestInterceptor(new TraceIdClientHttpRequestInterceptor())
+        return RestClient.builder().baseUrl(inventoryUrl).requestInterceptor(new TraceIdClientHttpRequestInterceptor())
                 .build();
     }
 
     @Bean
     RestClient pricingRestClient(@Value("${emall.downstream.pricing-url}") String pricingUrl) {
-        return RestClient.builder()
-                .baseUrl(pricingUrl)
-                .requestInterceptor(new TraceIdClientHttpRequestInterceptor())
+        return RestClient.builder().baseUrl(pricingUrl).requestInterceptor(new TraceIdClientHttpRequestInterceptor())
                 .build();
     }
 
     @Bean
     RestClient marketingRestClient(@Value("${emall.downstream.marketing-url}") String marketingUrl) {
-        return RestClient.builder()
-                .baseUrl(marketingUrl)
-                .requestInterceptor(new TraceIdClientHttpRequestInterceptor())
+        return RestClient.builder().baseUrl(marketingUrl).requestInterceptor(new TraceIdClientHttpRequestInterceptor())
                 .build();
     }
 

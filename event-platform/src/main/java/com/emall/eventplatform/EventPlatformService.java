@@ -38,7 +38,7 @@ class EventPlatformService {
 
     @Transactional
     TrackingEvent ingestEvent(String eventName, int version, String eventKey, String userKey, String payload,
-                              Instant occurredAt) {
+            Instant occurredAt) {
         EventSchema schema = repository.findSchema(normalize(eventName), version)
                 .orElseThrow(() -> new BusinessException(ErrorCode.NOT_FOUND, "event schema not found"));
         if (schema.status() != SchemaStatus.ACTIVE) {
@@ -62,16 +62,15 @@ class EventPlatformService {
     @Transactional
     MetricMaterialization materializeMetric(String eventName, String metricName, String windowKey) {
         long eventCount = repository.findEvents(normalize(eventName)).size();
-        long lateEventCount = repository.findEvents(normalize(eventName)).stream().filter(TrackingEvent::lateEvent)
-                .count();
+        long lateEventCount =
+                repository.findEvents(normalize(eventName)).stream().filter(TrackingEvent::lateEvent).count();
         return repository.saveMaterialization(new MetricMaterialization(idGenerator.nextId(), normalize(metricName),
                 normalize(windowKey), eventCount, lateEventCount, Instant.now()));
     }
 
     EventPlatformSummary summary() {
         int activeSchemas = (int) repository.findSchemas().stream()
-                .filter(schema -> schema.status() == SchemaStatus.ACTIVE)
-                .count();
+                .filter(schema -> schema.status() == SchemaStatus.ACTIVE).count();
         int lateEvents = (int) repository.findEvents().stream().filter(TrackingEvent::lateEvent).count();
         return new EventPlatformSummary(activeSchemas, repository.findEvents().size(), lateEvents,
                 repository.findMaterializations().size());

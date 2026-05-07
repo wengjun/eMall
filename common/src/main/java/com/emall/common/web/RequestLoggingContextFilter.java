@@ -19,17 +19,13 @@ public class RequestLoggingContextFilter extends OncePerRequestFilter {
     private static final Pattern ID_SEGMENT = Pattern.compile("/[0-9A-Za-z][0-9A-Za-z_-]{5,}");
 
     @Override
-    protected void doFilterInternal(
-            HttpServletRequest request,
-            HttpServletResponse response,
-            FilterChain filterChain
-    ) throws ServletException, IOException {
+    protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response, FilterChain filterChain)
+            throws ServletException, IOException {
         Map<String, String> previous = captureMdc();
         long startNanos = System.nanoTime();
         putIfPresent(TraceHeaders.REQUEST_ID_MDC_KEY, requestId(request));
-        putIfPresent(TraceHeaders.USER_ID_MDC_KEY, firstPresent(
-                request.getHeader(TraceHeaders.USER_ID_HEADER),
-                request.getParameter("userId")));
+        putIfPresent(TraceHeaders.USER_ID_MDC_KEY,
+                firstPresent(request.getHeader(TraceHeaders.USER_ID_HEADER), request.getParameter("userId")));
         putIfPresent(TraceHeaders.ORDER_ID_MDC_KEY, orderId(request));
         MDC.put(TraceHeaders.ROUTE_MDC_KEY, route(request));
         try {
@@ -65,9 +61,8 @@ public class RequestLoggingContextFilter extends OncePerRequestFilter {
     }
 
     private String requestId(HttpServletRequest request) {
-        return TraceHeaders.normalizeOrCreate(firstPresent(
-                request.getHeader(TraceHeaders.REQUEST_ID_HEADER),
-                request.getParameter("requestId")));
+        return TraceHeaders.normalizeOrCreate(
+                firstPresent(request.getHeader(TraceHeaders.REQUEST_ID_HEADER), request.getParameter("requestId")));
     }
 
     private String orderId(HttpServletRequest request) {

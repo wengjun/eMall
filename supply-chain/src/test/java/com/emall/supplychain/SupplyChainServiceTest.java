@@ -12,8 +12,8 @@ class SupplyChainServiceTest {
 
     @Test
     void managesWarehouseReceiptTransferAndWaybill() {
-        WarehouseReceipt receipt = service.receiveStock(1001L, "WH-EAST", "BATCH-1", 100,
-                LocalDate.now().plusDays(365));
+        WarehouseReceipt receipt =
+                service.receiveStock(1001L, "WH-EAST", "BATCH-1", 100, LocalDate.now().plusDays(365));
         WarehouseReceipt shelved = service.shelve(receipt.receiptId());
         InventoryTransfer transfer = service.createTransfer(1001L, "WH-EAST", "WH-SOUTH", 20);
         LogisticsWaybill waybill = service.createWaybill(9001L, "carrier-a", "east-south", 48);

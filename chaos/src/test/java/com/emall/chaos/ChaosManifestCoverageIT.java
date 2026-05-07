@@ -14,14 +14,10 @@ class ChaosManifestCoverageIT {
     void shouldHaveKubernetesManifestForEveryBaselineDrill() throws IOException {
         for (ChaosDrill drill : ChaosDrillCatalog.p3Baseline()) {
             Path manifest = MANIFEST_DIR.resolve(drill.code() + ".yml");
-            assertThat(manifest)
-                    .as("manifest for %s", drill.code())
-                    .exists()
-                    .isRegularFile();
+            assertThat(manifest).as("manifest for %s", drill.code()).exists().isRegularFile();
 
             String content = Files.readString(manifest);
-            assertThat(content)
-                    .as("manifest content for %s", drill.code())
+            assertThat(content).as("manifest content for %s", drill.code())
                     .contains("apiVersion: chaos-mesh.org/v1alpha1")
                     .contains("duration: " + drill.duration().toMinutes() + "m");
         }

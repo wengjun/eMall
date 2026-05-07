@@ -34,9 +34,7 @@ public final class SnowflakeIdGenerator {
             sequence = 0L;
         }
         lastTimestamp = timestamp;
-        return ((timestamp - CUSTOM_EPOCH) << (WORKER_BITS + SEQUENCE_BITS))
-                | (workerId << SEQUENCE_BITS)
-                | sequence;
+        return ((timestamp - CUSTOM_EPOCH) << (WORKER_BITS + SEQUENCE_BITS)) | (workerId << SEQUENCE_BITS) | sequence;
     }
 
     private long waitNextMillis(long timestamp) {

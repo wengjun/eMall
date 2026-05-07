@@ -27,17 +27,14 @@ public class JdbcProductRepository implements ProductRepository {
                 VALUES (?, ?, ?, ?, ?, ?, ?, ?)
                 ON DUPLICATE KEY UPDATE title = VALUES(title), category = VALUES(category), price = VALUES(price),
                     status = VALUES(status), updated_at = VALUES(updated_at)
-                """,
-                product.skuId(), product.spuId(), product.title(), product.category(), product.price(),
+                """, product.skuId(), product.spuId(), product.title(), product.category(), product.price(),
                 product.status().name(), Timestamp.from(product.createdAt()), Timestamp.from(product.updatedAt()));
         return product;
     }
 
     @Override
     public Optional<Product> findBySkuId(long skuId) {
-        return jdbcTemplate.query("SELECT * FROM product WHERE sku_id = ?", this::map, skuId)
-                .stream()
-                .findFirst();
+        return jdbcTemplate.query("SELECT * FROM product WHERE sku_id = ?", this::map, skuId).stream().findFirst();
     }
 
     @Override
@@ -52,14 +49,8 @@ public class JdbcProductRepository implements ProductRepository {
     }
 
     private Product map(ResultSet rs, int rowNum) throws SQLException {
-        return new Product(
-                rs.getLong("sku_id"),
-                rs.getLong("spu_id"),
-                rs.getString("title"),
-                rs.getString("category"),
-                rs.getBigDecimal("price"),
-                ProductStatus.valueOf(rs.getString("status")),
-                rs.getTimestamp("created_at").toInstant(),
-                rs.getTimestamp("updated_at").toInstant());
+        return new Product(rs.getLong("sku_id"), rs.getLong("spu_id"), rs.getString("title"), rs.getString("category"),
+                rs.getBigDecimal("price"), ProductStatus.valueOf(rs.getString("status")),
+                rs.getTimestamp("created_at").toInstant(), rs.getTimestamp("updated_at").toInstant());
     }
 }

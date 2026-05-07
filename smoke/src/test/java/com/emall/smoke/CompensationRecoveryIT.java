@@ -9,10 +9,9 @@ class CompensationRecoveryIT {
         String token = ProductionHttpGate.requireEnv("EMALL_INTERNAL_OPERATIONS_TOKEN");
 
         ProductionHttpGate.post(orderUrl(), "/internal/operations/orders/retry-pending?limit=10", token);
-        ProductionHttpGate.post(inventoryUrl(),
-                "/internal/operations/inventory/release-expired-reservations?limit=10", token);
-        ProductionHttpGate.post(paymentUrl(),
-                "/internal/operations/payments/retry-order-confirmation?limit=10", token);
+        ProductionHttpGate.post(inventoryUrl(), "/internal/operations/inventory/release-expired-reservations?limit=10",
+                token);
+        ProductionHttpGate.post(paymentUrl(), "/internal/operations/payments/retry-order-confirmation?limit=10", token);
         ProductionHttpGate.post(orderUrl(), "/internal/operations/outbox/retry-failed?limit=10", token);
         ProductionHttpGate.post(inventoryUrl(), "/internal/operations/outbox/retry-failed?limit=10", token);
         ProductionHttpGate.post(paymentUrl(), "/internal/operations/outbox/retry-failed?limit=10", token);

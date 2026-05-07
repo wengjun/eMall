@@ -15,10 +15,8 @@ import org.junit.jupiter.api.Test;
 
 class ProductServiceTest {
     private final InMemoryOutboxRepository outboxRepository = new InMemoryOutboxRepository();
-    private final ProductService productService = new ProductService(
-            new InMemoryProductRepository(),
-            outboxRepository,
-            new SnowflakeIdGenerator(1));
+    private final ProductService productService =
+            new ProductService(new InMemoryProductRepository(), outboxRepository, new SnowflakeIdGenerator(1));
 
     @Test
     void shouldCreatePublishAndSearchProduct() {
@@ -38,7 +36,6 @@ class ProductServiceTest {
         Product created = productService.create(1001L, "flagship phone", "digital", new BigDecimal("3999.00"));
 
         assertThatThrownBy(() -> productService.changePrice(created.skuId(), BigDecimal.ZERO))
-                .isInstanceOf(BusinessException.class)
-                .hasMessageContaining("price must be positive");
+                .isInstanceOf(BusinessException.class).hasMessageContaining("price must be positive");
     }
 }

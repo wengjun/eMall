@@ -30,10 +30,10 @@ class FulfillmentServiceTest {
         assertThat(order.plannedCarrier()).isEqualTo("JD");
         assertThat(order.estimatedSlaHours()).isEqualTo(24);
 
-        TrackingEvent shipped = service.ingestTrackingEvent(order.fulfillmentId(), "JD", "JD1001",
-                "SHIPPED", Instant.parse("2026-04-28T10:00:00Z"), "Beijing", "picked up");
-        service.ingestTrackingEvent(order.fulfillmentId(), "JD", "JD1001",
-                "DELIVERED", Instant.parse("2026-04-29T10:00:00Z"), "Beijing", "delivered");
+        TrackingEvent shipped = service.ingestTrackingEvent(order.fulfillmentId(), "JD", "JD1001", "SHIPPED",
+                Instant.parse("2026-04-28T10:00:00Z"), "Beijing", "picked up");
+        service.ingestTrackingEvent(order.fulfillmentId(), "JD", "JD1001", "DELIVERED",
+                Instant.parse("2026-04-29T10:00:00Z"), "Beijing", "delivered");
 
         FulfillmentOrder delivered = service.get(order.fulfillmentId());
         List<TrackingEvent> events = service.findTrackingEvents(order.fulfillmentId());

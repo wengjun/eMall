@@ -19,10 +19,9 @@ public class OrderEventConsumer {
     private final ProcessedMessageRepository processedMessageRepository;
     private final String defaultWarehouseCode;
 
-    public OrderEventConsumer(ObjectMapper objectMapper,
-                              FulfillmentService fulfillmentService,
-                              ProcessedMessageRepository processedMessageRepository,
-                              @Value("${emall.fulfillment.default-warehouse-code}") String defaultWarehouseCode) {
+    public OrderEventConsumer(ObjectMapper objectMapper, FulfillmentService fulfillmentService,
+            ProcessedMessageRepository processedMessageRepository,
+            @Value("${emall.fulfillment.default-warehouse-code}") String defaultWarehouseCode) {
         this.objectMapper = objectMapper;
         this.fulfillmentService = fulfillmentService;
         this.processedMessageRepository = processedMessageRepository;
@@ -40,12 +39,8 @@ public class OrderEventConsumer {
             return;
         }
         Map<String, Object> payload = event.payload();
-        fulfillmentService.allocate(
-                longValue(payload.get("orderId")),
-                longValue(payload.get("userId")),
-                longValue(payload.get("skuId")),
-                intValue(payload.get("quantity")),
-                defaultWarehouseCode);
+        fulfillmentService.allocate(longValue(payload.get("orderId")), longValue(payload.get("userId")),
+                longValue(payload.get("skuId")), intValue(payload.get("quantity")), defaultWarehouseCode);
     }
 
     private long longValue(Object value) {

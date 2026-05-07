@@ -10,12 +10,12 @@ class TrafficMetrics {
     @Bean
     MeterBinder trafficMeterBinder(TrafficService trafficService) {
         return registry -> {
-            Gauge.builder("emall_traffic_isolated_units", trafficService,
-                    service -> service.summary().isolatedUnits()).register(registry);
-            Gauge.builder("emall_traffic_running_shifts", trafficService,
-                    service -> service.summary().runningShifts()).register(registry);
-            Gauge.builder("emall_traffic_shard_routes", trafficService,
-                    service -> service.summary().shardRoutes()).register(registry);
+            Gauge.builder("emall_traffic_isolated_units", trafficService, service -> service.summary().isolatedUnits())
+                    .register(registry);
+            Gauge.builder("emall_traffic_running_shifts", trafficService, service -> service.summary().runningShifts())
+                    .register(registry);
+            Gauge.builder("emall_traffic_shard_routes", trafficService, service -> service.summary().shardRoutes())
+                    .register(registry);
         };
     }
 }

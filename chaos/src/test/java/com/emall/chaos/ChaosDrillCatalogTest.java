@@ -13,9 +13,8 @@ class ChaosDrillCatalogTest {
 
     @Test
     void p3CatalogCoversRequiredDrillTypes() {
-        Set<DrillType> drillTypes = ChaosDrillCatalog.p3Baseline().stream()
-                .map(ChaosDrill::type)
-                .collect(Collectors.toSet());
+        Set<DrillType> drillTypes =
+                ChaosDrillCatalog.p3Baseline().stream().map(ChaosDrill::type).collect(Collectors.toSet());
 
         assertThat(drillTypes).isEqualTo(EnumSet.allOf(DrillType.class));
     }
@@ -35,11 +34,9 @@ class ChaosDrillCatalogTest {
         ChaosSafetyReport report = safetyGate.validate(unsafe);
 
         assertThat(report.approved()).isFalse();
-        assertThat(report.violations())
-                .contains("duration exceeds 30 minutes")
+        assertThat(report.violations()).contains("duration exceeds 30 minutes")
                 .contains("cross-region blast radius requires manual executive approval")
-                .contains("abort conditions are required")
-                .contains("recovery checks are required")
+                .contains("abort conditions are required").contains("recovery checks are required")
                 .contains("rollback owner prerequisite is required");
     }
 }

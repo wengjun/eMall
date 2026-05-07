@@ -34,8 +34,7 @@ public class JdbcFulfillmentRepository implements FulfillmentRepository {
                     warehouse_code = VALUES(warehouse_code), planned_carrier = VALUES(planned_carrier),
                     estimated_sla_hours = VALUES(estimated_sla_hours), carrier = VALUES(carrier),
                     tracking_no = VALUES(tracking_no), status = VALUES(status), updated_at = VALUES(updated_at)
-                """,
-                order.fulfillmentId(), order.orderId(), order.userId(), order.skuId(), order.quantity(),
+                """, order.fulfillmentId(), order.orderId(), order.userId(), order.skuId(), order.quantity(),
                 order.destinationRegionCode(), order.warehouseCode(), order.plannedCarrier(), order.estimatedSlaHours(),
                 order.carrier(), order.trackingNo(), order.status().name(), Timestamp.from(order.createdAt()),
                 Timestamp.from(order.updatedAt()));
@@ -44,14 +43,13 @@ public class JdbcFulfillmentRepository implements FulfillmentRepository {
 
     @Override
     public Optional<FulfillmentOrder> findById(long fulfillmentId) {
-        return jdbcTemplate.query("SELECT * FROM fulfillment_order WHERE fulfillment_id = ?", this::map,
-                fulfillmentId).stream().findFirst();
+        return jdbcTemplate.query("SELECT * FROM fulfillment_order WHERE fulfillment_id = ?", this::map, fulfillmentId)
+                .stream().findFirst();
     }
 
     @Override
     public Optional<FulfillmentOrder> findByOrderId(long orderId) {
-        return jdbcTemplate.query("SELECT * FROM fulfillment_order WHERE order_id = ?", this::map, orderId)
-                .stream()
+        return jdbcTemplate.query("SELECT * FROM fulfillment_order WHERE order_id = ?", this::map, orderId).stream()
                 .findFirst();
     }
 
@@ -63,16 +61,15 @@ public class JdbcFulfillmentRepository implements FulfillmentRepository {
                 VALUES (?, ?, ?, ?, ?, ?, ?)
                 ON DUPLICATE KEY UPDATE region_code = VALUES(region_code), priority = VALUES(priority),
                     daily_capacity = VALUES(daily_capacity), enabled = VALUES(enabled), updated_at = VALUES(updated_at)
-                """,
-                warehouse.warehouseCode(), warehouse.regionCode(), warehouse.priority(), warehouse.dailyCapacity(),
+                """, warehouse.warehouseCode(), warehouse.regionCode(), warehouse.priority(), warehouse.dailyCapacity(),
                 warehouse.enabled(), Timestamp.from(warehouse.createdAt()), Timestamp.from(warehouse.updatedAt()));
         return warehouse;
     }
 
     @Override
     public Optional<WarehouseNode> findWarehouse(String warehouseCode) {
-        return jdbcTemplate.query("SELECT * FROM fulfillment_warehouse WHERE warehouse_code = ?",
-                this::mapWarehouse, warehouseCode).stream().findFirst();
+        return jdbcTemplate.query("SELECT * FROM fulfillment_warehouse WHERE warehouse_code = ?", this::mapWarehouse,
+                warehouseCode).stream().findFirst();
     }
 
     @Override
@@ -96,8 +93,7 @@ public class JdbcFulfillmentRepository implements FulfillmentRepository {
                     destination_region_code = VALUES(destination_region_code), priority = VALUES(priority),
                     base_cost = VALUES(base_cost), sla_hours = VALUES(sla_hours), active = VALUES(active),
                     updated_at = VALUES(updated_at)
-                """,
-                route.routeId(), route.carrierCode(), route.originWarehouseCode(), route.destinationRegionCode(),
+                """, route.routeId(), route.carrierCode(), route.originWarehouseCode(), route.destinationRegionCode(),
                 route.priority(), route.baseCost(), route.slaHours(), route.active(), Timestamp.from(route.createdAt()),
                 Timestamp.from(route.updatedAt()));
         return route;
@@ -105,8 +101,9 @@ public class JdbcFulfillmentRepository implements FulfillmentRepository {
 
     @Override
     public Optional<CarrierRoute> findCarrierRoute(long routeId) {
-        return jdbcTemplate.query("SELECT * FROM fulfillment_carrier_route WHERE route_id = ?",
-                this::mapCarrierRoute, routeId).stream().findFirst();
+        return jdbcTemplate
+                .query("SELECT * FROM fulfillment_carrier_route WHERE route_id = ?", this::mapCarrierRoute, routeId)
+                .stream().findFirst();
     }
 
     @Override
@@ -127,8 +124,7 @@ public class JdbcFulfillmentRepository implements FulfillmentRepository {
                 VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
                 ON DUPLICATE KEY UPDATE location = VALUES(location), description = VALUES(description),
                     received_at = VALUES(received_at)
-                """,
-                event.eventId(), event.fulfillmentId(), event.carrierCode(), event.trackingNo(), event.eventCode(),
+                """, event.eventId(), event.fulfillmentId(), event.carrierCode(), event.trackingNo(), event.eventCode(),
                 Timestamp.from(event.eventTime()), event.location(), event.description(),
                 Timestamp.from(event.receivedAt()));
         return event;
@@ -144,58 +140,29 @@ public class JdbcFulfillmentRepository implements FulfillmentRepository {
     }
 
     private FulfillmentOrder map(ResultSet rs, int rowNum) throws SQLException {
-        return new FulfillmentOrder(
-                rs.getLong("fulfillment_id"),
-                rs.getLong("order_id"),
-                rs.getLong("user_id"),
-                rs.getLong("sku_id"),
-                rs.getInt("quantity"),
-                rs.getString("destination_region_code"),
-                rs.getString("warehouse_code"),
-                rs.getString("planned_carrier"),
-                rs.getInt("estimated_sla_hours"),
-                rs.getString("carrier"),
-                rs.getString("tracking_no"),
-                ShipmentStatus.valueOf(rs.getString("status")),
-                rs.getTimestamp("created_at").toInstant(),
-                rs.getTimestamp("updated_at").toInstant());
+        return new FulfillmentOrder(rs.getLong("fulfillment_id"), rs.getLong("order_id"), rs.getLong("user_id"),
+                rs.getLong("sku_id"), rs.getInt("quantity"), rs.getString("destination_region_code"),
+                rs.getString("warehouse_code"), rs.getString("planned_carrier"), rs.getInt("estimated_sla_hours"),
+                rs.getString("carrier"), rs.getString("tracking_no"), ShipmentStatus.valueOf(rs.getString("status")),
+                rs.getTimestamp("created_at").toInstant(), rs.getTimestamp("updated_at").toInstant());
     }
 
     private WarehouseNode mapWarehouse(ResultSet rs, int rowNum) throws SQLException {
-        return new WarehouseNode(
-                rs.getString("warehouse_code"),
-                rs.getString("region_code"),
-                rs.getInt("priority"),
-                rs.getInt("daily_capacity"),
-                rs.getBoolean("enabled"),
-                rs.getTimestamp("created_at").toInstant(),
+        return new WarehouseNode(rs.getString("warehouse_code"), rs.getString("region_code"), rs.getInt("priority"),
+                rs.getInt("daily_capacity"), rs.getBoolean("enabled"), rs.getTimestamp("created_at").toInstant(),
                 rs.getTimestamp("updated_at").toInstant());
     }
 
     private CarrierRoute mapCarrierRoute(ResultSet rs, int rowNum) throws SQLException {
-        return new CarrierRoute(
-                rs.getLong("route_id"),
-                rs.getString("carrier_code"),
-                rs.getString("origin_warehouse_code"),
-                rs.getString("destination_region_code"),
-                rs.getInt("priority"),
-                rs.getBigDecimal("base_cost"),
-                rs.getInt("sla_hours"),
-                rs.getBoolean("active"),
-                rs.getTimestamp("created_at").toInstant(),
-                rs.getTimestamp("updated_at").toInstant());
+        return new CarrierRoute(rs.getLong("route_id"), rs.getString("carrier_code"),
+                rs.getString("origin_warehouse_code"), rs.getString("destination_region_code"), rs.getInt("priority"),
+                rs.getBigDecimal("base_cost"), rs.getInt("sla_hours"), rs.getBoolean("active"),
+                rs.getTimestamp("created_at").toInstant(), rs.getTimestamp("updated_at").toInstant());
     }
 
     private TrackingEvent mapTrackingEvent(ResultSet rs, int rowNum) throws SQLException {
-        return new TrackingEvent(
-                rs.getLong("event_id"),
-                rs.getLong("fulfillment_id"),
-                rs.getString("carrier_code"),
-                rs.getString("tracking_no"),
-                rs.getString("event_code"),
-                rs.getTimestamp("event_time").toInstant(),
-                rs.getString("location"),
-                rs.getString("description"),
-                rs.getTimestamp("received_at").toInstant());
+        return new TrackingEvent(rs.getLong("event_id"), rs.getLong("fulfillment_id"), rs.getString("carrier_code"),
+                rs.getString("tracking_no"), rs.getString("event_code"), rs.getTimestamp("event_time").toInstant(),
+                rs.getString("location"), rs.getString("description"), rs.getTimestamp("received_at").toInstant());
     }
 }

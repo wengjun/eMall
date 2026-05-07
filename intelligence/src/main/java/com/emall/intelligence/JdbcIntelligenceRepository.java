@@ -96,8 +96,8 @@ class JdbcIntelligenceRepository implements IntelligenceRepository {
 
     @Override
     public Optional<ModelDeployment> findModel(long modelId) {
-        return jdbcTemplate.query("SELECT * FROM model_deployment WHERE model_id = ?", this::mapModel, modelId)
-                .stream().findFirst();
+        return jdbcTemplate.query("SELECT * FROM model_deployment WHERE model_id = ?", this::mapModel, modelId).stream()
+                .findFirst();
     }
 
     @Override
@@ -135,15 +135,14 @@ class JdbcIntelligenceRepository implements IntelligenceRepository {
 
     private FeatureDefinition mapFeature(ResultSet rs, int rowNum) throws SQLException {
         return new FeatureDefinition(rs.getLong("feature_id"), rs.getString("feature_name"),
-                FeatureScope.valueOf(rs.getString("scope")), rs.getString("owner"),
-                rs.getInt("freshness_seconds"), rs.getTimestamp("created_at").toInstant());
+                FeatureScope.valueOf(rs.getString("scope")), rs.getString("owner"), rs.getInt("freshness_seconds"),
+                rs.getTimestamp("created_at").toInstant());
     }
 
     private ModelDeployment mapModel(ResultSet rs, int rowNum) throws SQLException {
         return new ModelDeployment(rs.getLong("model_id"), rs.getString("model_name"), rs.getString("version"),
-                rs.getString("use_case"), ModelStatus.valueOf(rs.getString("status")),
-                rs.getString("approval_ticket"), rs.getTimestamp("created_at").toInstant(),
-                rs.getTimestamp("updated_at").toInstant());
+                rs.getString("use_case"), ModelStatus.valueOf(rs.getString("status")), rs.getString("approval_ticket"),
+                rs.getTimestamp("created_at").toInstant(), rs.getTimestamp("updated_at").toInstant());
     }
 
     private AiDecision mapDecision(ResultSet rs, int rowNum) throws SQLException {

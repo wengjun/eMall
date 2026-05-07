@@ -35,8 +35,7 @@ public abstract class JdbcOutboxRepositorySupport implements OutboxRepository {
                 VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
                 ON DUPLICATE KEY UPDATE status = VALUES(status), retry_count = VALUES(retry_count),
                     next_retry_at = VALUES(next_retry_at), updated_at = VALUES(updated_at)
-                """,
-                event.eventId(), event.aggregateType(), event.aggregateId(), event.eventType(),
+                """, event.eventId(), event.aggregateType(), event.aggregateId(), event.eventType(),
                 serialize(event.payload()), event.status().name(), event.retryCount(),
                 Timestamp.from(event.nextRetryAt()), Timestamp.from(event.createdAt()),
                 Timestamp.from(event.updatedAt()));
@@ -65,16 +64,10 @@ public abstract class JdbcOutboxRepositorySupport implements OutboxRepository {
     }
 
     private OutboxEvent map(ResultSet rs, int rowNum) throws SQLException {
-        return new OutboxEvent(
-                rs.getString("event_id"),
-                rs.getString("aggregate_type"),
-                rs.getString("aggregate_id"),
-                rs.getString("event_type"),
-                deserialize(rs.getString("payload")),
-                OutboxStatus.valueOf(rs.getString("status")),
-                rs.getInt("retry_count"),
-                rs.getTimestamp("next_retry_at").toInstant(),
-                rs.getTimestamp("created_at").toInstant(),
+        return new OutboxEvent(rs.getString("event_id"), rs.getString("aggregate_type"), rs.getString("aggregate_id"),
+                rs.getString("event_type"), deserialize(rs.getString("payload")),
+                OutboxStatus.valueOf(rs.getString("status")), rs.getInt("retry_count"),
+                rs.getTimestamp("next_retry_at").toInstant(), rs.getTimestamp("created_at").toInstant(),
                 rs.getTimestamp("updated_at").toInstant());
     }
 

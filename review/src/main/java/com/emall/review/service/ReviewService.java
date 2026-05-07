@@ -27,8 +27,8 @@ public class ReviewService {
             throw new BusinessException(ErrorCode.BAD_REQUEST, "rating must be between 1 and 5");
         }
         Instant now = Instant.now();
-        return reviewRepository.save(new ProductReview(idGenerator.nextId(), orderId, skuId, userId,
-                rating, content, ReviewStatus.PENDING, now, now));
+        return reviewRepository.save(new ProductReview(idGenerator.nextId(), orderId, skuId, userId, rating, content,
+                ReviewStatus.PENDING, now, now));
     }
 
     public ProductReview get(long reviewId) {

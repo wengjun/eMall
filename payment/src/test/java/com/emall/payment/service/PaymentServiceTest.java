@@ -20,8 +20,8 @@ class PaymentServiceTest {
     @Test
     void reconcilesMatchedPaymentStatement() {
         PaymentService paymentService = newPaymentService();
-        long paymentId = paymentService.create("request-1", 1001L, 2001L, new BigDecimal("99.00"), "alipay")
-                .paymentId();
+        long paymentId =
+                paymentService.create("request-1", 1001L, 2001L, new BigDecimal("99.00"), "alipay").paymentId();
         paymentService.callback("trade-1", paymentId, new BigDecimal("99.00"));
         long statementId = paymentService.ingestChannelStatement("alipay", "trade-1", paymentId,
                 new BigDecimal("99.00"), StatementType.PAYMENT, Instant.now()).statementId();
@@ -35,8 +35,8 @@ class PaymentServiceTest {
     @Test
     void recordsAmountMismatchForPaymentStatement() {
         PaymentService paymentService = newPaymentService();
-        long paymentId = paymentService.create("request-2", 1002L, 2002L, new BigDecimal("99.00"), "wechat")
-                .paymentId();
+        long paymentId =
+                paymentService.create("request-2", 1002L, 2002L, new BigDecimal("99.00"), "wechat").paymentId();
         paymentService.callback("trade-2", paymentId, new BigDecimal("99.00"));
         long statementId = paymentService.ingestChannelStatement("wechat", "trade-2", paymentId,
                 new BigDecimal("98.00"), StatementType.PAYMENT, Instant.now()).statementId();
@@ -49,8 +49,8 @@ class PaymentServiceTest {
     @Test
     void reconcilesMatchedRefundStatement() {
         PaymentService paymentService = newPaymentService();
-        long paymentId = paymentService.create("request-3", 1003L, 2003L, new BigDecimal("35.50"), "alipay")
-                .paymentId();
+        long paymentId =
+                paymentService.create("request-3", 1003L, 2003L, new BigDecimal("35.50"), "alipay").paymentId();
         paymentService.callback("trade-3", paymentId, new BigDecimal("35.50"));
         paymentService.refund(paymentId);
         long statementId = paymentService.ingestChannelStatement("alipay", "trade-3", paymentId,
@@ -62,12 +62,8 @@ class PaymentServiceTest {
     }
 
     private PaymentService newPaymentService() {
-        return new PaymentService(
-                new InMemoryPaymentRepository(),
-                new InMemoryPaymentSettlementRepository(),
-                new InMemoryOutboxRepository(),
-                new SnowflakeIdGenerator(1),
-                new NoopOrderClient());
+        return new PaymentService(new InMemoryPaymentRepository(), new InMemoryPaymentSettlementRepository(),
+                new InMemoryOutboxRepository(), new SnowflakeIdGenerator(1), new NoopOrderClient());
     }
 
     private static final class NoopOrderClient extends OrderClient {

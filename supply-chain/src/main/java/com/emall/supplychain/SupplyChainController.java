@@ -42,7 +42,7 @@ class SupplyChainController {
 
     @PatchMapping("/transfers/{transferId}/status")
     ApiResponse<InventoryTransfer> changeTransferStatus(@PathVariable long transferId,
-                                                        @Valid @RequestBody ChangeTransferStatusRequest request) {
+            @Valid @RequestBody ChangeTransferStatusRequest request) {
         return ApiResponse.ok(supplyChainService.changeTransferStatus(transferId, request.status()));
     }
 
@@ -54,7 +54,7 @@ class SupplyChainController {
 
     @PatchMapping("/waybills/{waybillId}/exceptions")
     ApiResponse<LogisticsWaybill> reportException(@PathVariable long waybillId,
-                                                  @Valid @RequestBody ReportExceptionRequest request) {
+            @Valid @RequestBody ReportExceptionRequest request) {
         return ApiResponse.ok(supplyChainService.reportDeliveryException(waybillId, request.reason()));
     }
 
@@ -69,18 +69,18 @@ class SupplyChainController {
     }
 
     record ReceiveStockRequest(@Positive long skuId, @NotBlank String warehouseCode, @NotBlank String batchNo,
-                               @Positive int quantity, LocalDate expiresOn) {
+            @Positive int quantity, LocalDate expiresOn) {
     }
 
     record CreateTransferRequest(@Positive long skuId, @NotBlank String fromWarehouse, @NotBlank String toWarehouse,
-                                 @Positive int quantity) {
+            @Positive int quantity) {
     }
 
     record ChangeTransferStatusRequest(TransferStatus status) {
     }
 
     record CreateWaybillRequest(@Positive long orderId, @NotBlank String carrierCode, @NotBlank String routeCode,
-                                @Positive int slaHours) {
+            @Positive int slaHours) {
     }
 
     record ReportExceptionRequest(@NotBlank String reason) {

@@ -33,8 +33,8 @@ public class OrderService {
     private final MarketingClient marketingClient;
 
     public OrderService(OrderRepository orderRepository, OutboxRepository outboxRepository,
-                        SnowflakeIdGenerator idGenerator, InventoryClient inventoryClient,
-                        PricingClient pricingClient, MarketingClient marketingClient) {
+            SnowflakeIdGenerator idGenerator, InventoryClient inventoryClient, PricingClient pricingClient,
+            MarketingClient marketingClient) {
         this.orderRepository = orderRepository;
         this.outboxRepository = outboxRepository;
         this.idGenerator = idGenerator;
@@ -107,8 +107,8 @@ public class OrderService {
         if (reason.contains("release")) {
             return cancelAfterRetry(order);
         }
-        InventoryReservation reservation = inventoryClient.reserve(
-                new ReserveInventoryRequest(order.inventoryReservationId(), order.skuId(), order.quantity()));
+        InventoryReservation reservation = inventoryClient
+                .reserve(new ReserveInventoryRequest(order.inventoryReservationId(), order.skuId(), order.quantity()));
         if (reservation.reserved()) {
             Order created = orderRepository.save(order.markCreated());
             appendEvent(created, EventTypes.ORDER_CREATED);
@@ -123,15 +123,15 @@ public class OrderService {
         PriceQuote priceQuote = pricingClient.quote(skuId, quantity);
         PromotionQuote promotionQuote = marketingClient.quote(userId, priceQuote.subtotal());
         validatePayableAmount(priceQuote, promotionQuote);
-        InventoryReservation reservation = inventoryClient.reserve(
-                new ReserveInventoryRequest(reservationId, skuId, quantity));
+        InventoryReservation reservation =
+                inventoryClient.reserve(new ReserveInventoryRequest(reservationId, skuId, quantity));
         Instant now = Instant.now();
         OrderStatus status = reservation.reserved() ? OrderStatus.CREATED : OrderStatus.PENDING_RETRY;
         String reason = reservation.reserved() ? null : reservation.reason();
-        Order order = orderRepository.save(new Order(orderId, requestId, userId, skuId, quantity,
-                priceQuote.unitPrice(), priceQuote.subtotal(), promotionQuote.discountAmount(),
-                promotionQuote.payableAmount(), priceQuote.currency(), priceQuote.priceVersion(),
-                promotionQuote.couponId(), reservationId, status, reason, now, now));
+        Order order = orderRepository.save(
+                new Order(orderId, requestId, userId, skuId, quantity, priceQuote.unitPrice(), priceQuote.subtotal(),
+                        promotionQuote.discountAmount(), promotionQuote.payableAmount(), priceQuote.currency(),
+                        priceQuote.priceVersion(), promotionQuote.couponId(), reservationId, status, reason, now, now));
         if (order.status() == OrderStatus.CREATED) {
             appendEvent(order, EventTypes.ORDER_CREATED);
         }
@@ -159,24 +159,14 @@ public class OrderService {
     }
 
     private void appendEvent(Order order, String eventType) {
-        outboxRepository.save(OutboxEvent.create(
-                "order-event-" + idGenerator.nextId(),
-                "Order",
-                String.valueOf(order.orderId()),
-                eventType,
-                Map.ofEntries(
-                        Map.entry("orderId", order.orderId()),
-                        Map.entry("userId", order.userId()),
-                        Map.entry("skuId", order.skuId()),
-                        Map.entry("quantity", order.quantity()),
-                        Map.entry("unitPrice", order.unitPrice()),
-                        Map.entry("subtotalAmount", order.subtotalAmount()),
+        outboxRepository.save(OutboxEvent.create("order-event-" + idGenerator.nextId(), "Order",
+                String.valueOf(order.orderId()), eventType,
+                Map.ofEntries(Map.entry("orderId", order.orderId()), Map.entry("userId", order.userId()),
+                        Map.entry("skuId", order.skuId()), Map.entry("quantity", order.quantity()),
+                        Map.entry("unitPrice", order.unitPrice()), Map.entry("subtotalAmount", order.subtotalAmount()),
                         Map.entry("discountAmount", order.discountAmount()),
-                        Map.entry("payableAmount", order.payableAmount()),
-                        Map.entry("currency", order.currency()),
-                        Map.entry("priceVersion", order.priceVersion()),
-                        Map.entry("status", order.status().name())
-                )));
+                        Map.entry("payableAmount", order.payableAmount()), Map.entry("currency", order.currency()),
+                        Map.entry("priceVersion", order.priceVersion()), Map.entry("status", order.status().name()))));
     }
 
     private void validatePayableAmount(PriceQuote priceQuote, PromotionQuote promotionQuote) {

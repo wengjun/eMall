@@ -3,10 +3,12 @@ package com.emall.forecasting;
 import com.emall.common.api.ErrorCode;
 import com.emall.common.exception.BusinessException;
 import com.emall.common.id.SnowflakeIdGenerator;
+
 import java.time.Instant;
 import java.time.LocalDate;
 import java.util.List;
 import java.util.Locale;
+
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -22,7 +24,7 @@ class ForecastingService {
 
     @Transactional
     DemandSignal recordDemandSignal(long skuId, String regionCode, int soldQuantity, int pageViews,
-                                    LocalDate signalDate) {
+            LocalDate signalDate) {
         requireNonNegative(soldQuantity, "sold quantity must not be negative");
         requireNonNegative(pageViews, "page views must not be negative");
         return repository.saveDemandSignal(new DemandSignal(idGenerator.nextId(), skuId, normalize(regionCode),
@@ -32,9 +34,8 @@ class ForecastingService {
     @Transactional
     DemandForecast buildDemandForecast(long skuId, String regionCode, int currentStock, LocalDate forecastDate) {
         List<DemandSignal> signals = repository.findDemandSignals(skuId, normalize(regionCode));
-        int averageDemand = signals.isEmpty()
-                ? 0
-                : signals.stream().mapToInt(DemandSignal::soldQuantity).sum() / signals.size();
+        int averageDemand =
+                signals.isEmpty() ? 0 : signals.stream().mapToInt(DemandSignal::soldQuantity).sum() / signals.size();
         int forecastQuantity = Math.max(averageDemand, averageDemand + averageDemand / 5);
         ForecastRiskLevel risk = riskByCoverage(currentStock, forecastQuantity);
         DemandForecast forecast = new DemandForecast(idGenerator.nextId(), skuId, normalize(regionCode),
@@ -44,9 +45,10 @@ class ForecastingService {
 
     @Transactional
     ReplenishmentPlan createReplenishmentPlan(long skuId, String warehouseCode, int forecastQuantity,
-                                              int availableStock, LocalDate planDate) {
+            int availableStock, LocalDate planDate) {
         int gap = Math.max(0, forecastQuantity - availableStock);
-        ForecastRiskLevel priority = gap > forecastQuantity / 2 ? ForecastRiskLevel.HIGH
+        ForecastRiskLevel priority = gap > forecastQuantity / 2
+                ? ForecastRiskLevel.HIGH
                 : gap > 0 ? ForecastRiskLevel.MEDIUM : ForecastRiskLevel.LOW;
         return repository.saveReplenishmentPlan(new ReplenishmentPlan(idGenerator.nextId(), skuId,
                 normalize(warehouseCode), gap, priority, planDate, Instant.now()));
@@ -54,11 +56,12 @@ class ForecastingService {
 
     @Transactional
     CapacityForecast createCapacityForecast(String warehouseCode, int forecastOrders, int workerHours,
-                                            LocalDate forecastDate) {
+            LocalDate forecastDate) {
         requireNonNegative(forecastOrders, "forecast orders must not be negative");
         requireNonNegative(workerHours, "worker hours must not be negative");
         int ordersPerHour = workerHours == 0 ? forecastOrders : forecastOrders / workerHours;
-        ForecastRiskLevel pressure = ordersPerHour > 25 ? ForecastRiskLevel.HIGH
+        ForecastRiskLevel pressure = ordersPerHour > 25
+                ? ForecastRiskLevel.HIGH
                 : ordersPerHour > 15 ? ForecastRiskLevel.MEDIUM : ForecastRiskLevel.LOW;
         return repository.saveCapacityForecast(new CapacityForecast(idGenerator.nextId(), normalize(warehouseCode),
                 forecastOrders, workerHours, pressure, forecastDate, Instant.now()));
@@ -66,14 +69,11 @@ class ForecastingService {
 
     ForecastSummary summary() {
         int highRisk = (int) repository.findDemandForecasts().stream()
-                .filter(forecast -> forecast.stockoutRisk() == ForecastRiskLevel.HIGH)
-                .count();
+                .filter(forecast -> forecast.stockoutRisk() == ForecastRiskLevel.HIGH).count();
         highRisk += (int) repository.findReplenishmentPlans().stream()
-                .filter(plan -> plan.priority() == ForecastRiskLevel.HIGH)
-                .count();
+                .filter(plan -> plan.priority() == ForecastRiskLevel.HIGH).count();
         highRisk += (int) repository.findCapacityForecasts().stream()
-                .filter(forecast -> forecast.pressureLevel() == ForecastRiskLevel.HIGH)
-                .count();
+                .filter(forecast -> forecast.pressureLevel() == ForecastRiskLevel.HIGH).count();
         return new ForecastSummary(repository.findDemandSignals().size(), repository.findDemandForecasts().size(),
                 repository.findReplenishmentPlans().size(), highRisk);
     }

@@ -18,10 +18,8 @@ import org.testcontainers.junit.jupiter.Testcontainers;
 @Testcontainers(disabledWithoutDocker = true)
 class JdbcDistributedTaskLockIT {
     @Container
-    static final MySQLContainer<?> mysql = new MySQLContainer<>("mysql:8.4")
-            .withDatabaseName("emall_common_it")
-            .withUsername("emall")
-            .withPassword("emall");
+    static final MySQLContainer<?> mysql = new MySQLContainer<>("mysql:8.4").withDatabaseName("emall_common_it")
+            .withUsername("emall").withPassword("emall");
 
     @Test
     void shouldCoordinateTaskExecutionAcrossOwnersThroughMysql() {
@@ -42,12 +40,8 @@ class JdbcDistributedTaskLockIT {
     }
 
     private DataSource dataSource() {
-        return DataSourceBuilder.create()
-                .type(DriverManagerDataSource.class)
-                .url(mysql.getJdbcUrl())
-                .username(mysql.getUsername())
-                .password(mysql.getPassword())
-                .build();
+        return DataSourceBuilder.create().type(DriverManagerDataSource.class).url(mysql.getJdbcUrl())
+                .username(mysql.getUsername()).password(mysql.getPassword()).build();
     }
 
     private void createLockTable(JdbcTemplate jdbcTemplate) {

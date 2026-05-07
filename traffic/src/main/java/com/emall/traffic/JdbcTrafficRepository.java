@@ -26,15 +26,15 @@ class JdbcTrafficRepository implements TrafficRepository {
                 VALUES (?, ?, ?, ?, ?, ?, ?)
                 ON DUPLICATE KEY UPDATE capacity_weight = VALUES(capacity_weight), status = VALUES(status),
                     updated_at = VALUES(updated_at)
-                """, unit.unitId(), unit.unitCode(), unit.regionCode(), unit.capacityWeight(),
-                unit.status().name(), Timestamp.from(unit.createdAt()), Timestamp.from(unit.updatedAt()));
+                """, unit.unitId(), unit.unitCode(), unit.regionCode(), unit.capacityWeight(), unit.status().name(),
+                Timestamp.from(unit.createdAt()), Timestamp.from(unit.updatedAt()));
         return unit;
     }
 
     @Override
     public Optional<UnitCell> findUnit(String unitCode) {
-        return jdbcTemplate.query("SELECT * FROM unit_cell WHERE unit_code = ?", this::mapUnit, unitCode)
-                .stream().findFirst();
+        return jdbcTemplate.query("SELECT * FROM unit_cell WHERE unit_code = ?", this::mapUnit, unitCode).stream()
+                .findFirst();
     }
 
     @Override
@@ -67,16 +67,15 @@ class JdbcTrafficRepository implements TrafficRepository {
                     (shift_id, source_unit, target_unit, percent, status, reason, created_at, updated_at)
                 VALUES (?, ?, ?, ?, ?, ?, ?, ?)
                 ON DUPLICATE KEY UPDATE status = VALUES(status), updated_at = VALUES(updated_at)
-                """, shift.shiftId(), shift.sourceUnit(), shift.targetUnit(), shift.percent(),
-                shift.status().name(), shift.reason(), Timestamp.from(shift.createdAt()),
-                Timestamp.from(shift.updatedAt()));
+                """, shift.shiftId(), shift.sourceUnit(), shift.targetUnit(), shift.percent(), shift.status().name(),
+                shift.reason(), Timestamp.from(shift.createdAt()), Timestamp.from(shift.updatedAt()));
         return shift;
     }
 
     @Override
     public Optional<TrafficShift> findShift(long shiftId) {
-        return jdbcTemplate.query("SELECT * FROM traffic_shift WHERE shift_id = ?", this::mapShift, shiftId)
-                .stream().findFirst();
+        return jdbcTemplate.query("SELECT * FROM traffic_shift WHERE shift_id = ?", this::mapShift, shiftId).stream()
+                .findFirst();
     }
 
     @Override

@@ -16,20 +16,20 @@ enum QualityStatus {
     FAIL
 }
 
-record DatasetDefinition(long datasetId, WarehouseLayer layer, String datasetName, String owner,
-                         String description, int retentionDays, Instant createdAt, Instant updatedAt) {
+record DatasetDefinition(long datasetId, WarehouseLayer layer, String datasetName, String owner, String description,
+        int retentionDays, Instant createdAt, Instant updatedAt) {
 }
 
-record TablePartition(long partitionId, long datasetId, String partitionKey, LocalDate partitionDate,
-                      long rowCount, long storageBytes, Instant createdAt) {
+record TablePartition(long partitionId, long datasetId, String partitionKey, LocalDate partitionDate, long rowCount,
+        long storageBytes, Instant createdAt) {
 }
 
 record QualityCheck(long checkId, long datasetId, String checkName, QualityStatus status, String detail,
-                    Instant checkedAt) {
+        Instant checkedAt) {
 }
 
 record LineageEdge(long lineageId, long upstreamDatasetId, long downstreamDatasetId, String transformName,
-                   Instant createdAt) {
+        Instant createdAt) {
 }
 
 record WarehouseSummary(int datasets, int partitions, int failedChecks, int lineageEdges) {

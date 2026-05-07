@@ -58,15 +58,15 @@ class CustomerServiceService {
         if (amount.signum() <= 0) {
             throw new BusinessException(ErrorCode.BAD_REQUEST, "compensation amount must be positive");
         }
-        return repository.saveCompensation(new CompensationRecord(idGenerator.nextId(), ticketId, userId, amount,
-                reason, Instant.now()));
+        return repository.saveCompensation(
+                new CompensationRecord(idGenerator.nextId(), ticketId, userId, amount, reason, Instant.now()));
     }
 
     @Transactional
     KnowledgeArticle publishArticle(String category, String title, String content) {
         Instant now = Instant.now();
-        return repository.saveArticle(new KnowledgeArticle(idGenerator.nextId(), normalize(category), title,
-                content, true, now, now));
+        return repository.saveArticle(
+                new KnowledgeArticle(idGenerator.nextId(), normalize(category), title, content, true, now, now));
     }
 
     @Transactional
@@ -75,18 +75,17 @@ class CustomerServiceService {
         if (score < 1 || score > 5) {
             throw new BusinessException(ErrorCode.BAD_REQUEST, "service score must be 1-5");
         }
-        return repository.saveReview(new ServiceQualityReview(idGenerator.nextId(), ticketId, score, comment,
-                Instant.now()));
+        return repository
+                .saveReview(new ServiceQualityReview(idGenerator.nextId(), ticketId, score, comment, Instant.now()));
     }
 
     CustomerServiceSummary summary() {
-        int open = (int) repository.findTickets().stream().filter(ticket -> ticket.status() == TicketStatus.OPEN)
-                .count();
+        int open =
+                (int) repository.findTickets().stream().filter(ticket -> ticket.status() == TicketStatus.OPEN).count();
         int routed = (int) repository.findTickets().stream().filter(ticket -> ticket.status() == TicketStatus.ROUTED)
                 .count();
         int arbitration = (int) repository.findArbitrations().stream()
-                .filter(item -> item.status() == ArbitrationStatus.OPEN)
-                .count();
+                .filter(item -> item.status() == ArbitrationStatus.OPEN).count();
         return new CustomerServiceSummary(open, routed, arbitration, repository.findCompensations().size());
     }
 

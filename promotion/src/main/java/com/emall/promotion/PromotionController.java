@@ -29,14 +29,14 @@ class PromotionController {
 
     @PostMapping("/campaigns")
     ApiResponse<PromotionCampaign> createCampaign(@Valid @RequestBody CreateCampaignRequest request) {
-        return ApiResponse.ok(promotionService.createCampaign(request.name(), request.type(),
-                request.thresholdAmount(), request.benefitValue(), request.budgetAmount(), request.priority(),
-                request.stackable(), request.startsAt(), request.endsAt()));
+        return ApiResponse.ok(promotionService.createCampaign(request.name(), request.type(), request.thresholdAmount(),
+                request.benefitValue(), request.budgetAmount(), request.priority(), request.stackable(),
+                request.startsAt(), request.endsAt()));
     }
 
     @PatchMapping("/campaigns/{campaignId}/status")
     ApiResponse<PromotionCampaign> changeStatus(@PathVariable long campaignId,
-                                                @Valid @RequestBody ChangeStatusRequest request) {
+            @Valid @RequestBody ChangeStatusRequest request) {
         return ApiResponse.ok(promotionService.changeStatus(campaignId, request.status()));
     }
 
@@ -50,17 +50,10 @@ class PromotionController {
         return ApiResponse.ok(promotionService.calendar(month));
     }
 
-    record CreateCampaignRequest(
-            @NotBlank String name,
-            @NotNull PromotionType type,
+    record CreateCampaignRequest(@NotBlank String name, @NotNull PromotionType type,
             @NotNull @DecimalMin("0.00") BigDecimal thresholdAmount,
-            @NotNull @DecimalMin("0.00") BigDecimal benefitValue,
-            @NotNull @DecimalMin("0.01") BigDecimal budgetAmount,
-            @Min(1) int priority,
-            boolean stackable,
-            @NotNull Instant startsAt,
-            @NotNull Instant endsAt
-    ) {
+            @NotNull @DecimalMin("0.00") BigDecimal benefitValue, @NotNull @DecimalMin("0.01") BigDecimal budgetAmount,
+            @Min(1) int priority, boolean stackable, @NotNull Instant startsAt, @NotNull Instant endsAt) {
     }
 
     record ChangeStatusRequest(@NotNull CampaignStatus status) {

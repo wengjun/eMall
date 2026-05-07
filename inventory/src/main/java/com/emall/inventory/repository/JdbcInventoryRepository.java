@@ -30,15 +30,13 @@ public class JdbcInventoryRepository implements InventoryRepository {
                 VALUES (?, ?, ?, ?, ?)
                 ON DUPLICATE KEY UPDATE total = VALUES(total), reserved = VALUES(reserved), sold = VALUES(sold),
                     updated_at = VALUES(updated_at)
-                """,
-                item.skuId(), item.total(), item.reserved(), item.sold(), Timestamp.from(item.updatedAt()));
+                """, item.skuId(), item.total(), item.reserved(), item.sold(), Timestamp.from(item.updatedAt()));
         return item;
     }
 
     @Override
     public Optional<InventoryItem> findItem(long skuId) {
-        return jdbcTemplate.query("SELECT * FROM inventory_item WHERE sku_id = ?", this::mapItem, skuId)
-                .stream()
+        return jdbcTemplate.query("SELECT * FROM inventory_item WHERE sku_id = ?", this::mapItem, skuId).stream()
                 .findFirst();
     }
 
@@ -49,8 +47,7 @@ public class JdbcInventoryRepository implements InventoryRepository {
                 VALUES (?, ?, ?, ?, ?, ?)
                 ON DUPLICATE KEY UPDATE total = VALUES(total), reserved = VALUES(reserved), sold = VALUES(sold),
                     updated_at = VALUES(updated_at)
-                """,
-                bucket.skuId(), bucket.bucketNo(), bucket.total(), bucket.reserved(), bucket.sold(),
+                """, bucket.skuId(), bucket.bucketNo(), bucket.total(), bucket.reserved(), bucket.sold(),
                 Timestamp.from(bucket.updatedAt()));
         return bucket;
     }
@@ -63,8 +60,8 @@ public class JdbcInventoryRepository implements InventoryRepository {
 
     @Override
     public Optional<InventoryBucket> findBucket(long skuId, int bucketNo) {
-        return jdbcTemplate.query("SELECT * FROM inventory_bucket WHERE sku_id = ? AND bucket_no = ?",
-                this::mapBucket, skuId, bucketNo).stream().findFirst();
+        return jdbcTemplate.query("SELECT * FROM inventory_bucket WHERE sku_id = ? AND bucket_no = ?", this::mapBucket,
+                skuId, bucketNo).stream().findFirst();
     }
 
     @Override
@@ -85,18 +82,17 @@ public class JdbcInventoryRepository implements InventoryRepository {
                 VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
                 ON DUPLICATE KEY UPDATE status = VALUES(status), reason = VALUES(reason),
                     updated_at = VALUES(updated_at)
-                """,
-                reservation.requestId(), reservation.skuId(), reservation.quantity(), reservation.bucketNo(),
+                """, reservation.requestId(), reservation.skuId(), reservation.quantity(), reservation.bucketNo(),
                 reservation.status().name(), reservation.reason(), Timestamp.from(reservation.expiresAt()),
-                Timestamp.from(reservation.createdAt()),
-                Timestamp.from(reservation.updatedAt()));
+                Timestamp.from(reservation.createdAt()), Timestamp.from(reservation.updatedAt()));
         return reservation;
     }
 
     @Override
     public Optional<InventoryReservation> findReservation(String requestId) {
-        return jdbcTemplate.query("SELECT * FROM inventory_reservation WHERE request_id = ?", this::mapReservation,
-                requestId).stream().findFirst();
+        return jdbcTemplate
+                .query("SELECT * FROM inventory_reservation WHERE request_id = ?", this::mapReservation, requestId)
+                .stream().findFirst();
     }
 
     @Override
@@ -110,35 +106,20 @@ public class JdbcInventoryRepository implements InventoryRepository {
     }
 
     private InventoryItem mapItem(ResultSet rs, int rowNum) throws SQLException {
-        return new InventoryItem(
-                rs.getLong("sku_id"),
-                rs.getInt("total"),
-                rs.getInt("reserved"),
-                rs.getInt("sold"),
+        return new InventoryItem(rs.getLong("sku_id"), rs.getInt("total"), rs.getInt("reserved"), rs.getInt("sold"),
                 rs.getTimestamp("updated_at").toInstant());
     }
 
     private InventoryBucket mapBucket(ResultSet rs, int rowNum) throws SQLException {
-        return new InventoryBucket(
-                rs.getLong("sku_id"),
-                rs.getInt("bucket_no"),
-                rs.getInt("total"),
-                rs.getInt("reserved"),
-                rs.getInt("sold"),
-                rs.getTimestamp("updated_at").toInstant());
+        return new InventoryBucket(rs.getLong("sku_id"), rs.getInt("bucket_no"), rs.getInt("total"),
+                rs.getInt("reserved"), rs.getInt("sold"), rs.getTimestamp("updated_at").toInstant());
     }
 
     private InventoryReservation mapReservation(ResultSet rs, int rowNum) throws SQLException {
         int bucketNo = rs.getInt("bucket_no");
-        return new InventoryReservation(
-                rs.getString("request_id"),
-                rs.getLong("sku_id"),
-                rs.getInt("quantity"),
-                rs.wasNull() ? null : bucketNo,
-                ReservationStatus.valueOf(rs.getString("status")),
-                rs.getString("reason"),
-                rs.getTimestamp("expires_at").toInstant(),
-                rs.getTimestamp("created_at").toInstant(),
-                rs.getTimestamp("updated_at").toInstant());
+        return new InventoryReservation(rs.getString("request_id"), rs.getLong("sku_id"), rs.getInt("quantity"),
+                rs.wasNull() ? null : bucketNo, ReservationStatus.valueOf(rs.getString("status")),
+                rs.getString("reason"), rs.getTimestamp("expires_at").toInstant(),
+                rs.getTimestamp("created_at").toInstant(), rs.getTimestamp("updated_at").toInstant());
     }
 }

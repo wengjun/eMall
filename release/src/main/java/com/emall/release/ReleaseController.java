@@ -32,19 +32,19 @@ class ReleaseController {
 
     @PatchMapping("/feature-toggles/{toggleId}")
     ApiResponse<FeatureToggle> updateToggle(@PathVariable long toggleId,
-                                            @Valid @RequestBody UpdateToggleRequest request) {
+            @Valid @RequestBody UpdateToggleRequest request) {
         return ApiResponse.ok(releaseService.updateToggle(toggleId, request.status(), request.rolloutPercent()));
     }
 
     @PostMapping("/rollouts")
     ApiResponse<RolloutPlan> createRollout(@Valid @RequestBody CreateRolloutRequest request) {
-        return ApiResponse.ok(releaseService.createRollout(request.serviceName(), request.version(),
-                request.strategy(), request.currentPercent()));
+        return ApiResponse.ok(releaseService.createRollout(request.serviceName(), request.version(), request.strategy(),
+                request.currentPercent()));
     }
 
     @PatchMapping("/rollouts/{rolloutId}/status")
     ApiResponse<RolloutPlan> changeRollout(@PathVariable long rolloutId,
-                                           @Valid @RequestBody ChangeRolloutRequest request) {
+            @Valid @RequestBody ChangeRolloutRequest request) {
         return ApiResponse.ok(releaseService.changeRollout(rolloutId, request.status(), request.currentPercent()));
     }
 
@@ -56,7 +56,7 @@ class ReleaseController {
 
     @PatchMapping("/topics/{topicId}/status")
     ApiResponse<MessageTopicGovernance> changeTopicStatus(@PathVariable long topicId,
-                                                          @Valid @RequestBody ChangeTopicRequest request) {
+            @Valid @RequestBody ChangeTopicRequest request) {
         return ApiResponse.ok(releaseService.changeTopicStatus(topicId, request.status()));
     }
 
@@ -68,7 +68,7 @@ class ReleaseController {
 
     @PatchMapping("/replay-plans/{replayId}/status")
     ApiResponse<ReplayPlan> changeReplayStatus(@PathVariable long replayId,
-                                               @Valid @RequestBody ChangeReplayRequest request) {
+            @Valid @RequestBody ChangeReplayRequest request) {
         return ApiResponse.ok(releaseService.changeReplayStatus(replayId, request.status()));
     }
 
@@ -78,28 +78,28 @@ class ReleaseController {
     }
 
     record CreateToggleRequest(@NotBlank String flagKey, @NotBlank String serviceName, ToggleStatus status,
-                               @Min(0) @Max(100) int rolloutPercent) {
+            @Min(0) @Max(100) int rolloutPercent) {
     }
 
     record UpdateToggleRequest(ToggleStatus status, @Min(0) @Max(100) int rolloutPercent) {
     }
 
     record CreateRolloutRequest(@NotBlank String serviceName, @NotBlank String version, @NotBlank String strategy,
-                                @Min(0) @Max(100) int currentPercent) {
+            @Min(0) @Max(100) int currentPercent) {
     }
 
     record ChangeRolloutRequest(RolloutStatus status, @Min(0) @Max(100) int currentPercent) {
     }
 
     record RegisterTopicRequest(@NotBlank String topicName, @NotBlank String owner, @NotBlank String schemaVersion,
-                                @Positive long lagBudget) {
+            @Positive long lagBudget) {
     }
 
     record ChangeTopicRequest(TopicStatus status) {
     }
 
     record CreateReplayRequest(@NotBlank String topicName, @NotBlank String consumerGroup,
-                               @PositiveOrZero long fromOffset, @PositiveOrZero long toOffset) {
+            @PositiveOrZero long fromOffset, @PositiveOrZero long toOffset) {
     }
 
     record ChangeReplayRequest(RolloutStatus status) {

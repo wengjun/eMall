@@ -15,10 +15,10 @@ public class InMemoryPriceRepository implements PriceRepository {
     private final ConcurrentMap<Long, PriceBook> prices = new ConcurrentHashMap<>();
 
     public InMemoryPriceRepository() {
-        save(new PriceBook(10001L, BigDecimal.valueOf(399900, 2), BigDecimal.valueOf(379900, 2),
-                "USD", 1L, true, Instant.now()));
-        save(new PriceBook(10002L, BigDecimal.valueOf(699900, 2), BigDecimal.valueOf(679900, 2),
-                "USD", 1L, true, Instant.now()));
+        save(new PriceBook(10001L, BigDecimal.valueOf(399900, 2), BigDecimal.valueOf(379900, 2), "USD", 1L, true,
+                Instant.now()));
+        save(new PriceBook(10002L, BigDecimal.valueOf(699900, 2), BigDecimal.valueOf(679900, 2), "USD", 1L, true,
+                Instant.now()));
     }
 
     @Override

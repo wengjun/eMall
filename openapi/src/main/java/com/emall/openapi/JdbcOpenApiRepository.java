@@ -36,14 +36,14 @@ class JdbcOpenApiRepository implements OpenApiRepository {
 
     @Override
     public Optional<OpenApiApp> findApp(String appKey) {
-        return jdbcTemplate.query("SELECT * FROM openapi_app WHERE app_key = ?", this::mapApp, appKey)
-                .stream().findFirst();
+        return jdbcTemplate.query("SELECT * FROM openapi_app WHERE app_key = ?", this::mapApp, appKey).stream()
+                .findFirst();
     }
 
     @Override
     public Optional<OpenApiApp> findApp(long appId) {
-        return jdbcTemplate.query("SELECT * FROM openapi_app WHERE app_id = ?", this::mapApp, appId)
-                .stream().findFirst();
+        return jdbcTemplate.query("SELECT * FROM openapi_app WHERE app_id = ?", this::mapApp, appId).stream()
+                .findFirst();
     }
 
     @Override
@@ -109,8 +109,8 @@ class JdbcOpenApiRepository implements OpenApiRepository {
 
     private OpenApiApp mapApp(ResultSet rs, int rowNum) throws SQLException {
         return new OpenApiApp(rs.getLong("app_id"), rs.getLong("merchant_id"), rs.getString("app_key"),
-                rs.getString("secret_hash"), rs.getString("name"), rs.getString("scopes"),
-                rs.getInt("daily_quota"), rs.getBoolean("active"), rs.getTimestamp("created_at").toInstant(),
+                rs.getString("secret_hash"), rs.getString("name"), rs.getString("scopes"), rs.getInt("daily_quota"),
+                rs.getBoolean("active"), rs.getTimestamp("created_at").toInstant(),
                 rs.getTimestamp("updated_at").toInstant());
     }
 
@@ -120,8 +120,8 @@ class JdbcOpenApiRepository implements OpenApiRepository {
     }
 
     private WebhookSubscription mapSubscription(ResultSet rs, int rowNum) throws SQLException {
-        return new WebhookSubscription(rs.getLong("subscription_id"), rs.getLong("app_id"),
-                rs.getString("event_type"), rs.getString("target_url"), rs.getBoolean("active"),
-                rs.getTimestamp("created_at").toInstant(), rs.getTimestamp("updated_at").toInstant());
+        return new WebhookSubscription(rs.getLong("subscription_id"), rs.getLong("app_id"), rs.getString("event_type"),
+                rs.getString("target_url"), rs.getBoolean("active"), rs.getTimestamp("created_at").toInstant(),
+                rs.getTimestamp("updated_at").toInstant());
     }
 }

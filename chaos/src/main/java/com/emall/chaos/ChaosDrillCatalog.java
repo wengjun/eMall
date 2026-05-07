@@ -8,13 +8,7 @@ public final class ChaosDrillCatalog {
     }
 
     public static List<ChaosDrill> p3Baseline() {
-        return List.of(
-                redisFailure(),
-                mqBacklog(),
-                databaseFailover(),
-                downstreamLatency(),
-                partialRegionIsolation()
-        );
+        return List.of(redisFailure(), mqBacklog(), databaseFailover(), downstreamLatency(), partialRegionIsolation());
     }
 
     public static ChaosDrill redisFailure() {
@@ -29,8 +23,7 @@ public final class ChaosDrillCatalog {
         return new ChaosDrill("mq-backlog", DrillType.MQ_BACKLOG, "kafka", BlastRadius.SINGLE_SERVICE,
                 Duration.ofMinutes(15), standardPrerequisites(),
                 List.of("throttle fulfillment consumer group", "generate product and order event backlog"),
-                standardAbortConditions(),
-                List.of("consumer lag drains below 1000", "dead-letter topic growth stops"));
+                standardAbortConditions(), List.of("consumer lag drains below 1000", "dead-letter topic growth stops"));
     }
 
     public static ChaosDrill databaseFailover() {
@@ -62,10 +55,8 @@ public final class ChaosDrillCatalog {
     }
 
     private static List<AbortCondition> standardAbortConditions() {
-        return List.of(
-                new AbortCondition("http_server_error_ratio", ">", 5.0, 2),
+        return List.of(new AbortCondition("http_server_error_ratio", ">", 5.0, 2),
                 new AbortCondition("checkout_p99_latency_ms", ">", 2000.0, 2),
-                new AbortCondition("payment_error_ratio", ">", 1.0, 1)
-        );
+                new AbortCondition("payment_error_ratio", ">", 1.0, 1));
     }
 }

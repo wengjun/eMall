@@ -25,20 +25,17 @@ public class InventoryClient {
     @CircuitBreaker(name = "inventoryService", fallbackMethod = "fallbackReserve")
     public InventoryReservation reserve(ReserveInventoryRequest request) {
         if (!recoveryController.allowRequest()) {
-            return InventoryReservation.unavailable(
-                    request.requestId(), request.skuId(), request.quantity(), "DOWNSTREAM_RECOVERING");
+            return InventoryReservation.unavailable(request.requestId(), request.skuId(), request.quantity(),
+                    "DOWNSTREAM_RECOVERING");
         }
         try {
-            InventoryApiResponse response = inventoryRestClient.post()
-                    .uri("/api/inventory/reservations")
-                    .body(request)
-                    .retrieve()
-                    .body(InventoryApiResponse.class);
+            InventoryApiResponse response = inventoryRestClient.post().uri("/api/inventory/reservations").body(request)
+                    .retrieve().body(InventoryApiResponse.class);
             InventoryReservation result = response == null ? null : response.data();
             recoveryController.recordSuccess();
             return result == null
-                    ? InventoryReservation.unavailable(
-                            request.requestId(), request.skuId(), request.quantity(), "EMPTY_RESPONSE")
+                    ? InventoryReservation.unavailable(request.requestId(), request.skuId(), request.quantity(),
+                            "EMPTY_RESPONSE")
                     : result;
         } catch (RuntimeException ex) {
             recoveryController.recordFailure();
@@ -48,8 +45,8 @@ public class InventoryClient {
 
     public InventoryReservation fallbackReserve(ReserveInventoryRequest request, Throwable error) {
         recoveryController.recordFailure();
-        return InventoryReservation.unavailable(
-                request.requestId(), request.skuId(), request.quantity(), "FALLBACK_ACCEPTED_FOR_ASYNC_RETRY");
+        return InventoryReservation.unavailable(request.requestId(), request.skuId(), request.quantity(),
+                "FALLBACK_ACCEPTED_FOR_ASYNC_RETRY");
     }
 
     @Retry(name = "inventoryService")
@@ -61,15 +58,12 @@ public class InventoryClient {
             return InventoryReservation.unavailable(requestId, 0L, 0, "DOWNSTREAM_RECOVERING");
         }
         try {
-            InventoryApiResponse response = inventoryRestClient.post()
-                    .uri("/api/inventory/reservations/{requestId}/confirm", requestId)
-                    .retrieve()
-                    .body(InventoryApiResponse.class);
+            InventoryApiResponse response =
+                    inventoryRestClient.post().uri("/api/inventory/reservations/{requestId}/confirm", requestId)
+                            .retrieve().body(InventoryApiResponse.class);
             InventoryReservation result = response == null ? null : response.data();
             recoveryController.recordSuccess();
-            return result == null
-                    ? InventoryReservation.unavailable(requestId, 0L, 0, "EMPTY_RESPONSE")
-                    : result;
+            return result == null ? InventoryReservation.unavailable(requestId, 0L, 0, "EMPTY_RESPONSE") : result;
         } catch (RuntimeException ex) {
             recoveryController.recordFailure();
             throw ex;
@@ -90,15 +84,12 @@ public class InventoryClient {
             return InventoryReservation.unavailable(requestId, 0L, 0, "DOWNSTREAM_RECOVERING");
         }
         try {
-            InventoryApiResponse response = inventoryRestClient.post()
-                    .uri("/api/inventory/reservations/{requestId}/release", requestId)
-                    .retrieve()
-                    .body(InventoryApiResponse.class);
+            InventoryApiResponse response =
+                    inventoryRestClient.post().uri("/api/inventory/reservations/{requestId}/release", requestId)
+                            .retrieve().body(InventoryApiResponse.class);
             InventoryReservation result = response == null ? null : response.data();
             recoveryController.recordSuccess();
-            return result == null
-                    ? InventoryReservation.unavailable(requestId, 0L, 0, "EMPTY_RESPONSE")
-                    : result;
+            return result == null ? InventoryReservation.unavailable(requestId, 0L, 0, "EMPTY_RESPONSE") : result;
         } catch (RuntimeException ex) {
             recoveryController.recordFailure();
             throw ex;
@@ -113,16 +104,8 @@ public class InventoryClient {
     public record ReserveInventoryRequest(String requestId, long skuId, int quantity) {
     }
 
-    public record InventoryReservation(
-            String requestId,
-            long skuId,
-            int quantity,
-            String status,
-            String reason,
-            Instant expiresAt,
-            Instant createdAt,
-            Instant updatedAt
-    ) {
+    public record InventoryReservation(String requestId, long skuId, int quantity, String status, String reason,
+            Instant expiresAt, Instant createdAt, Instant updatedAt) {
         public boolean reserved() {
             return "RESERVED".equals(status);
         }
@@ -141,12 +124,7 @@ public class InventoryClient {
         }
     }
 
-    public record InventoryApiResponse(
-            boolean success,
-            String code,
-            String message,
-            InventoryReservation data,
-            Instant timestamp
-    ) {
+    public record InventoryApiResponse(boolean success, String code, String message, InventoryReservation data,
+            Instant timestamp) {
     }
 }

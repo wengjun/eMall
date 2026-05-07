@@ -33,8 +33,8 @@ public class MarketingController {
     @PostMapping("/coupons")
     @ResponseStatus(HttpStatus.CREATED)
     public ApiResponse<Coupon> issue(@Valid @RequestBody IssueCouponRequest request) {
-        return ApiResponse.ok(marketingService.issue(
-                request.userId(), request.thresholdAmount(), request.discountAmount(), request.expiresAt()));
+        return ApiResponse.ok(marketingService.issue(request.userId(), request.thresholdAmount(),
+                request.discountAmount(), request.expiresAt()));
     }
 
     @GetMapping("/users/{userId}/coupons")
@@ -52,12 +52,8 @@ public class MarketingController {
         return ApiResponse.ok(marketingService.redeem(couponId, request.orderAmount()));
     }
 
-    public record IssueCouponRequest(
-            @Positive long userId,
-            @NotNull @DecimalMin("0.00") BigDecimal thresholdAmount,
-            @NotNull @DecimalMin("0.01") BigDecimal discountAmount,
-            @NotNull @Future Instant expiresAt
-    ) {
+    public record IssueCouponRequest(@Positive long userId, @NotNull @DecimalMin("0.00") BigDecimal thresholdAmount,
+            @NotNull @DecimalMin("0.01") BigDecimal discountAmount, @NotNull @Future Instant expiresAt) {
     }
 
     public record PromotionQuoteRequest(@Positive long userId, @NotNull @DecimalMin("0.01") BigDecimal orderAmount) {

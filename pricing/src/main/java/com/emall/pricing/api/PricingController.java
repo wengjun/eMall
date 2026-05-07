@@ -31,8 +31,8 @@ public class PricingController {
     @PostMapping
     @ResponseStatus(HttpStatus.CREATED)
     public ApiResponse<PriceBook> upsert(@Valid @RequestBody UpsertPriceRequest request) {
-        return ApiResponse.ok(pricingService.upsert(
-                request.skuId(), request.listPrice(), request.salePrice(), request.currency(), request.active()));
+        return ApiResponse.ok(pricingService.upsert(request.skuId(), request.listPrice(), request.salePrice(),
+                request.currency(), request.active()));
     }
 
     @GetMapping("/{skuId}")
@@ -45,13 +45,8 @@ public class PricingController {
         return ApiResponse.ok(pricingService.quote(request.skuId(), request.quantity()));
     }
 
-    public record UpsertPriceRequest(
-            @Positive long skuId,
-            @NotNull @DecimalMin("0.01") BigDecimal listPrice,
-            @NotNull @DecimalMin("0.01") BigDecimal salePrice,
-            @NotBlank String currency,
-            boolean active
-    ) {
+    public record UpsertPriceRequest(@Positive long skuId, @NotNull @DecimalMin("0.01") BigDecimal listPrice,
+            @NotNull @DecimalMin("0.01") BigDecimal salePrice, @NotBlank String currency, boolean active) {
     }
 
     public record QuoteRequest(@Positive long skuId, @Positive int quantity) {

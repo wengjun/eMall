@@ -46,8 +46,7 @@ class FlashSaleServiceTest {
         service.issueToken(campaign.campaignId(), 1001L, 1);
 
         assertThatThrownBy(() -> service.issueToken(campaign.campaignId(), 1001L, 1))
-                .isInstanceOf(BusinessException.class)
-                .hasMessageContaining("per-user limit");
+                .isInstanceOf(BusinessException.class).hasMessageContaining("per-user limit");
     }
 
     @Test
@@ -57,16 +56,14 @@ class FlashSaleServiceTest {
         service.enqueueOrder(service.issueToken(campaign.campaignId(), 1001L, 1).token());
         FlashSaleToken secondToken = service.issueToken(campaign.campaignId(), 1002L, 1);
 
-        assertThatThrownBy(() -> service.enqueueOrder(secondToken.token()))
-                .isInstanceOf(BusinessException.class)
+        assertThatThrownBy(() -> service.enqueueOrder(secondToken.token())).isInstanceOf(BusinessException.class)
                 .hasMessageContaining("queue is full");
     }
 
     private FlashSaleCampaign createActiveCampaign(int perUserLimit, int queueCapacity) {
         Instant now = Instant.now();
-        FlashSaleCampaign campaign = service.createCampaign(3001L, "launch sale",
-                now.minus(1, ChronoUnit.MINUTES), now.plus(1, ChronoUnit.HOURS), perUserLimit, 60,
-                queueCapacity);
+        FlashSaleCampaign campaign = service.createCampaign(3001L, "launch sale", now.minus(1, ChronoUnit.MINUTES),
+                now.plus(1, ChronoUnit.HOURS), perUserLimit, 60, queueCapacity);
         return service.changeCampaignStatus(campaign.campaignId(), CampaignStatus.ACTIVE);
     }
 }

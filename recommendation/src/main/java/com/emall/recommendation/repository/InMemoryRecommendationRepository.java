@@ -34,10 +34,8 @@ public class InMemoryRecommendationRepository implements RecommendationRepositor
 
     @Override
     public List<UserPreference> findUserPreferences(long userId) {
-        return preferences.values().stream()
-                .filter(preference -> preference.userId() == userId)
-                .sorted(Comparator.comparingInt(UserPreference::affinityScore).reversed())
-                .toList();
+        return preferences.values().stream().filter(preference -> preference.userId() == userId)
+                .sorted(Comparator.comparingInt(UserPreference::affinityScore).reversed()).toList();
     }
 
     @Override
@@ -53,12 +51,10 @@ public class InMemoryRecommendationRepository implements RecommendationRepositor
 
     @Override
     public List<ItemFeature> findActiveItemFeatures(int limit) {
-        return itemFeatures.values().stream()
-                .filter(ItemFeature::active)
-                .sorted(Comparator.comparing(ItemFeature::popularityScore).reversed()
-                        .thenComparing(Comparator.comparing(ItemFeature::baseScore).reversed()))
-                .limit(limit)
-                .toList();
+        return itemFeatures
+                .values().stream().filter(ItemFeature::active).sorted(Comparator.comparing(ItemFeature::popularityScore)
+                        .reversed().thenComparing(Comparator.comparing(ItemFeature::baseScore).reversed()))
+                .limit(limit).toList();
     }
 
     @Override
@@ -80,8 +76,7 @@ public class InMemoryRecommendationRepository implements RecommendationRepositor
 
     @Override
     public Optional<Experiment> findActiveExperiment(String scene) {
-        return experiments.values().stream()
-                .filter(experiment -> experiment.scene().equals(scene))
+        return experiments.values().stream().filter(experiment -> experiment.scene().equals(scene))
                 .filter(experiment -> experiment.status() == ExperimentStatus.ACTIVE)
                 .max(Comparator.comparing(Experiment::updatedAt));
     }

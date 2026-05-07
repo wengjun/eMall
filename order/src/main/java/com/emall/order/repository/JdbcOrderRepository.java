@@ -34,26 +34,23 @@ public class JdbcOrderRepository implements OrderRepository {
                     price_version = VALUES(price_version), coupon_id = VALUES(coupon_id),
                     inventory_reservation_id = VALUES(inventory_reservation_id), status = VALUES(status),
                     failure_reason = VALUES(failure_reason), updated_at = VALUES(updated_at)
-                """,
-                order.orderId(), order.requestId(), order.userId(), order.skuId(), order.quantity(),
+                """, order.orderId(), order.requestId(), order.userId(), order.skuId(), order.quantity(),
                 order.unitPrice(), order.subtotalAmount(), order.discountAmount(), order.payableAmount(),
                 order.currency(), order.priceVersion(), order.couponId(), order.inventoryReservationId(),
-                order.status().name(), order.failureReason(),
-                Timestamp.from(order.createdAt()), Timestamp.from(order.updatedAt()));
+                order.status().name(), order.failureReason(), Timestamp.from(order.createdAt()),
+                Timestamp.from(order.updatedAt()));
         return order;
     }
 
     @Override
     public Optional<Order> findById(long orderId) {
-        return jdbcTemplate.query("SELECT * FROM order_record WHERE order_id = ?", this::map, orderId)
-                .stream()
+        return jdbcTemplate.query("SELECT * FROM order_record WHERE order_id = ?", this::map, orderId).stream()
                 .findFirst();
     }
 
     @Override
     public Optional<Order> findByRequestId(String requestId) {
-        return jdbcTemplate.query("SELECT * FROM order_record WHERE request_id = ?", this::map, requestId)
-                .stream()
+        return jdbcTemplate.query("SELECT * FROM order_record WHERE request_id = ?", this::map, requestId).stream()
                 .findFirst();
     }
 
@@ -68,23 +65,12 @@ public class JdbcOrderRepository implements OrderRepository {
     }
 
     private Order map(ResultSet rs, int rowNum) throws SQLException {
-        return new Order(
-                rs.getLong("order_id"),
-                rs.getString("request_id"),
-                rs.getLong("user_id"),
-                rs.getLong("sku_id"),
-                rs.getInt("quantity"),
-                rs.getBigDecimal("unit_price"),
-                rs.getBigDecimal("subtotal_amount"),
-                rs.getBigDecimal("discount_amount"),
-                rs.getBigDecimal("payable_amount"),
-                rs.getString("currency"),
-                rs.getLong("price_version"),
-                rs.getString("coupon_id"),
-                rs.getString("inventory_reservation_id"),
-                OrderStatus.valueOf(rs.getString("status")),
-                rs.getString("failure_reason"),
-                rs.getTimestamp("created_at").toInstant(),
-                rs.getTimestamp("updated_at").toInstant());
+        return new Order(rs.getLong("order_id"), rs.getString("request_id"), rs.getLong("user_id"),
+                rs.getLong("sku_id"), rs.getInt("quantity"), rs.getBigDecimal("unit_price"),
+                rs.getBigDecimal("subtotal_amount"), rs.getBigDecimal("discount_amount"),
+                rs.getBigDecimal("payable_amount"), rs.getString("currency"), rs.getLong("price_version"),
+                rs.getString("coupon_id"), rs.getString("inventory_reservation_id"),
+                OrderStatus.valueOf(rs.getString("status")), rs.getString("failure_reason"),
+                rs.getTimestamp("created_at").toInstant(), rs.getTimestamp("updated_at").toInstant());
     }
 }

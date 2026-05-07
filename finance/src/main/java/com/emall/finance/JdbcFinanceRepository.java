@@ -35,8 +35,8 @@ class JdbcFinanceRepository implements FinanceRepository {
 
     @Override
     public Optional<FinanceAccount> findAccount(long accountId) {
-        return jdbcTemplate.query("SELECT * FROM finance_account WHERE account_id = ?", this::mapAccount,
-                accountId).stream().findFirst();
+        return jdbcTemplate.query("SELECT * FROM finance_account WHERE account_id = ?", this::mapAccount, accountId)
+                .stream().findFirst();
     }
 
     @Override
@@ -50,8 +50,8 @@ class JdbcFinanceRepository implements FinanceRepository {
                 INSERT INTO ledger_entry
                     (entry_id, account_id, business_type, business_no, debit_amount, credit_amount, created_at)
                 VALUES (?, ?, ?, ?, ?, ?, ?)
-                """, entry.entryId(), entry.accountId(), entry.businessType(), entry.businessNo(),
-                entry.debitAmount(), entry.creditAmount(), Timestamp.from(entry.createdAt()));
+                """, entry.entryId(), entry.accountId(), entry.businessType(), entry.businessNo(), entry.debitAmount(),
+                entry.creditAmount(), Timestamp.from(entry.createdAt()));
         return entry;
     }
 
@@ -76,8 +76,9 @@ class JdbcFinanceRepository implements FinanceRepository {
 
     @Override
     public Optional<SettlementBatch> findSettlementBatch(long batchId) {
-        return jdbcTemplate.query("SELECT * FROM settlement_batch WHERE batch_id = ?", this::mapSettlementBatch,
-                batchId).stream().findFirst();
+        return jdbcTemplate
+                .query("SELECT * FROM settlement_batch WHERE batch_id = ?", this::mapSettlementBatch, batchId).stream()
+                .findFirst();
     }
 
     @Override
@@ -93,15 +94,15 @@ class JdbcFinanceRepository implements FinanceRepository {
                     (invoice_id, owner_id, amount, tax_no, status, created_at, updated_at)
                 VALUES (?, ?, ?, ?, ?, ?, ?)
                 ON DUPLICATE KEY UPDATE status = VALUES(status), updated_at = VALUES(updated_at)
-                """, invoice.invoiceId(), invoice.ownerId(), invoice.amount(), invoice.taxNo(),
-                invoice.status().name(), Timestamp.from(invoice.createdAt()), Timestamp.from(invoice.updatedAt()));
+                """, invoice.invoiceId(), invoice.ownerId(), invoice.amount(), invoice.taxNo(), invoice.status().name(),
+                Timestamp.from(invoice.createdAt()), Timestamp.from(invoice.updatedAt()));
         return invoice;
     }
 
     @Override
     public Optional<InvoiceDocument> findInvoice(long invoiceId) {
-        return jdbcTemplate.query("SELECT * FROM invoice_document WHERE invoice_id = ?", this::mapInvoice,
-                invoiceId).stream().findFirst();
+        return jdbcTemplate.query("SELECT * FROM invoice_document WHERE invoice_id = ?", this::mapInvoice, invoiceId)
+                .stream().findFirst();
     }
 
     @Override
@@ -130,8 +131,9 @@ class JdbcFinanceRepository implements FinanceRepository {
 
     @Override
     public Optional<ChargebackCase> findChargeback(long chargebackId) {
-        return jdbcTemplate.query("SELECT * FROM chargeback_case WHERE chargeback_id = ?", this::mapChargeback,
-                chargebackId).stream().findFirst();
+        return jdbcTemplate
+                .query("SELECT * FROM chargeback_case WHERE chargeback_id = ?", this::mapChargeback, chargebackId)
+                .stream().findFirst();
     }
 
     @Override
@@ -147,9 +149,9 @@ class JdbcFinanceRepository implements FinanceRepository {
     }
 
     private LedgerEntry mapEntry(ResultSet rs, int rowNum) throws SQLException {
-        return new LedgerEntry(rs.getLong("entry_id"), rs.getLong("account_id"),
-                rs.getString("business_type"), rs.getString("business_no"), rs.getBigDecimal("debit_amount"),
-                rs.getBigDecimal("credit_amount"), rs.getTimestamp("created_at").toInstant());
+        return new LedgerEntry(rs.getLong("entry_id"), rs.getLong("account_id"), rs.getString("business_type"),
+                rs.getString("business_no"), rs.getBigDecimal("debit_amount"), rs.getBigDecimal("credit_amount"),
+                rs.getTimestamp("created_at").toInstant());
     }
 
     private SettlementBatch mapSettlementBatch(ResultSet rs, int rowNum) throws SQLException {
@@ -166,8 +168,8 @@ class JdbcFinanceRepository implements FinanceRepository {
     }
 
     private ChargebackCase mapChargeback(ResultSet rs, int rowNum) throws SQLException {
-        return new ChargebackCase(rs.getLong("chargeback_id"), rs.getLong("payment_id"),
-                rs.getBigDecimal("amount"), rs.getString("reason"), ChargebackStatus.valueOf(rs.getString("status")),
+        return new ChargebackCase(rs.getLong("chargeback_id"), rs.getLong("payment_id"), rs.getBigDecimal("amount"),
+                rs.getString("reason"), ChargebackStatus.valueOf(rs.getString("status")),
                 rs.getTimestamp("created_at").toInstant(), rs.getTimestamp("updated_at").toInstant());
     }
 }

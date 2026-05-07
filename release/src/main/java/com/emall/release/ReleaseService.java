@@ -22,8 +22,8 @@ class ReleaseService {
     FeatureToggle createToggle(String flagKey, String serviceName, ToggleStatus status, int rolloutPercent) {
         requirePercent(rolloutPercent);
         Instant now = Instant.now();
-        return repository.saveToggle(new FeatureToggle(idGenerator.nextId(), normalize(flagKey),
-                normalize(serviceName), status, rolloutPercent, now, now));
+        return repository.saveToggle(new FeatureToggle(idGenerator.nextId(), normalize(flagKey), normalize(serviceName),
+                status, rolloutPercent, now, now));
     }
 
     @Transactional
@@ -38,8 +38,8 @@ class ReleaseService {
     RolloutPlan createRollout(String serviceName, String version, String strategy, int currentPercent) {
         requirePercent(currentPercent);
         Instant now = Instant.now();
-        return repository.saveRollout(new RolloutPlan(idGenerator.nextId(), normalize(serviceName),
-                normalize(version), normalize(strategy), currentPercent, RolloutStatus.PLANNED, now, now));
+        return repository.saveRollout(new RolloutPlan(idGenerator.nextId(), normalize(serviceName), normalize(version),
+                normalize(strategy), currentPercent, RolloutStatus.PLANNED, now, now));
     }
 
     @Transactional
@@ -85,13 +85,12 @@ class ReleaseService {
     }
 
     ReleaseSummary summary() {
-        int flags = (int) repository.findToggles().stream().filter(toggle -> toggle.status() == ToggleStatus.ON)
-                .count();
+        int flags =
+                (int) repository.findToggles().stream().filter(toggle -> toggle.status() == ToggleStatus.ON).count();
         int rollouts = (int) repository.findRollouts().stream()
-                .filter(rollout -> rollout.status() == RolloutStatus.RUNNING)
-                .count();
-        int topics = (int) repository.findTopics().stream().filter(topic -> topic.status() == TopicStatus.ACTIVE)
-                .count();
+                .filter(rollout -> rollout.status() == RolloutStatus.RUNNING).count();
+        int topics =
+                (int) repository.findTopics().stream().filter(topic -> topic.status() == TopicStatus.ACTIVE).count();
         int replays = (int) repository.findReplays().stream()
                 .filter(replay -> replay.status() == RolloutStatus.PLANNED || replay.status() == RolloutStatus.RUNNING)
                 .count();

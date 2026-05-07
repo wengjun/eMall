@@ -22,9 +22,8 @@ public class InventoryOperationsController extends InternalOperationsControllerS
     private final OutboxPublisher outboxPublisher;
 
     public InventoryOperationsController(ReservationExpirationJob reservationExpirationJob,
-                                         OutboxPublisher outboxPublisher,
-                                         OperationAuditRepository operationAuditRepository,
-                                         @Value("${emall.internal.operations-token}") String operationsToken) {
+            OutboxPublisher outboxPublisher, OperationAuditRepository operationAuditRepository,
+            @Value("${emall.internal.operations-token}") String operationsToken) {
         super(operationAuditRepository, "inventory", operationsToken);
         this.reservationExpirationJob = reservationExpirationJob;
         this.outboxPublisher = outboxPublisher;
@@ -36,8 +35,7 @@ public class InventoryOperationsController extends InternalOperationsControllerS
             @RequestHeader("X-Internal-Token") String token,
             @RequestHeader(value = "X-Operator", defaultValue = "unknown") String operator,
             @RequestHeader(value = "X-Trace-Id", required = false) String traceId) {
-        return execute(token, operator, traceId,
-                "inventory.release-expired-reservations",
+        return execute(token, operator, traceId, "inventory.release-expired-reservations",
                 () -> reservationExpirationJob.releaseExpiredReservations(limit));
     }
 
@@ -47,9 +45,7 @@ public class InventoryOperationsController extends InternalOperationsControllerS
             @RequestHeader("X-Internal-Token") String token,
             @RequestHeader(value = "X-Operator", defaultValue = "unknown") String operator,
             @RequestHeader(value = "X-Trace-Id", required = false) String traceId) {
-        return execute(token, operator, traceId,
-                "outbox.publish",
-                () -> outboxPublisher.publishBatch(limit));
+        return execute(token, operator, traceId, "outbox.publish", () -> outboxPublisher.publishBatch(limit));
     }
 
     @PostMapping("/outbox/retry-failed")
@@ -58,8 +54,6 @@ public class InventoryOperationsController extends InternalOperationsControllerS
             @RequestHeader("X-Internal-Token") String token,
             @RequestHeader(value = "X-Operator", defaultValue = "unknown") String operator,
             @RequestHeader(value = "X-Trace-Id", required = false) String traceId) {
-        return execute(token, operator, traceId,
-                "outbox.retry-failed",
-                () -> outboxPublisher.retryFailedNow(limit));
+        return execute(token, operator, traceId, "outbox.retry-failed", () -> outboxPublisher.retryFailedNow(limit));
     }
 }

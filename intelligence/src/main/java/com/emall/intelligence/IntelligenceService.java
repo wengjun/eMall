@@ -21,14 +21,14 @@ class IntelligenceService {
 
     @Transactional
     UserProfile upsertUserProfile(long userId, String segment, String preferences, boolean privacyRestricted) {
-        return repository.saveUserProfile(new UserProfile(idGenerator.nextId(), userId, normalize(segment),
-                preferences, privacyRestricted, Instant.now()));
+        return repository.saveUserProfile(new UserProfile(idGenerator.nextId(), userId, normalize(segment), preferences,
+                privacyRestricted, Instant.now()));
     }
 
     @Transactional
     ItemProfile upsertItemProfile(long skuId, String category, String attributes, BigDecimal qualityScore) {
-        return repository.saveItemProfile(new ItemProfile(idGenerator.nextId(), skuId, normalize(category),
-                attributes, qualityScore, Instant.now()));
+        return repository.saveItemProfile(new ItemProfile(idGenerator.nextId(), skuId, normalize(category), attributes,
+                qualityScore, Instant.now()));
     }
 
     @Transactional
@@ -41,8 +41,7 @@ class IntelligenceService {
     }
 
     @Transactional
-    OnlineFeatureValue writeFeatureValue(String featureName, String entityKey, String featureValue,
-                                         Instant eventTime) {
+    OnlineFeatureValue writeFeatureValue(String featureName, String entityKey, String featureValue, Instant eventTime) {
         return repository.saveFeatureValue(new OnlineFeatureValue(idGenerator.nextId(), normalize(featureName),
                 normalize(entityKey), featureValue, eventTime, Instant.now()));
     }
@@ -50,8 +49,8 @@ class IntelligenceService {
     @Transactional
     ModelDeployment registerModel(String modelName, String version, String useCase) {
         Instant now = Instant.now();
-        return repository.saveModel(new ModelDeployment(idGenerator.nextId(), normalize(modelName),
-                normalize(version), normalize(useCase), ModelStatus.REGISTERED, "", now, now));
+        return repository.saveModel(new ModelDeployment(idGenerator.nextId(), normalize(modelName), normalize(version),
+                normalize(useCase), ModelStatus.REGISTERED, "", now, now));
     }
 
     @Transactional
@@ -63,15 +62,14 @@ class IntelligenceService {
 
     @Transactional
     AiDecision recordDecision(String useCase, String entityKey, String decision, BigDecimal score,
-                              String modelVersion) {
-        return repository.saveDecision(new AiDecision(idGenerator.nextId(), normalize(useCase),
-                normalize(entityKey), normalize(decision), score, normalize(modelVersion), Instant.now()));
+            String modelVersion) {
+        return repository.saveDecision(new AiDecision(idGenerator.nextId(), normalize(useCase), normalize(entityKey),
+                normalize(decision), score, normalize(modelVersion), Instant.now()));
     }
 
     IntelligenceSummary summary() {
-        int deployedModels = (int) repository.findModels().stream()
-                .filter(model -> model.status() == ModelStatus.DEPLOYED)
-                .count();
+        int deployedModels =
+                (int) repository.findModels().stream().filter(model -> model.status() == ModelStatus.DEPLOYED).count();
         return new IntelligenceSummary(repository.findUserProfiles().size(), repository.findItemProfiles().size(),
                 repository.findFeatures().size(), deployedModels, repository.findDecisions().size());
     }

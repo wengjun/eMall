@@ -12,7 +12,7 @@ import org.springframework.core.env.Environment;
 public class ProductionRuntimeGuardAutoConfiguration {
     @Bean
     public ProductionRuntimeGuard productionRuntimeGuard(Environment environment,
-                                                         ProductionRuntimeGuardProperties properties) {
+            ProductionRuntimeGuardProperties properties) {
         return new ProductionRuntimeGuard(environment, properties.requiredProperties());
     }
 }

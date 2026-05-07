@@ -13,8 +13,7 @@ class OperationsServiceTest {
     void approvalCanBeCreatedAndApproved() {
         ApprovalRequest approval = service.createApproval("refund", "order", "1001", "ops-a", "large refund");
 
-        ApprovalRequest approved = service.decideApproval(approval.approvalId(), "ops-lead",
-                ApprovalStatus.APPROVED);
+        ApprovalRequest approved = service.decideApproval(approval.approvalId(), "ops-lead", ApprovalStatus.APPROVED);
 
         assertThat(approved.status()).isEqualTo(ApprovalStatus.APPROVED);
         assertThat(service.findApprovals(ApprovalStatus.PENDING)).isEmpty();
@@ -33,8 +32,8 @@ class OperationsServiceTest {
 
     @Test
     void taskStatusCanMoveToResolved() {
-        OperationTask task = service.createTask("reconciliation", "payment", "p1001", "finance", 1,
-                "review channel mismatch");
+        OperationTask task =
+                service.createTask("reconciliation", "payment", "p1001", "finance", 1, "review channel mismatch");
 
         OperationTask resolved = service.changeTaskStatus(task.taskId(), TaskStatus.RESOLVED);
 

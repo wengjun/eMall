@@ -43,8 +43,8 @@ class TrafficService {
             throw new BusinessException(ErrorCode.BAD_REQUEST, "traffic percent must be 0-100");
         }
         Instant now = Instant.now();
-        return repository.saveShift(new TrafficShift(idGenerator.nextId(), normalize(sourceUnit),
-                normalize(targetUnit), percent, ShiftStatus.PLANNED, reason, now, now));
+        return repository.saveShift(new TrafficShift(idGenerator.nextId(), normalize(sourceUnit), normalize(targetUnit),
+                percent, ShiftStatus.PLANNED, reason, now, now));
     }
 
     @Transactional
@@ -61,12 +61,10 @@ class TrafficService {
 
     TrafficSummary summary() {
         int active = (int) repository.findUnits().stream().filter(unit -> unit.status() == UnitStatus.ACTIVE).count();
-        int isolated = (int) repository.findUnits().stream()
-                .filter(unit -> unit.status() == UnitStatus.ISOLATED)
-                .count();
-        int running = (int) repository.findShifts().stream()
-                .filter(shift -> shift.status() == ShiftStatus.RUNNING)
-                .count();
+        int isolated =
+                (int) repository.findUnits().stream().filter(unit -> unit.status() == UnitStatus.ISOLATED).count();
+        int running =
+                (int) repository.findShifts().stream().filter(shift -> shift.status() == ShiftStatus.RUNNING).count();
         return new TrafficSummary(active, repository.findRoutes().size(), running, isolated);
     }
 

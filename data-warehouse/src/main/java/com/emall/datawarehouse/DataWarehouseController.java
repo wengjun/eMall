@@ -51,18 +51,18 @@ class DataWarehouseController {
     }
 
     record RegisterDatasetRequest(WarehouseLayer layer, @NotBlank String datasetName, @NotBlank String owner,
-                                  @NotBlank String description, @Positive int retentionDays) {
+            @NotBlank String description, @Positive int retentionDays) {
     }
 
     record AddPartitionRequest(@Positive long datasetId, @NotBlank String partitionKey, LocalDate partitionDate,
-                               @Min(0) long rowCount, @Min(0) long storageBytes) {
+            @Min(0) long rowCount, @Min(0) long storageBytes) {
     }
 
     record RecordQualityCheckRequest(@Positive long datasetId, @NotBlank String checkName, QualityStatus status,
-                                     @NotBlank String detail) {
+            @NotBlank String detail) {
     }
 
     record AddLineageRequest(@Positive long upstreamDatasetId, @Positive long downstreamDatasetId,
-                             @NotBlank String transformName) {
+            @NotBlank String transformName) {
     }
 }

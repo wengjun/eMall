@@ -35,8 +35,9 @@ class JdbcExperimentRepository implements ExperimentRepository {
 
     @Override
     public Optional<ExperimentDefinition> findExperiment(long experimentId) {
-        return jdbcTemplate.query("SELECT * FROM experiment_definition WHERE experiment_id = ?",
-                this::mapExperiment, experimentId).stream().findFirst();
+        return jdbcTemplate
+                .query("SELECT * FROM experiment_definition WHERE experiment_id = ?", this::mapExperiment, experimentId)
+                .stream().findFirst();
     }
 
     @Override
@@ -61,8 +62,8 @@ class JdbcExperimentRepository implements ExperimentRepository {
 
     @Override
     public List<GuardrailMetric> findGuardrails(long experimentId) {
-        return jdbcTemplate.query("SELECT * FROM experiment_guardrail WHERE experiment_id = ?",
-                this::mapGuardrail, experimentId);
+        return jdbcTemplate.query("SELECT * FROM experiment_guardrail WHERE experiment_id = ?", this::mapGuardrail,
+                experimentId);
     }
 
     @Override
@@ -78,22 +79,21 @@ class JdbcExperimentRepository implements ExperimentRepository {
 
     @Override
     public List<ExperimentMetric> findMetrics(long experimentId) {
-        return jdbcTemplate.query("SELECT * FROM experiment_metric WHERE experiment_id = ?",
-                this::mapMetric, experimentId);
+        return jdbcTemplate.query("SELECT * FROM experiment_metric WHERE experiment_id = ?", this::mapMetric,
+                experimentId);
     }
 
     private ExperimentDefinition mapExperiment(ResultSet rs, int rowNum) throws SQLException {
         return new ExperimentDefinition(rs.getLong("experiment_id"), rs.getString("scene"), rs.getString("name"),
-                rs.getString("mutual_exclusion_group"), rs.getInt("traffic_percent"),
-                rs.getString("control_variant"), rs.getString("treatment_variant"),
-                ExperimentStatus.valueOf(rs.getString("status")), rs.getTimestamp("created_at").toInstant(),
-                rs.getTimestamp("updated_at").toInstant());
+                rs.getString("mutual_exclusion_group"), rs.getInt("traffic_percent"), rs.getString("control_variant"),
+                rs.getString("treatment_variant"), ExperimentStatus.valueOf(rs.getString("status")),
+                rs.getTimestamp("created_at").toInstant(), rs.getTimestamp("updated_at").toInstant());
     }
 
     private GuardrailMetric mapGuardrail(ResultSet rs, int rowNum) throws SQLException {
-        return new GuardrailMetric(rs.getLong("metric_id"), rs.getLong("experiment_id"),
-                rs.getString("metric_name"), GuardrailDirection.valueOf(rs.getString("direction")),
-                rs.getBigDecimal("threshold_value"), rs.getTimestamp("created_at").toInstant());
+        return new GuardrailMetric(rs.getLong("metric_id"), rs.getLong("experiment_id"), rs.getString("metric_name"),
+                GuardrailDirection.valueOf(rs.getString("direction")), rs.getBigDecimal("threshold_value"),
+                rs.getTimestamp("created_at").toInstant());
     }
 
     private ExperimentMetric mapMetric(ResultSet rs, int rowNum) throws SQLException {

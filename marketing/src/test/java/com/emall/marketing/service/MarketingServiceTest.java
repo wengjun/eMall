@@ -12,9 +12,8 @@ import java.time.Instant;
 import org.junit.jupiter.api.Test;
 
 class MarketingServiceTest {
-    private final MarketingService marketingService = new MarketingService(
-            new InMemoryCouponRepository(),
-            new SnowflakeIdGenerator(4));
+    private final MarketingService marketingService =
+            new MarketingService(new InMemoryCouponRepository(), new SnowflakeIdGenerator(4));
 
     @Test
     void shouldApplyBestCouponAndRedeemIt() {

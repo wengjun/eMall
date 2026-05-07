@@ -37,17 +37,13 @@ public class InMemoryPaymentSettlementRepository implements PaymentSettlementRep
 
     @Override
     public List<PaymentChannelStatement> findUnreconciledStatements(int limit) {
-        return statementsById.values().stream()
-                .filter(statement -> !statement.reconciled())
-                .sorted(Comparator.comparing(PaymentChannelStatement::occurredAt))
-                .limit(limit)
-                .toList();
+        return statementsById.values().stream().filter(statement -> !statement.reconciled())
+                .sorted(Comparator.comparing(PaymentChannelStatement::occurredAt)).limit(limit).toList();
     }
 
     @Override
     public Optional<PaymentChannelStatement> findUnreconciledStatementById(long statementId) {
-        return Optional.ofNullable(statementsById.get(statementId))
-                .filter(statement -> !statement.reconciled());
+        return Optional.ofNullable(statementsById.get(statementId)).filter(statement -> !statement.reconciled());
     }
 
     @Override

@@ -22,21 +22,21 @@ class CatalogService {
 
     @Transactional
     CategoryNode createCategory(long parentId, String categoryCode, String name, boolean leaf) {
-        return repository.saveCategory(new CategoryNode(idGenerator.nextId(), parentId, normalize(categoryCode),
-                name, leaf));
+        return repository
+                .saveCategory(new CategoryNode(idGenerator.nextId(), parentId, normalize(categoryCode), name, leaf));
     }
 
     @Transactional
     AttributeTemplate upsertTemplate(long categoryId, String requiredAttributes, String optionalAttributes) {
         requireCategory(categoryId);
-        return repository.saveTemplate(new AttributeTemplate(idGenerator.nextId(), categoryId, requiredAttributes,
-                optionalAttributes));
+        return repository.saveTemplate(
+                new AttributeTemplate(idGenerator.nextId(), categoryId, requiredAttributes, optionalAttributes));
     }
 
     @Transactional
     BrandAuthorization authorizeBrand(long merchantId, String brandCode) {
-        return repository.saveBrandAuthorization(new BrandAuthorization(idGenerator.nextId(), merchantId,
-                normalize(brandCode), true, Instant.now()));
+        return repository.saveBrandAuthorization(
+                new BrandAuthorization(idGenerator.nextId(), merchantId, normalize(brandCode), true, Instant.now()));
     }
 
     @Transactional
@@ -57,8 +57,8 @@ class CatalogService {
             throw new BusinessException(ErrorCode.BAD_REQUEST, "sku price must be positive");
         }
         Instant now = Instant.now();
-        return repository.saveSku(new Sku(idGenerator.nextId(), spuId, normalize(skuCode), price, attributes, false,
-                now, now));
+        return repository
+                .saveSku(new Sku(idGenerator.nextId(), spuId, normalize(skuCode), price, attributes, false, now, now));
     }
 
     @Transactional
@@ -70,8 +70,8 @@ class CatalogService {
         }
         ListingStatus nextStatus = approved ? ListingStatus.APPROVED : ListingStatus.REJECTED;
         if (!approved) {
-            repository.saveViolation(new ListingViolation(idGenerator.nextId(), spuId, "listing-review", reason,
-                    Instant.now()));
+            repository.saveViolation(
+                    new ListingViolation(idGenerator.nextId(), spuId, "listing-review", reason, Instant.now()));
         }
         repository.saveSpu(spu.changeStatus(nextStatus, Math.max(0, Math.min(qualityScore, 100))));
         return new ListingReview(spuId, nextStatus, Math.max(0, Math.min(qualityScore, 100)), reason);

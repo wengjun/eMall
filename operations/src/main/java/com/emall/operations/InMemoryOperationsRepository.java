@@ -29,10 +29,8 @@ class InMemoryOperationsRepository implements OperationsRepository {
 
     @Override
     public List<ApprovalRequest> findApprovals(ApprovalStatus status) {
-        return approvals.values().stream()
-                .filter(approval -> approval.status() == status)
-                .sorted(Comparator.comparing(ApprovalRequest::updatedAt).reversed())
-                .toList();
+        return approvals.values().stream().filter(approval -> approval.status() == status)
+                .sorted(Comparator.comparing(ApprovalRequest::updatedAt).reversed()).toList();
     }
 
     @Override
@@ -48,8 +46,7 @@ class InMemoryOperationsRepository implements OperationsRepository {
 
     @Override
     public List<OperationTask> findTasks(TaskStatus status) {
-        return tasks.values().stream()
-                .filter(task -> task.status() == status)
+        return tasks.values().stream().filter(task -> task.status() == status)
                 .sorted(Comparator.comparingInt(OperationTask::priority)
                         .thenComparing(Comparator.comparing(OperationTask::updatedAt).reversed()))
                 .toList();
@@ -63,11 +60,9 @@ class InMemoryOperationsRepository implements OperationsRepository {
 
     @Override
     public List<ComplianceEvidence> findEvidence(String resourceType, String resourceId) {
-        return evidence.values().stream()
-                .filter(item -> item.resourceType().equals(resourceType))
+        return evidence.values().stream().filter(item -> item.resourceType().equals(resourceType))
                 .filter(item -> item.resourceId().equals(resourceId))
-                .sorted(Comparator.comparing(ComplianceEvidence::createdAt).reversed())
-                .toList();
+                .sorted(Comparator.comparing(ComplianceEvidence::createdAt).reversed()).toList();
     }
 
     @Override

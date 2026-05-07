@@ -15,9 +15,8 @@ import org.testcontainers.utility.DockerImageName;
 @Testcontainers(disabledWithoutDocker = true)
 class RedisRuntimePrimitivesIT {
     @Container
-    static final GenericContainer<?> redis = new GenericContainer<>(
-            DockerImageName.parse("redis:7.2-alpine"))
-            .withExposedPorts(6379);
+    static final GenericContainer<?> redis =
+            new GenericContainer<>(DockerImageName.parse("redis:7.2-alpine")).withExposedPorts(6379);
 
     @Test
     void shouldSupportCacheValuesAndRateLimitCounters() {
@@ -41,8 +40,8 @@ class RedisRuntimePrimitivesIT {
     }
 
     private LettuceConnectionFactory connectionFactory() {
-        LettuceConnectionFactory connectionFactory = new LettuceConnectionFactory(
-                redis.getHost(), redis.getMappedPort(6379));
+        LettuceConnectionFactory connectionFactory =
+                new LettuceConnectionFactory(redis.getHost(), redis.getMappedPort(6379));
         connectionFactory.afterPropertiesSet();
         return connectionFactory;
     }

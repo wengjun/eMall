@@ -43,28 +43,27 @@ public class RecommendationService {
 
     @Transactional
     public ItemFeature upsertItemFeature(long skuId, String categoryCode, BigDecimal baseScore,
-                                         BigDecimal popularityScore, boolean active) {
+            BigDecimal popularityScore, boolean active) {
         return repository.saveItemFeature(new ItemFeature(skuId, categoryCode, normalizeScore(baseScore),
                 normalizeScore(popularityScore), active, Instant.now()));
     }
 
     @Transactional
     public UserBehaviorEvent recordBehavior(long userId, long skuId, String categoryCode, BehaviorType behaviorType,
-                                            Instant occurredAt) {
+            Instant occurredAt) {
         int weight = behaviorWeight(behaviorType);
         UserBehaviorEvent event = repository.saveBehaviorEvent(new UserBehaviorEvent(idGenerator.nextId(), userId,
                 skuId, categoryCode, behaviorType, weight, occurredAt));
-        int currentScore = repository.findUserPreference(userId, categoryCode)
-                .map(UserPreference::affinityScore)
-                .orElse(0);
-        repository.saveUserPreference(new UserPreference(userId, categoryCode,
-                Math.min(100, currentScore + weight), Instant.now()));
+        int currentScore =
+                repository.findUserPreference(userId, categoryCode).map(UserPreference::affinityScore).orElse(0);
+        repository.saveUserPreference(
+                new UserPreference(userId, categoryCode, Math.min(100, currentScore + weight), Instant.now()));
         return event;
     }
 
     @Transactional
     public Experiment createExperiment(String scene, String name, int trafficPercent, String controlStrategy,
-                                       String treatmentStrategy) {
+            String treatmentStrategy) {
         if (trafficPercent < 0 || trafficPercent > 100) {
             throw new BusinessException(ErrorCode.BAD_REQUEST, "experiment traffic percent must be between 0 and 100");
         }
@@ -92,26 +91,21 @@ public class RecommendationService {
                 .map(feature -> rank(feature, userId, strategy, assignment.bucket()))
                 .sorted(Comparator.comparing(RecommendationItem::score).reversed()
                         .thenComparingLong(RecommendationItem::skuId))
-                .limit(Math.max(1, Math.min(limit, 100)))
-                .toList();
+                .limit(Math.max(1, Math.min(limit, 100))).toList();
     }
 
     private RecommendationItem rank(ItemFeature feature, long userId, RankingStrategy strategy, String bucket) {
         BigDecimal affinityScore = repository.findUserPreference(userId, feature.categoryCode())
-                .map(UserPreference::affinityScore)
-                .map(BigDecimal::new)
-                .orElse(BigDecimal.ZERO)
+                .map(UserPreference::affinityScore).map(BigDecimal::new).orElse(BigDecimal.ZERO)
                 .divide(AFFINITY_NORMALIZER, 6, RoundingMode.HALF_UP);
         BigDecimal score = feature.baseScore().multiply(strategy.baseWeight())
                 .add(feature.popularityScore().multiply(strategy.popularityWeight()))
-                .add(affinityScore.multiply(strategy.affinityWeight()))
-                .setScale(6, RoundingMode.HALF_UP);
+                .add(affinityScore.multiply(strategy.affinityWeight())).setScale(6, RoundingMode.HALF_UP);
         return new RecommendationItem(feature.skuId(), feature.categoryCode(), score, strategy.strategyCode(), bucket);
     }
 
     private ExperimentAssignment assignExperiment(long userId, String scene) {
-        return repository.findActiveExperiment(scene)
-                .map(experiment -> assignmentFor(userId, scene, experiment))
+        return repository.findActiveExperiment(scene).map(experiment -> assignmentFor(userId, scene, experiment))
                 .orElse(new ExperimentAssignment("control", RankingStrategy.balanced().strategyCode()));
     }
 

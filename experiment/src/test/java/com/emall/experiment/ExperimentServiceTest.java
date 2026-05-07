@@ -12,8 +12,8 @@ class ExperimentServiceTest {
 
     @Test
     void assignsTrafficAndRollsBackOnGuardrailBreach() {
-        ExperimentDefinition experiment = service.createExperiment("search", "rank-v2", "search-rank",
-                100, "control", "treatment");
+        ExperimentDefinition experiment =
+                service.createExperiment("search", "rank-v2", "search-rank", 100, "control", "treatment");
         service.addGuardrail(experiment.experimentId(), "http_5xx_rate", GuardrailDirection.MAX,
                 new BigDecimal("0.010000"));
         service.changeStatus(experiment.experimentId(), ExperimentStatus.ACTIVE);

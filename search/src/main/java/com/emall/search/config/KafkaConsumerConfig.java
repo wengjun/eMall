@@ -14,19 +14,16 @@ import org.springframework.util.backoff.FixedBackOff;
 @Configuration
 public class KafkaConsumerConfig {
     @Bean
-    DefaultErrorHandler searchKafkaErrorHandler(
-            KafkaTemplate<String, String> kafkaTemplate,
+    DefaultErrorHandler searchKafkaErrorHandler(KafkaTemplate<String, String> kafkaTemplate,
             @Value("${emall.events.product-dlt-topic}") String deadLetterTopic) {
-        DeadLetterPublishingRecoverer recoverer = new DeadLetterPublishingRecoverer(
-                kafkaTemplate,
+        DeadLetterPublishingRecoverer recoverer = new DeadLetterPublishingRecoverer(kafkaTemplate,
                 (record, error) -> new TopicPartition(deadLetterTopic, record.partition()));
         return new DefaultErrorHandler(recoverer, new FixedBackOff(1000L, 3L));
     }
 
     @Bean
     ConcurrentKafkaListenerContainerFactory<String, String> kafkaListenerContainerFactory(
-            ConsumerFactory<String, String> consumerFactory,
-            DefaultErrorHandler searchKafkaErrorHandler) {
+            ConsumerFactory<String, String> consumerFactory, DefaultErrorHandler searchKafkaErrorHandler) {
         ConcurrentKafkaListenerContainerFactory<String, String> factory =
                 new ConcurrentKafkaListenerContainerFactory<>();
         factory.setConsumerFactory(consumerFactory);

@@ -8,12 +8,8 @@ import org.springframework.core.env.Environment;
 import org.springframework.util.StringUtils;
 
 public class ProductionRuntimeGuard implements ApplicationRunner {
-    private static final List<String> DEFAULT_REQUIRED_PROPERTIES = List.of(
-            "spring.datasource.url",
-            "spring.datasource.username",
-            "spring.datasource.password",
-            "emall.internal.operations-token"
-    );
+    private static final List<String> DEFAULT_REQUIRED_PROPERTIES = List.of("spring.datasource.url",
+            "spring.datasource.username", "spring.datasource.password", "emall.internal.operations-token");
 
     private final Environment environment;
     private final List<String> requiredProperties;

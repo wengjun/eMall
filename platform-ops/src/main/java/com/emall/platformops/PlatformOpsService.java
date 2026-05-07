@@ -38,7 +38,7 @@ class PlatformOpsService {
 
     @Transactional
     DatabaseOperation createDatabaseOperation(String databaseName, String operationType, RiskLevel riskLevel,
-                                             String detail) {
+            String detail) {
         Instant now = Instant.now();
         return repository.saveDatabaseOperation(new DatabaseOperation(idGenerator.nextId(), normalize(databaseName),
                 normalize(operationType), riskLevel, OpsStatus.OPEN, normalize(detail), now, now));
@@ -84,14 +84,11 @@ class PlatformOpsService {
 
     PlatformOpsSummary summary() {
         int blockedDatabaseOps = (int) repository.findDatabaseOperations().stream()
-                .filter(operation -> operation.status() == OpsStatus.BLOCKED)
-                .count();
+                .filter(operation -> operation.status() == OpsStatus.BLOCKED).count();
         int approvedFinOps = (int) repository.findFinOpsActions().stream()
-                .filter(action -> action.status() == OpsStatus.APPROVED)
-                .count();
-        int criticalSecurity = (int) repository.findSecurityOperations().stream()
-                .filter(operation -> operation.riskLevel() == RiskLevel.CRITICAL
-                        && operation.status() != OpsStatus.COMPLETED)
+                .filter(action -> action.status() == OpsStatus.APPROVED).count();
+        int criticalSecurity = (int) repository.findSecurityOperations().stream().filter(
+                operation -> operation.riskLevel() == RiskLevel.CRITICAL && operation.status() != OpsStatus.COMPLETED)
                 .count();
         return new PlatformOpsSummary(repository.findBackupPlans().size(), blockedDatabaseOps, approvedFinOps,
                 criticalSecurity);

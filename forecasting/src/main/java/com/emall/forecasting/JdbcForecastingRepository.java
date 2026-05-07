@@ -24,8 +24,8 @@ class JdbcForecastingRepository implements ForecastingRepository {
                 INSERT INTO demand_signal
                     (signal_id, sku_id, region_code, sold_quantity, page_views, signal_date, created_at)
                 VALUES (?, ?, ?, ?, ?, ?, ?)
-                """, signal.signalId(), signal.skuId(), signal.regionCode(), signal.soldQuantity(),
-                signal.pageViews(), Date.valueOf(signal.signalDate()), Timestamp.from(signal.createdAt()));
+                """, signal.signalId(), signal.skuId(), signal.regionCode(), signal.soldQuantity(), signal.pageViews(),
+                Date.valueOf(signal.signalDate()), Timestamp.from(signal.createdAt()));
         return signal;
     }
 
@@ -106,10 +106,9 @@ class JdbcForecastingRepository implements ForecastingRepository {
     }
 
     private ReplenishmentPlan mapReplenishmentPlan(ResultSet rs, int rowNum) throws SQLException {
-        return new ReplenishmentPlan(rs.getLong("plan_id"), rs.getLong("sku_id"),
-                rs.getString("warehouse_code"), rs.getInt("recommended_quantity"),
-                ForecastRiskLevel.valueOf(rs.getString("priority")), rs.getDate("plan_date").toLocalDate(),
-                rs.getTimestamp("created_at").toInstant());
+        return new ReplenishmentPlan(rs.getLong("plan_id"), rs.getLong("sku_id"), rs.getString("warehouse_code"),
+                rs.getInt("recommended_quantity"), ForecastRiskLevel.valueOf(rs.getString("priority")),
+                rs.getDate("plan_date").toLocalDate(), rs.getTimestamp("created_at").toInstant());
     }
 
     private CapacityForecast mapCapacityForecast(ResultSet rs, int rowNum) throws SQLException {

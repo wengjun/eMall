@@ -23,7 +23,7 @@ class AdvertisingService {
 
     @Transactional
     AdCampaign createCampaign(long merchantId, String name, BigDecimal dailyBudget, BigDecimal bidAmount,
-                              Instant startsAt, Instant endsAt) {
+            Instant startsAt, Instant endsAt) {
         if (!endsAt.isAfter(startsAt)) {
             throw new BusinessException(ErrorCode.BAD_REQUEST, "ad campaign end time must be after start time");
         }
@@ -41,25 +41,22 @@ class AdvertisingService {
     @Transactional
     AdCreative addCreative(long campaignId, long skuId, String title, String targetUrl) {
         requireCampaign(campaignId);
-        return repository.saveCreative(new AdCreative(idGenerator.nextId(), campaignId, skuId, title, targetUrl,
-                true));
+        return repository.saveCreative(new AdCreative(idGenerator.nextId(), campaignId, skuId, title, targetUrl, true));
     }
 
     @Transactional
     KeywordTarget addTarget(long campaignId, String keyword, BigDecimal bidMultiplier) {
         requireCampaign(campaignId);
-        return repository.saveTarget(new KeywordTarget(idGenerator.nextId(), campaignId, normalize(keyword),
-                bidMultiplier, true));
+        return repository.saveTarget(
+                new KeywordTarget(idGenerator.nextId(), campaignId, normalize(keyword), bidMultiplier, true));
     }
 
     SponsoredResult rank(String keyword, int limit) {
         Instant now = Instant.now();
-        List<SponsoredItem> items = repository.findTargets(normalize(keyword)).stream()
-                .map(target -> toSponsoredItem(target, now))
-                .flatMap(List::stream)
-                .sorted(Comparator.comparing(SponsoredItem::score).reversed())
-                .limit(Math.max(1, Math.min(limit, 20)))
-                .toList();
+        List<SponsoredItem> items =
+                repository.findTargets(normalize(keyword)).stream().map(target -> toSponsoredItem(target, now))
+                        .flatMap(List::stream).sorted(Comparator.comparing(SponsoredItem::score).reversed())
+                        .limit(Math.max(1, Math.min(limit, 20))).toList();
         return new SponsoredResult(normalize(keyword), items);
     }
 
@@ -71,8 +68,8 @@ class AdvertisingService {
             throw new BusinessException(ErrorCode.CONFLICT, "ad campaign budget is exhausted");
         }
         repository.saveCampaign(campaign.consume(cost));
-        return repository.saveEvent(new AdEvent(idGenerator.nextId(), campaignId, creativeId, normalize(eventType),
-                cost, Instant.now()));
+        return repository.saveEvent(
+                new AdEvent(idGenerator.nextId(), campaignId, creativeId, normalize(eventType), cost, Instant.now()));
     }
 
     private List<SponsoredItem> toSponsoredItem(KeywordTarget target, Instant now) {
@@ -82,9 +79,9 @@ class AdvertisingService {
             return List.of();
         }
         BigDecimal score = campaign.bidAmount().multiply(target.bidMultiplier());
-        return repository.findCreatives(campaign.campaignId()).stream()
-                .map(creative -> new SponsoredItem(campaign.campaignId(), creative.creativeId(), creative.skuId(),
-                        score, creative.title(), creative.targetUrl()))
+        return repository
+                .findCreatives(campaign.campaignId()).stream().map(creative -> new SponsoredItem(campaign.campaignId(),
+                        creative.creativeId(), creative.skuId(), score, creative.title(), creative.targetUrl()))
                 .toList();
     }
 

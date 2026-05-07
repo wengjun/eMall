@@ -35,8 +35,9 @@ class JdbcOperationsRepository implements OperationsRepository {
 
     @Override
     public Optional<ApprovalRequest> findApproval(long approvalId) {
-        return jdbcTemplate.query("SELECT * FROM operations_approval WHERE approval_id = ?",
-                this::mapApproval, approvalId).stream().findFirst();
+        return jdbcTemplate
+                .query("SELECT * FROM operations_approval WHERE approval_id = ?", this::mapApproval, approvalId)
+                .stream().findFirst();
     }
 
     @Override
@@ -65,8 +66,8 @@ class JdbcOperationsRepository implements OperationsRepository {
 
     @Override
     public Optional<OperationTask> findTask(long taskId) {
-        return jdbcTemplate.query("SELECT * FROM operations_task WHERE task_id = ?",
-                this::mapTask, taskId).stream().findFirst();
+        return jdbcTemplate.query("SELECT * FROM operations_task WHERE task_id = ?", this::mapTask, taskId).stream()
+                .findFirst();
     }
 
     @Override
@@ -113,8 +114,8 @@ class JdbcOperationsRepository implements OperationsRepository {
 
     @Override
     public Optional<SecurityIncident> findIncident(long incidentId) {
-        return jdbcTemplate.query("SELECT * FROM operations_security_incident WHERE incident_id = ?",
-                this::mapIncident, incidentId).stream().findFirst();
+        return jdbcTemplate.query("SELECT * FROM operations_security_incident WHERE incident_id = ?", this::mapIncident,
+                incidentId).stream().findFirst();
     }
 
     private ApprovalRequest mapApproval(ResultSet rs, int rowNum) throws SQLException {

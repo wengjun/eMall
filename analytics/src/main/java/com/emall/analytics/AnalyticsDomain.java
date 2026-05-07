@@ -16,29 +16,29 @@ enum PrivacyRequestStatus {
 }
 
 record MetricDefinition(long metricId, String metricName, String owner, String expression, MetricStatus status,
-                        Instant createdAt, Instant updatedAt) {
+        Instant createdAt, Instant updatedAt) {
     MetricDefinition changeStatus(MetricStatus nextStatus) {
         return new MetricDefinition(metricId, metricName, owner, expression, nextStatus, createdAt, Instant.now());
     }
 }
 
 record MetricPoint(long pointId, String metricName, String dimensionKey, BigDecimal metricValue, Instant eventTime,
-                   Instant createdAt) {
+        Instant createdAt) {
 }
 
 record DashboardDefinition(long dashboardId, String dashboardName, String businessDomain, String metricNames,
-                           Instant createdAt) {
+        Instant createdAt) {
 }
 
 record AnomalySignal(long anomalyId, String metricName, BigDecimal actualValue, BigDecimal expectedValue,
-                     String severity, Instant createdAt) {
+        String severity, Instant createdAt) {
 }
 
 record ConsentRecord(long consentId, long userId, String purpose, boolean granted, Instant updatedAt) {
 }
 
-record PrivacyRequest(long requestId, long userId, String requestType, PrivacyRequestStatus status,
-                      Instant createdAt, Instant updatedAt) {
+record PrivacyRequest(long requestId, long userId, String requestType, PrivacyRequestStatus status, Instant createdAt,
+        Instant updatedAt) {
     PrivacyRequest changeStatus(PrivacyRequestStatus nextStatus) {
         return new PrivacyRequest(requestId, userId, requestType, nextStatus, createdAt, Instant.now());
     }

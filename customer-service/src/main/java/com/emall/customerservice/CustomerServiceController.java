@@ -33,7 +33,7 @@ class CustomerServiceController {
 
     @PatchMapping("/tickets/{ticketId}/route")
     ApiResponse<ServiceTicket> routeTicket(@PathVariable long ticketId,
-                                           @Valid @RequestBody RouteTicketRequest request) {
+            @Valid @RequestBody RouteTicketRequest request) {
         return ApiResponse.ok(customerService.routeTicket(ticketId, request.assignee()));
     }
 
@@ -44,26 +44,25 @@ class CustomerServiceController {
 
     @PostMapping("/arbitrations")
     ApiResponse<ArbitrationCase> openArbitration(@Valid @RequestBody OpenArbitrationRequest request) {
-        return ApiResponse.ok(customerService.openArbitration(request.ticketId(), request.merchantId(),
-                request.reason()));
+        return ApiResponse
+                .ok(customerService.openArbitration(request.ticketId(), request.merchantId(), request.reason()));
     }
 
     @PatchMapping("/arbitrations/{arbitrationId}/status")
     ApiResponse<ArbitrationCase> closeArbitration(@PathVariable long arbitrationId,
-                                                  @Valid @RequestBody CloseArbitrationRequest request) {
+            @Valid @RequestBody CloseArbitrationRequest request) {
         return ApiResponse.ok(customerService.closeArbitration(arbitrationId, request.status()));
     }
 
     @PostMapping("/compensations")
     ApiResponse<CompensationRecord> grantCompensation(@Valid @RequestBody GrantCompensationRequest request) {
-        return ApiResponse.ok(customerService.grantCompensation(request.ticketId(), request.userId(),
-                request.amount(), request.reason()));
+        return ApiResponse.ok(customerService.grantCompensation(request.ticketId(), request.userId(), request.amount(),
+                request.reason()));
     }
 
     @PostMapping("/knowledge")
     ApiResponse<KnowledgeArticle> publishArticle(@Valid @RequestBody PublishArticleRequest request) {
-        return ApiResponse.ok(customerService.publishArticle(request.category(), request.title(),
-                request.content()));
+        return ApiResponse.ok(customerService.publishArticle(request.category(), request.title(), request.content()));
     }
 
     @PostMapping("/reviews")
@@ -77,7 +76,7 @@ class CustomerServiceController {
     }
 
     record CreateTicketRequest(@Positive long userId, @Positive long orderId, @NotBlank String category,
-                               @NotBlank String priority) {
+            @NotBlank String priority) {
     }
 
     record RouteTicketRequest(@NotBlank String assignee) {
@@ -90,7 +89,7 @@ class CustomerServiceController {
     }
 
     record GrantCompensationRequest(@Positive long ticketId, @Positive long userId,
-                                    @DecimalMin("0.01") BigDecimal amount, @NotBlank String reason) {
+            @DecimalMin("0.01") BigDecimal amount, @NotBlank String reason) {
     }
 
     record PublishArticleRequest(@NotBlank String category, @NotBlank String title, @NotBlank String content) {

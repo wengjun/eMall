@@ -24,8 +24,7 @@ class InMemoryEventPlatformRepository implements EventPlatformRepository {
     @Override
     public Optional<EventSchema> findSchema(String eventName, int version) {
         return schemas.values().stream()
-                .filter(schema -> schema.eventName().equals(eventName) && schema.version() == version)
-                .findFirst();
+                .filter(schema -> schema.eventName().equals(eventName) && schema.version() == version).findFirst();
     }
 
     @Override

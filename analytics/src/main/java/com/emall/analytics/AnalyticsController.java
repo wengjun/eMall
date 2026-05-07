@@ -26,13 +26,13 @@ class AnalyticsController {
 
     @PostMapping("/metrics")
     ApiResponse<MetricDefinition> createMetric(@Valid @RequestBody CreateMetricRequest request) {
-        return ApiResponse.ok(analyticsService.createMetric(request.metricName(), request.owner(),
-                request.expression()));
+        return ApiResponse
+                .ok(analyticsService.createMetric(request.metricName(), request.owner(), request.expression()));
     }
 
     @PatchMapping("/metrics/{metricId}/status")
     ApiResponse<MetricDefinition> changeMetricStatus(@PathVariable long metricId,
-                                                     @Valid @RequestBody ChangeMetricStatusRequest request) {
+            @Valid @RequestBody ChangeMetricStatusRequest request) {
         return ApiResponse.ok(analyticsService.changeMetricStatus(metricId, request.status()));
     }
 
@@ -56,8 +56,7 @@ class AnalyticsController {
 
     @PostMapping("/consents")
     ApiResponse<ConsentRecord> recordConsent(@Valid @RequestBody RecordConsentRequest request) {
-        return ApiResponse.ok(analyticsService.recordConsent(request.userId(), request.purpose(),
-                request.granted()));
+        return ApiResponse.ok(analyticsService.recordConsent(request.userId(), request.purpose(), request.granted()));
     }
 
     @PostMapping("/privacy-requests")
@@ -67,7 +66,7 @@ class AnalyticsController {
 
     @PatchMapping("/privacy-requests/{requestId}/status")
     ApiResponse<PrivacyRequest> changePrivacyRequestStatus(@PathVariable long requestId,
-                                                           @Valid @RequestBody ChangePrivacyStatusRequest request) {
+            @Valid @RequestBody ChangePrivacyStatusRequest request) {
         return ApiResponse.ok(analyticsService.changePrivacyRequestStatus(requestId, request.status()));
     }
 
@@ -76,23 +75,22 @@ class AnalyticsController {
         return ApiResponse.ok(analyticsService.summary());
     }
 
-    record CreateMetricRequest(@NotBlank String metricName, @NotBlank String owner,
-                               @NotBlank String expression) {
+    record CreateMetricRequest(@NotBlank String metricName, @NotBlank String owner, @NotBlank String expression) {
     }
 
     record ChangeMetricStatusRequest(MetricStatus status) {
     }
 
     record RecordMetricPointRequest(@NotBlank String metricName, @NotBlank String dimensionKey,
-                                    @DecimalMin("0.00") BigDecimal metricValue, Instant eventTime) {
+            @DecimalMin("0.00") BigDecimal metricValue, Instant eventTime) {
     }
 
     record CreateDashboardRequest(@NotBlank String dashboardName, @NotBlank String businessDomain,
-                                  @NotBlank String metricNames) {
+            @NotBlank String metricNames) {
     }
 
     record RecordAnomalyRequest(@NotBlank String metricName, BigDecimal actualValue, BigDecimal expectedValue,
-                                @NotBlank String severity) {
+            @NotBlank String severity) {
     }
 
     record RecordConsentRequest(@Positive long userId, @NotBlank String purpose, boolean granted) {

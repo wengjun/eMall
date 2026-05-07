@@ -33,8 +33,9 @@ class JdbcReliabilityRepository implements ReliabilityRepository {
 
     @Override
     public Optional<CapacityRehearsal> findRehearsal(long rehearsalId) {
-        return jdbcTemplate.query("SELECT * FROM capacity_rehearsal WHERE rehearsal_id = ?",
-                this::mapRehearsal, rehearsalId).stream().findFirst();
+        return jdbcTemplate
+                .query("SELECT * FROM capacity_rehearsal WHERE rehearsal_id = ?", this::mapRehearsal, rehearsalId)
+                .stream().findFirst();
     }
 
     @Override
@@ -73,8 +74,8 @@ class JdbcReliabilityRepository implements ReliabilityRepository {
 
     @Override
     public Optional<ChaosSchedule> findChaos(long chaosId) {
-        return jdbcTemplate.query("SELECT * FROM chaos_schedule WHERE chaos_id = ?", this::mapChaos, chaosId)
-                .stream().findFirst();
+        return jdbcTemplate.query("SELECT * FROM chaos_schedule WHERE chaos_id = ?", this::mapChaos, chaosId).stream()
+                .findFirst();
     }
 
     @Override
@@ -101,8 +102,8 @@ class JdbcReliabilityRepository implements ReliabilityRepository {
     }
 
     private CapacityRehearsal mapRehearsal(ResultSet rs, int rowNum) throws SQLException {
-        return new CapacityRehearsal(rs.getLong("rehearsal_id"), rs.getString("service_name"),
-                rs.getInt("target_qps"), rs.getInt("peak_concurrency"), GateStatus.valueOf(rs.getString("status")),
+        return new CapacityRehearsal(rs.getLong("rehearsal_id"), rs.getString("service_name"), rs.getInt("target_qps"),
+                rs.getInt("peak_concurrency"), GateStatus.valueOf(rs.getString("status")),
                 rs.getTimestamp("created_at").toInstant(), rs.getTimestamp("updated_at").toInstant());
     }
 
@@ -113,15 +114,14 @@ class JdbcReliabilityRepository implements ReliabilityRepository {
     }
 
     private ChaosSchedule mapChaos(ResultSet rs, int rowNum) throws SQLException {
-        return new ChaosSchedule(rs.getLong("chaos_id"), rs.getString("service_name"),
-                rs.getString("drill_type"), rs.getInt("blast_radius_percent"),
-                GateStatus.valueOf(rs.getString("approval_status")), rs.getTimestamp("scheduled_at").toInstant(),
-                rs.getTimestamp("created_at").toInstant());
+        return new ChaosSchedule(rs.getLong("chaos_id"), rs.getString("service_name"), rs.getString("drill_type"),
+                rs.getInt("blast_radius_percent"), GateStatus.valueOf(rs.getString("approval_status")),
+                rs.getTimestamp("scheduled_at").toInstant(), rs.getTimestamp("created_at").toInstant());
     }
 
     private ReadinessGate mapGate(ResultSet rs, int rowNum) throws SQLException {
-        return new ReadinessGate(rs.getLong("gate_id"), rs.getString("service_name"),
-                rs.getBoolean("runbook_ready"), rs.getBoolean("dashboard_ready"), rs.getBoolean("rollback_ready"),
+        return new ReadinessGate(rs.getLong("gate_id"), rs.getString("service_name"), rs.getBoolean("runbook_ready"),
+                rs.getBoolean("dashboard_ready"), rs.getBoolean("rollback_ready"),
                 GateStatus.valueOf(rs.getString("status")), rs.getTimestamp("created_at").toInstant(),
                 rs.getTimestamp("updated_at").toInstant());
     }

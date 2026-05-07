@@ -28,33 +28,24 @@ public class JdbcCouponRepository implements CouponRepository {
                 VALUES (?, ?, ?, ?, ?, ?, ?)
                 ON DUPLICATE KEY UPDATE status = VALUES(status), expires_at = VALUES(expires_at),
                     updated_at = VALUES(updated_at)
-                """,
-                coupon.couponId(), coupon.userId(), coupon.thresholdAmount(), coupon.discountAmount(),
+                """, coupon.couponId(), coupon.userId(), coupon.thresholdAmount(), coupon.discountAmount(),
                 coupon.status().name(), Timestamp.from(coupon.expiresAt()), Timestamp.from(coupon.updatedAt()));
         return coupon;
     }
 
     @Override
     public Optional<Coupon> findById(String couponId) {
-        return jdbcTemplate.query("SELECT * FROM coupon WHERE coupon_id = ?", this::map, couponId)
-                .stream()
-                .findFirst();
+        return jdbcTemplate.query("SELECT * FROM coupon WHERE coupon_id = ?", this::map, couponId).stream().findFirst();
     }
 
     @Override
     public List<Coupon> findByUserId(long userId) {
-        return jdbcTemplate.query("SELECT * FROM coupon WHERE user_id = ? ORDER BY updated_at DESC", this::map,
-                userId);
+        return jdbcTemplate.query("SELECT * FROM coupon WHERE user_id = ? ORDER BY updated_at DESC", this::map, userId);
     }
 
     private Coupon map(ResultSet rs, int rowNum) throws SQLException {
-        return new Coupon(
-                rs.getString("coupon_id"),
-                rs.getLong("user_id"),
-                rs.getBigDecimal("threshold_amount"),
-                rs.getBigDecimal("discount_amount"),
-                CouponStatus.valueOf(rs.getString("status")),
-                rs.getTimestamp("expires_at").toInstant(),
-                rs.getTimestamp("updated_at").toInstant());
+        return new Coupon(rs.getString("coupon_id"), rs.getLong("user_id"), rs.getBigDecimal("threshold_amount"),
+                rs.getBigDecimal("discount_amount"), CouponStatus.valueOf(rs.getString("status")),
+                rs.getTimestamp("expires_at").toInstant(), rs.getTimestamp("updated_at").toInstant());
     }
 }

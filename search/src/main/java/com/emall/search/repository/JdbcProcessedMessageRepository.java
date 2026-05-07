@@ -19,8 +19,8 @@ public class JdbcProcessedMessageRepository implements ProcessedMessageRepositor
     @Override
     public boolean markProcessing(String messageId) {
         try {
-            jdbcTemplate.update("INSERT INTO processed_message (message_id, processed_at) VALUES (?, ?)",
-                    messageId, Timestamp.from(Instant.now()));
+            jdbcTemplate.update("INSERT INTO processed_message (message_id, processed_at) VALUES (?, ?)", messageId,
+                    Timestamp.from(Instant.now()));
             return true;
         } catch (DuplicateKeyException ex) {
             return false;

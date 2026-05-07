@@ -17,8 +17,8 @@ class PromotionServiceTest {
         Instant end = Instant.now().plusSeconds(3600);
         PromotionCampaign amountOff = service.createCampaign("amount off", PromotionType.AMOUNT_OFF,
                 new BigDecimal("100"), new BigDecimal("20"), new BigDecimal("100"), 1, true, start, end);
-        PromotionCampaign percentOff = service.createCampaign("percent off", PromotionType.PERCENT_OFF,
-                BigDecimal.ZERO, new BigDecimal("10"), new BigDecimal("100"), 2, true, start, end);
+        PromotionCampaign percentOff = service.createCampaign("percent off", PromotionType.PERCENT_OFF, BigDecimal.ZERO,
+                new BigDecimal("10"), new BigDecimal("100"), 2, true, start, end);
         service.changeStatus(amountOff.campaignId(), CampaignStatus.ACTIVE);
         service.changeStatus(percentOff.campaignId(), CampaignStatus.ACTIVE);
 

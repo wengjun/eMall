@@ -22,7 +22,7 @@ record BrandAuthorization(long authorizationId, long merchantId, String brandCod
 }
 
 record Spu(long spuId, long merchantId, String title, long categoryId, String brandCode, ListingStatus status,
-           int qualityScore, Instant createdAt, Instant updatedAt) {
+        int qualityScore, Instant createdAt, Instant updatedAt) {
     Spu changeStatus(ListingStatus nextStatus, int nextQualityScore) {
         return new Spu(spuId, merchantId, title, categoryId, brandCode, nextStatus, nextQualityScore, createdAt,
                 Instant.now());
@@ -30,7 +30,7 @@ record Spu(long spuId, long merchantId, String title, long categoryId, String br
 }
 
 record Sku(long skuId, long spuId, String skuCode, BigDecimal price, String attributes, boolean saleable,
-           Instant createdAt, Instant updatedAt) {
+        Instant createdAt, Instant updatedAt) {
 }
 
 record ListingViolation(long violationId, long spuId, String violationType, String reason, Instant createdAt) {

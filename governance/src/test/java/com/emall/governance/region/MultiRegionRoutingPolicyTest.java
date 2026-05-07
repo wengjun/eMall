@@ -9,8 +9,8 @@ import org.junit.jupiter.api.Test;
 class MultiRegionRoutingPolicyTest {
     @Test
     void routesPartitionedWritesToStableOwnerRegion() {
-        MultiRegionRoutingPolicy policy = MultiRegionRoutingPolicies.baseline(
-                "http://east.internal", "http://west.internal");
+        MultiRegionRoutingPolicy policy =
+                MultiRegionRoutingPolicies.baseline("http://east.internal", "http://west.internal");
 
         RoutingDecision first = policy.decide(DomainType.ORDER, TrafficIntent.WRITE, "us-east-1", 10001L);
         RoutingDecision second = policy.decide(DomainType.ORDER, TrafficIntent.WRITE, "us-west-2", 10001L);
@@ -22,8 +22,8 @@ class MultiRegionRoutingPolicyTest {
 
     @Test
     void servesReadsLocallyWhenRegionIsReadable() {
-        MultiRegionRoutingPolicy policy = MultiRegionRoutingPolicies.baseline(
-                "http://east.internal", "http://west.internal");
+        MultiRegionRoutingPolicy policy =
+                MultiRegionRoutingPolicies.baseline("http://east.internal", "http://west.internal");
 
         RoutingDecision decision = policy.decide(DomainType.ORDER, TrafficIntent.READ, "us-west-2", 10001L);
 
@@ -34,13 +34,10 @@ class MultiRegionRoutingPolicyTest {
 
     @Test
     void failsOverGlobalSingleWriterWhenPrimaryIsOffline() {
-        MultiRegionRoutingPolicy policy = new MultiRegionRoutingPolicy(List.of(
-                new DomainOwnershipRule(DomainType.PAYMENT, WriteStrategy.GLOBAL_SINGLE_WRITER, "us-east-1", 1,
-                        List.of(
-                                new RegionEndpoint("us-east-1", "http://east/payment", RegionStatus.OFFLINE, 10),
-                                new RegionEndpoint("us-west-2", "http://west/payment", RegionStatus.ACTIVE, 20)
-                        ))
-        ));
+        MultiRegionRoutingPolicy policy = new MultiRegionRoutingPolicy(
+                List.of(new DomainOwnershipRule(DomainType.PAYMENT, WriteStrategy.GLOBAL_SINGLE_WRITER, "us-east-1", 1,
+                        List.of(new RegionEndpoint("us-east-1", "http://east/payment", RegionStatus.OFFLINE, 10),
+                                new RegionEndpoint("us-west-2", "http://west/payment", RegionStatus.ACTIVE, 20)))));
 
         RoutingDecision decision = policy.decide(DomainType.PAYMENT, TrafficIntent.WRITE, "us-east-1", 10001L);
 
@@ -51,16 +48,12 @@ class MultiRegionRoutingPolicyTest {
 
     @Test
     void rejectsPartitionedWritesWhenOwnerRegionIsUnavailable() {
-        MultiRegionRoutingPolicy policy = new MultiRegionRoutingPolicy(List.of(
-                new DomainOwnershipRule(DomainType.ORDER, WriteStrategy.PARTITIONED_SINGLE_WRITER, "us-east-1", 1,
-                        List.of(
-                                new RegionEndpoint("us-east-1", "http://east/order", RegionStatus.OFFLINE, 10),
-                                new RegionEndpoint("us-west-2", "http://west/order", RegionStatus.ACTIVE, 20)
-                        ))
-        ));
+        MultiRegionRoutingPolicy policy = new MultiRegionRoutingPolicy(
+                List.of(new DomainOwnershipRule(DomainType.ORDER, WriteStrategy.PARTITIONED_SINGLE_WRITER, "us-east-1",
+                        1, List.of(new RegionEndpoint("us-east-1", "http://east/order", RegionStatus.OFFLINE, 10),
+                                new RegionEndpoint("us-west-2", "http://west/order", RegionStatus.ACTIVE, 20)))));
 
         assertThatThrownBy(() -> policy.decide(DomainType.ORDER, TrafficIntent.WRITE, "us-west-2", 10001L))
-                .isInstanceOf(IllegalStateException.class)
-                .hasMessageContaining("owner region is unavailable");
+                .isInstanceOf(IllegalStateException.class).hasMessageContaining("owner region is unavailable");
     }
 }

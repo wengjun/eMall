@@ -33,7 +33,7 @@ class OperationsController {
 
     @PatchMapping("/approvals/{approvalId}/decision")
     ApiResponse<ApprovalRequest> decideApproval(@PathVariable long approvalId,
-                                                @Valid @RequestBody DecideApprovalRequest request) {
+            @Valid @RequestBody DecideApprovalRequest request) {
         return ApiResponse.ok(operationsService.decideApproval(approvalId, request.operator(), request.status()));
     }
 
@@ -50,7 +50,7 @@ class OperationsController {
 
     @PatchMapping("/tasks/{taskId}/status")
     ApiResponse<OperationTask> changeTaskStatus(@PathVariable long taskId,
-                                                @Valid @RequestBody ChangeTaskStatusRequest request) {
+            @Valid @RequestBody ChangeTaskStatusRequest request) {
         return ApiResponse.ok(operationsService.changeTaskStatus(taskId, request.status()));
     }
 
@@ -67,7 +67,7 @@ class OperationsController {
 
     @GetMapping("/evidence")
     ApiResponse<List<ComplianceEvidence>> findEvidence(@RequestParam String resourceType,
-                                                       @RequestParam String resourceId) {
+            @RequestParam String resourceId) {
         return ApiResponse.ok(operationsService.findEvidence(resourceType, resourceId));
     }
 
@@ -78,26 +78,26 @@ class OperationsController {
 
     @PatchMapping("/security-incidents/{incidentId}/status")
     ApiResponse<SecurityIncident> changeIncidentStatus(@PathVariable long incidentId,
-                                                       @Valid @RequestBody ChangeIncidentStatusRequest request) {
+            @Valid @RequestBody ChangeIncidentStatusRequest request) {
         return ApiResponse.ok(operationsService.changeIncidentStatus(incidentId, request.status()));
     }
 
     record CreateApprovalRequest(@NotBlank String workflowType, @NotBlank String resourceType,
-                                 @NotBlank String resourceId, @NotBlank String requester, @NotBlank String reason) {
+            @NotBlank String resourceId, @NotBlank String requester, @NotBlank String reason) {
     }
 
     record DecideApprovalRequest(@NotBlank String operator, @NotNull ApprovalStatus status) {
     }
 
     record CreateTaskRequest(@NotBlank String taskType, @NotBlank String resourceType, @NotBlank String resourceId,
-                             @NotBlank String owner, @Min(1) @Max(5) int priority, @NotBlank String summary) {
+            @NotBlank String owner, @Min(1) @Max(5) int priority, @NotBlank String summary) {
     }
 
     record ChangeTaskStatusRequest(@NotNull TaskStatus status) {
     }
 
     record RecordEvidenceRequest(@NotBlank String evidenceType, @NotBlank String resourceType,
-                                 @NotBlank String resourceId, @NotBlank String owner, @NotBlank String summary) {
+            @NotBlank String resourceId, @NotBlank String owner, @NotBlank String summary) {
     }
 
     record OpenIncidentRequest(@NotBlank String severity, @NotBlank String owner, @NotBlank String summary) {

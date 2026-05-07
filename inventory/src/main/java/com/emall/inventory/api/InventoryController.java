@@ -45,7 +45,7 @@ public class InventoryController {
 
     @PostMapping("/{skuId}/buckets")
     public ApiResponse<List<InventoryBucket>> initializeBuckets(@PathVariable long skuId,
-                                                                @Valid @RequestBody InitBucketsRequest request) {
+            @Valid @RequestBody InitBucketsRequest request) {
         return ApiResponse.ok(inventoryService.initializeBuckets(skuId, request.bucketCount()));
     }
 

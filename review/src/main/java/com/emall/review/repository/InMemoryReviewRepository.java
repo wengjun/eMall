@@ -28,11 +28,8 @@ public class InMemoryReviewRepository implements ReviewRepository {
 
     @Override
     public List<ProductReview> findBySkuId(long skuId, int limit) {
-        return reviews.values().stream()
-                .filter(review -> review.skuId() == skuId)
+        return reviews.values().stream().filter(review -> review.skuId() == skuId)
                 .filter(review -> review.status() == ReviewStatus.PUBLISHED)
-                .sorted(Comparator.comparing(ProductReview::createdAt).reversed())
-                .limit(limit)
-                .toList();
+                .sorted(Comparator.comparing(ProductReview::createdAt).reversed()).limit(limit).toList();
     }
 }

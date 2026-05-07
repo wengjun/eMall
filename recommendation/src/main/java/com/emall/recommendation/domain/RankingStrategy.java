@@ -2,15 +2,10 @@ package com.emall.recommendation.domain;
 
 import java.math.BigDecimal;
 
-public record RankingStrategy(
-        String strategyCode,
-        BigDecimal baseWeight,
-        BigDecimal popularityWeight,
-        BigDecimal affinityWeight
-) {
+public record RankingStrategy(String strategyCode, BigDecimal baseWeight, BigDecimal popularityWeight,
+        BigDecimal affinityWeight) {
     public static RankingStrategy balanced() {
-        return new RankingStrategy("balanced", new BigDecimal("0.40"), new BigDecimal("0.30"),
-                new BigDecimal("0.30"));
+        return new RankingStrategy("balanced", new BigDecimal("0.40"), new BigDecimal("0.30"), new BigDecimal("0.30"));
     }
 
     public static RankingStrategy popularity() {

@@ -42,7 +42,7 @@ class OpenApiController {
 
     @PostMapping("/apps/{appId}/webhooks")
     ApiResponse<WebhookSubscription> subscribe(@PathVariable long appId,
-                                               @Valid @RequestBody SubscribeWebhookRequest request) {
+            @Valid @RequestBody SubscribeWebhookRequest request) {
         return ApiResponse.ok(openApiService.subscribe(appId, request.eventType(), request.targetUrl()));
     }
 
@@ -53,26 +53,16 @@ class OpenApiController {
 
     @PostMapping("/webhooks/{subscriptionId}/deliveries")
     ApiResponse<WebhookDelivery> recordDelivery(@PathVariable long subscriptionId,
-                                                @Valid @RequestBody RecordDeliveryRequest request) {
+            @Valid @RequestBody RecordDeliveryRequest request) {
         return ApiResponse.ok(openApiService.recordDelivery(subscriptionId, request.eventId(), request.status()));
     }
 
-    record RegisterAppRequest(
-            @Positive long merchantId,
-            @NotBlank String name,
-            @NotBlank String scopes,
-            @Min(1) int dailyQuota
-    ) {
+    record RegisterAppRequest(@Positive long merchantId, @NotBlank String name, @NotBlank String scopes,
+            @Min(1) int dailyQuota) {
     }
 
-    record VerifySignatureRequest(
-            @NotBlank String appKey,
-            @NotBlank String appSecret,
-            @NotBlank String requestPath,
-            @NotBlank String nonce,
-            @Min(1) long timestamp,
-            @NotBlank String signature
-    ) {
+    record VerifySignatureRequest(@NotBlank String appKey, @NotBlank String appSecret, @NotBlank String requestPath,
+            @NotBlank String nonce, @Min(1) long timestamp, @NotBlank String signature) {
     }
 
     record SubscribeWebhookRequest(@NotBlank String eventType, @NotBlank String targetUrl) {

@@ -73,8 +73,6 @@ class InMemoryIdentityRepository implements IdentityRepository {
 
     @Override
     public List<MerchantSubAccount> findSubAccounts(long merchantId) {
-        return subAccounts.values().stream()
-                .filter(subAccount -> subAccount.merchantId() == merchantId)
-                .toList();
+        return subAccounts.values().stream().filter(subAccount -> subAccount.merchantId() == merchantId).toList();
     }
 }

@@ -36,10 +36,7 @@ public class InMemoryOrderRepository implements OrderRepository {
 
     @Override
     public List<Order> findByStatus(OrderStatus status, int limit) {
-        return byId.values().stream()
-                .filter(order -> order.status() == status)
-                .sorted(Comparator.comparing(Order::updatedAt))
-                .limit(limit)
-                .toList();
+        return byId.values().stream().filter(order -> order.status() == status)
+                .sorted(Comparator.comparing(Order::updatedAt)).limit(limit).toList();
     }
 }

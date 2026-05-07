@@ -24,15 +24,13 @@ public class PaymentCompensationJob {
     }
 
     public int retryOrderConfirmation(int limit) {
-        return taskLock.executeIfAcquired("payment.compensation.retry-order-confirmation",
-                LOCK_TTL, () -> retryOrderConfirmationUnlocked(limit));
+        return taskLock.executeIfAcquired("payment.compensation.retry-order-confirmation", LOCK_TTL,
+                () -> retryOrderConfirmationUnlocked(limit));
     }
 
     private int retryOrderConfirmationUnlocked(int limit) {
         return paymentService.findSucceededButUnconfirmed(limit).stream()
-                .map(payment -> paymentService.retryOrderConfirmation(payment.paymentId()))
-                .toList()
-                .size();
+                .map(payment -> paymentService.retryOrderConfirmation(payment.paymentId())).toList().size();
     }
 
     @Scheduled(fixedDelay = 30000)
@@ -41,7 +39,7 @@ public class PaymentCompensationJob {
     }
 
     public int reconcileChannelStatements(int limit) {
-        return taskLock.executeIfAcquired("payment.reconciliation.channel-statements",
-                LOCK_TTL, () -> paymentService.reconcileChannelStatements(limit));
+        return taskLock.executeIfAcquired("payment.reconciliation.channel-statements", LOCK_TTL,
+                () -> paymentService.reconcileChannelStatements(limit));
     }
 }

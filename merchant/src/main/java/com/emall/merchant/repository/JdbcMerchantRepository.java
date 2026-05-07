@@ -34,8 +34,7 @@ public class JdbcMerchantRepository implements MerchantRepository {
                 VALUES (?, ?, ?, ?, ?, ?)
                 ON DUPLICATE KEY UPDATE name = VALUES(name), contact_email = VALUES(contact_email),
                     status = VALUES(status), updated_at = VALUES(updated_at)
-                """,
-                merchant.merchantId(), merchant.name(), merchant.contactEmail(), merchant.status().name(),
+                """, merchant.merchantId(), merchant.name(), merchant.contactEmail(), merchant.status().name(),
                 Timestamp.from(merchant.createdAt()), Timestamp.from(merchant.updatedAt()));
         return merchant;
     }
@@ -43,8 +42,7 @@ public class JdbcMerchantRepository implements MerchantRepository {
     @Override
     public Optional<Merchant> findMerchant(long merchantId) {
         return jdbcTemplate.query("SELECT * FROM merchant WHERE merchant_id = ?", this::mapMerchant, merchantId)
-                .stream()
-                .findFirst();
+                .stream().findFirst();
     }
 
     @Override
@@ -55,16 +53,14 @@ public class JdbcMerchantRepository implements MerchantRepository {
                 VALUES (?, ?, ?, ?, ?, ?, ?)
                 ON DUPLICATE KEY UPDATE name = VALUES(name), description = VALUES(description),
                     status = VALUES(status), updated_at = VALUES(updated_at)
-                """,
-                store.storeId(), store.merchantId(), store.name(), store.description(), store.status().name(),
+                """, store.storeId(), store.merchantId(), store.name(), store.description(), store.status().name(),
                 Timestamp.from(store.createdAt()), Timestamp.from(store.updatedAt()));
         return store;
     }
 
     @Override
     public Optional<Store> findStore(long storeId) {
-        return jdbcTemplate.query("SELECT * FROM merchant_store WHERE store_id = ?", this::mapStore, storeId)
-                .stream()
+        return jdbcTemplate.query("SELECT * FROM merchant_store WHERE store_id = ?", this::mapStore, storeId).stream()
                 .findFirst();
     }
 
@@ -90,8 +86,7 @@ public class JdbcMerchantRepository implements MerchantRepository {
                 VALUES (?, ?, ?, ?, ?, ?, ?)
                 ON DUPLICATE KEY UPDATE rate = VALUES(rate), active = VALUES(active),
                     effective_from = VALUES(effective_from), updated_at = VALUES(updated_at)
-                """,
-                rule.ruleId(), rule.merchantId(), rule.rate(), rule.active(), Timestamp.from(rule.effectiveFrom()),
+                """, rule.ruleId(), rule.merchantId(), rule.rate(), rule.active(), Timestamp.from(rule.effectiveFrom()),
                 Timestamp.from(rule.createdAt()), Timestamp.from(rule.updatedAt()));
         return rule;
     }
@@ -103,9 +98,7 @@ public class JdbcMerchantRepository implements MerchantRepository {
                 WHERE merchant_id = ? AND active = true
                 ORDER BY effective_from DESC
                 LIMIT 1
-                """, this::mapCommissionRule, merchantId)
-                .stream()
-                .findFirst();
+                """, this::mapCommissionRule, merchantId).stream().findFirst();
     }
 
     @Override
@@ -116,8 +109,7 @@ public class JdbcMerchantRepository implements MerchantRepository {
                      period_start, period_end, created_at, updated_at)
                 VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
                 ON DUPLICATE KEY UPDATE status = VALUES(status), updated_at = VALUES(updated_at)
-                """,
-                settlement.settlementId(), settlement.merchantId(), settlement.grossAmount(),
+                """, settlement.settlementId(), settlement.merchantId(), settlement.grossAmount(),
                 settlement.commissionAmount(), settlement.netAmount(), settlement.status().name(),
                 Timestamp.from(settlement.periodStart()), Timestamp.from(settlement.periodEnd()),
                 Timestamp.from(settlement.createdAt()), Timestamp.from(settlement.updatedAt()));
@@ -126,10 +118,9 @@ public class JdbcMerchantRepository implements MerchantRepository {
 
     @Override
     public Optional<Settlement> findSettlement(long settlementId) {
-        return jdbcTemplate.query("SELECT * FROM merchant_settlement WHERE settlement_id = ?",
-                        this::mapSettlement, settlementId)
-                .stream()
-                .findFirst();
+        return jdbcTemplate
+                .query("SELECT * FROM merchant_settlement WHERE settlement_id = ?", this::mapSettlement, settlementId)
+                .stream().findFirst();
     }
 
     @Override
@@ -148,8 +139,7 @@ public class JdbcMerchantRepository implements MerchantRepository {
                     (invoice_id, settlement_id, merchant_id, amount, status, invoice_title, created_at, updated_at)
                 VALUES (?, ?, ?, ?, ?, ?, ?, ?)
                 ON DUPLICATE KEY UPDATE status = VALUES(status), updated_at = VALUES(updated_at)
-                """,
-                invoice.invoiceId(), invoice.settlementId(), invoice.merchantId(), invoice.amount(),
+                """, invoice.invoiceId(), invoice.settlementId(), invoice.merchantId(), invoice.amount(),
                 invoice.status().name(), invoice.invoiceTitle(), Timestamp.from(invoice.createdAt()),
                 Timestamp.from(invoice.updatedAt()));
         return invoice;
@@ -165,60 +155,35 @@ public class JdbcMerchantRepository implements MerchantRepository {
     }
 
     private Merchant mapMerchant(ResultSet rs, int rowNum) throws SQLException {
-        return new Merchant(
-                rs.getLong("merchant_id"),
-                rs.getString("name"),
-                rs.getString("contact_email"),
-                MerchantStatus.valueOf(rs.getString("status")),
-                rs.getTimestamp("created_at").toInstant(),
+        return new Merchant(rs.getLong("merchant_id"), rs.getString("name"), rs.getString("contact_email"),
+                MerchantStatus.valueOf(rs.getString("status")), rs.getTimestamp("created_at").toInstant(),
                 rs.getTimestamp("updated_at").toInstant());
     }
 
     private Store mapStore(ResultSet rs, int rowNum) throws SQLException {
-        return new Store(
-                rs.getLong("store_id"),
-                rs.getLong("merchant_id"),
-                rs.getString("name"),
-                rs.getString("description"),
-                StoreStatus.valueOf(rs.getString("status")),
-                rs.getTimestamp("created_at").toInstant(),
-                rs.getTimestamp("updated_at").toInstant());
+        return new Store(rs.getLong("store_id"), rs.getLong("merchant_id"), rs.getString("name"),
+                rs.getString("description"), StoreStatus.valueOf(rs.getString("status")),
+                rs.getTimestamp("created_at").toInstant(), rs.getTimestamp("updated_at").toInstant());
     }
 
     private CommissionRule mapCommissionRule(ResultSet rs, int rowNum) throws SQLException {
-        return new CommissionRule(
-                rs.getLong("rule_id"),
-                rs.getLong("merchant_id"),
-                rs.getBigDecimal("rate"),
-                rs.getBoolean("active"),
-                rs.getTimestamp("effective_from").toInstant(),
-                rs.getTimestamp("created_at").toInstant(),
-                rs.getTimestamp("updated_at").toInstant());
+        return new CommissionRule(rs.getLong("rule_id"), rs.getLong("merchant_id"), rs.getBigDecimal("rate"),
+                rs.getBoolean("active"), rs.getTimestamp("effective_from").toInstant(),
+                rs.getTimestamp("created_at").toInstant(), rs.getTimestamp("updated_at").toInstant());
     }
 
     private Settlement mapSettlement(ResultSet rs, int rowNum) throws SQLException {
-        return new Settlement(
-                rs.getLong("settlement_id"),
-                rs.getLong("merchant_id"),
-                rs.getBigDecimal("gross_amount"),
-                rs.getBigDecimal("commission_amount"),
-                rs.getBigDecimal("net_amount"),
-                SettlementStatus.valueOf(rs.getString("status")),
-                rs.getTimestamp("period_start").toInstant(),
-                rs.getTimestamp("period_end").toInstant(),
-                rs.getTimestamp("created_at").toInstant(),
+        return new Settlement(rs.getLong("settlement_id"), rs.getLong("merchant_id"), rs.getBigDecimal("gross_amount"),
+                rs.getBigDecimal("commission_amount"), rs.getBigDecimal("net_amount"),
+                SettlementStatus.valueOf(rs.getString("status")), rs.getTimestamp("period_start").toInstant(),
+                rs.getTimestamp("period_end").toInstant(), rs.getTimestamp("created_at").toInstant(),
                 rs.getTimestamp("updated_at").toInstant());
     }
 
     private Invoice mapInvoice(ResultSet rs, int rowNum) throws SQLException {
-        return new Invoice(
-                rs.getLong("invoice_id"),
-                rs.getLong("settlement_id"),
-                rs.getLong("merchant_id"),
-                rs.getBigDecimal("amount"),
-                InvoiceStatus.valueOf(rs.getString("status")),
-                rs.getString("invoice_title"),
-                rs.getTimestamp("created_at").toInstant(),
+        return new Invoice(rs.getLong("invoice_id"), rs.getLong("settlement_id"), rs.getLong("merchant_id"),
+                rs.getBigDecimal("amount"), InvoiceStatus.valueOf(rs.getString("status")),
+                rs.getString("invoice_title"), rs.getTimestamp("created_at").toInstant(),
                 rs.getTimestamp("updated_at").toInstant());
     }
 }

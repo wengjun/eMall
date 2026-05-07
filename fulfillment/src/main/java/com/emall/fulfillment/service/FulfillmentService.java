@@ -29,14 +29,14 @@ public class FulfillmentService {
 
     @Transactional
     public synchronized FulfillmentOrder allocate(long orderId, long userId, long skuId, int quantity,
-                                                  String warehouseCode) {
+            String warehouseCode) {
         return fulfillmentRepository.findByOrderId(orderId)
                 .orElseGet(() -> allocateOnce(orderId, userId, skuId, quantity, warehouseCode));
     }
 
     @Transactional
     public synchronized FulfillmentOrder allocateWithPlan(long orderId, long userId, long skuId, int quantity,
-                                                          String destinationRegionCode) {
+            String destinationRegionCode) {
         return fulfillmentRepository.findByOrderId(orderId)
                 .orElseGet(() -> allocateWithRoutePlan(orderId, userId, skuId, quantity, destinationRegionCode));
     }
@@ -53,13 +53,12 @@ public class FulfillmentService {
 
     @Transactional
     public WarehouseNode upsertWarehouse(String warehouseCode, String regionCode, int priority, int dailyCapacity,
-                                         boolean enabled) {
+            boolean enabled) {
         Instant now = Instant.now();
-        Instant createdAt = fulfillmentRepository.findWarehouse(warehouseCode)
-                .map(WarehouseNode::createdAt)
-                .orElse(now);
-        return fulfillmentRepository.saveWarehouse(new WarehouseNode(warehouseCode, regionCode, priority,
-                dailyCapacity, enabled, createdAt, now));
+        Instant createdAt =
+                fulfillmentRepository.findWarehouse(warehouseCode).map(WarehouseNode::createdAt).orElse(now);
+        return fulfillmentRepository.saveWarehouse(
+                new WarehouseNode(warehouseCode, regionCode, priority, dailyCapacity, enabled, createdAt, now));
     }
 
     public List<WarehouseNode> findEnabledWarehouses() {
@@ -67,16 +66,15 @@ public class FulfillmentService {
     }
 
     @Transactional
-    public CarrierRoute createCarrierRoute(String carrierCode, String originWarehouseCode,
-                                           String destinationRegionCode, int priority, BigDecimal baseCost,
-                                           int slaHours) {
+    public CarrierRoute createCarrierRoute(String carrierCode, String originWarehouseCode, String destinationRegionCode,
+            int priority, BigDecimal baseCost, int slaHours) {
         if (baseCost.signum() < 0 || slaHours <= 0) {
             throw new BusinessException(ErrorCode.BAD_REQUEST, "carrier route cost and SLA are invalid");
         }
         Instant now = Instant.now();
-        return fulfillmentRepository.saveCarrierRoute(new CarrierRoute(idGenerator.nextId(), carrierCode,
-                originWarehouseCode, destinationRegionCode, priority, baseCost.setScale(2, RoundingMode.HALF_UP),
-                slaHours, true, now, now));
+        return fulfillmentRepository.saveCarrierRoute(
+                new CarrierRoute(idGenerator.nextId(), carrierCode, originWarehouseCode, destinationRegionCode,
+                        priority, baseCost.setScale(2, RoundingMode.HALF_UP), slaHours, true, now, now));
     }
 
     public List<CarrierRoute> findCarrierRoutes(String originWarehouseCode, String destinationRegionCode) {
@@ -103,8 +101,7 @@ public class FulfillmentService {
 
     @Transactional
     public TrackingEvent ingestTrackingEvent(long fulfillmentId, String carrierCode, String trackingNo,
-                                             String eventCode, Instant eventTime, String location,
-                                             String description) {
+            String eventCode, Instant eventTime, String location, String description) {
         FulfillmentOrder order = get(fulfillmentId);
         TrackingEvent event = fulfillmentRepository.saveTrackingEvent(new TrackingEvent(idGenerator.nextId(),
                 fulfillmentId, carrierCode, trackingNo, eventCode, eventTime, location, description, Instant.now()));
@@ -124,31 +121,26 @@ public class FulfillmentService {
     }
 
     private FulfillmentOrder allocateWithRoutePlan(long orderId, long userId, long skuId, int quantity,
-                                                   String destinationRegionCode) {
+            String destinationRegionCode) {
         WarehouseNode warehouse = chooseWarehouse(destinationRegionCode);
         CarrierRoute route = chooseCarrierRoute(warehouse.warehouseCode(), destinationRegionCode);
         Instant now = Instant.now();
-        return fulfillmentRepository.save(FulfillmentOrder.allocated(idGenerator.nextId(), orderId, userId, skuId,
-                quantity, destinationRegionCode, warehouse.warehouseCode(), route.carrierCode(), route.slaHours(),
-                now));
+        return fulfillmentRepository
+                .save(FulfillmentOrder.allocated(idGenerator.nextId(), orderId, userId, skuId, quantity,
+                        destinationRegionCode, warehouse.warehouseCode(), route.carrierCode(), route.slaHours(), now));
     }
 
     private WarehouseNode chooseWarehouse(String destinationRegionCode) {
         List<WarehouseNode> warehouses = fulfillmentRepository.findEnabledWarehouses();
-        return warehouses.stream()
-                .filter(warehouse -> warehouse.regionCode().equals(destinationRegionCode))
-                .min(Comparator.comparingInt(WarehouseNode::priority)
-                        .thenComparing(WarehouseNode::warehouseCode))
-                .or(() -> warehouses.stream()
-                        .min(Comparator.comparingInt(WarehouseNode::priority)
-                                .thenComparing(WarehouseNode::warehouseCode)))
+        return warehouses.stream().filter(warehouse -> warehouse.regionCode().equals(destinationRegionCode))
+                .min(Comparator.comparingInt(WarehouseNode::priority).thenComparing(WarehouseNode::warehouseCode))
+                .or(() -> warehouses.stream().min(
+                        Comparator.comparingInt(WarehouseNode::priority).thenComparing(WarehouseNode::warehouseCode)))
                 .orElseThrow(() -> new BusinessException(ErrorCode.CONFLICT, "no enabled warehouse available"));
     }
 
     private CarrierRoute chooseCarrierRoute(String warehouseCode, String destinationRegionCode) {
-        return fulfillmentRepository.findActiveCarrierRoutes(warehouseCode, destinationRegionCode)
-                .stream()
-                .findFirst()
+        return fulfillmentRepository.findActiveCarrierRoutes(warehouseCode, destinationRegionCode).stream().findFirst()
                 .orElseThrow(() -> new BusinessException(ErrorCode.CONFLICT, "no active carrier route available"));
     }
 

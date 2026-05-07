@@ -29,7 +29,7 @@ class FinanceService {
 
     @Transactional
     LedgerEntry postEntry(long accountId, String businessType, String businessNo, BigDecimal debitAmount,
-                          BigDecimal creditAmount) {
+            BigDecimal creditAmount) {
         FinanceAccount account = requireAccount(accountId);
         if (debitAmount.signum() < 0 || creditAmount.signum() < 0 || debitAmount.add(creditAmount).signum() <= 0) {
             throw new BusinessException(ErrorCode.BAD_REQUEST, "ledger amount must be positive");
@@ -51,7 +51,7 @@ class FinanceService {
 
     @Transactional
     SettlementBatch createSettlementBatch(long merchantId, BigDecimal amount, BigDecimal commissionAmount,
-                                          LocalDate settlementDate) {
+            LocalDate settlementDate) {
         Instant now = Instant.now();
         return repository.saveSettlementBatch(new SettlementBatch(idGenerator.nextId(), merchantId, amount,
                 commissionAmount, SettlementStatus.CREATED, settlementDate, now, now));
@@ -87,20 +87,17 @@ class FinanceService {
     @Transactional
     ChargebackCase openChargeback(long paymentId, BigDecimal amount, String reason) {
         Instant now = Instant.now();
-        return repository.saveChargeback(new ChargebackCase(idGenerator.nextId(), paymentId, amount, reason,
-                ChargebackStatus.OPEN, now, now));
+        return repository.saveChargeback(
+                new ChargebackCase(idGenerator.nextId(), paymentId, amount, reason, ChargebackStatus.OPEN, now, now));
     }
 
     FinanceSummary summary() {
-        BigDecimal totalBalance = repository.findAccounts().stream()
-                .map(FinanceAccount::balance)
+        BigDecimal totalBalance = repository.findAccounts().stream().map(FinanceAccount::balance)
                 .reduce(BigDecimal.ZERO, BigDecimal::add);
-        BigDecimal totalFrozen = repository.findAccounts().stream()
-                .map(FinanceAccount::frozenAmount)
+        BigDecimal totalFrozen = repository.findAccounts().stream().map(FinanceAccount::frozenAmount)
                 .reduce(BigDecimal.ZERO, BigDecimal::add);
         int openChargebacks = (int) repository.findChargebacks().stream()
-                .filter(chargeback -> chargeback.status() == ChargebackStatus.OPEN)
-                .count();
+                .filter(chargeback -> chargeback.status() == ChargebackStatus.OPEN).count();
         return new FinanceSummary(totalBalance, totalFrozen, 0, openChargebacks);
     }
 

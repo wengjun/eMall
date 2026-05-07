@@ -33,10 +33,10 @@ class OpenApiServiceTest {
     void recordsWebhookSubscriptionAndDelivery() {
         AppRegistration registration = service.registerApp(1001L, "seller-api", "order:read", 100);
 
-        WebhookSubscription subscription = service.subscribe(registration.app().appId(), "order.paid",
-                "https://merchant.example/webhook");
-        WebhookDelivery delivery = service.recordDelivery(subscription.subscriptionId(), "event-1",
-                WebhookDeliveryStatus.DELIVERED);
+        WebhookSubscription subscription =
+                service.subscribe(registration.app().appId(), "order.paid", "https://merchant.example/webhook");
+        WebhookDelivery delivery =
+                service.recordDelivery(subscription.subscriptionId(), "event-1", WebhookDeliveryStatus.DELIVERED);
 
         assertThat(service.findSubscriptions(registration.app().appId())).hasSize(1);
         assertThat(delivery.status()).isEqualTo(WebhookDeliveryStatus.DELIVERED);

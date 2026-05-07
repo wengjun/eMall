@@ -21,7 +21,7 @@ class DataWarehouseService {
 
     @Transactional
     DatasetDefinition registerDataset(WarehouseLayer layer, String datasetName, String owner, String description,
-                                      int retentionDays) {
+            int retentionDays) {
         if (retentionDays <= 0) {
             throw new BusinessException(ErrorCode.BAD_REQUEST, "retention days must be positive");
         }
@@ -32,7 +32,7 @@ class DataWarehouseService {
 
     @Transactional
     TablePartition addPartition(long datasetId, String partitionKey, LocalDate partitionDate, long rowCount,
-                                long storageBytes) {
+            long storageBytes) {
         requireDataset(datasetId);
         return repository.savePartition(new TablePartition(idGenerator.nextId(), datasetId, normalize(partitionKey),
                 partitionDate, Math.max(0, rowCount), Math.max(0, storageBytes), Instant.now()));
@@ -41,8 +41,8 @@ class DataWarehouseService {
     @Transactional
     QualityCheck recordQualityCheck(long datasetId, String checkName, QualityStatus status, String detail) {
         requireDataset(datasetId);
-        return repository.saveQualityCheck(new QualityCheck(idGenerator.nextId(), datasetId, normalize(checkName),
-                status, detail, Instant.now()));
+        return repository.saveQualityCheck(
+                new QualityCheck(idGenerator.nextId(), datasetId, normalize(checkName), status, detail, Instant.now()));
     }
 
     @Transactional
@@ -55,11 +55,9 @@ class DataWarehouseService {
 
     WarehouseSummary summary() {
         int failedChecks = (int) repository.findQualityChecks().stream()
-                .filter(check -> check.status() == QualityStatus.FAIL)
-                .count();
+                .filter(check -> check.status() == QualityStatus.FAIL).count();
         int partitions = repository.findDatasets().stream()
-                .mapToInt(dataset -> repository.findPartitions(dataset.datasetId()).size())
-                .sum();
+                .mapToInt(dataset -> repository.findPartitions(dataset.datasetId()).size()).sum();
         return new WarehouseSummary(repository.findDatasets().size(), partitions, failedChecks,
                 repository.findLineage().size());
     }

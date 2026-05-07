@@ -31,8 +31,8 @@ class JdbcCatalogRepository implements CatalogRepository {
 
     @Override
     public Optional<CategoryNode> findCategory(long categoryId) {
-        return jdbcTemplate.query("SELECT * FROM catalog_category WHERE category_id = ?", this::mapCategory,
-                categoryId).stream().findFirst();
+        return jdbcTemplate.query("SELECT * FROM catalog_category WHERE category_id = ?", this::mapCategory, categoryId)
+                .stream().findFirst();
     }
 
     @Override
@@ -50,8 +50,9 @@ class JdbcCatalogRepository implements CatalogRepository {
 
     @Override
     public Optional<AttributeTemplate> findTemplate(long categoryId) {
-        return jdbcTemplate.query("SELECT * FROM catalog_attribute_template WHERE category_id = ?",
-                this::mapTemplate, categoryId).stream().findFirst();
+        return jdbcTemplate
+                .query("SELECT * FROM catalog_attribute_template WHERE category_id = ?", this::mapTemplate, categoryId)
+                .stream().findFirst();
     }
 
     @Override
@@ -84,16 +85,15 @@ class JdbcCatalogRepository implements CatalogRepository {
                 VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
                 ON DUPLICATE KEY UPDATE title = VALUES(title), status = VALUES(status),
                     quality_score = VALUES(quality_score), updated_at = VALUES(updated_at)
-                """, spu.spuId(), spu.merchantId(), spu.title(), spu.categoryId(), spu.brandCode(),
-                spu.status().name(), spu.qualityScore(), Timestamp.from(spu.createdAt()),
-                Timestamp.from(spu.updatedAt()));
+                """, spu.spuId(), spu.merchantId(), spu.title(), spu.categoryId(), spu.brandCode(), spu.status().name(),
+                spu.qualityScore(), Timestamp.from(spu.createdAt()), Timestamp.from(spu.updatedAt()));
         return spu;
     }
 
     @Override
     public Optional<Spu> findSpu(long spuId) {
-        return jdbcTemplate.query("SELECT * FROM catalog_spu WHERE spu_id = ?", this::mapSpu, spuId)
-                .stream().findFirst();
+        return jdbcTemplate.query("SELECT * FROM catalog_spu WHERE spu_id = ?", this::mapSpu, spuId).stream()
+                .findFirst();
     }
 
     @Override
@@ -125,8 +125,8 @@ class JdbcCatalogRepository implements CatalogRepository {
 
     @Override
     public List<ListingViolation> findViolations(long spuId) {
-        return jdbcTemplate.query("SELECT * FROM catalog_listing_violation WHERE spu_id = ?",
-                this::mapViolation, spuId);
+        return jdbcTemplate.query("SELECT * FROM catalog_listing_violation WHERE spu_id = ?", this::mapViolation,
+                spuId);
     }
 
     private CategoryNode mapCategory(ResultSet rs, int rowNum) throws SQLException {
@@ -147,13 +147,13 @@ class JdbcCatalogRepository implements CatalogRepository {
     }
 
     private Sku mapSku(ResultSet rs, int rowNum) throws SQLException {
-        return new Sku(rs.getLong("sku_id"), rs.getLong("spu_id"), rs.getString("sku_code"),
-                rs.getBigDecimal("price"), rs.getString("attributes"), rs.getBoolean("saleable"),
-                rs.getTimestamp("created_at").toInstant(), rs.getTimestamp("updated_at").toInstant());
+        return new Sku(rs.getLong("sku_id"), rs.getLong("spu_id"), rs.getString("sku_code"), rs.getBigDecimal("price"),
+                rs.getString("attributes"), rs.getBoolean("saleable"), rs.getTimestamp("created_at").toInstant(),
+                rs.getTimestamp("updated_at").toInstant());
     }
 
     private ListingViolation mapViolation(ResultSet rs, int rowNum) throws SQLException {
-        return new ListingViolation(rs.getLong("violation_id"), rs.getLong("spu_id"),
-                rs.getString("violation_type"), rs.getString("reason"), rs.getTimestamp("created_at").toInstant());
+        return new ListingViolation(rs.getLong("violation_id"), rs.getLong("spu_id"), rs.getString("violation_type"),
+                rs.getString("reason"), rs.getTimestamp("created_at").toInstant());
     }
 }

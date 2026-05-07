@@ -16,8 +16,7 @@ public abstract class JdbcOperationAuditRepositorySupport implements OperationAu
                 INSERT INTO internal_operation_audit
                     (service_name, operation, operator, trace_id, affected, success, message, executed_at)
                 VALUES (?, ?, ?, ?, ?, ?, ?, ?)
-                """,
-                record.serviceName(), record.operation(), record.operator(), record.traceId(), record.affected(),
+                """, record.serviceName(), record.operation(), record.operator(), record.traceId(), record.affected(),
                 record.success(), record.message(), Timestamp.from(record.executedAt()));
         return record;
     }

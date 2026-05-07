@@ -58,8 +58,9 @@ class JdbcCustomerServiceRepository implements CustomerServiceRepository {
 
     @Override
     public Optional<ArbitrationCase> findArbitration(long arbitrationId) {
-        return jdbcTemplate.query("SELECT * FROM arbitration_case WHERE arbitration_id = ?", this::mapArbitration,
-                arbitrationId).stream().findFirst();
+        return jdbcTemplate
+                .query("SELECT * FROM arbitration_case WHERE arbitration_id = ?", this::mapArbitration, arbitrationId)
+                .stream().findFirst();
     }
 
     @Override
@@ -91,8 +92,8 @@ class JdbcCustomerServiceRepository implements CustomerServiceRepository {
                 VALUES (?, ?, ?, ?, ?, ?, ?)
                 ON DUPLICATE KEY UPDATE content = VALUES(content), published = VALUES(published),
                     updated_at = VALUES(updated_at)
-                """, article.articleId(), article.category(), article.title(), article.content(),
-                article.published(), Timestamp.from(article.createdAt()), Timestamp.from(article.updatedAt()));
+                """, article.articleId(), article.category(), article.title(), article.content(), article.published(),
+                Timestamp.from(article.createdAt()), Timestamp.from(article.updatedAt()));
         return article;
     }
 
@@ -114,15 +115,13 @@ class JdbcCustomerServiceRepository implements CustomerServiceRepository {
     }
 
     private ArbitrationCase mapArbitration(ResultSet rs, int rowNum) throws SQLException {
-        return new ArbitrationCase(rs.getLong("arbitration_id"), rs.getLong("ticket_id"),
-                rs.getLong("merchant_id"), rs.getString("reason"),
-                ArbitrationStatus.valueOf(rs.getString("status")), rs.getTimestamp("created_at").toInstant(),
-                rs.getTimestamp("updated_at").toInstant());
+        return new ArbitrationCase(rs.getLong("arbitration_id"), rs.getLong("ticket_id"), rs.getLong("merchant_id"),
+                rs.getString("reason"), ArbitrationStatus.valueOf(rs.getString("status")),
+                rs.getTimestamp("created_at").toInstant(), rs.getTimestamp("updated_at").toInstant());
     }
 
     private CompensationRecord mapCompensation(ResultSet rs, int rowNum) throws SQLException {
-        return new CompensationRecord(rs.getLong("compensation_id"), rs.getLong("ticket_id"),
-                rs.getLong("user_id"), rs.getBigDecimal("amount"), rs.getString("reason"),
-                rs.getTimestamp("created_at").toInstant());
+        return new CompensationRecord(rs.getLong("compensation_id"), rs.getLong("ticket_id"), rs.getLong("user_id"),
+                rs.getBigDecimal("amount"), rs.getString("reason"), rs.getTimestamp("created_at").toInstant());
     }
 }

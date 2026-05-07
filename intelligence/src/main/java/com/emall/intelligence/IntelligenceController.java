@@ -50,15 +50,15 @@ class IntelligenceController {
 
     @PostMapping("/models")
     ApiResponse<ModelDeployment> registerModel(@Valid @RequestBody RegisterModelRequest request) {
-        return ApiResponse.ok(intelligenceService.registerModel(request.modelName(), request.version(),
-                request.useCase()));
+        return ApiResponse
+                .ok(intelligenceService.registerModel(request.modelName(), request.version(), request.useCase()));
     }
 
     @PatchMapping("/models/{modelId}/status")
     ApiResponse<ModelDeployment> changeModelStatus(@PathVariable long modelId,
-                                                   @Valid @RequestBody ChangeModelStatusRequest request) {
-        return ApiResponse.ok(intelligenceService.changeModelStatus(modelId, request.status(),
-                request.approvalTicket()));
+            @Valid @RequestBody ChangeModelStatusRequest request) {
+        return ApiResponse
+                .ok(intelligenceService.changeModelStatus(modelId, request.status(), request.approvalTicket()));
     }
 
     @PostMapping("/decisions")
@@ -72,20 +72,20 @@ class IntelligenceController {
         return ApiResponse.ok(intelligenceService.summary());
     }
 
-    record UpsertUserProfileRequest(@Positive long userId, @NotBlank String segment,
-                                    @NotBlank String preferences, boolean privacyRestricted) {
+    record UpsertUserProfileRequest(@Positive long userId, @NotBlank String segment, @NotBlank String preferences,
+            boolean privacyRestricted) {
     }
 
-    record UpsertItemProfileRequest(@Positive long skuId, @NotBlank String category,
-                                    @NotBlank String attributes, @DecimalMin("0.00") BigDecimal qualityScore) {
+    record UpsertItemProfileRequest(@Positive long skuId, @NotBlank String category, @NotBlank String attributes,
+            @DecimalMin("0.00") BigDecimal qualityScore) {
     }
 
     record RegisterFeatureRequest(@NotBlank String featureName, FeatureScope scope, @NotBlank String owner,
-                                  @Positive int freshnessSeconds) {
+            @Positive int freshnessSeconds) {
     }
 
     record WriteFeatureValueRequest(@NotBlank String featureName, @NotBlank String entityKey,
-                                    @NotBlank String featureValue, Instant eventTime) {
+            @NotBlank String featureValue, Instant eventTime) {
     }
 
     record RegisterModelRequest(@NotBlank String modelName, @NotBlank String version, @NotBlank String useCase) {
@@ -95,6 +95,6 @@ class IntelligenceController {
     }
 
     record RecordDecisionRequest(@NotBlank String useCase, @NotBlank String entityKey, @NotBlank String decision,
-                                 @DecimalMin("0.00") BigDecimal score, @NotBlank String modelVersion) {
+            @DecimalMin("0.00") BigDecimal score, @NotBlank String modelVersion) {
     }
 }

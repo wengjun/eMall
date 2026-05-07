@@ -11,9 +11,8 @@ import com.emall.review.repository.InMemoryReviewRepository;
 import org.junit.jupiter.api.Test;
 
 class ReviewServiceTest {
-    private final ReviewService reviewService = new ReviewService(
-            new InMemoryReviewRepository(),
-            new SnowflakeIdGenerator(5));
+    private final ReviewService reviewService =
+            new ReviewService(new InMemoryReviewRepository(), new SnowflakeIdGenerator(5));
 
     @Test
     void shouldPublishPendingReviewAndListBySku() {
@@ -30,7 +29,6 @@ class ReviewServiceTest {
     @Test
     void shouldRejectInvalidRating() {
         assertThatThrownBy(() -> reviewService.create(90001L, 30001L, 70001L, 6, "invalid"))
-                .isInstanceOf(BusinessException.class)
-                .hasMessageContaining("rating must be between 1 and 5");
+                .isInstanceOf(BusinessException.class).hasMessageContaining("rating must be between 1 and 5");
     }
 }

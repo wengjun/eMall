@@ -16,10 +16,7 @@ public class OrderClient {
     @Retry(name = "orderService")
     @CircuitBreaker(name = "orderService", fallbackMethod = "fallbackPay")
     public boolean payOrder(long orderId) {
-        orderRestClient.post()
-                .uri("/api/orders/{orderId}/pay", orderId)
-                .retrieve()
-                .toBodilessEntity();
+        orderRestClient.post().uri("/api/orders/{orderId}/pay", orderId).retrieve().toBodilessEntity();
         return true;
     }
 

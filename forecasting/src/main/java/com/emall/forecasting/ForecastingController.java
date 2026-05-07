@@ -34,8 +34,7 @@ class ForecastingController {
     }
 
     @PostMapping("/replenishment-plans")
-    ApiResponse<ReplenishmentPlan> createReplenishmentPlan(
-            @Valid @RequestBody CreateReplenishmentPlanRequest request) {
+    ApiResponse<ReplenishmentPlan> createReplenishmentPlan(@Valid @RequestBody CreateReplenishmentPlanRequest request) {
         return ApiResponse.ok(forecastingService.createReplenishmentPlan(request.skuId(), request.warehouseCode(),
                 request.forecastQuantity(), request.availableStock(), request.planDate()));
     }
@@ -52,19 +51,18 @@ class ForecastingController {
     }
 
     record RecordDemandSignalRequest(@Positive long skuId, @NotBlank String regionCode, @Min(0) int soldQuantity,
-                                     @Min(0) int pageViews, LocalDate signalDate) {
+            @Min(0) int pageViews, LocalDate signalDate) {
     }
 
     record BuildDemandForecastRequest(@Positive long skuId, @NotBlank String regionCode, @Min(0) int currentStock,
-                                      LocalDate forecastDate) {
+            LocalDate forecastDate) {
     }
 
     record CreateReplenishmentPlanRequest(@Positive long skuId, @NotBlank String warehouseCode,
-                                          @Min(0) int forecastQuantity, @Min(0) int availableStock,
-                                          LocalDate planDate) {
+            @Min(0) int forecastQuantity, @Min(0) int availableStock, LocalDate planDate) {
     }
 
     record CreateCapacityForecastRequest(@NotBlank String warehouseCode, @Min(0) int forecastOrders,
-                                         @Min(0) int workerHours, LocalDate forecastDate) {
+            @Min(0) int workerHours, LocalDate forecastDate) {
     }
 }

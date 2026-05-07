@@ -27,9 +27,7 @@ class InMemorySupplyChainRepository implements SupplyChainRepository {
 
     @Override
     public List<WarehouseReceipt> findReceipts(String warehouseCode) {
-        return receipts.values().stream()
-                .filter(receipt -> receipt.warehouseCode().equals(warehouseCode))
-                .toList();
+        return receipts.values().stream().filter(receipt -> receipt.warehouseCode().equals(warehouseCode)).toList();
     }
 
     @Override
@@ -45,10 +43,8 @@ class InMemorySupplyChainRepository implements SupplyChainRepository {
 
     @Override
     public List<InventoryTransfer> findTransfers(String warehouseCode) {
-        return transfers.values().stream()
-                .filter(transfer -> transfer.fromWarehouse().equals(warehouseCode)
-                        || transfer.toWarehouse().equals(warehouseCode))
-                .toList();
+        return transfers.values().stream().filter(transfer -> transfer.fromWarehouse().equals(warehouseCode)
+                || transfer.toWarehouse().equals(warehouseCode)).toList();
     }
 
     @Override

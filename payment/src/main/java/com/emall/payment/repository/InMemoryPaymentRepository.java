@@ -46,11 +46,8 @@ public class InMemoryPaymentRepository implements PaymentRepository {
 
     @Override
     public List<PaymentOrder> findUnconfirmedByStatus(PaymentStatus status, int limit) {
-        return byId.values().stream()
-                .filter(payment -> payment.status() == status)
-                .filter(payment -> !payment.orderConfirmed())
-                .sorted(Comparator.comparing(PaymentOrder::updatedAt))
-                .limit(limit)
-                .toList();
+        return byId.values().stream().filter(payment -> payment.status() == status)
+                .filter(payment -> !payment.orderConfirmed()).sorted(Comparator.comparing(PaymentOrder::updatedAt))
+                .limit(limit).toList();
     }
 }

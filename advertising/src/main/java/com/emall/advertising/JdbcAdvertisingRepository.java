@@ -36,8 +36,9 @@ class JdbcAdvertisingRepository implements AdvertisingRepository {
 
     @Override
     public Optional<AdCampaign> findCampaign(long campaignId) {
-        return jdbcTemplate.query("SELECT * FROM advertising_campaign WHERE campaign_id = ?",
-                this::mapCampaign, campaignId).stream().findFirst();
+        return jdbcTemplate
+                .query("SELECT * FROM advertising_campaign WHERE campaign_id = ?", this::mapCampaign, campaignId)
+                .stream().findFirst();
     }
 
     @Override
@@ -66,8 +67,7 @@ class JdbcAdvertisingRepository implements AdvertisingRepository {
                 INSERT INTO advertising_keyword_target (target_id, campaign_id, keyword, bid_multiplier, active)
                 VALUES (?, ?, ?, ?, ?)
                 ON DUPLICATE KEY UPDATE bid_multiplier = VALUES(bid_multiplier), active = VALUES(active)
-                """, target.targetId(), target.campaignId(), target.keyword(), target.bidMultiplier(),
-                target.active());
+                """, target.targetId(), target.campaignId(), target.keyword(), target.bidMultiplier(), target.active());
         return target;
     }
 
@@ -91,10 +91,10 @@ class JdbcAdvertisingRepository implements AdvertisingRepository {
 
     private AdCampaign mapCampaign(ResultSet rs, int rowNum) throws SQLException {
         return new AdCampaign(rs.getLong("campaign_id"), rs.getLong("merchant_id"), rs.getString("name"),
-                rs.getBigDecimal("daily_budget"), rs.getBigDecimal("used_budget"),
-                rs.getBigDecimal("bid_amount"), AdStatus.valueOf(rs.getString("status")),
-                rs.getTimestamp("starts_at").toInstant(), rs.getTimestamp("ends_at").toInstant(),
-                rs.getTimestamp("created_at").toInstant(), rs.getTimestamp("updated_at").toInstant());
+                rs.getBigDecimal("daily_budget"), rs.getBigDecimal("used_budget"), rs.getBigDecimal("bid_amount"),
+                AdStatus.valueOf(rs.getString("status")), rs.getTimestamp("starts_at").toInstant(),
+                rs.getTimestamp("ends_at").toInstant(), rs.getTimestamp("created_at").toInstant(),
+                rs.getTimestamp("updated_at").toInstant());
     }
 
     private AdCreative mapCreative(ResultSet rs, int rowNum) throws SQLException {

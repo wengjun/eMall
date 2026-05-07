@@ -56,10 +56,8 @@ class InMemoryOpenApiRepository implements OpenApiRepository {
 
     @Override
     public List<WebhookSubscription> findActiveSubscriptions(long appId) {
-        return subscriptions.values().stream()
-                .filter(subscription -> subscription.appId() == appId)
-                .filter(WebhookSubscription::active)
-                .toList();
+        return subscriptions.values().stream().filter(subscription -> subscription.appId() == appId)
+                .filter(WebhookSubscription::active).toList();
     }
 
     @Override

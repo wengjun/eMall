@@ -27,8 +27,8 @@ public class OrderController {
     @PostMapping
     @ResponseStatus(HttpStatus.ACCEPTED)
     public ApiResponse<Order> createOrder(@Valid @RequestBody CreateOrderRequest request) {
-        return ApiResponse.ok(orderService.create(
-                request.requestId(), request.userId(), request.skuId(), request.quantity()));
+        return ApiResponse
+                .ok(orderService.create(request.requestId(), request.userId(), request.skuId(), request.quantity()));
     }
 
     @GetMapping("/{orderId}")
@@ -46,11 +46,7 @@ public class OrderController {
         return ApiResponse.ok(orderService.cancel(orderId));
     }
 
-    public record CreateOrderRequest(
-            @NotBlank String requestId,
-            @Positive long userId,
-            @Positive long skuId,
-            @Positive int quantity
-    ) {
+    public record CreateOrderRequest(@NotBlank String requestId, @Positive long userId, @Positive long skuId,
+            @Positive int quantity) {
     }
 }

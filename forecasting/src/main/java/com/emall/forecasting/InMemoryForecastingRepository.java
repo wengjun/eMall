@@ -23,8 +23,7 @@ class InMemoryForecastingRepository implements ForecastingRepository {
     @Override
     public List<DemandSignal> findDemandSignals(long skuId, String regionCode) {
         return signals.values().stream()
-                .filter(signal -> signal.skuId() == skuId && signal.regionCode().equals(regionCode))
-                .toList();
+                .filter(signal -> signal.skuId() == skuId && signal.regionCode().equals(regionCode)).toList();
     }
 
     @Override

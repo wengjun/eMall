@@ -27,8 +27,8 @@ public class FlashSaleService {
     }
 
     @Transactional
-    public FlashSaleCampaign createCampaign(long skuId, String name, Instant startsAt, Instant endsAt,
-                                            int perUserLimit, int tokenTtlSeconds, int queueCapacity) {
+    public FlashSaleCampaign createCampaign(long skuId, String name, Instant startsAt, Instant endsAt, int perUserLimit,
+            int tokenTtlSeconds, int queueCapacity) {
         if (!startsAt.isBefore(endsAt)) {
             throw new BusinessException(ErrorCode.BAD_REQUEST, "campaign start time must be before end time");
         }
@@ -53,8 +53,8 @@ public class FlashSaleService {
             throw new BusinessException(ErrorCode.BAD_REQUEST, "flash sale stock must be positive");
         }
         FlashSaleCampaign campaign = getCampaign(campaignId);
-        FlashSaleStock stock = new FlashSaleStock(campaignId, campaign.skuId(), totalStock, totalStock,
-                0, 0, 0, Instant.now());
+        FlashSaleStock stock =
+                new FlashSaleStock(campaignId, campaign.skuId(), totalStock, totalStock, 0, 0, 0, Instant.now());
         return repository.saveStock(stock);
     }
 

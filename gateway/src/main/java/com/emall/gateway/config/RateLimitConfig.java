@@ -13,30 +13,23 @@ import reactor.core.publisher.Mono;
 public class RateLimitConfig {
     @Bean
     KeyResolver userOrIpKeyResolver() {
-        return exchange -> exchange.getPrincipal()
-                .map(Principal::getName)
-                .defaultIfEmpty("anonymous")
+        return exchange -> exchange.getPrincipal().map(Principal::getName).defaultIfEmpty("anonymous")
                 .map(user -> rateLimitKey(exchange, user));
     }
 
     private String rateLimitKey(ServerWebExchange exchange, String user) {
         ServerHttpRequest request = exchange.getRequest();
-        String deviceId = Optional.ofNullable(request.getHeaders().getFirst("X-Device-Id"))
-                .orElse("unknown-device");
+        String deviceId = Optional.ofNullable(request.getHeaders().getFirst("X-Device-Id")).orElse("unknown-device");
         String skuId = Optional.ofNullable(request.getQueryParams().getFirst("skuId"))
                 .orElseGet(() -> skuFromPath(request.getPath().value()));
-        return "user=" + user
-                + "|device=" + deviceId
-                + "|sku=" + skuId
-                + "|ip=" + clientIp(exchange);
+        return "user=" + user + "|device=" + deviceId + "|sku=" + skuId + "|ip=" + clientIp(exchange);
     }
 
     private String clientIp(ServerWebExchange exchange) {
         return Optional.ofNullable(exchange.getRequest().getHeaders().getFirst("X-Forwarded-For"))
                 .map(header -> header.split(",")[0].trim())
                 .orElseGet(() -> Optional.ofNullable(exchange.getRequest().getRemoteAddress())
-                        .map(address -> address.getAddress().getHostAddress())
-                        .orElse("unknown-ip"));
+                        .map(address -> address.getAddress().getHostAddress()).orElse("unknown-ip"));
     }
 
     private String skuFromPath(String path) {

@@ -21,19 +21,14 @@ public abstract class InMemoryOutboxRepositorySupport implements OutboxRepositor
     public List<OutboxEvent> findPublishable(Instant now, int limit) {
         return events.values().stream()
                 .filter(event -> event.status() == OutboxStatus.NEW || event.status() == OutboxStatus.FAILED)
-                .filter(event -> !event.nextRetryAt().isAfter(now))
-                .sorted(Comparator.comparing(OutboxEvent::createdAt))
-                .limit(limit)
-                .toList();
+                .filter(event -> !event.nextRetryAt().isAfter(now)).sorted(Comparator.comparing(OutboxEvent::createdAt))
+                .limit(limit).toList();
     }
 
     @Override
     public int rescheduleFailed(Instant now, int limit) {
-        List<OutboxEvent> failedEvents = events.values().stream()
-                .filter(event -> event.status() == OutboxStatus.FAILED)
-                .sorted(Comparator.comparing(OutboxEvent::createdAt))
-                .limit(limit)
-                .toList();
+        List<OutboxEvent> failedEvents = events.values().stream().filter(event -> event.status() == OutboxStatus.FAILED)
+                .sorted(Comparator.comparing(OutboxEvent::createdAt)).limit(limit).toList();
         failedEvents.forEach(event -> events.put(event.eventId(), event.readyForRetry(now)));
         return failedEvents.size();
     }

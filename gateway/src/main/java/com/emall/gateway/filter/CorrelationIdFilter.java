@@ -20,9 +20,7 @@ public class CorrelationIdFilter implements GlobalFilter, Ordered {
         if (traceId == null || traceId.isBlank()) {
             traceId = UUID.randomUUID().toString().replace("-", "");
         }
-        ServerHttpRequest request = exchange.getRequest().mutate()
-                .header(TRACE_ID_HEADER, traceId)
-                .build();
+        ServerHttpRequest request = exchange.getRequest().mutate().header(TRACE_ID_HEADER, traceId).build();
         exchange.getResponse().getHeaders().set(TRACE_ID_HEADER, traceId);
         return chain.filter(exchange.mutate().request(request).build());
     }

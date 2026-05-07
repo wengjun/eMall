@@ -22,11 +22,8 @@ public class MarketingClient {
     @Bulkhead(name = "marketingService")
     @CircuitBreaker(name = "marketingService", fallbackMethod = "fallbackQuote")
     public PromotionQuote quote(long userId, BigDecimal orderAmount) {
-        PromotionQuoteResponse response = marketingRestClient.post()
-                .uri("/api/marketing/quotes")
-                .body(new PromotionQuoteRequest(userId, orderAmount))
-                .retrieve()
-                .body(PromotionQuoteResponse.class);
+        PromotionQuoteResponse response = marketingRestClient.post().uri("/api/marketing/quotes")
+                .body(new PromotionQuoteRequest(userId, orderAmount)).retrieve().body(PromotionQuoteResponse.class);
         PromotionQuote result = response == null ? null : response.data();
         return result == null ? PromotionQuote.none(userId, orderAmount) : result;
     }
@@ -38,25 +35,14 @@ public class MarketingClient {
     public record PromotionQuoteRequest(long userId, BigDecimal orderAmount) {
     }
 
-    public record PromotionQuote(
-            long userId,
-            BigDecimal orderAmount,
-            BigDecimal discountAmount,
-            BigDecimal payableAmount,
-            String couponId,
-            Instant quotedAt
-    ) {
+    public record PromotionQuote(long userId, BigDecimal orderAmount, BigDecimal discountAmount,
+            BigDecimal payableAmount, String couponId, Instant quotedAt) {
         public static PromotionQuote none(long userId, BigDecimal orderAmount) {
             return new PromotionQuote(userId, orderAmount, BigDecimal.ZERO, orderAmount, null, Instant.now());
         }
     }
 
-    public record PromotionQuoteResponse(
-            boolean success,
-            String code,
-            String message,
-            PromotionQuote data,
-            Instant timestamp
-    ) {
+    public record PromotionQuoteResponse(boolean success, String code, String message, PromotionQuote data,
+            Instant timestamp) {
     }
 }

@@ -22,8 +22,8 @@ class AnalyticsService {
     @Transactional
     MetricDefinition createMetric(String metricName, String owner, String expression) {
         Instant now = Instant.now();
-        return repository.saveMetric(new MetricDefinition(idGenerator.nextId(), normalize(metricName),
-                normalize(owner), expression, MetricStatus.DRAFT, now, now));
+        return repository.saveMetric(new MetricDefinition(idGenerator.nextId(), normalize(metricName), normalize(owner),
+                expression, MetricStatus.DRAFT, now, now));
     }
 
     @Transactional
@@ -34,8 +34,7 @@ class AnalyticsService {
     }
 
     @Transactional
-    MetricPoint recordMetricPoint(String metricName, String dimensionKey, BigDecimal metricValue,
-                                  Instant eventTime) {
+    MetricPoint recordMetricPoint(String metricName, String dimensionKey, BigDecimal metricValue, Instant eventTime) {
         return repository.saveMetricPoint(new MetricPoint(idGenerator.nextId(), normalize(metricName),
                 normalize(dimensionKey), metricValue, eventTime, Instant.now()));
     }
@@ -47,23 +46,22 @@ class AnalyticsService {
     }
 
     @Transactional
-    AnomalySignal recordAnomaly(String metricName, BigDecimal actualValue, BigDecimal expectedValue,
-                                String severity) {
+    AnomalySignal recordAnomaly(String metricName, BigDecimal actualValue, BigDecimal expectedValue, String severity) {
         return repository.saveAnomaly(new AnomalySignal(idGenerator.nextId(), normalize(metricName), actualValue,
                 expectedValue, normalize(severity), Instant.now()));
     }
 
     @Transactional
     ConsentRecord recordConsent(long userId, String purpose, boolean granted) {
-        return repository.saveConsent(new ConsentRecord(idGenerator.nextId(), userId, normalize(purpose), granted,
-                Instant.now()));
+        return repository.saveConsent(
+                new ConsentRecord(idGenerator.nextId(), userId, normalize(purpose), granted, Instant.now()));
     }
 
     @Transactional
     PrivacyRequest openPrivacyRequest(long userId, String requestType) {
         Instant now = Instant.now();
-        return repository.savePrivacyRequest(new PrivacyRequest(idGenerator.nextId(), userId,
-                normalize(requestType), PrivacyRequestStatus.OPEN, now, now));
+        return repository.savePrivacyRequest(new PrivacyRequest(idGenerator.nextId(), userId, normalize(requestType),
+                PrivacyRequestStatus.OPEN, now, now));
     }
 
     @Transactional
@@ -75,11 +73,9 @@ class AnalyticsService {
 
     AnalyticsSummary summary() {
         int approvedMetrics = (int) repository.findMetrics().stream()
-                .filter(metric -> metric.status() == MetricStatus.APPROVED)
-                .count();
+                .filter(metric -> metric.status() == MetricStatus.APPROVED).count();
         int openPrivacyRequests = (int) repository.findPrivacyRequests().stream()
-                .filter(request -> request.status() == PrivacyRequestStatus.OPEN)
-                .count();
+                .filter(request -> request.status() == PrivacyRequestStatus.OPEN).count();
         return new AnalyticsSummary(approvedMetrics, repository.findDashboards().size(),
                 repository.findAnomalies().size(), openPrivacyRequests);
     }

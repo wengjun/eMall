@@ -37,15 +37,15 @@ public class FulfillmentController {
     @PostMapping("/orders")
     @ResponseStatus(HttpStatus.CREATED)
     public ApiResponse<FulfillmentOrder> allocate(@Valid @RequestBody AllocateRequest request) {
-        return ApiResponse.ok(fulfillmentService.allocate(
-                request.orderId(), request.userId(), request.skuId(), request.quantity(), request.warehouseCode()));
+        return ApiResponse.ok(fulfillmentService.allocate(request.orderId(), request.userId(), request.skuId(),
+                request.quantity(), request.warehouseCode()));
     }
 
     @PostMapping("/orders/plan")
     @ResponseStatus(HttpStatus.CREATED)
     public ApiResponse<FulfillmentOrder> allocateWithPlan(@Valid @RequestBody AllocateWithPlanRequest request) {
-        return ApiResponse.ok(fulfillmentService.allocateWithPlan(request.orderId(), request.userId(),
-                request.skuId(), request.quantity(), request.destinationRegionCode()));
+        return ApiResponse.ok(fulfillmentService.allocateWithPlan(request.orderId(), request.userId(), request.skuId(),
+                request.quantity(), request.destinationRegionCode()));
     }
 
     @GetMapping("/orders/{fulfillmentId}")
@@ -60,7 +60,7 @@ public class FulfillmentController {
 
     @PostMapping("/orders/{fulfillmentId}/ship")
     public ApiResponse<FulfillmentOrder> ship(@PathVariable long fulfillmentId,
-                                              @Valid @RequestBody ShipRequest request) {
+            @Valid @RequestBody ShipRequest request) {
         return ApiResponse.ok(fulfillmentService.ship(fulfillmentId, request.carrier(), request.trackingNo()));
     }
 
@@ -83,24 +83,24 @@ public class FulfillmentController {
     @PostMapping("/carrier-routes")
     @ResponseStatus(HttpStatus.CREATED)
     public ApiResponse<CarrierRoute> createCarrierRoute(@Valid @RequestBody CreateCarrierRouteRequest request) {
-        return ApiResponse.ok(fulfillmentService.createCarrierRoute(request.carrierCode(),
-                request.originWarehouseCode(), request.destinationRegionCode(), request.priority(),
-                request.baseCost(), request.slaHours()));
+        return ApiResponse
+                .ok(fulfillmentService.createCarrierRoute(request.carrierCode(), request.originWarehouseCode(),
+                        request.destinationRegionCode(), request.priority(), request.baseCost(), request.slaHours()));
     }
 
     @GetMapping("/carrier-routes/{originWarehouseCode}/{destinationRegionCode}")
     public ApiResponse<List<CarrierRoute>> findCarrierRoutes(@PathVariable String originWarehouseCode,
-                                                             @PathVariable String destinationRegionCode) {
+            @PathVariable String destinationRegionCode) {
         return ApiResponse.ok(fulfillmentService.findCarrierRoutes(originWarehouseCode, destinationRegionCode));
     }
 
     @PostMapping("/orders/{fulfillmentId}/tracking-events")
     @ResponseStatus(HttpStatus.CREATED)
     public ApiResponse<TrackingEvent> ingestTrackingEvent(@PathVariable long fulfillmentId,
-                                                          @Valid @RequestBody TrackingEventRequest request) {
-        return ApiResponse.ok(fulfillmentService.ingestTrackingEvent(fulfillmentId, request.carrierCode(),
-                request.trackingNo(), request.eventCode(), request.eventTime(), request.location(),
-                request.description()));
+            @Valid @RequestBody TrackingEventRequest request) {
+        return ApiResponse
+                .ok(fulfillmentService.ingestTrackingEvent(fulfillmentId, request.carrierCode(), request.trackingNo(),
+                        request.eventCode(), request.eventTime(), request.location(), request.description()));
     }
 
     @GetMapping("/orders/{fulfillmentId}/tracking-events")
@@ -108,55 +108,28 @@ public class FulfillmentController {
         return ApiResponse.ok(fulfillmentService.findTrackingEvents(fulfillmentId));
     }
 
-    public record AllocateRequest(
-            @Positive long orderId,
-            @Positive long userId,
-            @Positive long skuId,
-            @Positive int quantity,
-            @NotBlank String warehouseCode
-    ) {
+    public record AllocateRequest(@Positive long orderId, @Positive long userId, @Positive long skuId,
+            @Positive int quantity, @NotBlank String warehouseCode) {
     }
 
-    public record AllocateWithPlanRequest(
-            @Positive long orderId,
-            @Positive long userId,
-            @Positive long skuId,
-            @Positive int quantity,
-            @NotBlank String destinationRegionCode
-    ) {
+    public record AllocateWithPlanRequest(@Positive long orderId, @Positive long userId, @Positive long skuId,
+            @Positive int quantity, @NotBlank String destinationRegionCode) {
     }
 
     public record ShipRequest(@NotBlank String carrier, @NotBlank String trackingNo) {
     }
 
-    public record UpsertWarehouseRequest(
-            @NotBlank String warehouseCode,
-            @NotBlank String regionCode,
-            @Min(0) int priority,
-            @Positive int dailyCapacity,
-            boolean enabled
-    ) {
+    public record UpsertWarehouseRequest(@NotBlank String warehouseCode, @NotBlank String regionCode,
+            @Min(0) int priority, @Positive int dailyCapacity, boolean enabled) {
     }
 
-    public record CreateCarrierRouteRequest(
-            @NotBlank String carrierCode,
-            @NotBlank String originWarehouseCode,
-            @NotBlank String destinationRegionCode,
-            @Min(0) int priority,
-            @NotNull
-            @DecimalMin("0.00") BigDecimal baseCost,
-            @Positive int slaHours
-    ) {
+    public record CreateCarrierRouteRequest(@NotBlank String carrierCode, @NotBlank String originWarehouseCode,
+            @NotBlank String destinationRegionCode, @Min(0) int priority,
+            @NotNull @DecimalMin("0.00") BigDecimal baseCost, @Positive int slaHours) {
     }
 
-    public record TrackingEventRequest(
-            @NotBlank String carrierCode,
-            @NotBlank String trackingNo,
-            @NotBlank String eventCode,
-            @NotNull
-            @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) Instant eventTime,
-            String location,
-            String description
-    ) {
+    public record TrackingEventRequest(@NotBlank String carrierCode, @NotBlank String trackingNo,
+            @NotBlank String eventCode, @NotNull @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) Instant eventTime,
+            String location, String description) {
     }
 }

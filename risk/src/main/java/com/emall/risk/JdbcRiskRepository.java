@@ -36,8 +36,8 @@ class JdbcRiskRepository implements RiskRepository {
 
     @Override
     public Optional<RiskRule> findRule(long ruleId) {
-        return jdbcTemplate.query("SELECT * FROM risk_rule WHERE rule_id = ?", this::mapRule, ruleId)
-                .stream().findFirst();
+        return jdbcTemplate.query("SELECT * FROM risk_rule WHERE rule_id = ?", this::mapRule, ruleId).stream()
+                .findFirst();
     }
 
     @Override
@@ -63,8 +63,8 @@ class JdbcRiskRepository implements RiskRepository {
 
     @Override
     public Optional<DeviceReputation> findDevice(String deviceId) {
-        return jdbcTemplate.query("SELECT * FROM risk_device_reputation WHERE device_id = ?",
-                this::mapDevice, deviceId).stream().findFirst();
+        return jdbcTemplate.query("SELECT * FROM risk_device_reputation WHERE device_id = ?", this::mapDevice, deviceId)
+                .stream().findFirst();
     }
 
     @Override
@@ -90,23 +90,22 @@ class JdbcRiskRepository implements RiskRepository {
     }
 
     private RiskRule mapRule(ResultSet rs, int rowNum) throws SQLException {
-        return new RiskRule(rs.getLong("rule_id"), RiskScene.valueOf(rs.getString("scene")),
-                rs.getString("rule_code"), rs.getString("field_name"),
-                RuleOperator.valueOf(rs.getString("operator")), rs.getBigDecimal("threshold_value"),
-                RiskLevel.valueOf(rs.getString("risk_level")), RuleStatus.valueOf(rs.getString("status")),
-                rs.getTimestamp("created_at").toInstant(), rs.getTimestamp("updated_at").toInstant());
+        return new RiskRule(rs.getLong("rule_id"), RiskScene.valueOf(rs.getString("scene")), rs.getString("rule_code"),
+                rs.getString("field_name"), RuleOperator.valueOf(rs.getString("operator")),
+                rs.getBigDecimal("threshold_value"), RiskLevel.valueOf(rs.getString("risk_level")),
+                RuleStatus.valueOf(rs.getString("status")), rs.getTimestamp("created_at").toInstant(),
+                rs.getTimestamp("updated_at").toInstant());
     }
 
     private DeviceReputation mapDevice(ResultSet rs, int rowNum) throws SQLException {
-        return new DeviceReputation(rs.getString("device_id"), rs.getInt("reputation_score"),
-                rs.getBoolean("risky"), rs.getTimestamp("updated_at").toInstant());
+        return new DeviceReputation(rs.getString("device_id"), rs.getInt("reputation_score"), rs.getBoolean("risky"),
+                rs.getTimestamp("updated_at").toInstant());
     }
 
     private RiskEvent mapEvent(ResultSet rs, int rowNum) throws SQLException {
         return new RiskEvent(rs.getLong("event_id"), RiskScene.valueOf(rs.getString("scene")),
-                rs.getString("subject_id"), rs.getString("device_id"), rs.getString("ip"),
-                rs.getBigDecimal("amount"), rs.getInt("velocity"), rs.getInt("score"),
-                RiskLevel.valueOf(rs.getString("risk_level")), rs.getString("reason"),
-                rs.getTimestamp("occurred_at").toInstant());
+                rs.getString("subject_id"), rs.getString("device_id"), rs.getString("ip"), rs.getBigDecimal("amount"),
+                rs.getInt("velocity"), rs.getInt("score"), RiskLevel.valueOf(rs.getString("risk_level")),
+                rs.getString("reason"), rs.getTimestamp("occurred_at").toInstant());
     }
 }

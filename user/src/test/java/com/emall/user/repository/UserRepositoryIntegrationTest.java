@@ -18,10 +18,8 @@ import org.testcontainers.junit.jupiter.Testcontainers;
 @Testcontainers(disabledWithoutDocker = true)
 class UserRepositoryIntegrationTest {
     @Container
-    static final MySQLContainer<?> mysql = new MySQLContainer<>("mysql:8.4")
-            .withDatabaseName("emall_user")
-            .withUsername("emall")
-            .withPassword("emall");
+    static final MySQLContainer<?> mysql = new MySQLContainer<>("mysql:8.4").withDatabaseName("emall_user")
+            .withUsername("emall").withPassword("emall");
 
     @Autowired
     private UserRepository userRepository;
@@ -40,10 +38,7 @@ class UserRepositoryIntegrationTest {
 
         userRepository.save(user);
 
-        assertThat(userRepository.findByMobile("15500000000"))
-                .isPresent()
-                .get()
-                .extracting(UserAccount::userId)
+        assertThat(userRepository.findByMobile("15500000000")).isPresent().get().extracting(UserAccount::userId)
                 .isEqualTo(1L);
     }
 }

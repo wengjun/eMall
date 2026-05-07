@@ -32,8 +32,7 @@ public class JdbcPaymentSettlementRepository implements PaymentSettlementReposit
                         (ledger_id, payment_id, order_id, user_id, direction, amount, currency, business_type,
                          reference_id, created_at)
                     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-                    """,
-                    entry.ledgerId(), entry.paymentId(), entry.orderId(), entry.userId(), entry.direction().name(),
+                    """, entry.ledgerId(), entry.paymentId(), entry.orderId(), entry.userId(), entry.direction().name(),
                     entry.amount(), entry.currency(), entry.businessType(), entry.referenceId(),
                     Timestamp.from(entry.createdAt()));
         } catch (DuplicateKeyException ignored) {
@@ -49,10 +48,10 @@ public class JdbcPaymentSettlementRepository implements PaymentSettlementReposit
                         (statement_id, channel, channel_trade_no, payment_id, amount, statement_type, occurred_at,
                          reconciled, created_at)
                     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
-                    """,
-                    statement.statementId(), statement.channel(), statement.channelTradeNo(), statement.paymentId(),
-                    statement.amount(), statement.statementType().name(), Timestamp.from(statement.occurredAt()),
-                    statement.reconciled(), Timestamp.from(statement.createdAt()));
+                    """, statement.statementId(), statement.channel(), statement.channelTradeNo(),
+                    statement.paymentId(), statement.amount(), statement.statementType().name(),
+                    Timestamp.from(statement.occurredAt()), statement.reconciled(),
+                    Timestamp.from(statement.createdAt()));
         } catch (DuplicateKeyException ignored) {
         }
         return statement;
@@ -88,8 +87,7 @@ public class JdbcPaymentSettlementRepository implements PaymentSettlementReposit
                         (record_id, statement_id, payment_id, channel_trade_no, statement_type, status, message,
                          created_at)
                     VALUES (?, ?, ?, ?, ?, ?, ?, ?)
-                    """,
-                    record.recordId(), record.statementId(), record.paymentId(), record.channelTradeNo(),
+                    """, record.recordId(), record.statementId(), record.paymentId(), record.channelTradeNo(),
                     record.statementType().name(), record.status().name(), record.message(),
                     Timestamp.from(record.createdAt()));
         } catch (DuplicateKeyException ignored) {
@@ -104,15 +102,9 @@ public class JdbcPaymentSettlementRepository implements PaymentSettlementReposit
     }
 
     private PaymentChannelStatement mapStatement(ResultSet rs, int rowNum) throws SQLException {
-        return new PaymentChannelStatement(
-                rs.getLong("statement_id"),
-                rs.getString("channel"),
-                rs.getString("channel_trade_no"),
-                rs.getLong("payment_id"),
-                rs.getBigDecimal("amount"),
-                StatementType.valueOf(rs.getString("statement_type")),
-                rs.getTimestamp("occurred_at").toInstant(),
-                rs.getBoolean("reconciled"),
-                rs.getTimestamp("created_at").toInstant());
+        return new PaymentChannelStatement(rs.getLong("statement_id"), rs.getString("channel"),
+                rs.getString("channel_trade_no"), rs.getLong("payment_id"), rs.getBigDecimal("amount"),
+                StatementType.valueOf(rs.getString("statement_type")), rs.getTimestamp("occurred_at").toInstant(),
+                rs.getBoolean("reconciled"), rs.getTimestamp("created_at").toInstant());
     }
 }

@@ -9,13 +9,12 @@ import org.junit.jupiter.api.Test;
 class CheckoutLoadTestApplicationTest {
     @Test
     void shouldParseCliOptionsAndNormalizeBaseUrl() throws Exception {
-        Class<?> optionsType = Class.forName(
-                "com.emall.loadtest.CheckoutLoadTestApplication$LoadTestOptions");
+        Class<?> optionsType = Class.forName("com.emall.loadtest.CheckoutLoadTestApplication$LoadTestOptions");
         Method from = optionsType.getDeclaredMethod("from", String[].class);
         from.setAccessible(true);
 
-        Object options = from.invoke(null,
-                (Object) new String[] {"http://localhost:8080/", "10", "5", "3", "read-heavy"});
+        Object options =
+                from.invoke(null, (Object) new String[]{"http://localhost:8080/", "10", "5", "3", "read-heavy"});
         Object scenario = invoke(optionsType, options, "scenario");
 
         assertThat(invoke(optionsType, options, "baseUrl")).isEqualTo("http://localhost:8080");

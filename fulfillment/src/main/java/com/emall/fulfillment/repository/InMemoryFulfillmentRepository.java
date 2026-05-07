@@ -52,8 +52,7 @@ public class InMemoryFulfillmentRepository implements FulfillmentRepository {
 
     @Override
     public List<WarehouseNode> findEnabledWarehouses() {
-        return warehouses.values().stream()
-                .filter(WarehouseNode::enabled)
+        return warehouses.values().stream().filter(WarehouseNode::enabled)
                 .sorted(Comparator.comparing(WarehouseNode::regionCode).thenComparingInt(WarehouseNode::priority))
                 .toList();
     }
@@ -71,12 +70,10 @@ public class InMemoryFulfillmentRepository implements FulfillmentRepository {
 
     @Override
     public List<CarrierRoute> findActiveCarrierRoutes(String originWarehouseCode, String destinationRegionCode) {
-        return carrierRoutes.values().stream()
-                .filter(CarrierRoute::active)
+        return carrierRoutes.values().stream().filter(CarrierRoute::active)
                 .filter(route -> route.originWarehouseCode().equals(originWarehouseCode))
                 .filter(route -> route.destinationRegionCode().equals(destinationRegionCode))
-                .sorted(Comparator.comparingInt(CarrierRoute::priority).thenComparing(CarrierRoute::baseCost))
-                .toList();
+                .sorted(Comparator.comparingInt(CarrierRoute::priority).thenComparing(CarrierRoute::baseCost)).toList();
     }
 
     @Override
@@ -87,8 +84,7 @@ public class InMemoryFulfillmentRepository implements FulfillmentRepository {
 
     @Override
     public List<TrackingEvent> findTrackingEvents(long fulfillmentId) {
-        return trackingEvents.values().stream()
-                .filter(event -> event.fulfillmentId() == fulfillmentId)
+        return trackingEvents.values().stream().filter(event -> event.fulfillmentId() == fulfillmentId)
                 .sorted(Comparator.comparing(TrackingEvent::eventTime).thenComparingLong(TrackingEvent::eventId))
                 .toList();
     }

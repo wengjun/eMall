@@ -12,8 +12,7 @@ class InMemoryDistributedTaskLockTest {
     @Test
     void shouldExecuteTaskWhenLockIsAcquired() {
         DistributedTaskLock taskLock = new InMemoryDistributedTaskLock(
-                Clock.fixed(Instant.parse("2026-01-01T00:00:00Z"), ZoneOffset.UTC),
-                "node-a");
+                Clock.fixed(Instant.parse("2026-01-01T00:00:00Z"), ZoneOffset.UTC), "node-a");
 
         int result = taskLock.executeIfAcquired("order.compensation", Duration.ofSeconds(30), () -> 7);
 

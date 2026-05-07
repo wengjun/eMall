@@ -12,11 +12,10 @@ enum AdStatus {
 }
 
 record AdCampaign(long campaignId, long merchantId, String name, BigDecimal dailyBudget, BigDecimal usedBudget,
-                  BigDecimal bidAmount, AdStatus status, Instant startsAt, Instant endsAt,
-                  Instant createdAt, Instant updatedAt) {
+        BigDecimal bidAmount, AdStatus status, Instant startsAt, Instant endsAt, Instant createdAt, Instant updatedAt) {
     AdCampaign changeStatus(AdStatus nextStatus) {
-        return new AdCampaign(campaignId, merchantId, name, dailyBudget, usedBudget, bidAmount, nextStatus,
-                startsAt, endsAt, createdAt, Instant.now());
+        return new AdCampaign(campaignId, merchantId, name, dailyBudget, usedBudget, bidAmount, nextStatus, startsAt,
+                endsAt, createdAt, Instant.now());
     }
 
     AdCampaign consume(BigDecimal cost) {

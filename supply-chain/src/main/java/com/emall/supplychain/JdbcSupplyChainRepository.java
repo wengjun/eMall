@@ -35,8 +35,8 @@ class JdbcSupplyChainRepository implements SupplyChainRepository {
 
     @Override
     public Optional<WarehouseReceipt> findReceipt(long receiptId) {
-        return jdbcTemplate.query("SELECT * FROM warehouse_receipt WHERE receipt_id = ?", this::mapReceipt,
-                receiptId).stream().findFirst();
+        return jdbcTemplate.query("SELECT * FROM warehouse_receipt WHERE receipt_id = ?", this::mapReceipt, receiptId)
+                .stream().findFirst();
     }
 
     @Override
@@ -60,8 +60,9 @@ class JdbcSupplyChainRepository implements SupplyChainRepository {
 
     @Override
     public Optional<InventoryTransfer> findTransfer(long transferId) {
-        return jdbcTemplate.query("SELECT * FROM inventory_transfer WHERE transfer_id = ?", this::mapTransfer,
-                transferId).stream().findFirst();
+        return jdbcTemplate
+                .query("SELECT * FROM inventory_transfer WHERE transfer_id = ?", this::mapTransfer, transferId).stream()
+                .findFirst();
     }
 
     @Override
@@ -90,8 +91,8 @@ class JdbcSupplyChainRepository implements SupplyChainRepository {
 
     @Override
     public Optional<LogisticsWaybill> findWaybill(long waybillId) {
-        return jdbcTemplate.query("SELECT * FROM logistics_waybill WHERE waybill_id = ?", this::mapWaybill,
-                waybillId).stream().findFirst();
+        return jdbcTemplate.query("SELECT * FROM logistics_waybill WHERE waybill_id = ?", this::mapWaybill, waybillId)
+                .stream().findFirst();
     }
 
     @Override
@@ -100,25 +101,23 @@ class JdbcSupplyChainRepository implements SupplyChainRepository {
     }
 
     private WarehouseReceipt mapReceipt(ResultSet rs, int rowNum) throws SQLException {
-        return new WarehouseReceipt(rs.getLong("receipt_id"), rs.getLong("sku_id"),
-                rs.getString("warehouse_code"), rs.getString("batch_no"), rs.getInt("quantity"),
-                rs.getDate("expires_on").toLocalDate(), ReceiptStatus.valueOf(rs.getString("status")),
-                rs.getTimestamp("created_at").toInstant(), rs.getTimestamp("updated_at").toInstant());
+        return new WarehouseReceipt(rs.getLong("receipt_id"), rs.getLong("sku_id"), rs.getString("warehouse_code"),
+                rs.getString("batch_no"), rs.getInt("quantity"), rs.getDate("expires_on").toLocalDate(),
+                ReceiptStatus.valueOf(rs.getString("status")), rs.getTimestamp("created_at").toInstant(),
+                rs.getTimestamp("updated_at").toInstant());
     }
 
     private InventoryTransfer mapTransfer(ResultSet rs, int rowNum) throws SQLException {
-        return new InventoryTransfer(rs.getLong("transfer_id"), rs.getLong("sku_id"),
-                rs.getString("from_warehouse"), rs.getString("to_warehouse"), rs.getInt("quantity"),
-                TransferStatus.valueOf(rs.getString("status")), rs.getTimestamp("created_at").toInstant(),
-                rs.getTimestamp("updated_at").toInstant());
+        return new InventoryTransfer(rs.getLong("transfer_id"), rs.getLong("sku_id"), rs.getString("from_warehouse"),
+                rs.getString("to_warehouse"), rs.getInt("quantity"), TransferStatus.valueOf(rs.getString("status")),
+                rs.getTimestamp("created_at").toInstant(), rs.getTimestamp("updated_at").toInstant());
     }
 
     private LogisticsWaybill mapWaybill(ResultSet rs, int rowNum) throws SQLException {
         Timestamp deliveredAt = rs.getTimestamp("delivered_at");
-        return new LogisticsWaybill(rs.getLong("waybill_id"), rs.getLong("order_id"),
-                rs.getString("carrier_code"), rs.getString("route_code"), rs.getInt("sla_hours"),
-                WaybillStatus.valueOf(rs.getString("status")), rs.getString("exception_reason"),
-                deliveredAt == null ? null : deliveredAt.toInstant(), rs.getTimestamp("created_at").toInstant(),
-                rs.getTimestamp("updated_at").toInstant());
+        return new LogisticsWaybill(rs.getLong("waybill_id"), rs.getLong("order_id"), rs.getString("carrier_code"),
+                rs.getString("route_code"), rs.getInt("sla_hours"), WaybillStatus.valueOf(rs.getString("status")),
+                rs.getString("exception_reason"), deliveredAt == null ? null : deliveredAt.toInstant(),
+                rs.getTimestamp("created_at").toInstant(), rs.getTimestamp("updated_at").toInstant());
     }
 }

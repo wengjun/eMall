@@ -27,10 +27,8 @@ public class InMemoryCartRepository implements CartRepository {
 
     @Override
     public List<CartItem> findByUserId(long userId) {
-        return items.values().stream()
-                .filter(item -> item.userId() == userId)
-                .sorted(Comparator.comparing(CartItem::updatedAt).reversed())
-                .toList();
+        return items.values().stream().filter(item -> item.userId() == userId)
+                .sorted(Comparator.comparing(CartItem::updatedAt).reversed()).toList();
     }
 
     @Override
@@ -40,8 +38,7 @@ public class InMemoryCartRepository implements CartRepository {
 
     @Override
     public void clearSelected(long userId) {
-        items.values().stream()
-                .filter(item -> item.userId() == userId && item.selected())
+        items.values().stream().filter(item -> item.userId() == userId && item.selected())
                 .forEach(item -> items.remove(key(item.userId(), item.skuId())));
     }
 

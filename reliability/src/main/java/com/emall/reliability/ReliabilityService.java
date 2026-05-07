@@ -22,8 +22,8 @@ class ReliabilityService {
     @Transactional
     CapacityRehearsal createRehearsal(String serviceName, int targetQps, int peakConcurrency) {
         Instant now = Instant.now();
-        return repository.saveRehearsal(new CapacityRehearsal(idGenerator.nextId(), normalize(serviceName),
-                targetQps, peakConcurrency, GateStatus.OPEN, now, now));
+        return repository.saveRehearsal(new CapacityRehearsal(idGenerator.nextId(), normalize(serviceName), targetQps,
+                peakConcurrency, GateStatus.OPEN, now, now));
     }
 
     @Transactional
@@ -35,9 +35,9 @@ class ReliabilityService {
 
     @Transactional
     SloObjective defineSlo(String serviceName, BigDecimal availabilityTarget, int latencyP95Ms,
-                           BigDecimal errorBudgetPercent) {
-        return repository.saveSlo(new SloObjective(idGenerator.nextId(), normalize(serviceName),
-                availabilityTarget, latencyP95Ms, errorBudgetPercent, Instant.now()));
+            BigDecimal errorBudgetPercent) {
+        return repository.saveSlo(new SloObjective(idGenerator.nextId(), normalize(serviceName), availabilityTarget,
+                latencyP95Ms, errorBudgetPercent, Instant.now()));
     }
 
     @Transactional
@@ -58,7 +58,7 @@ class ReliabilityService {
 
     @Transactional
     ReadinessGate evaluateReadiness(String serviceName, boolean runbookReady, boolean dashboardReady,
-                                    boolean rollbackReady) {
+            boolean rollbackReady) {
         GateStatus status = runbookReady && dashboardReady && rollbackReady ? GateStatus.PASSED : GateStatus.BLOCKED;
         Instant now = Instant.now();
         return repository.saveReadinessGate(new ReadinessGate(idGenerator.nextId(), normalize(serviceName),
@@ -67,11 +67,9 @@ class ReliabilityService {
 
     ReliabilitySummary summary() {
         int approvedChaos = (int) repository.findChaosSchedules().stream()
-                .filter(chaos -> chaos.approvalStatus() == GateStatus.PASSED)
-                .count();
+                .filter(chaos -> chaos.approvalStatus() == GateStatus.PASSED).count();
         int blockedGates = (int) repository.findReadinessGates().stream()
-                .filter(gate -> gate.status() == GateStatus.BLOCKED)
-                .count();
+                .filter(gate -> gate.status() == GateStatus.BLOCKED).count();
         return new ReliabilitySummary(repository.findRehearsals().size(), approvedChaos, blockedGates,
                 repository.findSlos().size());
     }

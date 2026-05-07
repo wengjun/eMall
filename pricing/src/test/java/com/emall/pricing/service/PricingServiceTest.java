@@ -25,9 +25,8 @@ class PricingServiceTest {
 
     @Test
     void shouldRejectSalePriceGreaterThanListPrice() {
-        assertThatThrownBy(() -> pricingService.upsert(30001L,
-                new BigDecimal("99.00"), new BigDecimal("100.00"), "CNY", true))
-                .isInstanceOf(BusinessException.class)
-                .hasMessageContaining("sale price cannot exceed list price");
+        assertThatThrownBy(
+                () -> pricingService.upsert(30001L, new BigDecimal("99.00"), new BigDecimal("100.00"), "CNY", true))
+                .isInstanceOf(BusinessException.class).hasMessageContaining("sale price cannot exceed list price");
     }
 }

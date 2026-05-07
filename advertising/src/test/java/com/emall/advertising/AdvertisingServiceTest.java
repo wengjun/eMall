@@ -13,8 +13,8 @@ class AdvertisingServiceTest {
 
     @Test
     void ranksSponsoredItemsAndChargesClickCost() {
-        AdCampaign campaign = service.createCampaign(1001L, "phone ads", new BigDecimal("100"),
-                new BigDecimal("2.50"), Instant.now().minusSeconds(60), Instant.now().plusSeconds(3600));
+        AdCampaign campaign = service.createCampaign(1001L, "phone ads", new BigDecimal("100"), new BigDecimal("2.50"),
+                Instant.now().minusSeconds(60), Instant.now().plusSeconds(3600));
         service.addCreative(campaign.campaignId(), 2001L, "Flagship Phone", "https://example.com/p/2001");
         service.addTarget(campaign.campaignId(), "phone", new BigDecimal("1.20"));
         service.changeStatus(campaign.campaignId(), AdStatus.ACTIVE);

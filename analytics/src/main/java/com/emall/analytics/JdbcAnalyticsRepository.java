@@ -109,8 +109,9 @@ class JdbcAnalyticsRepository implements AnalyticsRepository {
 
     @Override
     public Optional<PrivacyRequest> findPrivacyRequest(long requestId) {
-        return jdbcTemplate.query("SELECT * FROM privacy_request WHERE request_id = ?", this::mapPrivacyRequest,
-                requestId).stream().findFirst();
+        return jdbcTemplate
+                .query("SELECT * FROM privacy_request WHERE request_id = ?", this::mapPrivacyRequest, requestId)
+                .stream().findFirst();
     }
 
     @Override
@@ -137,8 +138,8 @@ class JdbcAnalyticsRepository implements AnalyticsRepository {
     }
 
     private PrivacyRequest mapPrivacyRequest(ResultSet rs, int rowNum) throws SQLException {
-        return new PrivacyRequest(rs.getLong("request_id"), rs.getLong("user_id"),
-                rs.getString("request_type"), PrivacyRequestStatus.valueOf(rs.getString("status")),
-                rs.getTimestamp("created_at").toInstant(), rs.getTimestamp("updated_at").toInstant());
+        return new PrivacyRequest(rs.getLong("request_id"), rs.getLong("user_id"), rs.getString("request_type"),
+                PrivacyRequestStatus.valueOf(rs.getString("status")), rs.getTimestamp("created_at").toInstant(),
+                rs.getTimestamp("updated_at").toInstant());
     }
 }

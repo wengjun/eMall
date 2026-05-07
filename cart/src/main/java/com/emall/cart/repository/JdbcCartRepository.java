@@ -26,16 +26,14 @@ public class JdbcCartRepository implements CartRepository {
                 VALUES (?, ?, ?, ?, ?)
                 ON DUPLICATE KEY UPDATE quantity = VALUES(quantity), selected = VALUES(selected),
                     updated_at = VALUES(updated_at)
-                """,
-                item.userId(), item.skuId(), item.quantity(), item.selected(), Timestamp.from(item.updatedAt()));
+                """, item.userId(), item.skuId(), item.quantity(), item.selected(), Timestamp.from(item.updatedAt()));
         return item;
     }
 
     @Override
     public Optional<CartItem> find(long userId, long skuId) {
         return jdbcTemplate.query("SELECT * FROM cart_item WHERE user_id = ? AND sku_id = ?", this::map, userId, skuId)
-                .stream()
-                .findFirst();
+                .stream().findFirst();
     }
 
     @Override
@@ -55,11 +53,7 @@ public class JdbcCartRepository implements CartRepository {
     }
 
     private CartItem map(ResultSet rs, int rowNum) throws SQLException {
-        return new CartItem(
-                rs.getLong("user_id"),
-                rs.getLong("sku_id"),
-                rs.getInt("quantity"),
-                rs.getBoolean("selected"),
-                rs.getTimestamp("updated_at").toInstant());
+        return new CartItem(rs.getLong("user_id"), rs.getLong("sku_id"), rs.getInt("quantity"),
+                rs.getBoolean("selected"), rs.getTimestamp("updated_at").toInstant());
     }
 }

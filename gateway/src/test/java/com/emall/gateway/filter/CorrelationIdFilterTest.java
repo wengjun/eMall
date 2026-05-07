@@ -14,8 +14,7 @@ class CorrelationIdFilterTest {
 
     @Test
     void shouldGenerateTraceIdWhenRequestDoesNotProvideOne() {
-        MockServerWebExchange exchange = MockServerWebExchange.from(
-                MockServerHttpRequest.get("/api/products").build());
+        MockServerWebExchange exchange = MockServerWebExchange.from(MockServerHttpRequest.get("/api/products").build());
         AtomicReference<ServerWebExchange> forwardedExchange = new AtomicReference<>();
 
         filter.filter(exchange, current -> {
@@ -23,10 +22,9 @@ class CorrelationIdFilterTest {
             return Mono.empty();
         }).block();
 
-        String responseTraceId = exchange.getResponse().getHeaders()
-                .getFirst(CorrelationIdFilter.TRACE_ID_HEADER);
-        String forwardedTraceId = forwardedExchange.get().getRequest().getHeaders()
-                .getFirst(CorrelationIdFilter.TRACE_ID_HEADER);
+        String responseTraceId = exchange.getResponse().getHeaders().getFirst(CorrelationIdFilter.TRACE_ID_HEADER);
+        String forwardedTraceId =
+                forwardedExchange.get().getRequest().getHeaders().getFirst(CorrelationIdFilter.TRACE_ID_HEADER);
 
         assertThat(responseTraceId).isNotBlank();
         assertThat(forwardedTraceId).isEqualTo(responseTraceId);
@@ -34,10 +32,8 @@ class CorrelationIdFilterTest {
 
     @Test
     void shouldPreserveExistingTraceId() {
-        MockServerWebExchange exchange = MockServerWebExchange.from(
-                MockServerHttpRequest.get("/api/products")
-                        .header(CorrelationIdFilter.TRACE_ID_HEADER, "trace-001")
-                        .build());
+        MockServerWebExchange exchange = MockServerWebExchange.from(MockServerHttpRequest.get("/api/products")
+                .header(CorrelationIdFilter.TRACE_ID_HEADER, "trace-001").build());
         AtomicReference<ServerWebExchange> forwardedExchange = new AtomicReference<>();
 
         filter.filter(exchange, current -> {
@@ -47,8 +43,7 @@ class CorrelationIdFilterTest {
 
         assertThat(exchange.getResponse().getHeaders().getFirst(CorrelationIdFilter.TRACE_ID_HEADER))
                 .isEqualTo("trace-001");
-        assertThat(forwardedExchange.get().getRequest().getHeaders()
-                .getFirst(CorrelationIdFilter.TRACE_ID_HEADER))
+        assertThat(forwardedExchange.get().getRequest().getHeaders().getFirst(CorrelationIdFilter.TRACE_ID_HEADER))
                 .isEqualTo("trace-001");
     }
 }

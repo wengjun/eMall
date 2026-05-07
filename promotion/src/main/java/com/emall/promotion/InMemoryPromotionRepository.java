@@ -26,16 +26,13 @@ class InMemoryPromotionRepository implements PromotionRepository {
 
     @Override
     public List<PromotionCampaign> findActiveCampaigns() {
-        return campaigns.values().stream()
-                .filter(campaign -> campaign.status() == CampaignStatus.ACTIVE)
-                .sorted(Comparator.comparingInt(PromotionCampaign::priority))
-                .toList();
+        return campaigns.values().stream().filter(campaign -> campaign.status() == CampaignStatus.ACTIVE)
+                .sorted(Comparator.comparingInt(PromotionCampaign::priority)).toList();
     }
 
     @Override
     public List<PromotionCampaign> findCampaigns() {
-        return campaigns.values().stream()
-                .sorted(Comparator.comparing(PromotionCampaign::createdAt).reversed())
+        return campaigns.values().stream().sorted(Comparator.comparing(PromotionCampaign::createdAt).reversed())
                 .toList();
     }
 }

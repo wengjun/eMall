@@ -29,16 +29,14 @@ public class JdbcSearchRepository implements SearchRepository {
                 VALUES (?, ?, ?, ?, ?, ?, ?)
                 ON DUPLICATE KEY UPDATE title = VALUES(title), category = VALUES(category), price = VALUES(price),
                     tags = VALUES(tags), saleable = VALUES(saleable), indexed_at = VALUES(indexed_at)
-                """,
-                document.skuId(), document.title(), document.category(), document.price(), serialize(document.tags()),
-                document.saleable(), Timestamp.from(document.indexedAt()));
+                """, document.skuId(), document.title(), document.category(), document.price(),
+                serialize(document.tags()), document.saleable(), Timestamp.from(document.indexedAt()));
         return document;
     }
 
     @Override
     public Optional<SearchDocument> findBySkuId(long skuId) {
-        return jdbcTemplate.query("SELECT * FROM search_document WHERE sku_id = ?", this::map, skuId)
-                .stream()
+        return jdbcTemplate.query("SELECT * FROM search_document WHERE sku_id = ?", this::map, skuId).stream()
                 .findFirst();
     }
 
@@ -59,13 +57,8 @@ public class JdbcSearchRepository implements SearchRepository {
     }
 
     private SearchDocument map(ResultSet rs, int rowNum) throws SQLException {
-        return new SearchDocument(
-                rs.getLong("sku_id"),
-                rs.getString("title"),
-                rs.getString("category"),
-                rs.getBigDecimal("price"),
-                deserialize(rs.getString("tags")),
-                rs.getBoolean("saleable"),
+        return new SearchDocument(rs.getLong("sku_id"), rs.getString("title"), rs.getString("category"),
+                rs.getBigDecimal("price"), deserialize(rs.getString("tags")), rs.getBoolean("saleable"),
                 rs.getTimestamp("indexed_at").toInstant());
     }
 
@@ -77,8 +70,6 @@ public class JdbcSearchRepository implements SearchRepository {
         if (tags == null || tags.isBlank()) {
             return Set.of();
         }
-        return Arrays.stream(tags.split(","))
-                .filter(tag -> !tag.isBlank())
-                .collect(Collectors.toUnmodifiableSet());
+        return Arrays.stream(tags.split(",")).filter(tag -> !tag.isBlank()).collect(Collectors.toUnmodifiableSet());
     }
 }

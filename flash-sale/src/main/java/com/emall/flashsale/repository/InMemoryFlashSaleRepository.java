@@ -77,8 +77,7 @@ public class InMemoryFlashSaleRepository implements FlashSaleRepository {
     @Override
     public int countTokensByUser(long campaignId, long userId) {
         return (int) tokens.values().stream()
-                .filter(token -> token.campaignId() == campaignId && token.userId() == userId)
-                .count();
+                .filter(token -> token.campaignId() == campaignId && token.userId() == userId).count();
     }
 
     @Override
@@ -94,20 +93,16 @@ public class InMemoryFlashSaleRepository implements FlashSaleRepository {
 
     @Override
     public List<FlashSaleOrderRequest> findQueuedRequests(long campaignId, int limit) {
-        return requests.values().stream()
-                .filter(request -> request.campaignId() == campaignId)
+        return requests.values().stream().filter(request -> request.campaignId() == campaignId)
                 .filter(request -> request.status() == FlashSaleRequestStatus.QUEUED)
                 .sorted(Comparator.comparing(FlashSaleOrderRequest::createdAt)
                         .thenComparingLong(FlashSaleOrderRequest::requestId))
-                .limit(limit)
-                .toList();
+                .limit(limit).toList();
     }
 
     @Override
     public int countQueuedRequests(long campaignId) {
-        return (int) requests.values().stream()
-                .filter(request -> request.campaignId() == campaignId)
-                .filter(request -> request.status() == FlashSaleRequestStatus.QUEUED)
-                .count();
+        return (int) requests.values().stream().filter(request -> request.campaignId() == campaignId)
+                .filter(request -> request.status() == FlashSaleRequestStatus.QUEUED).count();
     }
 }

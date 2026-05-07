@@ -31,8 +31,7 @@ public class JdbcRecommendationRepository implements RecommendationRepository {
                     (user_id, category_code, affinity_score, updated_at)
                 VALUES (?, ?, ?, ?)
                 ON DUPLICATE KEY UPDATE affinity_score = VALUES(affinity_score), updated_at = VALUES(updated_at)
-                """,
-                preference.userId(), preference.categoryCode(), preference.affinityScore(),
+                """, preference.userId(), preference.categoryCode(), preference.affinityScore(),
                 Timestamp.from(preference.updatedAt()));
         return preference;
     }
@@ -63,16 +62,16 @@ public class JdbcRecommendationRepository implements RecommendationRepository {
                 ON DUPLICATE KEY UPDATE category_code = VALUES(category_code), base_score = VALUES(base_score),
                     popularity_score = VALUES(popularity_score), active = VALUES(active),
                     updated_at = VALUES(updated_at)
-                """,
-                feature.skuId(), feature.categoryCode(), feature.baseScore(), feature.popularityScore(),
+                """, feature.skuId(), feature.categoryCode(), feature.baseScore(), feature.popularityScore(),
                 feature.active(), Timestamp.from(feature.updatedAt()));
         return feature;
     }
 
     @Override
     public Optional<ItemFeature> findItemFeature(long skuId) {
-        return jdbcTemplate.query("SELECT * FROM recommendation_item_feature WHERE sku_id = ?",
-                this::mapItemFeature, skuId).stream().findFirst();
+        return jdbcTemplate
+                .query("SELECT * FROM recommendation_item_feature WHERE sku_id = ?", this::mapItemFeature, skuId)
+                .stream().findFirst();
     }
 
     @Override
@@ -91,9 +90,8 @@ public class JdbcRecommendationRepository implements RecommendationRepository {
                 INSERT INTO recommendation_behavior_event
                     (event_id, user_id, sku_id, category_code, behavior_type, weight, occurred_at)
                 VALUES (?, ?, ?, ?, ?, ?, ?)
-                """,
-                event.eventId(), event.userId(), event.skuId(), event.categoryCode(),
-                event.behaviorType().name(), event.weight(), Timestamp.from(event.occurredAt()));
+                """, event.eventId(), event.userId(), event.skuId(), event.categoryCode(), event.behaviorType().name(),
+                event.weight(), Timestamp.from(event.occurredAt()));
         return event;
     }
 
@@ -107,8 +105,7 @@ public class JdbcRecommendationRepository implements RecommendationRepository {
                 ON DUPLICATE KEY UPDATE name = VALUES(name), traffic_percent = VALUES(traffic_percent),
                     control_strategy = VALUES(control_strategy), treatment_strategy = VALUES(treatment_strategy),
                     status = VALUES(status), updated_at = VALUES(updated_at)
-                """,
-                experiment.experimentId(), experiment.scene(), experiment.name(), experiment.trafficPercent(),
+                """, experiment.experimentId(), experiment.scene(), experiment.name(), experiment.trafficPercent(),
                 experiment.controlStrategy(), experiment.treatmentStrategy(), experiment.status().name(),
                 Timestamp.from(experiment.createdAt()), Timestamp.from(experiment.updatedAt()));
         return experiment;
@@ -131,44 +128,26 @@ public class JdbcRecommendationRepository implements RecommendationRepository {
     }
 
     private UserPreference mapPreference(ResultSet rs, int rowNum) throws SQLException {
-        return new UserPreference(
-                rs.getLong("user_id"),
-                rs.getString("category_code"),
-                rs.getInt("affinity_score"),
+        return new UserPreference(rs.getLong("user_id"), rs.getString("category_code"), rs.getInt("affinity_score"),
                 rs.getTimestamp("updated_at").toInstant());
     }
 
     private ItemFeature mapItemFeature(ResultSet rs, int rowNum) throws SQLException {
-        return new ItemFeature(
-                rs.getLong("sku_id"),
-                rs.getString("category_code"),
-                rs.getBigDecimal("base_score"),
-                rs.getBigDecimal("popularity_score"),
-                rs.getBoolean("active"),
+        return new ItemFeature(rs.getLong("sku_id"), rs.getString("category_code"), rs.getBigDecimal("base_score"),
+                rs.getBigDecimal("popularity_score"), rs.getBoolean("active"),
                 rs.getTimestamp("updated_at").toInstant());
     }
 
     private UserBehaviorEvent mapBehaviorEvent(ResultSet rs, int rowNum) throws SQLException {
-        return new UserBehaviorEvent(
-                rs.getLong("event_id"),
-                rs.getLong("user_id"),
-                rs.getLong("sku_id"),
-                rs.getString("category_code"),
-                BehaviorType.valueOf(rs.getString("behavior_type")),
-                rs.getInt("weight"),
+        return new UserBehaviorEvent(rs.getLong("event_id"), rs.getLong("user_id"), rs.getLong("sku_id"),
+                rs.getString("category_code"), BehaviorType.valueOf(rs.getString("behavior_type")), rs.getInt("weight"),
                 rs.getTimestamp("occurred_at").toInstant());
     }
 
     private Experiment mapExperiment(ResultSet rs, int rowNum) throws SQLException {
-        return new Experiment(
-                rs.getLong("experiment_id"),
-                rs.getString("scene"),
-                rs.getString("name"),
-                rs.getInt("traffic_percent"),
-                rs.getString("control_strategy"),
-                rs.getString("treatment_strategy"),
-                ExperimentStatus.valueOf(rs.getString("status")),
-                rs.getTimestamp("created_at").toInstant(),
+        return new Experiment(rs.getLong("experiment_id"), rs.getString("scene"), rs.getString("name"),
+                rs.getInt("traffic_percent"), rs.getString("control_strategy"), rs.getString("treatment_strategy"),
+                ExperimentStatus.valueOf(rs.getString("status")), rs.getTimestamp("created_at").toInstant(),
                 rs.getTimestamp("updated_at").toInstant());
     }
 }

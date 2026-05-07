@@ -22,14 +22,14 @@ enum TopicStatus {
 }
 
 record FeatureToggle(long toggleId, String flagKey, String serviceName, ToggleStatus status, int rolloutPercent,
-                     Instant createdAt, Instant updatedAt) {
+        Instant createdAt, Instant updatedAt) {
     FeatureToggle change(ToggleStatus nextStatus, int nextPercent) {
         return new FeatureToggle(toggleId, flagKey, serviceName, nextStatus, nextPercent, createdAt, Instant.now());
     }
 }
 
 record RolloutPlan(long rolloutId, String serviceName, String version, String strategy, int currentPercent,
-                   RolloutStatus status, Instant createdAt, Instant updatedAt) {
+        RolloutStatus status, Instant createdAt, Instant updatedAt) {
     RolloutPlan change(RolloutStatus nextStatus, int percent) {
         return new RolloutPlan(rolloutId, serviceName, version, strategy, percent, nextStatus, createdAt,
                 Instant.now());
@@ -37,7 +37,7 @@ record RolloutPlan(long rolloutId, String serviceName, String version, String st
 }
 
 record MessageTopicGovernance(long topicId, String topicName, String owner, String schemaVersion, long lagBudget,
-                              TopicStatus status, Instant createdAt, Instant updatedAt) {
+        TopicStatus status, Instant createdAt, Instant updatedAt) {
     MessageTopicGovernance changeStatus(TopicStatus nextStatus) {
         return new MessageTopicGovernance(topicId, topicName, owner, schemaVersion, lagBudget, nextStatus, createdAt,
                 Instant.now());
@@ -45,7 +45,7 @@ record MessageTopicGovernance(long topicId, String topicName, String owner, Stri
 }
 
 record ReplayPlan(long replayId, String topicName, String consumerGroup, long fromOffset, long toOffset,
-                  RolloutStatus status, Instant createdAt, Instant updatedAt) {
+        RolloutStatus status, Instant createdAt, Instant updatedAt) {
     ReplayPlan changeStatus(RolloutStatus nextStatus) {
         return new ReplayPlan(replayId, topicName, consumerGroup, fromOffset, toOffset, nextStatus, createdAt,
                 Instant.now());

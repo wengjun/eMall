@@ -42,9 +42,9 @@ public class RecommendationController {
 
     @PostMapping("/users/{userId}/preferences")
     public ApiResponse<UserPreference> upsertPreference(@PathVariable long userId,
-                                                        @Valid @RequestBody UpsertPreferenceRequest request) {
-        return ApiResponse.ok(recommendationService.upsertPreference(userId, request.categoryCode(),
-                request.affinityScore()));
+            @Valid @RequestBody UpsertPreferenceRequest request) {
+        return ApiResponse
+                .ok(recommendationService.upsertPreference(userId, request.categoryCode(), request.affinityScore()));
     }
 
     @GetMapping("/users/{userId}/preferences")
@@ -74,49 +74,32 @@ public class RecommendationController {
 
     @PatchMapping("/experiments/{experimentId}/status")
     public ApiResponse<Experiment> changeExperimentStatus(@PathVariable long experimentId,
-                                                          @Valid @RequestBody ChangeExperimentStatusRequest request) {
+            @Valid @RequestBody ChangeExperimentStatusRequest request) {
         return ApiResponse.ok(recommendationService.changeExperimentStatus(experimentId, request.status()));
     }
 
     @GetMapping
     public ApiResponse<List<RecommendationItem>> recommend(@RequestParam long userId,
-                                                           @RequestParam(defaultValue = "home") String scene,
-                                                           @RequestParam(defaultValue = "20") int limit) {
+            @RequestParam(defaultValue = "home") String scene, @RequestParam(defaultValue = "20") int limit) {
         return ApiResponse.ok(recommendationService.recommend(userId, scene, limit));
     }
 
-    public record UpsertPreferenceRequest(@NotBlank String categoryCode,
-                                          @Min(0) @Max(100) int affinityScore) {
+    public record UpsertPreferenceRequest(@NotBlank String categoryCode, @Min(0) @Max(100) int affinityScore) {
     }
 
-    public record UpsertItemRequest(
-            @Positive long skuId,
-            @NotBlank String categoryCode,
-            @NotNull
-            @DecimalMin("0.000000") BigDecimal baseScore,
-            @NotNull
-            @DecimalMin("0.000000") BigDecimal popularityScore,
-            boolean active
-    ) {
+    public record UpsertItemRequest(@Positive long skuId, @NotBlank String categoryCode,
+            @NotNull @DecimalMin("0.000000") BigDecimal baseScore,
+            @NotNull @DecimalMin("0.000000") BigDecimal popularityScore, boolean active) {
     }
 
-    public record RecordBehaviorRequest(
-            @Positive long userId,
-            @Positive long skuId,
-            @NotBlank String categoryCode,
+    public record RecordBehaviorRequest(@Positive long userId, @Positive long skuId, @NotBlank String categoryCode,
             @NotNull BehaviorType behaviorType,
-            @NotNull
-            @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) Instant occurredAt
-    ) {
+            @NotNull @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) Instant occurredAt) {
     }
 
-    public record CreateExperimentRequest(
-            @NotBlank String scene,
-            @NotBlank String name,
-            @Min(0) @Max(100) int trafficPercent,
-            @NotBlank String controlStrategy,
-            @NotBlank String treatmentStrategy
-    ) {
+    public record CreateExperimentRequest(@NotBlank String scene, @NotBlank String name,
+            @Min(0) @Max(100) int trafficPercent, @NotBlank String controlStrategy,
+            @NotBlank String treatmentStrategy) {
     }
 
     public record ChangeExperimentStatusRequest(@NotNull ExperimentStatus status) {

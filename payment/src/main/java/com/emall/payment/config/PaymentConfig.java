@@ -16,9 +16,7 @@ public class PaymentConfig {
 
     @Bean
     RestClient orderRestClient(@Value("${emall.downstream.order-url}") String orderUrl) {
-        return RestClient.builder()
-                .baseUrl(orderUrl)
-                .requestInterceptor(new TraceIdClientHttpRequestInterceptor())
+        return RestClient.builder().baseUrl(orderUrl).requestInterceptor(new TraceIdClientHttpRequestInterceptor())
                 .build();
     }
 }

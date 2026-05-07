@@ -33,14 +33,14 @@ class JdbcIdentityRepository implements IdentityRepository {
 
     @Override
     public Optional<IdentityAccount> findAccount(long accountId) {
-        return jdbcTemplate.query("SELECT * FROM identity_account WHERE account_id = ?",
-                this::mapAccount, accountId).stream().findFirst();
+        return jdbcTemplate.query("SELECT * FROM identity_account WHERE account_id = ?", this::mapAccount, accountId)
+                .stream().findFirst();
     }
 
     @Override
     public Optional<IdentityAccount> findAccountBySubject(String subject) {
-        return jdbcTemplate.query("SELECT * FROM identity_account WHERE subject = ?",
-                this::mapAccount, subject).stream().findFirst();
+        return jdbcTemplate.query("SELECT * FROM identity_account WHERE subject = ?", this::mapAccount, subject)
+                .stream().findFirst();
     }
 
     @Override
@@ -59,8 +59,9 @@ class JdbcIdentityRepository implements IdentityRepository {
 
     @Override
     public Optional<DeviceSession> findSession(long sessionId) {
-        return jdbcTemplate.query("SELECT * FROM identity_device_session WHERE session_id = ?",
-                this::mapSession, sessionId).stream().findFirst();
+        return jdbcTemplate
+                .query("SELECT * FROM identity_device_session WHERE session_id = ?", this::mapSession, sessionId)
+                .stream().findFirst();
     }
 
     @Override
@@ -75,8 +76,8 @@ class JdbcIdentityRepository implements IdentityRepository {
 
     @Override
     public List<PermissionGrant> findGrants(long accountId) {
-        return jdbcTemplate.query("SELECT * FROM identity_permission_grant WHERE account_id = ?",
-                this::mapGrant, accountId);
+        return jdbcTemplate.query("SELECT * FROM identity_permission_grant WHERE account_id = ?", this::mapGrant,
+                accountId);
     }
 
     @Override
@@ -94,8 +95,9 @@ class JdbcIdentityRepository implements IdentityRepository {
 
     @Override
     public Optional<ServiceClient> findServiceClient(String clientKey) {
-        return jdbcTemplate.query("SELECT * FROM identity_service_client WHERE client_key = ?",
-                this::mapClient, clientKey).stream().findFirst();
+        return jdbcTemplate
+                .query("SELECT * FROM identity_service_client WHERE client_key = ?", this::mapClient, clientKey)
+                .stream().findFirst();
     }
 
     @Override
@@ -106,9 +108,8 @@ class JdbcIdentityRepository implements IdentityRepository {
                 VALUES (?, ?, ?, ?, ?, ?, ?)
                 ON DUPLICATE KEY UPDATE role_code = VALUES(role_code), active = VALUES(active),
                     updated_at = VALUES(updated_at)
-                """, subAccount.subAccountId(), subAccount.merchantId(), subAccount.accountId(),
-                subAccount.roleCode(), subAccount.active(), Timestamp.from(subAccount.createdAt()),
-                Timestamp.from(subAccount.updatedAt()));
+                """, subAccount.subAccountId(), subAccount.merchantId(), subAccount.accountId(), subAccount.roleCode(),
+                subAccount.active(), Timestamp.from(subAccount.createdAt()), Timestamp.from(subAccount.updatedAt()));
         return subAccount;
     }
 
@@ -120,9 +121,8 @@ class JdbcIdentityRepository implements IdentityRepository {
 
     private IdentityAccount mapAccount(ResultSet rs, int rowNum) throws SQLException {
         return new IdentityAccount(rs.getLong("account_id"), IdentityType.valueOf(rs.getString("identity_type")),
-                rs.getString("subject"), rs.getString("display_name"),
-                IdentityStatus.valueOf(rs.getString("status")), rs.getTimestamp("created_at").toInstant(),
-                rs.getTimestamp("updated_at").toInstant());
+                rs.getString("subject"), rs.getString("display_name"), IdentityStatus.valueOf(rs.getString("status")),
+                rs.getTimestamp("created_at").toInstant(), rs.getTimestamp("updated_at").toInstant());
     }
 
     private DeviceSession mapSession(ResultSet rs, int rowNum) throws SQLException {
@@ -138,14 +138,14 @@ class JdbcIdentityRepository implements IdentityRepository {
     }
 
     private ServiceClient mapClient(ResultSet rs, int rowNum) throws SQLException {
-        return new ServiceClient(rs.getLong("client_id"), rs.getString("client_key"),
-                rs.getString("secret_hash"), rs.getString("scopes"), rs.getBoolean("active"),
-                rs.getTimestamp("created_at").toInstant(), rs.getTimestamp("updated_at").toInstant());
+        return new ServiceClient(rs.getLong("client_id"), rs.getString("client_key"), rs.getString("secret_hash"),
+                rs.getString("scopes"), rs.getBoolean("active"), rs.getTimestamp("created_at").toInstant(),
+                rs.getTimestamp("updated_at").toInstant());
     }
 
     private MerchantSubAccount mapSubAccount(ResultSet rs, int rowNum) throws SQLException {
-        return new MerchantSubAccount(rs.getLong("sub_account_id"), rs.getLong("merchant_id"),
-                rs.getLong("account_id"), rs.getString("role_code"), rs.getBoolean("active"),
-                rs.getTimestamp("created_at").toInstant(), rs.getTimestamp("updated_at").toInstant());
+        return new MerchantSubAccount(rs.getLong("sub_account_id"), rs.getLong("merchant_id"), rs.getLong("account_id"),
+                rs.getString("role_code"), rs.getBoolean("active"), rs.getTimestamp("created_at").toInstant(),
+                rs.getTimestamp("updated_at").toInstant());
     }
 }

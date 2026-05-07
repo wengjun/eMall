@@ -32,50 +32,20 @@ enum RuleOperator {
     EQUALS
 }
 
-record RiskRule(
-        long ruleId,
-        RiskScene scene,
-        String ruleCode,
-        String fieldName,
-        RuleOperator operator,
-        BigDecimal threshold,
-        RiskLevel level,
-        RuleStatus status,
-        Instant createdAt,
-        Instant updatedAt
-) {
+record RiskRule(long ruleId, RiskScene scene, String ruleCode, String fieldName, RuleOperator operator,
+        BigDecimal threshold, RiskLevel level, RuleStatus status, Instant createdAt, Instant updatedAt) {
     RiskRule changeStatus(RuleStatus nextStatus) {
         return new RiskRule(ruleId, scene, ruleCode, fieldName, operator, threshold, level, nextStatus, createdAt,
                 Instant.now());
     }
 }
 
-record DeviceReputation(
-        String deviceId,
-        int reputationScore,
-        boolean risky,
-        Instant updatedAt
-) {
+record DeviceReputation(String deviceId, int reputationScore, boolean risky, Instant updatedAt) {
 }
 
-record RiskEvent(
-        long eventId,
-        RiskScene scene,
-        String subjectId,
-        String deviceId,
-        String ip,
-        BigDecimal amount,
-        int velocity,
-        int score,
-        RiskLevel level,
-        String reason,
-        Instant occurredAt
-) {
+record RiskEvent(long eventId, RiskScene scene, String subjectId, String deviceId, String ip, BigDecimal amount,
+        int velocity, int score, RiskLevel level, String reason, Instant occurredAt) {
 }
 
-record RiskDecision(
-        RiskLevel level,
-        int score,
-        String reason
-) {
+record RiskDecision(RiskLevel level, int score, String reason) {
 }

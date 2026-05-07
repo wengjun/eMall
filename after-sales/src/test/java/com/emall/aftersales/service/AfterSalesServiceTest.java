@@ -11,14 +11,13 @@ import java.math.BigDecimal;
 import org.junit.jupiter.api.Test;
 
 class AfterSalesServiceTest {
-    private final AfterSalesService afterSalesService = new AfterSalesService(
-            new InMemoryAfterSalesRepository(),
-            new SnowflakeIdGenerator(6));
+    private final AfterSalesService afterSalesService =
+            new AfterSalesService(new InMemoryAfterSalesRepository(), new SnowflakeIdGenerator(6));
 
     @Test
     void shouldApproveReceiveAndRefundReturnRequest() {
-        AfterSalesRequest created = afterSalesService.create(90001L, 70001L, 30001L, 1,
-                new BigDecimal("3799.00"), AfterSalesType.RETURN_AND_REFUND, "quality issue");
+        AfterSalesRequest created = afterSalesService.create(90001L, 70001L, 30001L, 1, new BigDecimal("3799.00"),
+                AfterSalesType.RETURN_AND_REFUND, "quality issue");
 
         AfterSalesRequest approved = afterSalesService.approve(created.requestId());
         AfterSalesRequest received = afterSalesService.receive(created.requestId());

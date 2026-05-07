@@ -41,7 +41,7 @@ public class PaymentController {
 
     @PostMapping("/{paymentId}/callbacks")
     public ApiResponse<PaymentOrder> callback(@PathVariable long paymentId,
-                                              @Valid @RequestBody PaymentCallbackRequest request) {
+            @Valid @RequestBody PaymentCallbackRequest request) {
         return ApiResponse.ok(paymentService.callback(request.channelTradeNo(), paymentId, request.paidAmount()));
     }
 
@@ -50,18 +50,11 @@ public class PaymentController {
         return ApiResponse.ok(paymentService.refund(paymentId));
     }
 
-    public record CreatePaymentRequest(
-            @NotBlank String requestId,
-            @Positive long orderId,
-            @Positive long userId,
-            @NotNull @DecimalMin("0.01") BigDecimal amount,
-            @NotBlank String channel
-    ) {
+    public record CreatePaymentRequest(@NotBlank String requestId, @Positive long orderId, @Positive long userId,
+            @NotNull @DecimalMin("0.01") BigDecimal amount, @NotBlank String channel) {
     }
 
-    public record PaymentCallbackRequest(
-            @NotBlank String channelTradeNo,
-            @NotNull @DecimalMin("0.01") BigDecimal paidAmount
-    ) {
+    public record PaymentCallbackRequest(@NotBlank String channelTradeNo,
+            @NotNull @DecimalMin("0.01") BigDecimal paidAmount) {
     }
 }

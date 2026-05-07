@@ -16,21 +16,20 @@ enum ShiftStatus {
 }
 
 record UnitCell(long unitId, String unitCode, String regionCode, int capacityWeight, UnitStatus status,
-                Instant createdAt, Instant updatedAt) {
+        Instant createdAt, Instant updatedAt) {
     UnitCell changeStatus(UnitStatus nextStatus) {
         return new UnitCell(unitId, unitCode, regionCode, capacityWeight, nextStatus, createdAt, Instant.now());
     }
 }
 
 record ShardRoute(long routeId, String domainName, int shardNo, String unitCode, String databaseKey,
-                  Instant updatedAt) {
+        Instant updatedAt) {
 }
 
-record TrafficShift(long shiftId, String sourceUnit, String targetUnit, int percent, ShiftStatus status,
-                    String reason, Instant createdAt, Instant updatedAt) {
+record TrafficShift(long shiftId, String sourceUnit, String targetUnit, int percent, ShiftStatus status, String reason,
+        Instant createdAt, Instant updatedAt) {
     TrafficShift changeStatus(ShiftStatus nextStatus) {
-        return new TrafficShift(shiftId, sourceUnit, targetUnit, percent, nextStatus, reason, createdAt,
-                Instant.now());
+        return new TrafficShift(shiftId, sourceUnit, targetUnit, percent, nextStatus, reason, createdAt, Instant.now());
     }
 }
 

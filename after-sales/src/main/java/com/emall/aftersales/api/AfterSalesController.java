@@ -60,14 +60,8 @@ public class AfterSalesController {
         return ApiResponse.ok(afterSalesService.refund(requestId));
     }
 
-    public record CreateAfterSalesRequest(
-            @Positive long orderId,
-            @Positive long userId,
-            @Positive long skuId,
-            @Positive int quantity,
-            @NotNull @DecimalMin("0.01") BigDecimal refundAmount,
-            @NotNull AfterSalesType type,
-            @NotBlank String reason
-    ) {
+    public record CreateAfterSalesRequest(@Positive long orderId, @Positive long userId, @Positive long skuId,
+            @Positive int quantity, @NotNull @DecimalMin("0.01") BigDecimal refundAmount, @NotNull AfterSalesType type,
+            @NotBlank String reason) {
     }
 }

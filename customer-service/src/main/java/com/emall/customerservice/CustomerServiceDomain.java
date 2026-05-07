@@ -17,8 +17,8 @@ enum ArbitrationStatus {
     PLATFORM_MEDIATED
 }
 
-record ServiceTicket(long ticketId, long userId, long orderId, String category, String priority,
-                     TicketStatus status, String assignee, Instant createdAt, Instant updatedAt) {
+record ServiceTicket(long ticketId, long userId, long orderId, String category, String priority, TicketStatus status,
+        String assignee, Instant createdAt, Instant updatedAt) {
     ServiceTicket route(String nextAssignee) {
         return new ServiceTicket(ticketId, userId, orderId, category, priority, TicketStatus.ROUTED, nextAssignee,
                 createdAt, Instant.now());
@@ -31,19 +31,18 @@ record ServiceTicket(long ticketId, long userId, long orderId, String category, 
 }
 
 record ArbitrationCase(long arbitrationId, long ticketId, long merchantId, String reason, ArbitrationStatus status,
-                       Instant createdAt, Instant updatedAt) {
+        Instant createdAt, Instant updatedAt) {
     ArbitrationCase close(ArbitrationStatus nextStatus) {
-        return new ArbitrationCase(arbitrationId, ticketId, merchantId, reason, nextStatus, createdAt,
-                Instant.now());
+        return new ArbitrationCase(arbitrationId, ticketId, merchantId, reason, nextStatus, createdAt, Instant.now());
     }
 }
 
 record CompensationRecord(long compensationId, long ticketId, long userId, BigDecimal amount, String reason,
-                          Instant createdAt) {
+        Instant createdAt) {
 }
 
 record KnowledgeArticle(long articleId, String category, String title, String content, boolean published,
-                        Instant createdAt, Instant updatedAt) {
+        Instant createdAt, Instant updatedAt) {
 }
 
 record ServiceQualityReview(long reviewId, long ticketId, int score, String comment, Instant createdAt) {

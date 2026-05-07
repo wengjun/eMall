@@ -18,10 +18,10 @@ public class InMemorySearchRepository implements SearchRepository {
     private final ConcurrentMap<Long, SearchDocument> documents = new ConcurrentHashMap<>();
 
     public InMemorySearchRepository() {
-        save(new SearchDocument(10001L, "flagship phone", "digital",
-                BigDecimal.valueOf(379900, 2), Set.of("phone", "mobile"), true, Instant.now()));
-        save(new SearchDocument(10002L, "thin laptop", "computer",
-                BigDecimal.valueOf(679900, 2), Set.of("laptop", "computer"), true, Instant.now()));
+        save(new SearchDocument(10001L, "flagship phone", "digital", BigDecimal.valueOf(379900, 2),
+                Set.of("phone", "mobile"), true, Instant.now()));
+        save(new SearchDocument(10002L, "thin laptop", "computer", BigDecimal.valueOf(679900, 2),
+                Set.of("laptop", "computer"), true, Instant.now()));
     }
 
     @Override
@@ -37,12 +37,9 @@ public class InMemorySearchRepository implements SearchRepository {
 
     @Override
     public List<SearchDocument> search(String keyword, int limit) {
-        return documents.values().stream()
-                .filter(SearchDocument::saleable)
+        return documents.values().stream().filter(SearchDocument::saleable)
                 .filter(document -> document.matches(keyword))
-                .sorted(Comparator.comparing(SearchDocument::indexedAt).reversed())
-                .limit(limit)
-                .toList();
+                .sorted(Comparator.comparing(SearchDocument::indexedAt).reversed()).limit(limit).toList();
     }
 
     @Override

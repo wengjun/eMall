@@ -31,11 +31,9 @@ public class PaymentOperationsController extends InternalOperationsControllerSup
     private final OutboxPublisher outboxPublisher;
     private final PaymentService paymentService;
 
-    public PaymentOperationsController(PaymentCompensationJob paymentCompensationJob,
-                                       OutboxPublisher outboxPublisher,
-                                       PaymentService paymentService,
-                                       OperationAuditRepository operationAuditRepository,
-                                       @Value("${emall.internal.operations-token}") String operationsToken) {
+    public PaymentOperationsController(PaymentCompensationJob paymentCompensationJob, OutboxPublisher outboxPublisher,
+            PaymentService paymentService, OperationAuditRepository operationAuditRepository,
+            @Value("${emall.internal.operations-token}") String operationsToken) {
         super(operationAuditRepository, "payment", operationsToken);
         this.paymentCompensationJob = paymentCompensationJob;
         this.outboxPublisher = outboxPublisher;
@@ -48,24 +46,20 @@ public class PaymentOperationsController extends InternalOperationsControllerSup
             @RequestHeader("X-Internal-Token") String token,
             @RequestHeader(value = "X-Operator", defaultValue = "unknown") String operator,
             @RequestHeader(value = "X-Trace-Id", required = false) String traceId) {
-        return execute(token, operator, traceId,
-                "payments.retry-order-confirmation",
+        return execute(token, operator, traceId, "payments.retry-order-confirmation",
                 () -> paymentCompensationJob.retryOrderConfirmation(limit));
     }
 
     @PostMapping("/payments/channel-statements")
-    public ApiResponse<OperationResult> ingestChannelStatement(
-            @Valid @RequestBody ChannelStatementRequest request,
+    public ApiResponse<OperationResult> ingestChannelStatement(@Valid @RequestBody ChannelStatementRequest request,
             @RequestHeader("X-Internal-Token") String token,
             @RequestHeader(value = "X-Operator", defaultValue = "unknown") String operator,
             @RequestHeader(value = "X-Trace-Id", required = false) String traceId) {
-        return execute(token, operator, traceId,
-                "payments.ingest-channel-statement",
-                () -> {
-                    paymentService.ingestChannelStatement(request.channel(), request.channelTradeNo(),
-                            request.paymentId(), request.amount(), request.statementType(), request.occurredAt());
-                    return 1;
-                });
+        return execute(token, operator, traceId, "payments.ingest-channel-statement", () -> {
+            paymentService.ingestChannelStatement(request.channel(), request.channelTradeNo(), request.paymentId(),
+                    request.amount(), request.statementType(), request.occurredAt());
+            return 1;
+        });
     }
 
     @PostMapping("/payments/reconcile-channel-statements")
@@ -74,8 +68,7 @@ public class PaymentOperationsController extends InternalOperationsControllerSup
             @RequestHeader("X-Internal-Token") String token,
             @RequestHeader(value = "X-Operator", defaultValue = "unknown") String operator,
             @RequestHeader(value = "X-Trace-Id", required = false) String traceId) {
-        return execute(token, operator, traceId,
-                "payments.reconcile-channel-statements",
+        return execute(token, operator, traceId, "payments.reconcile-channel-statements",
                 () -> paymentCompensationJob.reconcileChannelStatements(limit));
     }
 
@@ -85,9 +78,7 @@ public class PaymentOperationsController extends InternalOperationsControllerSup
             @RequestHeader("X-Internal-Token") String token,
             @RequestHeader(value = "X-Operator", defaultValue = "unknown") String operator,
             @RequestHeader(value = "X-Trace-Id", required = false) String traceId) {
-        return execute(token, operator, traceId,
-                "outbox.publish",
-                () -> outboxPublisher.publishBatch(limit));
+        return execute(token, operator, traceId, "outbox.publish", () -> outboxPublisher.publishBatch(limit));
     }
 
     @PostMapping("/outbox/retry-failed")
@@ -96,18 +87,11 @@ public class PaymentOperationsController extends InternalOperationsControllerSup
             @RequestHeader("X-Internal-Token") String token,
             @RequestHeader(value = "X-Operator", defaultValue = "unknown") String operator,
             @RequestHeader(value = "X-Trace-Id", required = false) String traceId) {
-        return execute(token, operator, traceId,
-                "outbox.retry-failed",
-                () -> outboxPublisher.retryFailedNow(limit));
+        return execute(token, operator, traceId, "outbox.retry-failed", () -> outboxPublisher.retryFailedNow(limit));
     }
 
-    public record ChannelStatementRequest(
-            @NotBlank String channel,
-            @NotBlank String channelTradeNo,
-            @Positive long paymentId,
-            @NotNull @DecimalMin("0.01") BigDecimal amount,
-            @NotNull StatementType statementType,
-            @NotNull Instant occurredAt
-    ) {
+    public record ChannelStatementRequest(@NotBlank String channel, @NotBlank String channelTradeNo,
+            @Positive long paymentId, @NotNull @DecimalMin("0.01") BigDecimal amount,
+            @NotNull StatementType statementType, @NotNull Instant occurredAt) {
     }
 }

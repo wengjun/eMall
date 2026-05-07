@@ -18,7 +18,7 @@ public class ReservationExpirationJob {
     private final DistributedTaskLock taskLock;
 
     public ReservationExpirationJob(InventoryRepository inventoryRepository, InventoryService inventoryService,
-                                    DistributedTaskLock taskLock) {
+            DistributedTaskLock taskLock) {
         this.inventoryRepository = inventoryRepository;
         this.inventoryService = inventoryService;
         this.taskLock = taskLock;
@@ -35,8 +35,6 @@ public class ReservationExpirationJob {
 
     private int releaseExpiredReservationsUnlocked(int limit) {
         return inventoryRepository.findExpiredReservations(Instant.now(), limit).stream()
-                .map(reservation -> inventoryService.release(reservation.requestId()))
-                .toList()
-                .size();
+                .map(reservation -> inventoryService.release(reservation.requestId())).toList().size();
     }
 }

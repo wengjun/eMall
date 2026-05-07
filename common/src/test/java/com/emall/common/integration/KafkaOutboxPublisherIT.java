@@ -39,14 +39,13 @@ class KafkaOutboxPublisherIT {
     private static final ObjectMapper OBJECT_MAPPER = new ObjectMapper().findAndRegisterModules();
 
     @Container
-    static final KafkaContainer kafka = new KafkaContainer(
-            DockerImageName.parse("confluentinc/cp-kafka:7.7.1"));
+    static final KafkaContainer kafka = new KafkaContainer(DockerImageName.parse("confluentinc/cp-kafka:7.7.1"));
 
     @Test
     void shouldPublishOutboxEventToKafkaAndMarkItPublished() throws Exception {
         TestOutboxRepository outboxRepository = new TestOutboxRepository();
-        OutboxEvent event = OutboxEvent.create("event-001", "Product", "30001",
-                EventTypes.PRODUCT_CHANGED, Map.of("skuId", 30001L));
+        OutboxEvent event = OutboxEvent.create("event-001", "Product", "30001", EventTypes.PRODUCT_CHANGED,
+                Map.of("skuId", 30001L));
         outboxRepository.save(event);
         KafkaTemplate<String, String> kafkaTemplate = kafkaTemplate();
         try {
@@ -67,11 +66,9 @@ class KafkaOutboxPublisherIT {
     }
 
     private KafkaTemplate<String, String> kafkaTemplate() {
-        Map<String, Object> properties = Map.of(
-                ProducerConfig.BOOTSTRAP_SERVERS_CONFIG, kafka.getBootstrapServers(),
+        Map<String, Object> properties = Map.of(ProducerConfig.BOOTSTRAP_SERVERS_CONFIG, kafka.getBootstrapServers(),
                 ProducerConfig.KEY_SERIALIZER_CLASS_CONFIG, StringSerializer.class,
-                ProducerConfig.VALUE_SERIALIZER_CLASS_CONFIG, StringSerializer.class
-        );
+                ProducerConfig.VALUE_SERIALIZER_CLASS_CONFIG, StringSerializer.class);
         return new KafkaTemplate<>(new DefaultKafkaProducerFactory<>(properties));
     }
 

@@ -32,11 +32,8 @@ public class PaymentService {
     private final SnowflakeIdGenerator idGenerator;
     private final OrderClient orderClient;
 
-    public PaymentService(PaymentRepository paymentRepository,
-                          PaymentSettlementRepository settlementRepository,
-                          OutboxRepository outboxRepository,
-                          SnowflakeIdGenerator idGenerator,
-                          OrderClient orderClient) {
+    public PaymentService(PaymentRepository paymentRepository, PaymentSettlementRepository settlementRepository,
+            OutboxRepository outboxRepository, SnowflakeIdGenerator idGenerator, OrderClient orderClient) {
         this.paymentRepository = paymentRepository;
         this.settlementRepository = settlementRepository;
         this.outboxRepository = outboxRepository;
@@ -45,8 +42,8 @@ public class PaymentService {
     }
 
     @Transactional
-    public synchronized PaymentOrder create(String requestId, long orderId, long userId,
-                                            BigDecimal amount, String channel) {
+    public synchronized PaymentOrder create(String requestId, long orderId, long userId, BigDecimal amount,
+            String channel) {
         return paymentRepository.findByRequestId(requestId)
                 .orElseGet(() -> createOnce(requestId, orderId, userId, amount, channel));
     }
@@ -97,22 +94,13 @@ public class PaymentService {
 
     @Transactional
     public PaymentChannelStatement ingestChannelStatement(String channel, String channelTradeNo, long paymentId,
-                                                          BigDecimal amount, StatementType statementType,
-                                                          Instant occurredAt) {
+            BigDecimal amount, StatementType statementType, Instant occurredAt) {
         if (amount.signum() <= 0) {
             throw new BusinessException(ErrorCode.BAD_REQUEST, "statement amount must be positive");
         }
         Instant now = Instant.now();
-        return settlementRepository.saveStatementIfAbsent(new PaymentChannelStatement(
-                idGenerator.nextId(),
-                channel,
-                channelTradeNo,
-                paymentId,
-                amount,
-                statementType,
-                occurredAt,
-                false,
-                now));
+        return settlementRepository.saveStatementIfAbsent(new PaymentChannelStatement(idGenerator.nextId(), channel,
+                channelTradeNo, paymentId, amount, statementType, occurredAt, false, now));
     }
 
     public List<PaymentChannelStatement> findUnreconciledStatements(int limit) {
@@ -132,9 +120,7 @@ public class PaymentService {
     @Transactional
     public synchronized int reconcileChannelStatements(int limit) {
         return settlementRepository.findUnreconciledStatements(limit).stream()
-                .map(statement -> reconcileStatement(statement.statementId()))
-                .toList()
-                .size();
+                .map(statement -> reconcileStatement(statement.statementId())).toList().size();
     }
 
     public List<PaymentOrder> findSucceededButUnconfirmed(int limit) {
@@ -163,18 +149,10 @@ public class PaymentService {
     }
 
     private void appendLedger(PaymentOrder payment, LedgerDirection direction, String businessType,
-                              String referenceId) {
-        settlementRepository.saveLedgerIfAbsent(new PaymentLedgerEntry(
-                idGenerator.nextId(),
-                payment.paymentId(),
-                payment.orderId(),
-                payment.userId(),
-                direction,
-                payment.amount(),
-                "CNY",
-                businessType,
-                referenceId,
-                Instant.now()));
+            String referenceId) {
+        settlementRepository.saveLedgerIfAbsent(
+                new PaymentLedgerEntry(idGenerator.nextId(), payment.paymentId(), payment.orderId(), payment.userId(),
+                        direction, payment.amount(), "CNY", businessType, referenceId, Instant.now()));
     }
 
     private PaymentReconciliationRecord buildReconciliationRecord(PaymentChannelStatement statement) {
@@ -201,32 +179,16 @@ public class PaymentService {
         return paymentStatus == PaymentStatus.REFUNDED;
     }
 
-    private PaymentReconciliationRecord reconciliation(PaymentChannelStatement statement,
-                                                       ReconciliationStatus status,
-                                                       String message) {
-        return new PaymentReconciliationRecord(
-                idGenerator.nextId(),
-                statement.statementId(),
-                statement.paymentId(),
-                statement.channelTradeNo(),
-                statement.statementType(),
-                status,
-                message,
-                Instant.now());
+    private PaymentReconciliationRecord reconciliation(PaymentChannelStatement statement, ReconciliationStatus status,
+            String message) {
+        return new PaymentReconciliationRecord(idGenerator.nextId(), statement.statementId(), statement.paymentId(),
+                statement.channelTradeNo(), statement.statementType(), status, message, Instant.now());
     }
 
     private void appendEvent(PaymentOrder payment, String eventType) {
-        outboxRepository.save(OutboxEvent.create(
-                "payment-event-" + idGenerator.nextId(),
-                "Payment",
-                String.valueOf(payment.paymentId()),
-                eventType,
-                Map.of(
-                        "paymentId", payment.paymentId(),
-                        "orderId", payment.orderId(),
-                        "userId", payment.userId(),
-                        "amount", payment.amount(),
-                        "status", payment.status().name()
-                )));
+        outboxRepository.save(OutboxEvent.create("payment-event-" + idGenerator.nextId(), "Payment",
+                String.valueOf(payment.paymentId()), eventType,
+                Map.of("paymentId", payment.paymentId(), "orderId", payment.orderId(), "userId", payment.userId(),
+                        "amount", payment.amount(), "status", payment.status().name())));
     }
 }
