@@ -1,4 +1,4 @@
-﻿# Amazon L6 面试导向指南
+# Amazon L6 面试导向指南
 
 [返回学习手册首页](README.md) | [返回技术能力地图](../technical-skill-map.md)
 

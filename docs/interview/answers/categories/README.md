@@ -1,4 +1,4 @@
-﻿# 面试题分类目录
+# 面试题分类目录
 
 [返回答案手册](../README.md) | [返回逐题精讲目录](../sequential/README.md) | [返回面试题库](../../question-bank.md)
 

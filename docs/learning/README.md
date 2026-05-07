@@ -1,4 +1,4 @@
-﻿# eMall 学习手册
+# eMall 学习手册
 
 本目录由原 `docs/technical-skill-map.md` 拆分而来，用于按主题学习大型 Java 电商系统。
 建议先按顺序阅读，再回到具体模块代码中手写和验证。

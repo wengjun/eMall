@@ -1,4 +1,4 @@
-﻿# Java、Spring Boot 和 Maven
+# Java、Spring Boot 和 Maven
 
 [返回学习手册首页](README.md) | [返回技术能力地图](../technical-skill-map.md)
 

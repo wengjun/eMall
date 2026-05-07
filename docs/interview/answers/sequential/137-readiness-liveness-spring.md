@@ -193,4 +193,3 @@ Spring Boot Actuator 可以暴露 /actuator/health/liveness 和 /actuator/health
 
 - 先看本文的题目专属答案，再按共享框架补齐项目落点、失败路径、取舍和验收。
 - 白板复述时用结论 -> 例子 -> 风险 -> 指标四层结构。
-

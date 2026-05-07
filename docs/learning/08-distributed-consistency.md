@@ -1,4 +1,4 @@
-﻿# 分布式一致性
+# 分布式一致性
 
 [返回学习手册首页](README.md) | [返回技术能力地图](../technical-skill-map.md)
 
