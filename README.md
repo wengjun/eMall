@@ -110,6 +110,29 @@ docker build --build-arg MODULE=order -t emall/order:local .
 
 运行时连接配置可以通过环境变量覆盖，本地默认值见 `.env.example`。
 
+## 代码格式
+
+项目使用 `.editorconfig` 和 `checkstyle.xml` 统一代码格式：
+
+- Java 使用 4 个空格缩进，单行不超过 120 个字符。
+- YAML 使用 2 个空格缩进。
+- Markdown 保留行尾空格，避免破坏手写换行。
+
+推荐使用 IntelliJ IDEA 或 VS Code 读取 `.editorconfig` 后执行全项目格式化。命令行校验使用：
+
+```powershell
+mvn formatter:format
+mvn validate
+git diff --check
+```
+
+说明：
+
+- `mvn formatter:format` 一键格式化所有模块的 `src/main/java` 和 `src/test/java`。
+- `mvn validate` 执行全模块 Checkstyle 校验。
+- `git diff --check` 检查行尾空格、空白错误等 Git 级格式问题。
+- Formatter 使用 `eclipse-formatter.xml`，保持 Java 17、4 空格缩进、LF 换行和 120 行宽约束。
+
 ## 验证
 
 常用命令：

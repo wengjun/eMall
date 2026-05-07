@@ -18,6 +18,7 @@
         <spring.cloud.version>2023.0.3</spring.cloud.version>
         <resilience4j.version>2.2.0</resilience4j.version>
         <testcontainers.version>1.21.4</testcontainers.version>
+        <formatter.maven.plugin.version>2.29.0</formatter.maven.plugin.version>
         <skipITs>true</skipITs>
     </properties>
 
@@ -447,6 +448,20 @@
                     </executions>
                 </plugin>
                 <plugin>
+                    <groupId>net.revelc.code.formatter</groupId>
+                    <artifactId>formatter-maven-plugin</artifactId>
+                    <version>${formatter.maven.plugin.version}</version>
+                    <configuration>
+                        <configFile>${maven.multiModuleProjectDirectory}/eclipse-formatter.xml</configFile>
+                        <compilerSource>${java.version}</compilerSource>
+                        <compilerCompliance>${java.version}</compilerCompliance>
+                        <compilerTargetPlatform>${java.version}</compilerTargetPlatform>
+                        <encoding>${project.build.sourceEncoding}</encoding>
+                        <lineEnding>LF</lineEnding>
+                        <removeTrailingWhitespace>true</removeTrailingWhitespace>
+                    </configuration>
+                </plugin>
+                <plugin>
                     <groupId>org.apache.maven.plugins</groupId>
                     <artifactId>maven-failsafe-plugin</artifactId>
                     <version>3.5.4</version>
@@ -471,6 +486,10 @@
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-checkstyle-plugin</artifactId>
+            </plugin>
+            <plugin>
+                <groupId>net.revelc.code.formatter</groupId>
+                <artifactId>formatter-maven-plugin</artifactId>
             </plugin>
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
