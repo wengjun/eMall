@@ -112,13 +112,14 @@ docker build --build-arg MODULE=order -t emall/order:local .
 
 ## 代码格式
 
-项目使用 `.editorconfig` 和 `checkstyle.xml` 统一代码格式：
+项目使用 `.editorconfig`、`checkstyle.xml` 和 `eclipse-formatter.xml` 统一代码格式：
 
 - Java 使用 4 个空格缩进，单行不超过 120 个字符。
+- Java 注解参数、方法参数和构造器参数使用紧凑格式；不超过 120 字符时不强制换行，超过 120 字符再自动换行。
 - YAML 使用 2 个空格缩进。
 - Markdown 保留行尾空格，避免破坏手写换行。
 
-推荐使用 IntelliJ IDEA 或 VS Code 读取 `.editorconfig` 后执行全项目格式化。命令行校验使用：
+推荐使用 Maven formatter 做全项目格式化，IDE 只作为辅助，不应引入不同格式规则。命令行使用：
 
 ```powershell
 mvn formatter:format
@@ -131,7 +132,7 @@ git diff --check
 - `mvn formatter:format` 一键格式化所有模块的 `src/main/java` 和 `src/test/java`。
 - `mvn validate` 执行全模块 Checkstyle 校验。
 - `git diff --check` 检查行尾空格、空白错误等 Git 级格式问题。
-- Formatter 使用 `eclipse-formatter.xml`，保持 Java 17、4 空格缩进、LF 换行和 120 行宽约束。
+- Formatter 使用 `eclipse-formatter.xml`，保持 Java 17、4 空格缩进、LF 换行、120 行宽和参数紧凑换行约束。
 
 ## 验证
 
@@ -141,6 +142,7 @@ git diff --check
 mvn validate
 mvn test
 mvn verify -DskipITs=false
+mvn -DskipITs=false test-compile failsafe:integration-test failsafe:verify
 mvn -Pcore-services verify
 mvn -Pbusiness-platforms verify
 mvn -Pdata-platforms verify
@@ -152,10 +154,18 @@ mvn -Pstable-runtime verify
 说明：
 
 - `mvn validate` 执行 Checkstyle。
-- `mvn test` 执行全部单元测试。
-- `mvn verify -DskipITs=false` 执行完整构建、单元测试、打包和 Failsafe 集成测试。
+- `mvn test` 执行 Surefire 测试，即常规单元测试阶段。
+- `mvn verify -DskipITs=false` 执行完整构建、Surefire 测试、打包和 Failsafe 集成测试。
+- `mvn -DskipITs=false test-compile failsafe:integration-test failsafe:verify` 只执行 Failsafe 集成测试阶段。
+- 不要用 `mvn -DskipTests -DskipITs=false verify` 作为集成测试命令；`skipTests` 会让 Failsafe 也跳过测试。
 - Testcontainers 测试需要 Docker daemon 正常运行。
 - Smoke 真实环境测试需要设置 `EMALL_RUN_*_IT` 环境变量。
+
+最近一次本地验证结果：
+
+- `mvn verify -DskipITs=false`：43 个模块全部通过，130 个测试，0 failures，0 errors，7 skipped。
+- `mvn -DskipITs test`：Surefire 阶段 113 个测试，0 failures，0 errors，0 skipped。
+- `mvn -DskipITs=false test-compile failsafe:integration-test failsafe:verify`：Failsafe 阶段 17 个测试，0 failures，0 errors，7 skipped。
 
 ## 压测
 

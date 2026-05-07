@@ -4,11 +4,14 @@
 
 ## 执行分层
 
-- 单元测试：`mvn test`，由 Surefire 执行 `*Test.java`。
-- 集成测试：`mvn verify -DskipITs=false`，由 Failsafe 执行 `*IT.java`。
+- Surefire 测试：`mvn test`，执行 Maven 单元测试阶段，默认匹配 `*Test.java`。
+- 完整验证：`mvn verify -DskipITs=false`，执行编译、Checkstyle、Surefire、打包和 Failsafe 集成测试。
+- 只跑 Failsafe 集成测试：`mvn -DskipITs=false test-compile failsafe:integration-test failsafe:verify`。
 - Testcontainers 测试：需要 Docker，用真实 MySQL、Redis、Kafka 等组件验证行为。
 - Smoke 测试：需要真实运行的服务，并通过 `EMALL_RUN_*_IT` 环境变量显式开启。
 - 配置和清单测试：验证 Kubernetes、Docker Compose、Prometheus、Grafana、混沌清单等文件。
+
+不要用 `mvn -DskipTests -DskipITs=false verify` 作为“只跑集成测试”的命令；`skipTests` 会让 Failsafe 也跳过测试。
 
 ## 当前覆盖
 
@@ -59,12 +62,25 @@ mvn -pl smoke -DskipITs=false verify
 
 ## 执行要求
 
-- 本地单元测试不依赖 Docker。
+- 常规单元测试应尽量不依赖 Docker。
+- 当前 `user` 模块的 `UserRepositoryIntegrationTest` 会被 Surefire 单元测试阶段捕获，因此执行 `mvn test`
+  时也可能启动 Testcontainers/MySQL。后续如果要严格区分阶段，可以把它重命名为 `UserRepositoryIT`。
 - Testcontainers 测试需要 Docker daemon 正常运行。
 - 真实 E2E 测试需要先启动 MySQL、Redis、Kafka、OpenSearch 和相关服务。
-- CI 可以先跑 `mvn verify -DskipITs=false`，再在具备 Docker 的环境跑更完整的 IT。
+- 快速 CI 可以先跑 `mvn validate` 和 `mvn test`。
+- 具备 Docker 的 CI 环境再跑 `mvn verify -DskipITs=false` 或单独的 Failsafe 集成测试命令。
 
 ## 本地限制
 
 当前机器如果 Docker Desktop 未启动，Testcontainers 测试会自动跳过。此时 `mvn verify -DskipITs=false`
 仍然可以通过，但不能说明真实 MySQL、Redis、Kafka 集成路径已经执行。
+
+## 最近一次本地结果
+
+2026-05-07 在 Docker Desktop 可用的本地环境中验证：
+
+- 完整构建：`mvn verify -DskipITs=false`，43 个模块全部通过，130 个测试，0 failures，0 errors，7 skipped。
+- Surefire 阶段：`mvn -DskipITs test`，113 个测试，0 failures，0 errors，0 skipped。
+- Failsafe 阶段：`mvn -DskipITs=false test-compile failsafe:integration-test failsafe:verify`，17 个测试，
+  0 failures，0 errors，7 skipped。
+- 7 个 skipped 都来自 `smoke` 模块真实服务端到端测试；未设置 `EMALL_RUN_*_IT` 时按设计跳过。

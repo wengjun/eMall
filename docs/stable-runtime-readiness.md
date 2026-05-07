@@ -33,10 +33,20 @@
 
 - `mvn test` 可以执行全部单元测试。
 - `mvn verify -DskipITs=false` 可以执行完整构建和集成测试阶段。
+- `mvn -DskipITs=false test-compile failsafe:integration-test failsafe:verify` 可以单独执行 Failsafe 集成测试阶段。
 - 所有 Maven 模块都有基础测试。
-- 没有 Docker 时，Testcontainers 测试会按设计跳过。
+- Docker Desktop 可用时，Testcontainers 可以拉起 MySQL、Redis、Kafka 等真实依赖执行集成测试。
+- 没有 Docker 时，Testcontainers 测试会按设计跳过；此时构建通过不等于真实中间件路径已经验证。
 - 没有设置 smoke 环境变量时，真实端到端测试会按设计跳过。
 - 配置、部署和清单类测试可以在本地执行。
+
+2026-05-07 最近一次本地验证结果：
+
+- 完整构建：`mvn verify -DskipITs=false`，43 个模块全部通过，130 个测试，0 failures，0 errors，7 skipped。
+- Surefire 阶段：`mvn -DskipITs test`，113 个测试，0 failures，0 errors，0 skipped。
+- Failsafe 阶段：`mvn -DskipITs=false test-compile failsafe:integration-test failsafe:verify`，17 个测试，
+  0 failures，0 errors，7 skipped。
+- 7 个 skipped 来自 `smoke` 模块真实服务端到端测试，因为未设置 `EMALL_RUN_*_IT`。
 
 ## 真实生产前仍需要
 
