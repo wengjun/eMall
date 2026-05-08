@@ -1,5 +1,7 @@
 # eMall 学习手册
 
+[项目首页](../../README.md) | [文档索引](../README.md)
+
 本目录由原 `docs/technical-skill-map.md` 拆分而来，用于按主题学习大型 Java 电商系统。
 建议先按顺序阅读，再回到具体模块代码中手写和验证。
 
@@ -19,12 +21,6 @@
 - [测试、工程治理和生产就绪](12-testing-governance-readiness.md)
 - [从概念到实现的深度补强](13-concept-to-implementation.md)
 - [学习路径和面试表达](14-learning-path-interview.md)
-
-## 面试专项
-
-- [面试专题入口](../interview/README.md)
-- [Java 专家级分布式服务开发面试题库](../interview/question-bank.md)
-- [Java 分布式服务专家级面试答案手册](../interview/answers/README.md)
 
 ## 学习建议
 

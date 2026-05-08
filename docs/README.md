@@ -1,5 +1,7 @@
 ﻿# 文档索引
 
+[项目首页](../README.md) | [学习手册](learning/README.md) | [运维配置索引](../ops/README.md)
+
 本文是项目文档入口。建议先从架构、深度设计、模块清单和路线图读起，再看运维、测试、数据和安全文档。
 
 ## 建议先读
@@ -8,7 +10,6 @@
 - [设计深度说明](design-deep-dive.md)：设计思路、数据流图、关键技术细节、竞品对比和面试讲法。
 - [技术能力地图](technical-skill-map.md)：手动实现本工程需要掌握的 Java 后端技术点导航。
 - [学习手册](learning/README.md)：按主题拆分后的深入学习文档，适合系统学习。
-- [面试专题](interview/README.md)：面试题库、逐题精讲和专家级答案手册。
 - [模块清单](modules.md)：所有 Maven 模块、职责分组和构建 profile。
 - [路线图](roadmap.md)：P0 到 P14 的阶段规划和完成标记。
 - [生产检查清单](production-checklist.md)：上线前需要检查的核心事项。

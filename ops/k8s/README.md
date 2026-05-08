@@ -1,5 +1,7 @@
 ﻿# Kubernetes 基线
 
+[项目首页](../../README.md) | [文档索引](../../docs/README.md) | [运维配置索引](../README.md)
+
 `ops/k8s` 目录提供 eMall 在线服务的 Kubernetes 部署基线。它用于表达生产部署需要考虑的资源和策略，
 不是可以不修改就直接上线的最终清单。
 

@@ -18,8 +18,6 @@
 - [测试、工程治理和生产就绪](learning/12-testing-governance-readiness.md)
 - [从概念到实现的深度补强](learning/13-concept-to-implementation.md)
 - [学习路径和面试表达](learning/14-learning-path-interview.md)
-- [Java 专家级分布式服务开发面试题库](interview/question-bank.md)
-- [Java 分布式服务专家级面试答案手册](interview/answers/README.md)
 
 ## 使用方式
 

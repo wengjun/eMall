@@ -1,5 +1,7 @@
 ﻿# 运维配置索引
 
+[项目首页](../README.md) | [文档索引](../docs/README.md) | [Kubernetes 基线](k8s/README.md)
+
 `ops` 目录保存本地运行、部署、可观测、混沌、MySQL 和压测相关配置。这里是配置入口说明。
 
 ## 本地运行
