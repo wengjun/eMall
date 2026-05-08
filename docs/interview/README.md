@@ -330,10 +330,10 @@
 
 #### 题库补充题
 
-补充 1. [固定窗口、滑动窗口、令牌桶、漏桶有什么区别？](answers/537-design-rate-limit-system.md)
+补充 1. [固定窗口、滑动窗口、令牌桶、漏桶有什么区别？](answers/537-rate-limit-system.md)
 补充 2. [网关限流和服务内限流如何配合？](answers/250-rate-limiting-design.md)
-补充 3. [按 IP、用户、设备、SKU、商家限流有什么区别？](answers/537-design-rate-limit-system.md)
-补充 4. [如何防止恶意用户绕过限流？](answers/528-design-risk-system.md)
+补充 3. [按 IP、用户、设备、SKU、商家限流有什么区别？](answers/537-rate-limit-system.md)
+补充 4. [如何防止恶意用户绕过限流？](answers/528-risk-system.md)
 
 ### 04 数据库、SQL 和数据建模
 
@@ -616,57 +616,57 @@
 
 题号：514-530；进度：17/17。
 
-514. [设计一个京东/Amazon 类电商系统。](answers/514-design-jd-amazon-ecommerce.md)
-515. [设计下单系统。](answers/515-design-order-system.md)
-516. [设计库存系统。](answers/516-design-inventory-system.md)
-517. [设计支付系统。](answers/517-design-payment-system.md)
-518. [设计购物车系统。](answers/518-design-cart-system.md)
-519. [设计商品详情系统。](answers/519-design-product-detail-system.md)
-520. [设计商品搜索系统。](answers/520-design-product-search-system.md)
-521. [设计秒杀系统。](answers/521-design-flash-sale-system.md)
-522. [设计优惠券系统。](answers/522-design-coupon-system.md)
-523. [设计价格服务。](answers/523-design-pricing-system.md)
-524. [设计履约系统。](answers/524-design-fulfillment-system.md)
-525. [设计售后退款系统。](answers/525-design-after-sales-refund.md)
-526. [设计商家入驻和商品审核系统。](answers/526-design-merchant-onboarding-review.md)
-527. [设计开放平台 API。](answers/527-design-openapi.md)
-528. [设计风控系统。](answers/528-design-risk-system.md)
-529. [设计推荐系统的在线服务部分。](answers/529-design-recommendation-online.md)
-530. [设计广告投放系统的核心链路。](answers/530-design-ad-delivery.md)
+514. [设计一个京东/Amazon 类电商系统。](answers/514-jd-amazon-ecommerce.md)
+515. [设计下单系统。](answers/515-order-system.md)
+516. [设计库存系统。](answers/516-inventory-system.md)
+517. [设计支付系统。](answers/517-payment-system.md)
+518. [设计购物车系统。](answers/518-cart-system.md)
+519. [设计商品详情系统。](answers/519-product-detail-system.md)
+520. [设计商品搜索系统。](answers/520-product-search-system.md)
+521. [设计秒杀系统。](answers/521-flash-sale-system.md)
+522. [设计优惠券系统。](answers/522-coupon-system.md)
+523. [设计价格服务。](answers/523-pricing-system.md)
+524. [设计履约系统。](answers/524-fulfillment-system.md)
+525. [设计售后退款系统。](answers/525-after-sales-refund.md)
+526. [设计商家入驻和商品审核系统。](answers/526-merchant-onboarding-review.md)
+527. [设计开放平台 API。](answers/527-openapi.md)
+528. [设计风控系统。](answers/528-risk-system.md)
+529. [设计推荐系统的在线服务部分。](answers/529-recommendation-online.md)
+530. [设计广告投放系统的核心链路。](answers/530-ad-delivery.md)
 
 ### 02 平台和基础设施设计
 
 题号：531-541；进度：11/11。
 
-531. [设计订单对账系统。](answers/531-design-order-reconciliation.md)
-532. [设计支付渠道对账系统。](answers/532-design-payment-channel-reconciliation.md)
-533. [设计消息重放平台。](answers/533-design-message-replay-platform.md)
-534. [设计内部运维补偿平台。](answers/534-design-internal-compensation-platform.md)
-535. [设计分布式 ID 服务。](answers/535-design-distributed-id.md)
-536. [设计配置中心。](answers/536-design-config-center.md)
-537. [设计限流系统。](answers/537-design-rate-limit-system.md)
-538. [设计熔断降级平台。](answers/538-design-circuit-degrade-platform.md)
-539. [设计灰度发布平台。](answers/539-design-canary-release-platform.md)
-540. [设计日志采集和查询平台。](answers/540-design-log-collection-query.md)
-541. [设计指标和告警平台。](answers/541-design-metrics-alerting.md)
+531. [设计订单对账系统。](answers/531-order-reconciliation.md)
+532. [设计支付渠道对账系统。](answers/532-payment-channel-reconciliation.md)
+533. [设计消息重放平台。](answers/533-message-replay-platform.md)
+534. [设计内部运维补偿平台。](answers/534-internal-compensation-platform.md)
+535. [设计分布式 ID 服务。](answers/535-distributed-id.md)
+536. [设计配置中心。](answers/536-config-center.md)
+537. [设计限流系统。](answers/537-rate-limit-system.md)
+538. [设计熔断降级平台。](answers/538-circuit-degrade-platform.md)
+539. [设计灰度发布平台。](answers/539-canary-release-platform.md)
+540. [设计日志采集和查询平台。](answers/540-log-collection-query.md)
+541. [设计指标和告警平台。](answers/541-metrics-alerting.md)
 
 ### 03 大规模容量和多活设计
 
 题号：542-554；进度：13/13。
 
-542. [设计链路追踪系统。](answers/542-system-answer.md)
-543. [设计多区域电商系统。](answers/543-system-answer.md)
-544. [设计异地多活订单系统。](answers/544-system-answer.md)
-545. [设计数据归档系统。](answers/545-system-answer.md)
-546. [设计大促容量保障方案。](answers/546-system-answer.md)
-547. [设计热点 SKU 保护方案。](answers/547-system-answer.md)
-548. [设计商品缓存系统。](answers/548-system-answer.md)
-549. [设计 Kafka Outbox 可靠事件系统。](answers/549-system-answer.md)
-550. [设计面向 10 亿用户的用户中心。](answers/550-system-answer.md)
-551. [设计支持 100 万峰值并发的网关。](answers/551-system-answer.md)
-552. [设计支持 10 万下单 QPS 的交易链路。](answers/552-system-answer.md)
-553. [设计一次数据库扩容和迁移方案。](answers/553-system-answer.md)
-554. [设计一次从单体到微服务的演进方案。](answers/554-system-answer.md)
+542. [设计链路追踪系统。](answers/542-distributed-tracing-system.md)
+543. [设计多区域电商系统。](answers/543-multi-region-ecommerce.md)
+544. [设计异地多活订单系统。](answers/544-active-active-order.md)
+545. [设计数据归档系统。](answers/545-data-archiving.md)
+546. [设计大促容量保障方案。](answers/546-promotion-capacity.md)
+547. [设计热点 SKU 保护方案。](answers/547-hot-sku-protection.md)
+548. [设计商品缓存系统。](answers/548-product-cache.md)
+549. [设计 Kafka Outbox 可靠事件系统。](answers/549-kafka-outbox-events.md)
+550. [设计面向 10 亿用户的用户中心。](answers/550-billion-user-center.md)
+551. [设计支持 100 万峰值并发的网关。](answers/551-million-concurrency-gateway.md)
+552. [设计支持 10 万下单 QPS 的交易链路。](answers/552-order-qps-transaction.md)
+553. [设计一次数据库扩容和迁移方案。](answers/553-database-expansion-migration.md)
+554. [设计一次从单体到微服务的演进方案。](answers/554-monolith-to-microservices.md)
 
 ## 05 生产事故和排障
 
@@ -674,51 +674,51 @@
 
 题号：555-563；进度：9/9。
 
-555. [下单成功率突然下降，你怎么排查？](answers/555-incident-answer.md)
-556. [支付成功但订单未变成已支付，怎么处理？](answers/556-incident-answer.md)
-557. [库存出现少量超卖，怎么定位和修复？](answers/557-incident-answer.md)
-558. [库存预占记录大量过期未释放，怎么恢复？](answers/558-incident-answer.md)
-559. [Outbox 表积压大量待发送事件，怎么处理？](answers/559-incident-answer.md)
-560. [Kafka 某个 topic lag 快速增长，怎么排查？](answers/560-incident-answer.md)
-561. [Redis 集群抖动，商品详情接口 P99 升高，怎么处理？](answers/561-incident-answer.md)
-562. [数据库 CPU 100%，你先看什么？](answers/562-incident-answer.md)
-563. [数据库连接池耗尽，如何止血？](answers/563-incident-answer.md)
+555. [下单成功率突然下降，你怎么排查？](answers/555-order-success-rate-drop.md)
+556. [支付成功但订单未变成已支付，怎么处理？](answers/556-payment-success-order-unpaid.md)
+557. [库存出现少量超卖，怎么定位和修复？](answers/557-inventory-oversell.md)
+558. [库存预占记录大量过期未释放，怎么恢复？](answers/558-stock-reservation-unreleased.md)
+559. [Outbox 表积压大量待发送事件，怎么处理？](answers/559-outbox-backlog.md)
+560. [Kafka 某个 topic lag 快速增长，怎么排查？](answers/560-kafka-lag-growth.md)
+561. [Redis 集群抖动，商品详情接口 P99 升高，怎么处理？](answers/561-redis-p99-spike.md)
+562. [数据库 CPU 100%，你先看什么？](answers/562-database-high-cpu.md)
+563. [数据库连接池耗尽，如何止血？](answers/563-db-pool-exhaustion.md)
 
 ### 02 发布、中间件和运行时事故
 
 题号：564-572；进度：9/9。
 
-564. [某个新版本发布后错误率上升，如何判断是否回滚？](answers/564-incident-answer.md)
-565. [灰度 5% 正常，放量 50% 后异常，可能是什么原因？](answers/565-incident-answer.md)
-566. [一个 Pod 频繁重启，如何排查？](answers/566-incident-answer.md)
-567. [JVM Full GC 频繁，如何处理？](answers/567-incident-answer.md)
-568. [线程数暴涨，如何定位？](answers/568-incident-answer.md)
-569. [线上死锁如何处理？](answers/569-incident-answer.md)
-570. [支付渠道重复回调导致大量冲突日志，是否是事故？](answers/570-incident-answer.md)
-571. [对账发现渠道成功本地失败，怎么修复？](answers/571-incident-answer.md)
-572. [用户投诉重复扣款，如何排查？](answers/572-incident-answer.md)
+564. [某个新版本发布后错误率上升，如何判断是否回滚？](answers/564-release-error-rate.md)
+565. [灰度 5% 正常，放量 50% 后异常，可能是什么原因？](answers/565-canary-scale-up.md)
+566. [一个 Pod 频繁重启，如何排查？](answers/566-pod-restart.md)
+567. [JVM Full GC 频繁，如何处理？](answers/567-full-gc.md)
+568. [线程数暴涨，如何定位？](answers/568-thread-spike.md)
+569. [线上死锁如何处理？](answers/569-deadlock.md)
+570. [支付渠道重复回调导致大量冲突日志，是否是事故？](answers/570-duplicate-payment-callback.md)
+571. [对账发现渠道成功本地失败，怎么修复？](answers/571-reconciliation-channel-success.md)
+572. [用户投诉重复扣款，如何排查？](answers/572-duplicate-charge.md)
 
 ### 03 配置、安全、观测和数据修复
 
 题号：573-579；进度：7/7。
 
-573. [秒杀开始后普通下单也变慢，怎么止血？](answers/573-incident-answer.md)
-574. [搜索结果大量缺商品，怎么恢复？](answers/574-incident-answer.md)
-575. [商品价格显示旧值，如何排查缓存一致性问题？](answers/575-incident-answer.md)
-576. [配置中心推错配置，如何回滚？](answers/576-incident-answer.md)
-577. [Secret 泄露后如何应急？](answers/577-incident-answer.md)
-578. [日志系统故障是否会影响交易链路？](answers/578-incident-answer.md)
-579. [监控告警误报太多，如何治理？](answers/579-incident-answer.md)
+573. [秒杀开始后普通下单也变慢，怎么止血？](answers/573-flash-sale-slow-normal-order.md)
+574. [搜索结果大量缺商品，怎么恢复？](answers/574-search-missing-products.md)
+575. [商品价格显示旧值，如何排查缓存一致性问题？](answers/575-stale-price-cache.md)
+576. [配置中心推错配置，如何回滚？](answers/576-config-rollback.md)
+577. [Secret 泄露后如何应急？](answers/577-secret-leak.md)
+578. [日志系统故障是否会影响交易链路？](answers/578-logging-outage.md)
+579. [监控告警误报太多，如何治理？](answers/579-alert-noise.md)
 
 ### 04 大促、容量和恢复决策
 
 题号：580-584；进度：5/5。
 
-580. [生产数据库误删数据，如何恢复？](answers/580-incident-answer.md)
-581. [消费者 bug 导致错误写入大量数据，如何修复？](answers/581-incident-answer.md)
-582. [下游恢复后流量全部放开又被打挂，如何避免？](answers/582-incident-answer.md)
-583. [大促前你会做哪些检查？](answers/583-incident-answer.md)
-584. [大促中核心指标异常，你如何决策降级？](answers/584-incident-answer.md)
+580. [生产数据库误删数据，如何恢复？](answers/580-database-data-deletion.md)
+581. [消费者 bug 导致错误写入大量数据，如何修复？](answers/581-consumer-bad-writes.md)
+582. [下游恢复后流量全部放开又被打挂，如何避免？](answers/582-downstream-recovery-surge.md)
+583. [大促前你会做哪些检查？](answers/583-promotion-readiness.md)
+584. [大促中核心指标异常，你如何决策降级？](answers/584-promotion-degradation-decision.md)
 
 ## 06 架构取舍和高级追问
 
@@ -726,42 +726,42 @@
 
 题号：585-594；进度：10/10。
 
-585. [你为什么选择微服务而不是单体？](answers/585-tradeoff-answer.md)
-586. [你为什么选择本地事务加 Outbox，而不是 TCC？](answers/586-tradeoff-answer.md)
-587. [你为什么不使用全局分布式事务？](answers/587-tradeoff-answer.md)
-588. [你为什么用 Kafka，而不是 RabbitMQ？](answers/588-tradeoff-answer.md)
-589. [你为什么用 Redis 缓存，而不是只靠数据库？](answers/589-tradeoff-answer.md)
-590. [你为什么用 OpenSearch，而不是 MySQL like 查询？](answers/590-tradeoff-answer.md)
-591. [你为什么要做库存预占，而不是支付时再扣库存？](answers/591-tradeoff-answer.md)
-592. [你为什么要保存价格快照？](answers/592-tradeoff-answer.md)
-593. [你为什么要做支付流水，而不是只更新支付状态？](answers/593-tradeoff-answer.md)
-594. [你为什么要做对账？](answers/594-tradeoff-answer.md)
+585. [你为什么选择微服务而不是单体？](answers/585-microservices-vs-monolith.md)
+586. [你为什么选择本地事务加 Outbox，而不是 TCC？](answers/586-outbox-vs-tcc.md)
+587. [你为什么不使用全局分布式事务？](answers/587-avoid-global-transaction.md)
+588. [你为什么用 Kafka，而不是 RabbitMQ？](answers/588-kafka-vs-rabbitmq.md)
+589. [你为什么用 Redis 缓存，而不是只靠数据库？](answers/589-redis-cache.md)
+590. [你为什么用 OpenSearch，而不是 MySQL like 查询？](answers/590-opensearch-vs-mysql.md)
+591. [你为什么要做库存预占，而不是支付时再扣库存？](answers/591-inventory-reservation.md)
+592. [你为什么要保存价格快照？](answers/592-price-snapshot.md)
+593. [你为什么要做支付流水，而不是只更新支付状态？](answers/593-payment-ledger.md)
+594. [你为什么要做对账？](answers/594-reconciliation.md)
 
 ### 02 一致性、成本和技术债
 
 题号：595-604；进度：10/10。
 
-595. [你为什么要做补偿任务，而不是人工处理所有异常？](answers/595-tradeoff-answer.md)
-596. [你为什么要做幂等表，而不是只在代码里判断状态？](answers/596-tradeoff-answer.md)
-597. [你为什么要引入 Kubernetes？](answers/597-tradeoff-answer.md)
-598. [你为什么要拆 common？](answers/598-tradeoff-answer.md)
-599. [你如何避免 common 变成强耦合中心？](answers/599-tradeoff-answer.md)
-600. [你如何判断一个方案过度设计？](answers/600-tradeoff-answer.md)
-601. [你如何在交付速度和架构质量之间取舍？](answers/601-tradeoff-answer.md)
-602. [你如何在一致性和可用性之间取舍？](answers/602-tradeoff-answer.md)
-603. [你如何在成本和性能之间取舍？](answers/603-tradeoff-answer.md)
-604. [如果只能做三件事提升稳定性，你做什么？](answers/604-tradeoff-answer.md)
+595. [你为什么要做补偿任务，而不是人工处理所有异常？](answers/595-compensation-jobs.md)
+596. [你为什么要做幂等表，而不是只在代码里判断状态？](answers/596-idempotency-table.md)
+597. [你为什么要引入 Kubernetes？](answers/597-kubernetes.md)
+598. [你为什么要拆 common？](answers/598-common-module.md)
+599. [你如何避免 common 变成强耦合中心？](answers/599-common-coupling.md)
+600. [你如何判断一个方案过度设计？](answers/600-overengineering.md)
+601. [你如何在交付速度和架构质量之间取舍？](answers/601-speed-vs-quality.md)
+602. [你如何在一致性和可用性之间取舍？](answers/602-consistency-vs-availability.md)
+603. [你如何在成本和性能之间取舍？](answers/603-cost-vs-performance.md)
+604. [如果只能做三件事提升稳定性，你做什么？](answers/604-stability-top-three.md)
 
 ### 03 团队协作和工程质量
 
 题号：605-610；进度：6/6。
 
-605. [如果只能做三件事提升吞吐，你做什么？](answers/605-tradeoff-answer.md)
-606. [如果只能做三件事降低成本，你做什么？](answers/606-tradeoff-answer.md)
-607. [如果让你重构当前系统，你优先改什么？](answers/607-tradeoff-answer.md)
-608. [当前系统最大的技术债是什么？](answers/608-tradeoff-answer.md)
-609. [当前系统最大的生产风险是什么？](answers/609-tradeoff-answer.md)
-610. [你如何证明这个系统不是玩具项目？](answers/610-tradeoff-answer.md)
+605. [如果只能做三件事提升吞吐，你做什么？](answers/605-throughput-top-three.md)
+606. [如果只能做三件事降低成本，你做什么？](answers/606-cost-top-three.md)
+607. [如果让你重构当前系统，你优先改什么？](answers/607-refactor-priorities.md)
+608. [当前系统最大的技术债是什么？](answers/608-technical-debt.md)
+609. [当前系统最大的生产风险是什么？](answers/609-production-risk.md)
+610. [你如何证明这个系统不是玩具项目？](answers/610-not-toy-project.md)
 
 ## 07 Amazon L6 行为面试
 
@@ -769,36 +769,36 @@
 
 题号：611-622；进度：12/12。
 
-611. [讲一次你主导复杂系统设计的经历。](answers/611-behavior-answer.md)
-612. [讲一次你在需求模糊时如何拆解问题。](answers/612-behavior-answer.md)
-613. [讲一次你发现并修复深层技术问题的经历。](answers/613-behavior-answer.md)
-614. [讲一次你推动团队采用更好工程实践的经历。](answers/614-behavior-answer.md)
-615. [讲一次你和别人技术意见不一致时如何处理。](answers/615-behavior-answer.md)
-616. [讲一次你做出技术取舍的经历。](answers/616-behavior-answer.md)
-617. [讲一次你为了长期质量牺牲短期速度的经历。](answers/617-behavior-answer.md)
-618. [讲一次你为了业务交付接受技术债的经历。](answers/618-behavior-answer.md)
-619. [讲一次你处理线上事故的经历。](answers/619-behavior-answer.md)
-620. [讲一次你在事故后推动系统性改进的经历。](answers/620-behavior-answer.md)
-621. [讲一次你用数据证明方案有效的经历。](answers/621-behavior-answer.md)
-622. [讲一次你降低系统成本的经历。](answers/622-behavior-answer.md)
+611. [讲一次你主导复杂系统设计的经历。](answers/611-complex-system-design.md)
+612. [讲一次你在需求模糊时如何拆解问题。](answers/612-ambiguous-requirements.md)
+613. [讲一次你发现并修复深层技术问题的经历。](answers/613-deep-technical-issue.md)
+614. [讲一次你推动团队采用更好工程实践的经历。](answers/614-engineering-practices.md)
+615. [讲一次你和别人技术意见不一致时如何处理。](answers/615-technical-disagreement.md)
+616. [讲一次你做出技术取舍的经历。](answers/616-technical-tradeoff.md)
+617. [讲一次你为了长期质量牺牲短期速度的经历。](answers/617-quality-over-speed.md)
+618. [讲一次你为了业务交付接受技术债的经历。](answers/618-accepted-technical-debt.md)
+619. [讲一次你处理线上事故的经历。](answers/619-production-incident.md)
+620. [讲一次你在事故后推动系统性改进的经历。](answers/620-post-incident-improvement.md)
+621. [讲一次你用数据证明方案有效的经历。](answers/621-data-driven-proof.md)
+622. [讲一次你降低系统成本的经历。](answers/622-cost-reduction.md)
 
 ### 02 影响力、取舍和跨团队推动
 
 题号：623-635；进度：13/13。
 
-623. [讲一次你提升系统可用性的经历。](answers/623-behavior-answer.md)
-624. [讲一次你提升性能或容量的经历。](answers/624-behavior-answer.md)
-625. [讲一次你 mentor 其他工程师的经历。](answers/625-behavior-answer.md)
-626. [讲一次你影响多个团队的经历。](answers/626-behavior-answer.md)
-627. [讲一次你面对失败项目如何复盘。](answers/627-behavior-answer.md)
-628. [讲一次你主动承担超出职责范围工作的经历。](answers/628-behavior-answer.md)
-629. [讲一次你拒绝不合理方案的经历。](answers/629-behavior-answer.md)
-630. [讲一次你把复杂问题讲清楚给非技术人员的经历。](answers/630-behavior-answer.md)
-631. [讲一次你坚持高标准的经历。](answers/631-behavior-answer.md)
-632. [讲一次你快速学习陌生领域并交付的经历。](answers/632-behavior-answer.md)
-633. [讲一次你处理安全或合规风险的经历。](answers/633-behavior-answer.md)
-634. [讲一次你没有足够资源但仍然交付结果的经历。](answers/634-behavior-answer.md)
-635. [讲一次你做长期架构演进规划的经历。](answers/635-behavior-answer.md)
+623. [讲一次你提升系统可用性的经历。](answers/623-availability-improvement.md)
+624. [讲一次你提升性能或容量的经历。](answers/624-performance-capacity.md)
+625. [讲一次你 mentor 其他工程师的经历。](answers/625-mentoring.md)
+626. [讲一次你影响多个团队的经历。](answers/626-cross-team-influence.md)
+627. [讲一次你面对失败项目如何复盘。](answers/627-failed-project-retro.md)
+628. [讲一次你主动承担超出职责范围工作的经历。](answers/628-beyond-scope-ownership.md)
+629. [讲一次你拒绝不合理方案的经历。](answers/629-reject-unreasonable-plan.md)
+630. [讲一次你把复杂问题讲清楚给非技术人员的经历。](answers/630-explain-to-nontechnical.md)
+631. [讲一次你坚持高标准的经历。](answers/631-high-standards.md)
+632. [讲一次你快速学习陌生领域并交付的经历。](answers/632-learn-new-domain.md)
+633. [讲一次你处理安全或合规风险的经历。](answers/633-security-compliance.md)
+634. [讲一次你没有足够资源但仍然交付结果的经历。](answers/634-limited-resources.md)
+635. [讲一次你做长期架构演进规划的经历。](answers/635-architecture-roadmap.md)
 
 ## 08 现场编码和设计实现
 
@@ -806,44 +806,44 @@
 
 题号：636-644；进度：9/9。
 
-636. [手写 LRU Cache。](answers/636-coding-answer.md)
-637. [手写令牌桶限流器。](answers/637-coding-answer.md)
-638. [手写滑动窗口限流器。](answers/638-coding-answer.md)
-639. [手写线程安全单例。](answers/639-coding-answer.md)
-640. [手写阻塞队列。](answers/640-coding-answer.md)
-641. [手写生产者消费者模型。](answers/641-coding-answer.md)
-642. [手写简化线程池。](answers/642-coding-answer.md)
-643. [手写延迟队列。](answers/643-coding-answer.md)
-644. [手写重试工具，支持指数退避和 jitter。](answers/644-coding-answer.md)
+636. [手写 LRU Cache。](answers/636-lru-cache.md)
+637. [手写令牌桶限流器。](answers/637-token-bucket.md)
+638. [手写滑动窗口限流器。](answers/638-sliding-window-limiter.md)
+639. [手写线程安全单例。](answers/639-thread-safe-singleton.md)
+640. [手写阻塞队列。](answers/640-blocking-queue.md)
+641. [手写生产者消费者模型。](answers/641-producer-consumer.md)
+642. [手写简化线程池。](answers/642-simple-thread-pool.md)
+643. [手写延迟队列。](answers/643-delay-queue.md)
+644. [手写重试工具，支持指数退避和 jitter。](answers/644-retry-backoff-jitter.md)
 
 ### 02 后端基础组件实现
 
 题号：645-654；进度：10/10。
 
-645. [手写熔断器状态机。](answers/645-coding-answer.md)
-646. [手写幂等处理器。](answers/646-coding-answer.md)
-647. [手写订单状态机。](answers/647-coding-answer.md)
-648. [手写库存条件扣减逻辑。](answers/648-coding-answer.md)
-649. [手写 Outbox Relay 核心逻辑。](answers/649-coding-answer.md)
-650. [手写 MQ 消费端去重逻辑。](answers/650-coding-answer.md)
-651. [手写 HMAC 签名校验。](answers/651-coding-answer.md)
-652. [手写敏感字段脱敏工具。](answers/652-coding-answer.md)
-653. [手写统一异常处理。](answers/653-coding-answer.md)
-654. [手写分页查询接口。](answers/654-coding-answer.md)
+645. [手写熔断器状态机。](answers/645-circuit-breaker.md)
+646. [手写幂等处理器。](answers/646-idempotency-processor.md)
+647. [手写订单状态机。](answers/647-order-state-machine.md)
+648. [手写库存条件扣减逻辑。](answers/648-inventory-deduction.md)
+649. [手写 Outbox Relay 核心逻辑。](answers/649-outbox-relay.md)
+650. [手写 MQ 消费端去重逻辑。](answers/650-mq-consumer-dedup.md)
+651. [手写 HMAC 签名校验。](answers/651-hmac-verification.md)
+652. [手写敏感字段脱敏工具。](answers/652-data-masking.md)
+653. [手写统一异常处理。](answers/653-exception-handler.md)
+654. [手写分页查询接口。](answers/654-pagination-api.md)
 
 ### 03 分布式可靠性组件实现
 
 题号：655-663；进度：9/9。
 
-655. [手写分布式 ID 生成器简化版。](answers/655-coding-answer.md)
-656. [手写一致性 hash。](answers/656-coding-answer.md)
-657. [手写 Top K 统计。](answers/657-coding-answer.md)
-658. [手写限时任务执行器。](answers/658-coding-answer.md)
-659. [手写一个可关闭的后台 worker。](answers/659-coding-answer.md)
-660. [手写 SQL 查询最近 30 天每天下单量。](answers/660-coding-answer.md)
-661. [手写 SQL 查询支付对账差异。](answers/661-coding-answer.md)
-662. [手写 SQL 找出重复 request_id。](answers/662-coding-answer.md)
-663. [手写 Java 代码解析并聚合日志错误码。](answers/663-coding-answer.md)
+655. [手写分布式 ID 生成器简化版。](answers/655-distributed-id.md)
+656. [手写一致性 hash。](answers/656-consistent-hash.md)
+657. [手写 Top K 统计。](answers/657-top-k.md)
+658. [手写限时任务执行器。](answers/658-timed-task-executor.md)
+659. [手写一个可关闭的后台 worker。](answers/659-closeable-worker.md)
+660. [手写 SQL 查询最近 30 天每天下单量。](answers/660-sql-daily-orders.md)
+661. [手写 SQL 查询支付对账差异。](answers/661-sql-reconciliation-differences.md)
+662. [手写 SQL 找出重复 request_id。](answers/662-sql-duplicate-request-id.md)
+663. [手写 Java 代码解析并聚合日志错误码。](answers/663-log-error-aggregation.md)
 
 ## 09 反问面试官
 
@@ -851,21 +851,21 @@
 
 题号：664-668；进度：5/5。
 
-664. [这个团队负责的核心业务指标是什么？](answers/664-reverse-answer.md)
-665. [当前系统最大的稳定性挑战是什么？](answers/665-reverse-answer.md)
-666. [团队如何做 on-call 和事故复盘？](answers/666-reverse-answer.md)
-667. [服务规模大概是多少 QPS、数据量和实例数？](answers/667-reverse-answer.md)
-668. [团队使用哪些技术栈和部署平台？](answers/668-reverse-answer.md)
+664. [这个团队负责的核心业务指标是什么？](answers/664-core-business-metrics.md)
+665. [当前系统最大的稳定性挑战是什么？](answers/665-stability-challenges.md)
+666. [团队如何做 on-call 和事故复盘？](answers/666-oncall-incident-review.md)
+667. [服务规模大概是多少 QPS、数据量和实例数？](answers/667-service-scale.md)
+668. [团队使用哪些技术栈和部署平台？](answers/668-tech-stack.md)
 
 ### 02 业务和成长空间判断
 
 题号：669-673；进度：5/5。
 
-669. [当前系统是一体化架构还是微服务架构？](answers/669-reverse-answer.md)
-670. [团队如何做灰度、回滚和容量评估？](answers/670-reverse-answer.md)
-671. [团队如何衡量 Senior/L6 工程师的影响力？](answers/671-reverse-answer.md)
-672. [新人加入后前三个月通常会负责什么？](answers/672-reverse-answer.md)
-673. [团队当前最需要解决的技术债是什么？](answers/673-reverse-answer.md)
+669. [当前系统是一体化架构还是微服务架构？](answers/669-architecture-style.md)
+670. [团队如何做灰度、回滚和容量评估？](answers/670-release-capacity.md)
+671. [团队如何衡量 Senior/L6 工程师的影响力？](answers/671-senior-impact.md)
+672. [新人加入后前三个月通常会负责什么？](answers/672-new-hire-ramp.md)
+673. [团队当前最需要解决的技术债是什么？](answers/673-team-technical-debt.md)
 
 ## 使用建议
 

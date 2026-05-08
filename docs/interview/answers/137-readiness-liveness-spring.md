@@ -2,10 +2,6 @@
 
 [返回按分类学习面试题](../README.md)
 
-完成标记：已完成
-
-深度完善标记：已完成
-
 ## 题目
 
 readiness 和 liveness 在 Spring 中如何实现？
