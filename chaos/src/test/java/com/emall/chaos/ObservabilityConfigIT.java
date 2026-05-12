@@ -13,6 +13,7 @@ class ObservabilityConfigIT {
         String prometheus = Files.readString(Path.of("..", "ops", "prometheus.yml").normalize());
         String alerts = Files.readString(Path.of("..", "ops", "prometheus", "rules", "emall-alerts.yml").normalize());
         String otel = Files.readString(Path.of("..", "ops", "otel-collector.yml").normalize());
+        String logstash = Files.readString(Path.of("..", "ops", "elk", "logstash.conf").normalize());
         String dashboard =
                 Files.readString(Path.of("..", "ops", "grafana", "dashboards", "emall-overview.json").normalize());
 
@@ -27,6 +28,8 @@ class ObservabilityConfigIT {
                 .contains("EmallHpaNearMaxReplicas").contains("EmallPlatformOpsCriticalSecuritySignalsHigh");
         assertThat(otel).contains("endpoint: 0.0.0.0:4317").contains("endpoint: 0.0.0.0:4318").contains("processors:")
                 .contains("exporters:");
+        assertThat(logstash).contains("tcp").contains("json_lines").contains("http://elasticsearch:9200")
+                .contains("emall-logs-%{+YYYY.MM.dd}");
         assertThat(dashboard).contains("\"uid\": \"emall-overview\"").contains("\"title\": \"HTTP QPS\"")
                 .contains("\"title\": \"HTTP 5xx Ratio\"").contains("\"title\": \"HTTP P95 Latency\"")
                 .contains("\"title\": \"JVM Heap Usage\"");

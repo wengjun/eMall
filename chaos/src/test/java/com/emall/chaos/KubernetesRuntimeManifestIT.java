@@ -33,4 +33,21 @@ class KubernetesRuntimeManifestIT {
                     "- " + service);
         }
     }
+
+    @Test
+    void shouldProvideHelmDeploymentBaselineForStableRuntime() throws IOException {
+        Path chartDir = Path.of("..", "ops", "helm", "emall").normalize();
+        String chart = Files.readString(chartDir.resolve("Chart.yaml"));
+        String values = Files.readString(chartDir.resolve("values.yaml"));
+        String deployment = Files.readString(chartDir.resolve("templates/deployment.yaml"));
+        String hpa = Files.readString(chartDir.resolve("templates/hpa.yaml"));
+
+        assertThat(chart).contains("name: emall").contains("type: application");
+        assertThat(values).contains("EMALL_SENTINEL_ENABLED").contains("EMALL_REDIS_CLUSTER_NODES")
+                .contains("EMALL_NACOS_DISCOVERY_ENABLED").contains("EMALL_DUBBO_REGISTRY_ADDRESS")
+                .contains("name: order").contains("name: payment");
+        assertThat(deployment).contains("SPRING_PROFILES_ACTIVE").contains("redis-cluster")
+                .contains("/actuator/health/readiness").contains("/actuator/health/liveness");
+        assertThat(hpa).contains("kind: HorizontalPodAutoscaler").contains("averageUtilization");
+    }
 }
