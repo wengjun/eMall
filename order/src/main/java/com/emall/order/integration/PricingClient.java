@@ -1,32 +1,46 @@
 package com.emall.order.integration;
 
+import com.alibaba.csp.sentinel.annotation.SentinelResource;
+import com.alibaba.csp.sentinel.slots.block.BlockException;
 import com.emall.common.api.ErrorCode;
 import com.emall.common.exception.BusinessException;
-import io.github.resilience4j.bulkhead.annotation.Bulkhead;
-import io.github.resilience4j.circuitbreaker.annotation.CircuitBreaker;
-import io.github.resilience4j.ratelimiter.annotation.RateLimiter;
-import io.github.resilience4j.retry.annotation.Retry;
+import com.emall.common.rpc.PriceQuoteCommand;
+import com.emall.common.rpc.PriceQuoteView;
+import com.emall.common.rpc.PricingRpcService;
 import java.math.BigDecimal;
 import java.time.Instant;
+import org.apache.dubbo.config.annotation.DubboReference;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestClient;
 
 @Service
 public class PricingClient {
     private final RestClient pricingRestClient;
+    private final String rpcProtocol;
 
-    public PricingClient(RestClient pricingRestClient) {
+    @DubboReference(check = false, retries = 0, timeout = 300)
+    private PricingRpcService pricingRpcService;
+
+    public PricingClient(RestClient pricingRestClient, @Value("${emall.rpc.protocol:http}") String rpcProtocol) {
         this.pricingRestClient = pricingRestClient;
+        this.rpcProtocol = rpcProtocol;
     }
 
-    @Retry(name = "pricingService")
-    @RateLimiter(name = "pricingService")
-    @Bulkhead(name = "pricingService")
-    @CircuitBreaker(name = "pricingService", fallbackMethod = "fallbackQuote")
+    public PricingClient(RestClient pricingRestClient) {
+        this(pricingRestClient, "http");
+    }
+
+    @SentinelResource(value = "order.pricing.quote", blockHandler = "blockQuote", fallback = "fallbackQuote")
     public PriceQuote quote(long skuId, int quantity) {
-        PriceQuoteResponse response = pricingRestClient.post().uri("/api/prices/quotes")
-                .body(new QuoteRequest(skuId, quantity)).retrieve().body(PriceQuoteResponse.class);
-        PriceQuote result = response == null ? null : response.data();
+        PriceQuote result;
+        if (dubboEnabled()) {
+            result = toLocal(pricingRpcService.quote(new PriceQuoteCommand(skuId, quantity)));
+        } else {
+            PriceQuoteResponse response = pricingRestClient.post().uri("/api/prices/quotes")
+                    .body(new QuoteRequest(skuId, quantity)).retrieve().body(PriceQuoteResponse.class);
+            result = response == null ? null : response.data();
+        }
         if (result == null) {
             throw new BusinessException(ErrorCode.CONFLICT, "price quote returned empty response");
         }
@@ -35,6 +49,19 @@ public class PricingClient {
 
     public PriceQuote fallbackQuote(long skuId, int quantity, Throwable error) {
         throw new BusinessException(ErrorCode.CONFLICT, "pricing service unavailable");
+    }
+
+    public PriceQuote blockQuote(long skuId, int quantity, BlockException error) {
+        throw new BusinessException(ErrorCode.CONFLICT, "pricing service throttled");
+    }
+
+    private boolean dubboEnabled() {
+        return "dubbo".equalsIgnoreCase(rpcProtocol) && pricingRpcService != null;
+    }
+
+    private PriceQuote toLocal(PriceQuoteView view) {
+        return view == null ? null : new PriceQuote(view.skuId(), view.unitPrice(), view.quantity(), view.subtotal(),
+                view.currency(), view.priceVersion(), view.quotedAt());
     }
 
     public record QuoteRequest(long skuId, int quantity) {
