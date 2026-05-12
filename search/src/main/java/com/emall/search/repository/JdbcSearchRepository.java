@@ -14,7 +14,7 @@ import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Repository;
 
 @Repository
-@ConditionalOnProperty(name = "emall.storage", havingValue = "jdbc", matchIfMissing = true)
+@ConditionalOnProperty(name = "emall.search.engine", havingValue = "jdbc", matchIfMissing = true)
 public class JdbcSearchRepository implements SearchRepository {
     private final JdbcTemplate jdbcTemplate;
 
