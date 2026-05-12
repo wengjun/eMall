@@ -20,7 +20,7 @@
   <rect x="440" y="205" width="120" height="60" class="event"/><text x="500" y="241" class="text" text-anchor="middle">Kafka</text>
   <rect x="620" y="205" width="140" height="60" class="box"/><text x="690" y="241" class="text" text-anchor="middle">搜索消费者</text>
   <rect x="820" y="135" width="150" height="60" class="db"/><text x="895" y="171" class="text" text-anchor="middle">消息去重</text>
-  <rect x="820" y="235" width="150" height="60" class="db"/><text x="895" y="271" class="text" text-anchor="middle">OpenSearch 索引</text>
+  <rect x="820" y="235" width="150" height="60" class="db"/><text x="895" y="271" class="text" text-anchor="middle">Elasticsearch 索引</text>
   <path d="M185 160 L245 115" class="line"/>
   <path d="M185 190 L245 235" class="line"/>
   <path d="M380 235 H440" class="line"/>

@@ -13,7 +13,7 @@
 - MySQL CPU、连接数、慢 SQL、锁等待。
 - Redis 命中率、内存、热 key、慢命令。
 - Kafka 生产速率、消费延迟、积压。
-- OpenSearch 查询延迟、写入延迟、索引大小。
+- Elasticsearch 查询延迟、写入延迟、索引大小。
 
 ## 全局 SLO 目标
 

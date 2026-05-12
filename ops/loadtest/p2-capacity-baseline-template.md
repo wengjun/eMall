@@ -13,7 +13,7 @@
 - MySQL 规格：
 - Redis 规格：
 - Kafka 规格：
-- OpenSearch 规格：
+- Elasticsearch 规格：
 - 压测机规格：
 
 ## 场景

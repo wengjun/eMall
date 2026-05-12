@@ -49,7 +49,7 @@
 2. 商品服务写 Outbox 事件。
 3. Outbox relay 发布到 Kafka。
 4. 搜索服务消费事件并幂等更新索引。
-5. 搜索查询读取 OpenSearch 投影。
+5. 搜索查询读取 Elasticsearch 投影。
 
 这种方案牺牲短暂实时性，换取商品写入的稳定性和可恢复性。
 

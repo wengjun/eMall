@@ -24,7 +24,7 @@
 ## 建议应用顺序
 
 1. 先创建 namespace、Secret、ConfigMap 和 ServiceAccount。
-2. 再部署 MySQL、Redis、Kafka、OpenSearch 等基础设施，或者接入外部托管服务。
+2. 再部署 MySQL、Redis、Kafka、Nacos、Elasticsearch 等基础设施，或者接入外部托管服务。
 3. 部署核心服务：gateway、user、product、inventory、order、payment。
 4. 部署扩展服务：search、fulfillment、review、after-sales、merchant 等。
 5. 部署观测组件和告警规则。

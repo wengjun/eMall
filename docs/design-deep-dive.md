@@ -66,7 +66,7 @@ eMall 不是一个简单 CRUD 商城，而是一个面向大型电商场景的 J
 
 ### 商品到搜索同步流程
 
-搜索是读模型，不应该让商品写入阻塞在 OpenSearch 上。
+搜索是读模型，不应该让商品写入阻塞在 Elasticsearch 上。
 
 ![商品到搜索同步数据流图](assets/product-search-sync-flow.svg)
 
@@ -201,7 +201,7 @@ Outbox 用于解决“本地事务成功但 MQ 发送失败”的问题。
 - 模块数量较多，小团队学习和维护成本偏高。
 - 部分服务是生产基线实现，还需要更深业务规则才能真实上线。
 - 没有经过持续压测、真实分库分表和生产指标验证，不能声称已经达到真实大厂规模。
-- Docker、Kafka、Redis、MySQL、OpenSearch、Kubernetes 都需要运维能力。
+- Docker、Kafka、Redis、MySQL、Elasticsearch、Kubernetes 都需要运维能力。
 - 目前缺少完整前端商城、商家后台和内部运维控制台。
 - 安全、隐私、税务、结算和合规流程还需要结合国家和行业要求继续深化。
 

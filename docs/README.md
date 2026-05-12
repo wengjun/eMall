@@ -1,4 +1,4 @@
-﻿# 文档索引
+# 文档索引
 
 [项目首页](../README.md) | [学习手册](learning/README.md) | [运维配置索引](../ops/README.md)
 
@@ -10,6 +10,8 @@
 - [设计深度说明](design-deep-dive.md)：设计思路、数据流图、关键技术细节、竞品对比和面试讲法。
 - [技术能力地图](technical-skill-map.md)：手动实现本工程需要掌握的 Java 后端技术点导航。
 - [学习手册](learning/README.md)：按主题拆分后的深入学习文档，适合系统学习。
+- [国内互联网技术栈适配](domestic-stack.md)：Sentinel、MyBatis-Plus、Nacos、Dubbo、Elasticsearch、ClickHouse 和 ELK 的接入说明。
+- [国内生产扩展说明](domestic-stack.md#生产扩展基线)：分库分表、多级缓存、Redis Cluster 和 Helm 部署基线。
 - [模块清单](modules.md)：所有 Maven 模块、职责分组和构建 profile。
 - [路线图](roadmap.md)：P0 到 P14 的阶段规划和完成标记。
 - [生产检查清单](production-checklist.md)：上线前需要检查的核心事项。
@@ -41,6 +43,7 @@
 ## 部署资产
 
 - [Kubernetes 基线](../ops/k8s/README.md)：Kubernetes 清单使用方式和假设。
+- [Helm 部署基线](../ops/helm/emall)：面向国内云原生部署的 Helm Chart 示例。
 - [运维配置索引](../ops/README.md)：本地运行和部署配置地图。
 - `../docker-compose.yml`：本地运行拓扑。
 - `../ops/**`：Kubernetes、可观测、发布、混沌、MySQL 和压测基线。

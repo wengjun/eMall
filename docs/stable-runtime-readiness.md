@@ -52,7 +52,7 @@
 
 - 启动 Docker 或真实基础设施，执行 Testcontainers 和 smoke E2E。
 - 对核心链路做持续压测，得到容量基线。
-- 为 MySQL、Redis、Kafka、OpenSearch 准备真实集群和备份恢复方案。
+- 为 MySQL、Redis、Kafka、Elasticsearch 准备真实集群和备份恢复方案。
 - 接入真实配置中心、服务发现、密钥管理和日志平台。
 - 建立发布审批、灰度、回滚和故障演练流程。
 - 补齐前端、后台、权限、审计和合规流程。

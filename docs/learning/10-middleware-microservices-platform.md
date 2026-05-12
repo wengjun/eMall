@@ -59,7 +59,7 @@
 - 消费延迟需要监控。
 - 消息顺序通常只在同一个 partition 内保证。
 
-### OpenSearch
+### Elasticsearch
 
 用于搜索读模型。
 
@@ -86,7 +86,7 @@
 - MySQL。
 - Redis。
 - Kafka。
-- OpenSearch。
+- Elasticsearch。
 - Prometheus。
 - Grafana。
 
@@ -196,7 +196,7 @@ Docker Compose 适合本地开发。
 - MySQL。
 - Redis。
 - Kafka。
-- OpenSearch。
+- Elasticsearch。
 - Prometheus。
 - Grafana。
 - 应用服务。

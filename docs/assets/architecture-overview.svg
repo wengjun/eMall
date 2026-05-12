@@ -77,7 +77,7 @@
   <rect x="1030" y="390" width="210" height="235" class="data"/>
   <text x="1060" y="425" class="layer">数据和中间件</text>
   <text x="1060" y="465" class="text">MySQL / Redis</text>
-  <text x="1060" y="500" class="text">Kafka / OpenSearch</text>
+  <text x="1060" y="500" class="text">Kafka / Elasticsearch</text>
   <text x="1060" y="535" class="text">对象存储 / 数仓</text>
 
   <rect x="260" y="655" width="980" height="70" class="ops"/>

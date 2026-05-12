@@ -66,7 +66,7 @@ mvn -pl smoke -DskipITs=false verify
 - 当前 `user` 模块的 `UserRepositoryIntegrationTest` 会被 Surefire 单元测试阶段捕获，因此执行 `mvn test`
   时也可能启动 Testcontainers/MySQL。后续如果要严格区分阶段，可以把它重命名为 `UserRepositoryIT`。
 - Testcontainers 测试需要 Docker daemon 正常运行。
-- 真实 E2E 测试需要先启动 MySQL、Redis、Kafka、OpenSearch 和相关服务。
+- 真实 E2E 测试需要先启动 MySQL、Redis、Kafka、Elasticsearch 和相关服务。
 - 快速 CI 可以先跑 `mvn validate` 和 `mvn test`。
 - 具备 Docker 的 CI 环境再跑 `mvn verify -DskipITs=false` 或单独的 Failsafe 集成测试命令。
 

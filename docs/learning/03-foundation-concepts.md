@@ -744,7 +744,7 @@ CI 环境又是 C
 使用 Docker Compose：
 
 ```text
-一条命令启动 MySQL、Redis、Kafka、OpenSearch
+一条命令启动 MySQL、Redis、Kafka、Elasticsearch
 ```
 
 学习重点：
