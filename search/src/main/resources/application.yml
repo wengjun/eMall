@@ -8,10 +8,28 @@ logging:
 spring:
   application:
     name: search
+  cloud:
+    nacos:
+      server-addr: ${EMALL_NACOS_SERVER_ADDR:localhost:8848}
+      discovery:
+        enabled: ${EMALL_NACOS_DISCOVERY_ENABLED:false}
+        namespace: ${EMALL_NACOS_NAMESPACE:public}
+        group: ${EMALL_NACOS_GROUP:DEFAULT_GROUP}
+      config:
+        enabled: ${EMALL_NACOS_CONFIG_ENABLED:false}
+        import-check:
+          enabled: false
+    sentinel:
+      enabled: ${EMALL_SENTINEL_ENABLED:false}
+      transport:
+        dashboard: ${EMALL_SENTINEL_DASHBOARD:localhost:8858}
+        port: ${EMALL_SENTINEL_API_PORT:8719}
   datasource:
     url: ${EMALL_SEARCH_DB_URL:jdbc:mysql://localhost:3306/emall_search?useUnicode=true&characterEncoding=utf8&serverTimezone=UTC}
     username: ${EMALL_DB_USERNAME:root}
     password: ${EMALL_DB_PASSWORD:root}
+  elasticsearch:
+    uris: ${EMALL_ELASTICSEARCH_URL:http://localhost:9200}
   flyway:
     enabled: true
   kafka:
@@ -27,8 +45,8 @@ spring:
 emall:
   storage: jdbc
   search:
-    engine: opensearch
-    url: ${EMALL_OPENSEARCH_URL:http://localhost:9200}
+    engine: elasticsearch
+    url: ${EMALL_ELASTICSEARCH_URL:http://localhost:9200}
   events:
     product-topic: ${EMALL_PRODUCT_EVENTS_TOPIC:emall.product.events}
     product-dlt-topic: ${EMALL_PRODUCT_EVENTS_DLT_TOPIC:emall.product.events.dlt}
@@ -51,3 +69,8 @@ management:
     web:
       exposure:
         include: health,info,metrics,prometheus
+mybatis-plus:
+  configuration:
+    map-underscore-to-camel-case: true
+  global-config:
+    banner: false

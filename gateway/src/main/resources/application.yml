@@ -13,6 +13,21 @@ spring:
       host: ${EMALL_REDIS_HOST:localhost}
       port: ${EMALL_REDIS_PORT:6379}
   cloud:
+    nacos:
+      server-addr: ${EMALL_NACOS_SERVER_ADDR:localhost:8848}
+      discovery:
+        enabled: ${EMALL_NACOS_DISCOVERY_ENABLED:false}
+        namespace: ${EMALL_NACOS_NAMESPACE:public}
+        group: ${EMALL_NACOS_GROUP:DEFAULT_GROUP}
+      config:
+        enabled: ${EMALL_NACOS_CONFIG_ENABLED:false}
+        import-check:
+          enabled: false
+    sentinel:
+      enabled: ${EMALL_SENTINEL_ENABLED:false}
+      transport:
+        dashboard: ${EMALL_SENTINEL_DASHBOARD:localhost:8858}
+        port: ${EMALL_SENTINEL_API_PORT:8719}
     gateway:
       default-filters:
         - name: RequestRateLimiter
@@ -23,147 +38,147 @@ spring:
             redis-rate-limiter.requestedTokens: 1
       routes:
         - id: user
-          uri: ${EMALL_USER_URL:http://localhost:8081}
+          uri: ${EMALL_USER_URL:lb://user}
           predicates:
             - Path=/api/users/**
         - id: product
-          uri: ${EMALL_PRODUCT_URL:http://localhost:8082}
+          uri: ${EMALL_PRODUCT_URL:lb://product}
           predicates:
             - Path=/api/products/**
         - id: inventory
-          uri: ${EMALL_INVENTORY_URL:http://localhost:8083}
+          uri: ${EMALL_INVENTORY_URL:lb://inventory}
           predicates:
             - Path=/api/inventory/**
         - id: order
-          uri: ${EMALL_ORDER_URL:http://localhost:8084}
+          uri: ${EMALL_ORDER_URL:lb://order}
           predicates:
             - Path=/api/orders/**
         - id: cart
-          uri: ${EMALL_CART_URL:http://localhost:8085}
+          uri: ${EMALL_CART_URL:lb://cart}
           predicates:
             - Path=/api/carts/**
         - id: payment
-          uri: ${EMALL_PAYMENT_URL:http://localhost:8086}
+          uri: ${EMALL_PAYMENT_URL:lb://payment}
           predicates:
             - Path=/api/payments/**
         - id: pricing
-          uri: ${EMALL_PRICING_URL:http://localhost:8087}
+          uri: ${EMALL_PRICING_URL:lb://pricing}
           predicates:
             - Path=/api/prices/**
         - id: marketing
-          uri: ${EMALL_MARKETING_URL:http://localhost:8088}
+          uri: ${EMALL_MARKETING_URL:lb://marketing}
           predicates:
             - Path=/api/marketing/**
         - id: search
-          uri: ${EMALL_SEARCH_URL:http://localhost:8089}
+          uri: ${EMALL_SEARCH_URL:lb://search}
           predicates:
             - Path=/api/search/**
         - id: fulfillment
-          uri: ${EMALL_FULFILLMENT_URL:http://localhost:8090}
+          uri: ${EMALL_FULFILLMENT_URL:lb://fulfillment}
           predicates:
             - Path=/api/fulfillment/**
         - id: review
-          uri: ${EMALL_REVIEW_URL:http://localhost:8091}
+          uri: ${EMALL_REVIEW_URL:lb://review}
           predicates:
             - Path=/api/reviews/**
         - id: after-sales
-          uri: ${EMALL_AFTER_SALES_URL:http://localhost:8092}
+          uri: ${EMALL_AFTER_SALES_URL:lb://after-sales}
           predicates:
             - Path=/api/after-sales/**
         - id: merchant
-          uri: ${EMALL_MERCHANT_URL:http://localhost:8093}
+          uri: ${EMALL_MERCHANT_URL:lb://merchant}
           predicates:
             - Path=/api/merchants/**
         - id: flash-sale
-          uri: ${EMALL_FLASH_SALE_URL:http://localhost:8094}
+          uri: ${EMALL_FLASH_SALE_URL:lb://flash-sale}
           predicates:
             - Path=/api/flash-sales/**
         - id: recommendation
-          uri: ${EMALL_RECOMMENDATION_URL:http://localhost:8095}
+          uri: ${EMALL_RECOMMENDATION_URL:lb://recommendation}
           predicates:
             - Path=/api/recommendations/**
         - id: cost
-          uri: ${EMALL_COST_URL:http://localhost:8096}
+          uri: ${EMALL_COST_URL:lb://cost}
           predicates:
             - Path=/api/cost/**
         - id: identity
-          uri: ${EMALL_IDENTITY_URL:http://localhost:8097}
+          uri: ${EMALL_IDENTITY_URL:lb://identity}
           predicates:
             - Path=/api/identity/**
         - id: risk
-          uri: ${EMALL_RISK_URL:http://localhost:8098}
+          uri: ${EMALL_RISK_URL:lb://risk}
           predicates:
             - Path=/api/risk/**
         - id: operations
-          uri: ${EMALL_OPERATIONS_URL:http://localhost:8099}
+          uri: ${EMALL_OPERATIONS_URL:lb://operations}
           predicates:
             - Path=/api/operations/**
         - id: openapi
-          uri: ${EMALL_OPENAPI_URL:http://localhost:8100}
+          uri: ${EMALL_OPENAPI_URL:lb://openapi}
           predicates:
             - Path=/api/openapi/**
         - id: catalog
-          uri: ${EMALL_CATALOG_URL:http://localhost:8101}
+          uri: ${EMALL_CATALOG_URL:lb://catalog}
           predicates:
             - Path=/api/catalog/**
         - id: promotion
-          uri: ${EMALL_PROMOTION_URL:http://localhost:8102}
+          uri: ${EMALL_PROMOTION_URL:lb://promotion}
           predicates:
             - Path=/api/promotions/**
         - id: experiment
-          uri: ${EMALL_EXPERIMENT_URL:http://localhost:8103}
+          uri: ${EMALL_EXPERIMENT_URL:lb://experiment}
           predicates:
             - Path=/api/experiments/**
         - id: advertising
-          uri: ${EMALL_ADVERTISING_URL:http://localhost:8104}
+          uri: ${EMALL_ADVERTISING_URL:lb://advertising}
           predicates:
             - Path=/api/advertising/**
         - id: supply-chain
-          uri: ${EMALL_SUPPLY_CHAIN_URL:http://localhost:8105}
+          uri: ${EMALL_SUPPLY_CHAIN_URL:lb://supply-chain}
           predicates:
             - Path=/api/supply-chain/**
         - id: finance
-          uri: ${EMALL_FINANCE_URL:http://localhost:8106}
+          uri: ${EMALL_FINANCE_URL:lb://finance}
           predicates:
             - Path=/api/finance/**
         - id: customer-service
-          uri: ${EMALL_CUSTOMER_SERVICE_URL:http://localhost:8107}
+          uri: ${EMALL_CUSTOMER_SERVICE_URL:lb://customer-service}
           predicates:
             - Path=/api/customer-service/**
         - id: forecasting
-          uri: ${EMALL_FORECASTING_URL:http://localhost:8108}
+          uri: ${EMALL_FORECASTING_URL:lb://forecasting}
           predicates:
             - Path=/api/forecasting/**
         - id: event-platform
-          uri: ${EMALL_EVENT_PLATFORM_URL:http://localhost:8109}
+          uri: ${EMALL_EVENT_PLATFORM_URL:lb://event-platform}
           predicates:
             - Path=/api/event-platform/**
         - id: data-warehouse
-          uri: ${EMALL_DATA_WAREHOUSE_URL:http://localhost:8110}
+          uri: ${EMALL_DATA_WAREHOUSE_URL:lb://data-warehouse}
           predicates:
             - Path=/api/data-warehouse/**
         - id: intelligence
-          uri: ${EMALL_INTELLIGENCE_URL:http://localhost:8111}
+          uri: ${EMALL_INTELLIGENCE_URL:lb://intelligence}
           predicates:
             - Path=/api/intelligence/**
         - id: analytics
-          uri: ${EMALL_ANALYTICS_URL:http://localhost:8112}
+          uri: ${EMALL_ANALYTICS_URL:lb://analytics}
           predicates:
             - Path=/api/analytics/**
         - id: traffic
-          uri: ${EMALL_TRAFFIC_URL:http://localhost:8113}
+          uri: ${EMALL_TRAFFIC_URL:lb://traffic}
           predicates:
             - Path=/api/traffic/**
         - id: reliability
-          uri: ${EMALL_RELIABILITY_URL:http://localhost:8114}
+          uri: ${EMALL_RELIABILITY_URL:lb://reliability}
           predicates:
             - Path=/api/reliability/**
         - id: release
-          uri: ${EMALL_RELEASE_URL:http://localhost:8115}
+          uri: ${EMALL_RELEASE_URL:lb://release}
           predicates:
             - Path=/api/release/**
         - id: platform-ops
-          uri: ${EMALL_PLATFORM_OPS_URL:http://localhost:8116}
+          uri: ${EMALL_PLATFORM_OPS_URL:lb://platform-ops}
           predicates:
             - Path=/api/platform-ops/**
 
@@ -185,3 +200,13 @@ management:
     web:
       exposure:
         include: health,info,metrics,prometheus,gateway
+---
+spring:
+  config:
+    activate:
+      on-profile: redis-cluster
+  data:
+    redis:
+      cluster:
+        nodes: ${EMALL_REDIS_CLUSTER_NODES:localhost:6379}
+        max-redirects: ${EMALL_REDIS_CLUSTER_MAX_REDIRECTS:5}

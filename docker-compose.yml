@@ -1,3 +1,8 @@
+x-app-discovery-env: &app-discovery-env
+  EMALL_NACOS_SERVER_ADDR: nacos:8848
+  EMALL_NACOS_DISCOVERY_ENABLED: "true"
+  EMALL_NACOS_CONFIG_ENABLED: "false"
+
 services:
   redis:
     image: redis:7.2
@@ -29,15 +34,48 @@ services:
       KAFKA_CONTROLLER_LISTENER_NAMES: CONTROLLER
       KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
 
-  opensearch:
-    image: opensearchproject/opensearch:2.17.1
+  nacos:
+    image: nacos/nacos-server:v2.4.3
+    ports:
+      - "8848:8848"
+      - "9848:9848"
+    environment:
+      MODE: standalone
+      NACOS_AUTH_ENABLE: "false"
+
+  elasticsearch:
+    image: docker.elastic.co/elasticsearch/elasticsearch:8.15.3
     environment:
       discovery.type: single-node
-      plugins.security.disabled: "true"
-      OPENSEARCH_INITIAL_ADMIN_PASSWORD: "EmallAdmin123!"
-      OPENSEARCH_JAVA_OPTS: "-Xms512m -Xmx512m"
+      xpack.security.enabled: "false"
+      ES_JAVA_OPTS: "-Xms512m -Xmx512m"
     ports:
       - "9200:9200"
+
+  clickhouse:
+    image: clickhouse/clickhouse-server:25.3
+    ports:
+      - "8123:8123"
+      - "9000:9000"
+
+  logstash:
+    image: docker.elastic.co/logstash/logstash:8.15.3
+    ports:
+      - "5000:5000"
+      - "9600:9600"
+    volumes:
+      - ./ops/elk/logstash.conf:/usr/share/logstash/pipeline/logstash.conf:ro
+    depends_on:
+      - elasticsearch
+
+  kibana:
+    image: docker.elastic.co/kibana/kibana:8.15.3
+    ports:
+      - "5601:5601"
+    environment:
+      ELASTICSEARCH_HOSTS: http://elasticsearch:9200
+    depends_on:
+      - elasticsearch
 
   prometheus:
     image: prom/prometheus:v2.55.0
@@ -73,45 +111,47 @@ services:
     ports:
       - "8080:8080"
     environment:
+      <<: *app-discovery-env
       EMALL_REDIS_HOST: redis
       EMALL_OTLP_TRACES_ENDPOINT: http://otel-collector:4318/v1/traces
-      EMALL_USER_URL: http://user-app:8081
-      EMALL_PRODUCT_URL: http://product-app:8082
-      EMALL_INVENTORY_URL: http://inventory-app:8083
-      EMALL_ORDER_URL: http://order-app:8084
-      EMALL_CART_URL: http://cart-app:8085
-      EMALL_PAYMENT_URL: http://payment-app:8086
-      EMALL_PRICING_URL: http://pricing-app:8087
-      EMALL_MARKETING_URL: http://marketing-app:8088
-      EMALL_SEARCH_URL: http://search-app:8089
-      EMALL_FULFILLMENT_URL: http://fulfillment-app:8090
-      EMALL_REVIEW_URL: http://review-app:8091
-      EMALL_AFTER_SALES_URL: http://after-sales-app:8092
-      EMALL_MERCHANT_URL: http://merchant-app:8093
-      EMALL_FLASH_SALE_URL: http://flash-sale-app:8094
-      EMALL_RECOMMENDATION_URL: http://recommendation-app:8095
-      EMALL_COST_URL: http://cost-app:8096
-      EMALL_IDENTITY_URL: http://identity-app:8097
-      EMALL_RISK_URL: http://risk-app:8098
-      EMALL_OPERATIONS_URL: http://operations-app:8099
-      EMALL_OPENAPI_URL: http://openapi-app:8100
-      EMALL_CATALOG_URL: http://catalog-app:8101
-      EMALL_PROMOTION_URL: http://promotion-app:8102
-      EMALL_EXPERIMENT_URL: http://experiment-app:8103
-      EMALL_ADVERTISING_URL: http://advertising-app:8104
-      EMALL_SUPPLY_CHAIN_URL: http://supply-chain-app:8105
-      EMALL_FINANCE_URL: http://finance-app:8106
-      EMALL_CUSTOMER_SERVICE_URL: http://customer-service-app:8107
-      EMALL_FORECASTING_URL: http://forecasting-app:8108
-      EMALL_EVENT_PLATFORM_URL: http://event-platform-app:8109
-      EMALL_DATA_WAREHOUSE_URL: http://data-warehouse-app:8110
-      EMALL_INTELLIGENCE_URL: http://intelligence-app:8111
-      EMALL_ANALYTICS_URL: http://analytics-app:8112
-      EMALL_TRAFFIC_URL: http://traffic-app:8113
-      EMALL_RELIABILITY_URL: http://reliability-app:8114
-      EMALL_RELEASE_URL: http://release-app:8115
-      EMALL_PLATFORM_OPS_URL: http://platform-ops-app:8116
+      EMALL_USER_URL: lb://user
+      EMALL_PRODUCT_URL: lb://product
+      EMALL_INVENTORY_URL: lb://inventory
+      EMALL_ORDER_URL: lb://order
+      EMALL_CART_URL: lb://cart
+      EMALL_PAYMENT_URL: lb://payment
+      EMALL_PRICING_URL: lb://pricing
+      EMALL_MARKETING_URL: lb://marketing
+      EMALL_SEARCH_URL: lb://search
+      EMALL_FULFILLMENT_URL: lb://fulfillment
+      EMALL_REVIEW_URL: lb://review
+      EMALL_AFTER_SALES_URL: lb://after-sales
+      EMALL_MERCHANT_URL: lb://merchant
+      EMALL_FLASH_SALE_URL: lb://flash-sale
+      EMALL_RECOMMENDATION_URL: lb://recommendation
+      EMALL_COST_URL: lb://cost
+      EMALL_IDENTITY_URL: lb://identity
+      EMALL_RISK_URL: lb://risk
+      EMALL_OPERATIONS_URL: lb://operations
+      EMALL_OPENAPI_URL: lb://openapi
+      EMALL_CATALOG_URL: lb://catalog
+      EMALL_PROMOTION_URL: lb://promotion
+      EMALL_EXPERIMENT_URL: lb://experiment
+      EMALL_ADVERTISING_URL: lb://advertising
+      EMALL_SUPPLY_CHAIN_URL: lb://supply-chain
+      EMALL_FINANCE_URL: lb://finance
+      EMALL_CUSTOMER_SERVICE_URL: lb://customer-service
+      EMALL_FORECASTING_URL: lb://forecasting
+      EMALL_EVENT_PLATFORM_URL: lb://event-platform
+      EMALL_DATA_WAREHOUSE_URL: lb://data-warehouse
+      EMALL_INTELLIGENCE_URL: lb://intelligence
+      EMALL_ANALYTICS_URL: lb://analytics
+      EMALL_TRAFFIC_URL: lb://traffic
+      EMALL_RELIABILITY_URL: lb://reliability
+      EMALL_RELEASE_URL: lb://release
+      EMALL_PLATFORM_OPS_URL: lb://platform-ops
     depends_on:
+      - nacos
       - redis
       - otel-collector
       - user-app
@@ -160,12 +200,14 @@ services:
     ports:
       - "8081:8081"
     environment:
+      <<: *app-discovery-env
       EMALL_USER_DB_URL: jdbc:mysql://mysql:3306/emall_user?useUnicode=true&characterEncoding=utf8&serverTimezone=UTC
       EMALL_DB_USERNAME: root
       EMALL_DB_PASSWORD: root
       EMALL_FIELD_ENCRYPTION_KEY: ${EMALL_FIELD_ENCRYPTION_KEY:-local-development-field-encryption-key}
       EMALL_OTLP_TRACES_ENDPOINT: http://otel-collector:4318/v1/traces
     depends_on:
+      - nacos
       - mysql
       - otel-collector
 
@@ -178,6 +220,7 @@ services:
     ports:
       - "8082:8082"
     environment:
+      <<: *app-discovery-env
       EMALL_PRODUCT_DB_URL: jdbc:mysql://mysql:3306/emall_product?useUnicode=true&characterEncoding=utf8&serverTimezone=UTC
       EMALL_DB_USERNAME: root
       EMALL_DB_PASSWORD: root
@@ -186,6 +229,7 @@ services:
       EMALL_INTERNAL_OPERATIONS_TOKEN: ${EMALL_INTERNAL_OPERATIONS_TOKEN:-local-dev-token}
       EMALL_OTLP_TRACES_ENDPOINT: http://otel-collector:4318/v1/traces
     depends_on:
+      - nacos
       - mysql
       - redis
       - kafka
@@ -200,6 +244,10 @@ services:
     ports:
       - "8083:8083"
     environment:
+      <<: *app-discovery-env
+      EMALL_RPC_PROTOCOL: dubbo
+      EMALL_DUBBO_REGISTRY_ADDRESS: nacos://nacos:8848
+      EMALL_DUBBO_PORT: "-1"
       EMALL_INVENTORY_DB_URL: jdbc:mysql://mysql:3306/emall_inventory?useUnicode=true&characterEncoding=utf8&serverTimezone=UTC
       EMALL_DB_USERNAME: root
       EMALL_DB_PASSWORD: root
@@ -207,6 +255,7 @@ services:
       EMALL_INTERNAL_OPERATIONS_TOKEN: ${EMALL_INTERNAL_OPERATIONS_TOKEN:-local-dev-token}
       EMALL_OTLP_TRACES_ENDPOINT: http://otel-collector:4318/v1/traces
     depends_on:
+      - nacos
       - mysql
       - kafka
       - otel-collector
@@ -220,6 +269,10 @@ services:
     ports:
       - "8084:8084"
     environment:
+      <<: *app-discovery-env
+      EMALL_RPC_PROTOCOL: dubbo
+      EMALL_DUBBO_REGISTRY_ADDRESS: nacos://nacos:8848
+      EMALL_DUBBO_PORT: "-1"
       EMALL_ORDER_DB_URL: jdbc:mysql://mysql:3306/emall_order?useUnicode=true&characterEncoding=utf8&serverTimezone=UTC
       EMALL_DB_USERNAME: root
       EMALL_DB_PASSWORD: root
@@ -230,6 +283,7 @@ services:
       EMALL_INTERNAL_OPERATIONS_TOKEN: ${EMALL_INTERNAL_OPERATIONS_TOKEN:-local-dev-token}
       EMALL_OTLP_TRACES_ENDPOINT: http://otel-collector:4318/v1/traces
     depends_on:
+      - nacos
       - mysql
       - kafka
       - otel-collector
@@ -246,11 +300,13 @@ services:
     ports:
       - "8085:8085"
     environment:
+      <<: *app-discovery-env
       EMALL_CART_DB_URL: jdbc:mysql://mysql:3306/emall_cart?useUnicode=true&characterEncoding=utf8&serverTimezone=UTC
       EMALL_DB_USERNAME: root
       EMALL_DB_PASSWORD: root
       EMALL_OTLP_TRACES_ENDPOINT: http://otel-collector:4318/v1/traces
     depends_on:
+      - nacos
       - mysql
       - otel-collector
 
@@ -263,12 +319,17 @@ services:
     ports:
       - "8087:8087"
     environment:
+      <<: *app-discovery-env
+      EMALL_RPC_PROTOCOL: dubbo
+      EMALL_DUBBO_REGISTRY_ADDRESS: nacos://nacos:8848
+      EMALL_DUBBO_PORT: "-1"
       EMALL_PRICING_DB_URL: jdbc:mysql://mysql:3306/emall_pricing?useUnicode=true&characterEncoding=utf8&serverTimezone=UTC
       EMALL_DB_USERNAME: root
       EMALL_DB_PASSWORD: root
       EMALL_REDIS_HOST: redis
       EMALL_OTLP_TRACES_ENDPOINT: http://otel-collector:4318/v1/traces
     depends_on:
+      - nacos
       - mysql
       - redis
       - otel-collector
@@ -282,11 +343,16 @@ services:
     ports:
       - "8088:8088"
     environment:
+      <<: *app-discovery-env
+      EMALL_RPC_PROTOCOL: dubbo
+      EMALL_DUBBO_REGISTRY_ADDRESS: nacos://nacos:8848
+      EMALL_DUBBO_PORT: "-1"
       EMALL_MARKETING_DB_URL: jdbc:mysql://mysql:3306/emall_marketing?useUnicode=true&characterEncoding=utf8&serverTimezone=UTC
       EMALL_DB_USERNAME: root
       EMALL_DB_PASSWORD: root
       EMALL_OTLP_TRACES_ENDPOINT: http://otel-collector:4318/v1/traces
     depends_on:
+      - nacos
       - mysql
       - otel-collector
 
@@ -299,16 +365,18 @@ services:
     ports:
       - "8089:8089"
     environment:
+      <<: *app-discovery-env
       EMALL_SEARCH_DB_URL: jdbc:mysql://mysql:3306/emall_search?useUnicode=true&characterEncoding=utf8&serverTimezone=UTC
       EMALL_DB_USERNAME: root
       EMALL_DB_PASSWORD: root
       EMALL_KAFKA_BOOTSTRAP_SERVERS: kafka:9092
-      EMALL_OPENSEARCH_URL: http://opensearch:9200
+      EMALL_ELASTICSEARCH_URL: http://elasticsearch:9200
       EMALL_OTLP_TRACES_ENDPOINT: http://otel-collector:4318/v1/traces
     depends_on:
+      - nacos
       - mysql
       - kafka
-      - opensearch
+      - elasticsearch
       - otel-collector
 
   payment-app:
@@ -320,6 +388,10 @@ services:
     ports:
       - "8086:8086"
     environment:
+      <<: *app-discovery-env
+      EMALL_RPC_PROTOCOL: dubbo
+      EMALL_DUBBO_REGISTRY_ADDRESS: nacos://nacos:8848
+      EMALL_DUBBO_PORT: "-1"
       EMALL_PAYMENT_DB_URL: jdbc:mysql://mysql:3306/emall_payment?useUnicode=true&characterEncoding=utf8&serverTimezone=UTC
       EMALL_DB_USERNAME: root
       EMALL_DB_PASSWORD: root
@@ -328,6 +400,7 @@ services:
       EMALL_INTERNAL_OPERATIONS_TOKEN: ${EMALL_INTERNAL_OPERATIONS_TOKEN:-local-dev-token}
       EMALL_OTLP_TRACES_ENDPOINT: http://otel-collector:4318/v1/traces
     depends_on:
+      - nacos
       - mysql
       - kafka
       - otel-collector
@@ -342,6 +415,7 @@ services:
     ports:
       - "8090:8090"
     environment:
+      <<: *app-discovery-env
       EMALL_FULFILLMENT_DB_URL: jdbc:mysql://mysql:3306/emall_fulfillment?useUnicode=true&characterEncoding=utf8&serverTimezone=UTC
       EMALL_DB_USERNAME: root
       EMALL_DB_PASSWORD: root
@@ -350,6 +424,7 @@ services:
       EMALL_DEFAULT_WAREHOUSE_CODE: WH-DEFAULT
       EMALL_OTLP_TRACES_ENDPOINT: http://otel-collector:4318/v1/traces
     depends_on:
+      - nacos
       - mysql
       - kafka
       - otel-collector
@@ -363,11 +438,13 @@ services:
     ports:
       - "8091:8091"
     environment:
+      <<: *app-discovery-env
       EMALL_REVIEW_DB_URL: jdbc:mysql://mysql:3306/emall_review?useUnicode=true&characterEncoding=utf8&serverTimezone=UTC
       EMALL_DB_USERNAME: root
       EMALL_DB_PASSWORD: root
       EMALL_OTLP_TRACES_ENDPOINT: http://otel-collector:4318/v1/traces
     depends_on:
+      - nacos
       - mysql
       - otel-collector
 
@@ -380,11 +457,13 @@ services:
     ports:
       - "8092:8092"
     environment:
+      <<: *app-discovery-env
       EMALL_AFTER_SALES_DB_URL: jdbc:mysql://mysql:3306/emall_after_sales?useUnicode=true&characterEncoding=utf8&serverTimezone=UTC
       EMALL_DB_USERNAME: root
       EMALL_DB_PASSWORD: root
       EMALL_OTLP_TRACES_ENDPOINT: http://otel-collector:4318/v1/traces
     depends_on:
+      - nacos
       - mysql
       - otel-collector
 
@@ -397,11 +476,13 @@ services:
     ports:
       - "8093:8093"
     environment:
+      <<: *app-discovery-env
       EMALL_MERCHANT_DB_URL: jdbc:mysql://mysql:3306/emall_merchant?useUnicode=true&characterEncoding=utf8&serverTimezone=UTC
       EMALL_DB_USERNAME: root
       EMALL_DB_PASSWORD: root
       EMALL_OTLP_TRACES_ENDPOINT: http://otel-collector:4318/v1/traces
     depends_on:
+      - nacos
       - mysql
       - otel-collector
 
@@ -414,11 +495,13 @@ services:
     ports:
       - "8094:8094"
     environment:
+      <<: *app-discovery-env
       EMALL_FLASH_SALE_DB_URL: jdbc:mysql://mysql:3306/emall_flash_sale?useUnicode=true&characterEncoding=utf8&serverTimezone=UTC
       EMALL_DB_USERNAME: root
       EMALL_DB_PASSWORD: root
       EMALL_OTLP_TRACES_ENDPOINT: http://otel-collector:4318/v1/traces
     depends_on:
+      - nacos
       - mysql
       - otel-collector
 
@@ -431,11 +514,13 @@ services:
     ports:
       - "8095:8095"
     environment:
+      <<: *app-discovery-env
       EMALL_RECOMMENDATION_DB_URL: jdbc:mysql://mysql:3306/emall_recommendation?useUnicode=true&characterEncoding=utf8&serverTimezone=UTC
       EMALL_DB_USERNAME: root
       EMALL_DB_PASSWORD: root
       EMALL_OTLP_TRACES_ENDPOINT: http://otel-collector:4318/v1/traces
     depends_on:
+      - nacos
       - mysql
       - otel-collector
 
@@ -448,11 +533,13 @@ services:
     ports:
       - "8096:8096"
     environment:
+      <<: *app-discovery-env
       EMALL_COST_DB_URL: jdbc:mysql://mysql:3306/emall_cost?useUnicode=true&characterEncoding=utf8&serverTimezone=UTC
       EMALL_DB_USERNAME: root
       EMALL_DB_PASSWORD: root
       EMALL_OTLP_TRACES_ENDPOINT: http://otel-collector:4318/v1/traces
     depends_on:
+      - nacos
       - mysql
       - otel-collector
 
@@ -465,11 +552,13 @@ services:
     ports:
       - "8097:8097"
     environment:
+      <<: *app-discovery-env
       EMALL_IDENTITY_DB_URL: jdbc:mysql://mysql:3306/emall_identity?useUnicode=true&characterEncoding=utf8&serverTimezone=UTC
       EMALL_DB_USERNAME: root
       EMALL_DB_PASSWORD: root
       EMALL_OTLP_TRACES_ENDPOINT: http://otel-collector:4318/v1/traces
     depends_on:
+      - nacos
       - mysql
       - otel-collector
 
@@ -482,11 +571,13 @@ services:
     ports:
       - "8098:8098"
     environment:
+      <<: *app-discovery-env
       EMALL_RISK_DB_URL: jdbc:mysql://mysql:3306/emall_risk?useUnicode=true&characterEncoding=utf8&serverTimezone=UTC
       EMALL_DB_USERNAME: root
       EMALL_DB_PASSWORD: root
       EMALL_OTLP_TRACES_ENDPOINT: http://otel-collector:4318/v1/traces
     depends_on:
+      - nacos
       - mysql
       - otel-collector
 
@@ -499,11 +590,13 @@ services:
     ports:
       - "8099:8099"
     environment:
+      <<: *app-discovery-env
       EMALL_OPERATIONS_DB_URL: jdbc:mysql://mysql:3306/emall_operations?useUnicode=true&characterEncoding=utf8&serverTimezone=UTC
       EMALL_DB_USERNAME: root
       EMALL_DB_PASSWORD: root
       EMALL_OTLP_TRACES_ENDPOINT: http://otel-collector:4318/v1/traces
     depends_on:
+      - nacos
       - mysql
       - otel-collector
 
@@ -516,11 +609,13 @@ services:
     ports:
       - "8100:8100"
     environment:
+      <<: *app-discovery-env
       EMALL_OPENAPI_DB_URL: jdbc:mysql://mysql:3306/emall_openapi?useUnicode=true&characterEncoding=utf8&serverTimezone=UTC
       EMALL_DB_USERNAME: root
       EMALL_DB_PASSWORD: root
       EMALL_OTLP_TRACES_ENDPOINT: http://otel-collector:4318/v1/traces
     depends_on:
+      - nacos
       - mysql
       - otel-collector
 
@@ -533,11 +628,13 @@ services:
     ports:
       - "8101:8101"
     environment:
+      <<: *app-discovery-env
       EMALL_CATALOG_DB_URL: jdbc:mysql://mysql:3306/emall_catalog?useUnicode=true&characterEncoding=utf8&serverTimezone=UTC
       EMALL_DB_USERNAME: root
       EMALL_DB_PASSWORD: root
       EMALL_OTLP_TRACES_ENDPOINT: http://otel-collector:4318/v1/traces
     depends_on:
+      - nacos
       - mysql
       - otel-collector
 
@@ -550,11 +647,13 @@ services:
     ports:
       - "8102:8102"
     environment:
+      <<: *app-discovery-env
       EMALL_PROMOTION_DB_URL: jdbc:mysql://mysql:3306/emall_promotion?useUnicode=true&characterEncoding=utf8&serverTimezone=UTC
       EMALL_DB_USERNAME: root
       EMALL_DB_PASSWORD: root
       EMALL_OTLP_TRACES_ENDPOINT: http://otel-collector:4318/v1/traces
     depends_on:
+      - nacos
       - mysql
       - otel-collector
 
@@ -567,11 +666,13 @@ services:
     ports:
       - "8103:8103"
     environment:
+      <<: *app-discovery-env
       EMALL_EXPERIMENT_DB_URL: jdbc:mysql://mysql:3306/emall_experiment?useUnicode=true&characterEncoding=utf8&serverTimezone=UTC
       EMALL_DB_USERNAME: root
       EMALL_DB_PASSWORD: root
       EMALL_OTLP_TRACES_ENDPOINT: http://otel-collector:4318/v1/traces
     depends_on:
+      - nacos
       - mysql
       - otel-collector
 
@@ -584,11 +685,13 @@ services:
     ports:
       - "8104:8104"
     environment:
+      <<: *app-discovery-env
       EMALL_ADVERTISING_DB_URL: jdbc:mysql://mysql:3306/emall_advertising?useUnicode=true&characterEncoding=utf8&serverTimezone=UTC
       EMALL_DB_USERNAME: root
       EMALL_DB_PASSWORD: root
       EMALL_OTLP_TRACES_ENDPOINT: http://otel-collector:4318/v1/traces
     depends_on:
+      - nacos
       - mysql
       - otel-collector
 
@@ -601,11 +704,13 @@ services:
     ports:
       - "8105:8105"
     environment:
+      <<: *app-discovery-env
       EMALL_SUPPLY_CHAIN_DB_URL: jdbc:mysql://mysql:3306/emall_supply_chain?useUnicode=true&characterEncoding=utf8&serverTimezone=UTC
       EMALL_DB_USERNAME: root
       EMALL_DB_PASSWORD: root
       EMALL_OTLP_TRACES_ENDPOINT: http://otel-collector:4318/v1/traces
     depends_on:
+      - nacos
       - mysql
       - otel-collector
 
@@ -618,11 +723,13 @@ services:
     ports:
       - "8106:8106"
     environment:
+      <<: *app-discovery-env
       EMALL_FINANCE_DB_URL: jdbc:mysql://mysql:3306/emall_finance?useUnicode=true&characterEncoding=utf8&serverTimezone=UTC
       EMALL_DB_USERNAME: root
       EMALL_DB_PASSWORD: root
       EMALL_OTLP_TRACES_ENDPOINT: http://otel-collector:4318/v1/traces
     depends_on:
+      - nacos
       - mysql
       - otel-collector
 
@@ -635,11 +742,13 @@ services:
     ports:
       - "8107:8107"
     environment:
+      <<: *app-discovery-env
       EMALL_CUSTOMER_SERVICE_DB_URL: jdbc:mysql://mysql:3306/emall_customer_service?useUnicode=true&characterEncoding=utf8&serverTimezone=UTC
       EMALL_DB_USERNAME: root
       EMALL_DB_PASSWORD: root
       EMALL_OTLP_TRACES_ENDPOINT: http://otel-collector:4318/v1/traces
     depends_on:
+      - nacos
       - mysql
       - otel-collector
 
@@ -652,11 +761,13 @@ services:
     ports:
       - "8108:8108"
     environment:
+      <<: *app-discovery-env
       EMALL_FORECASTING_DB_URL: jdbc:mysql://mysql:3306/emall_forecasting?useUnicode=true&characterEncoding=utf8&serverTimezone=UTC
       EMALL_DB_USERNAME: root
       EMALL_DB_PASSWORD: root
       EMALL_OTLP_TRACES_ENDPOINT: http://otel-collector:4318/v1/traces
     depends_on:
+      - nacos
       - mysql
       - otel-collector
 
@@ -669,11 +780,13 @@ services:
     ports:
       - "8109:8109"
     environment:
+      <<: *app-discovery-env
       EMALL_EVENT_PLATFORM_DB_URL: jdbc:mysql://mysql:3306/emall_event_platform?useUnicode=true&characterEncoding=utf8&serverTimezone=UTC
       EMALL_DB_USERNAME: root
       EMALL_DB_PASSWORD: root
       EMALL_OTLP_TRACES_ENDPOINT: http://otel-collector:4318/v1/traces
     depends_on:
+      - nacos
       - mysql
       - otel-collector
 
@@ -686,12 +799,16 @@ services:
     ports:
       - "8110:8110"
     environment:
+      <<: *app-discovery-env
       EMALL_DATA_WAREHOUSE_DB_URL: jdbc:mysql://mysql:3306/emall_data_warehouse?useUnicode=true&characterEncoding=utf8&serverTimezone=UTC
+      EMALL_CLICKHOUSE_URL: jdbc:clickhouse://clickhouse:8123/emall
       EMALL_DB_USERNAME: root
       EMALL_DB_PASSWORD: root
       EMALL_OTLP_TRACES_ENDPOINT: http://otel-collector:4318/v1/traces
     depends_on:
+      - nacos
       - mysql
+      - clickhouse
       - otel-collector
 
   intelligence-app:
@@ -703,11 +820,13 @@ services:
     ports:
       - "8111:8111"
     environment:
+      <<: *app-discovery-env
       EMALL_INTELLIGENCE_DB_URL: jdbc:mysql://mysql:3306/emall_intelligence?useUnicode=true&characterEncoding=utf8&serverTimezone=UTC
       EMALL_DB_USERNAME: root
       EMALL_DB_PASSWORD: root
       EMALL_OTLP_TRACES_ENDPOINT: http://otel-collector:4318/v1/traces
     depends_on:
+      - nacos
       - mysql
       - otel-collector
 
@@ -720,12 +839,16 @@ services:
     ports:
       - "8112:8112"
     environment:
+      <<: *app-discovery-env
       EMALL_ANALYTICS_DB_URL: jdbc:mysql://mysql:3306/emall_analytics?useUnicode=true&characterEncoding=utf8&serverTimezone=UTC
+      EMALL_CLICKHOUSE_URL: jdbc:clickhouse://clickhouse:8123/emall
       EMALL_DB_USERNAME: root
       EMALL_DB_PASSWORD: root
       EMALL_OTLP_TRACES_ENDPOINT: http://otel-collector:4318/v1/traces
     depends_on:
+      - nacos
       - mysql
+      - clickhouse
       - otel-collector
 
   traffic-app:
@@ -737,11 +860,13 @@ services:
     ports:
       - "8113:8113"
     environment:
+      <<: *app-discovery-env
       EMALL_TRAFFIC_DB_URL: jdbc:mysql://mysql:3306/emall_traffic?useUnicode=true&characterEncoding=utf8&serverTimezone=UTC
       EMALL_DB_USERNAME: root
       EMALL_DB_PASSWORD: root
       EMALL_OTLP_TRACES_ENDPOINT: http://otel-collector:4318/v1/traces
     depends_on:
+      - nacos
       - mysql
       - otel-collector
 
@@ -754,11 +879,13 @@ services:
     ports:
       - "8114:8114"
     environment:
+      <<: *app-discovery-env
       EMALL_RELIABILITY_DB_URL: jdbc:mysql://mysql:3306/emall_reliability?useUnicode=true&characterEncoding=utf8&serverTimezone=UTC
       EMALL_DB_USERNAME: root
       EMALL_DB_PASSWORD: root
       EMALL_OTLP_TRACES_ENDPOINT: http://otel-collector:4318/v1/traces
     depends_on:
+      - nacos
       - mysql
       - otel-collector
 
@@ -771,11 +898,13 @@ services:
     ports:
       - "8115:8115"
     environment:
+      <<: *app-discovery-env
       EMALL_RELEASE_DB_URL: jdbc:mysql://mysql:3306/emall_release?useUnicode=true&characterEncoding=utf8&serverTimezone=UTC
       EMALL_DB_USERNAME: root
       EMALL_DB_PASSWORD: root
       EMALL_OTLP_TRACES_ENDPOINT: http://otel-collector:4318/v1/traces
     depends_on:
+      - nacos
       - mysql
       - otel-collector
 
@@ -788,10 +917,12 @@ services:
     ports:
       - "8116:8116"
     environment:
+      <<: *app-discovery-env
       EMALL_PLATFORM_OPS_DB_URL: jdbc:mysql://mysql:3306/emall_platform_ops?useUnicode=true&characterEncoding=utf8&serverTimezone=UTC
       EMALL_DB_USERNAME: root
       EMALL_DB_PASSWORD: root
       EMALL_OTLP_TRACES_ENDPOINT: http://otel-collector:4318/v1/traces
     depends_on:
+      - nacos
       - mysql
       - otel-collector

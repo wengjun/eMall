@@ -16,7 +16,10 @@
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <spring.boot.version>3.3.5</spring.boot.version>
         <spring.cloud.version>2023.0.3</spring.cloud.version>
-        <resilience4j.version>2.2.0</resilience4j.version>
+        <spring.cloud.alibaba.version>2023.0.3.3</spring.cloud.alibaba.version>
+        <dubbo.version>3.3.5</dubbo.version>
+        <mybatis.plus.version>3.5.9</mybatis.plus.version>
+        <clickhouse.jdbc.version>0.9.7</clickhouse.jdbc.version>
         <testcontainers.version>1.21.4</testcontainers.version>
         <formatter.maven.plugin.version>2.29.0</formatter.maven.plugin.version>
         <skipITs>true</skipITs>
@@ -44,6 +47,38 @@
                 <version>${spring.cloud.version}</version>
                 <type>pom</type>
                 <scope>import</scope>
+            </dependency>
+            <dependency>
+                <groupId>com.alibaba.cloud</groupId>
+                <artifactId>spring-cloud-alibaba-dependencies</artifactId>
+                <version>${spring.cloud.alibaba.version}</version>
+                <type>pom</type>
+                <scope>import</scope>
+            </dependency>
+            <dependency>
+                <groupId>com.baomidou</groupId>
+                <artifactId>mybatis-plus-spring-boot3-starter</artifactId>
+                <version>${mybatis.plus.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>com.baomidou</groupId>
+                <artifactId>mybatis-plus-extension</artifactId>
+                <version>${mybatis.plus.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>com.baomidou</groupId>
+                <artifactId>mybatis-plus-jsqlparser</artifactId>
+                <version>${mybatis.plus.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.apache.dubbo</groupId>
+                <artifactId>dubbo-spring-boot-starter</artifactId>
+                <version>${dubbo.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>com.clickhouse</groupId>
+                <artifactId>clickhouse-jdbc</artifactId>
+                <version>${clickhouse.jdbc.version}</version>
             </dependency>
             <dependency>
                 <groupId>com.emall</groupId>
@@ -250,7 +285,7 @@
                 <artifactId>loadtest</artifactId>
                 <version>${project.version}</version>
             </dependency>
-        </dependencies>
+    </dependencies>
     </dependencyManagement>
 
     <profiles>

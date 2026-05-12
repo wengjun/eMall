@@ -1,4 +1,6 @@
 com.emall.common.crypto.FieldEncryptionAutoConfiguration
+com.emall.common.mybatis.MybatisPlusAutoConfiguration
+com.emall.common.olap.ClickHouseAutoConfiguration
 com.emall.common.runtime.ProductionRuntimeGuardAutoConfiguration
 com.emall.common.task.TaskLockAutoConfiguration
 com.emall.common.web.CommonWebAutoConfiguration

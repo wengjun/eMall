@@ -8,6 +8,22 @@ logging:
 spring:
   application:
     name: pricing
+  cloud:
+    nacos:
+      server-addr: ${EMALL_NACOS_SERVER_ADDR:localhost:8848}
+      discovery:
+        enabled: ${EMALL_NACOS_DISCOVERY_ENABLED:false}
+        namespace: ${EMALL_NACOS_NAMESPACE:public}
+        group: ${EMALL_NACOS_GROUP:DEFAULT_GROUP}
+      config:
+        enabled: ${EMALL_NACOS_CONFIG_ENABLED:false}
+        import-check:
+          enabled: false
+    sentinel:
+      enabled: ${EMALL_SENTINEL_ENABLED:false}
+      transport:
+        dashboard: ${EMALL_SENTINEL_DASHBOARD:localhost:8858}
+        port: ${EMALL_SENTINEL_API_PORT:8719}
   datasource:
     url: ${EMALL_PRICING_DB_URL:jdbc:mysql://localhost:3306/emall_pricing?useUnicode=true&characterEncoding=utf8&serverTimezone=UTC}
     username: ${EMALL_DB_USERNAME:root}
@@ -23,6 +39,22 @@ emall:
   storage: jdbc
   cache:
     ttl: 120s
+  rpc:
+    protocol: ${EMALL_RPC_PROTOCOL:http}
+
+dubbo:
+  application:
+    name: ${spring.application.name}
+    qos-enable: false
+  protocol:
+    name: tri
+    port: ${EMALL_DUBBO_PORT:-1}
+  registry:
+    address: ${EMALL_DUBBO_REGISTRY_ADDRESS:N/A}
+  consumer:
+    check: false
+    retries: 0
+    timeout: 500
 
 management:
   metrics:
@@ -42,3 +74,18 @@ management:
     web:
       exposure:
         include: health,info,metrics,prometheus
+mybatis-plus:
+  configuration:
+    map-underscore-to-camel-case: true
+  global-config:
+    banner: false
+---
+spring:
+  config:
+    activate:
+      on-profile: redis-cluster
+  data:
+    redis:
+      cluster:
+        nodes: ${EMALL_REDIS_CLUSTER_NODES:localhost:6379}
+        max-redirects: ${EMALL_REDIS_CLUSTER_MAX_REDIRECTS:5}

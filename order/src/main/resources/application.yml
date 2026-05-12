@@ -8,6 +8,22 @@ logging:
 spring:
   application:
     name: order
+  cloud:
+    nacos:
+      server-addr: ${EMALL_NACOS_SERVER_ADDR:localhost:8848}
+      discovery:
+        enabled: ${EMALL_NACOS_DISCOVERY_ENABLED:false}
+        namespace: ${EMALL_NACOS_NAMESPACE:public}
+        group: ${EMALL_NACOS_GROUP:DEFAULT_GROUP}
+      config:
+        enabled: ${EMALL_NACOS_CONFIG_ENABLED:false}
+        import-check:
+          enabled: false
+    sentinel:
+      enabled: ${EMALL_SENTINEL_ENABLED:false}
+      transport:
+        dashboard: ${EMALL_SENTINEL_DASHBOARD:localhost:8858}
+        port: ${EMALL_SENTINEL_API_PORT:8719}
   datasource:
     url: ${EMALL_ORDER_DB_URL:jdbc:mysql://localhost:3306/emall_order?useUnicode=true&characterEncoding=utf8&serverTimezone=UTC}
     username: ${EMALL_DB_USERNAME:root}
@@ -30,6 +46,22 @@ emall:
     inventory-url: ${EMALL_INVENTORY_URL:http://localhost:8083}
     pricing-url: ${EMALL_PRICING_URL:http://localhost:8087}
     marketing-url: ${EMALL_MARKETING_URL:http://localhost:8088}
+  rpc:
+    protocol: ${EMALL_RPC_PROTOCOL:http}
+
+dubbo:
+  application:
+    name: ${spring.application.name}
+    qos-enable: false
+  protocol:
+    name: tri
+    port: ${EMALL_DUBBO_PORT:-1}
+  registry:
+    address: ${EMALL_DUBBO_REGISTRY_ADDRESS:N/A}
+  consumer:
+    check: false
+    retries: 0
+    timeout: 500
 
 management:
   metrics:
@@ -50,66 +82,8 @@ management:
       exposure:
         include: health,info,metrics,prometheus
 
-resilience4j:
-  circuitbreaker:
-    instances:
-      inventoryService:
-        slidingWindowType: COUNT_BASED
-        slidingWindowSize: 100
-        minimumNumberOfCalls: 50
-        failureRateThreshold: 50
-        waitDurationInOpenState: 30s
-        permittedNumberOfCallsInHalfOpenState: 20
-        automaticTransitionFromOpenToHalfOpenEnabled: true
-      pricingService:
-        slidingWindowType: COUNT_BASED
-        slidingWindowSize: 100
-        minimumNumberOfCalls: 20
-        failureRateThreshold: 50
-        waitDurationInOpenState: 10s
-        permittedNumberOfCallsInHalfOpenState: 10
-        automaticTransitionFromOpenToHalfOpenEnabled: true
-      marketingService:
-        slidingWindowType: COUNT_BASED
-        slidingWindowSize: 100
-        minimumNumberOfCalls: 20
-        failureRateThreshold: 50
-        waitDurationInOpenState: 10s
-        permittedNumberOfCallsInHalfOpenState: 10
-        automaticTransitionFromOpenToHalfOpenEnabled: true
-  retry:
-    instances:
-      inventoryService:
-        maxAttempts: 2
-        waitDuration: 50ms
-      pricingService:
-        maxAttempts: 2
-        waitDuration: 30ms
-      marketingService:
-        maxAttempts: 1
-        waitDuration: 20ms
-  ratelimiter:
-    instances:
-      inventoryService:
-        limitForPeriod: 5000
-        limitRefreshPeriod: 1s
-        timeoutDuration: 20ms
-      pricingService:
-        limitForPeriod: 5000
-        limitRefreshPeriod: 1s
-        timeoutDuration: 20ms
-      marketingService:
-        limitForPeriod: 3000
-        limitRefreshPeriod: 1s
-        timeoutDuration: 20ms
-  bulkhead:
-    instances:
-      inventoryService:
-        maxConcurrentCalls: 200
-        maxWaitDuration: 20ms
-      pricingService:
-        maxConcurrentCalls: 200
-        maxWaitDuration: 20ms
-      marketingService:
-        maxConcurrentCalls: 120
-        maxWaitDuration: 20ms
+mybatis-plus:
+  configuration:
+    map-underscore-to-camel-case: true
+  global-config:
+    banner: false
