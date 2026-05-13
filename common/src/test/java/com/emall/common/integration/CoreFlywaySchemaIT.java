@@ -3,29 +3,44 @@ package com.emall.common.integration;
 import static org.assertj.core.api.Assertions.assertThat;
 
 import java.nio.file.Path;
+import java.time.Duration;
 import java.util.List;
 import javax.sql.DataSource;
 import org.flywaydb.core.Flyway;
 import org.flywaydb.core.api.output.MigrateResult;
+import org.junit.jupiter.api.AfterAll;
+import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.condition.EnabledIf;
 import org.springframework.boot.jdbc.DataSourceBuilder;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.jdbc.datasource.DriverManagerDataSource;
 import org.testcontainers.containers.MySQLContainer;
-import org.testcontainers.junit.jupiter.Container;
-import org.testcontainers.junit.jupiter.Testcontainers;
 
-@Testcontainers(disabledWithoutDocker = true)
+@EnabledIf("dockerIsAvailable")
 class CoreFlywaySchemaIT {
-    @Container
     static final MySQLContainer<?> mysql = new MySQLContainer<>("mysql:8.4").withDatabaseName("emall_schema_it")
-            .withUsername("root").withPassword("emall");
+            .withUsername("root").withPassword("emall").withStartupTimeout(Duration.ofMinutes(2));
 
     private static final List<SchemaTarget> SCHEMAS = List.of(new SchemaTarget("emall_user_it", "user", 2),
             new SchemaTarget("emall_product_it", "product", 3), new SchemaTarget("emall_inventory_it", "inventory", 2),
             new SchemaTarget("emall_order_it", "order", 2), new SchemaTarget("emall_payment_it", "payment", 3),
             new SchemaTarget("emall_search_it", "search", 2),
             new SchemaTarget("emall_fulfillment_it", "fulfillment", 2));
+
+    @BeforeAll
+    static void startMysql() {
+        mysql.start();
+    }
+
+    @AfterAll
+    static void stopMysql() {
+        mysql.stop();
+    }
+
+    static boolean dockerIsAvailable() {
+        return DockerIntegrationSupport.isDockerAvailable();
+    }
 
     @Test
     void shouldApplyCoreServiceFlywayMigrationsOnMysql() {

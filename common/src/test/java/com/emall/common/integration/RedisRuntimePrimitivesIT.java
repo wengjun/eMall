@@ -3,20 +3,35 @@ package com.emall.common.integration;
 import static org.assertj.core.api.Assertions.assertThat;
 
 import java.time.Duration;
+import org.junit.jupiter.api.AfterAll;
+import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.condition.EnabledIf;
 import org.springframework.data.redis.connection.lettuce.LettuceConnectionFactory;
 import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.data.redis.serializer.StringRedisSerializer;
 import org.testcontainers.containers.GenericContainer;
-import org.testcontainers.junit.jupiter.Container;
-import org.testcontainers.junit.jupiter.Testcontainers;
 import org.testcontainers.utility.DockerImageName;
 
-@Testcontainers(disabledWithoutDocker = true)
+@EnabledIf("dockerIsAvailable")
 class RedisRuntimePrimitivesIT {
-    @Container
     static final GenericContainer<?> redis =
-            new GenericContainer<>(DockerImageName.parse("redis:7.2-alpine")).withExposedPorts(6379);
+            new GenericContainer<>(DockerImageName.parse("redis:7.2-alpine")).withExposedPorts(6379)
+                    .withStartupTimeout(Duration.ofMinutes(2));
+
+    @BeforeAll
+    static void startRedis() {
+        redis.start();
+    }
+
+    @AfterAll
+    static void stopRedis() {
+        redis.stop();
+    }
+
+    static boolean dockerIsAvailable() {
+        return DockerIntegrationSupport.isDockerAvailable();
+    }
 
     @Test
     void shouldSupportCacheValuesAndRateLimitCounters() {

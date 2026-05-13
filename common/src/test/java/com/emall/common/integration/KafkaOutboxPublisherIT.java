@@ -25,21 +25,36 @@ import org.apache.kafka.clients.consumer.ConsumerRecords;
 import org.apache.kafka.clients.producer.ProducerConfig;
 import org.apache.kafka.common.serialization.StringDeserializer;
 import org.apache.kafka.common.serialization.StringSerializer;
+import org.junit.jupiter.api.AfterAll;
+import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.condition.EnabledIf;
 import org.springframework.kafka.core.DefaultKafkaProducerFactory;
 import org.springframework.kafka.core.KafkaTemplate;
 import org.testcontainers.containers.KafkaContainer;
-import org.testcontainers.junit.jupiter.Container;
-import org.testcontainers.junit.jupiter.Testcontainers;
 import org.testcontainers.utility.DockerImageName;
 
-@Testcontainers(disabledWithoutDocker = true)
+@EnabledIf("dockerIsAvailable")
 class KafkaOutboxPublisherIT {
     private static final String TOPIC = "emall.outbox.it";
     private static final ObjectMapper OBJECT_MAPPER = new ObjectMapper().findAndRegisterModules();
 
-    @Container
-    static final KafkaContainer kafka = new KafkaContainer(DockerImageName.parse("confluentinc/cp-kafka:7.7.1"));
+    static final KafkaContainer kafka = new KafkaContainer(DockerImageName.parse("confluentinc/cp-kafka:7.7.1"))
+            .withStartupTimeout(Duration.ofMinutes(3));
+
+    @BeforeAll
+    static void startKafka() {
+        kafka.start();
+    }
+
+    @AfterAll
+    static void stopKafka() {
+        kafka.stop();
+    }
+
+    static boolean dockerIsAvailable() {
+        return DockerIntegrationSupport.isDockerAvailable();
+    }
 
     @Test
     void shouldPublishOutboxEventToKafkaAndMarkItPublished() throws Exception {

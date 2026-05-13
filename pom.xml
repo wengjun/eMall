@@ -502,6 +502,7 @@
                     <version>3.5.4</version>
                     <configuration>
                         <skipITs>${skipITs}</skipITs>
+                        <classesDirectory>${project.build.outputDirectory}</classesDirectory>
                         <includes>
                             <include>**/*IT.java</include>
                         </includes>
