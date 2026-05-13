@@ -11,7 +11,7 @@ import org.testcontainers.DockerClientFactory;
 
 final class DockerIntegrationSupport {
     private static final long DOCKER_CHECK_TIMEOUT_SECONDS =
-            Long.getLong("emall.testcontainers.docker-check-timeout-seconds", 10L);
+            Long.getLong("emall.testcontainers.docker-check-timeout-seconds", 90L);
     private static volatile Boolean dockerAvailable;
 
     private DockerIntegrationSupport() {
@@ -34,8 +34,8 @@ final class DockerIntegrationSupport {
 
     private static boolean checkDockerWithTimeout() {
         ExecutorService executor = Executors.newSingleThreadExecutor(daemonThreadFactory());
-        CompletableFuture<Boolean> future = CompletableFuture.supplyAsync(DockerIntegrationSupport::pingDocker,
-                executor);
+        CompletableFuture<Boolean> future =
+                CompletableFuture.supplyAsync(DockerIntegrationSupport::checkDocker, executor);
         try {
             return future.get(DOCKER_CHECK_TIMEOUT_SECONDS, TimeUnit.SECONDS);
         } catch (InterruptedException ex) {
@@ -48,10 +48,9 @@ final class DockerIntegrationSupport {
         }
     }
 
-    private static boolean pingDocker() {
+    private static boolean checkDocker() {
         try {
-            DockerClientFactory.instance().client().pingCmd().exec();
-            return true;
+            return DockerClientFactory.instance().isDockerAvailable();
         } catch (Throwable ex) {
             return false;
         }
