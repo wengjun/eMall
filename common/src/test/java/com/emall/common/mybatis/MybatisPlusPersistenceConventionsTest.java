@@ -5,6 +5,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.Locale;
 import java.util.List;
 import java.util.stream.Stream;
 import org.junit.jupiter.api.Test;
@@ -41,12 +42,22 @@ class MybatisPlusPersistenceConventionsTest {
         assertThat(violations).isEmpty();
     }
 
+    @Test
+    void businessPersistenceShouldNotUseJdbcOrOdbcPrimitives() throws IOException {
+        List<Path> violations = javaFiles()
+                .filter(MybatisPlusPersistenceConventionsTest::isBusinessPersistenceSource)
+                .filter(MybatisPlusPersistenceConventionsTest::usesJdbcOrOdbcPrimitive)
+                .toList();
+
+        assertThat(violations).isEmpty();
+    }
+
     private static Stream<Path> javaFiles() throws IOException {
         return Files.walk(PROJECT_ROOT)
                 .filter(Files::isRegularFile)
                 .filter(path -> path.toString().endsWith(".java"))
-                .filter(path -> !path.toString().contains("\\target\\"))
-                .filter(path -> path.toString().contains("\\src\\main\\java\\"));
+                .filter(path -> !normalized(path).contains("/target/"))
+                .filter(path -> normalized(path).contains("/src/main/java/"));
     }
 
     private static boolean isMapperOrRepository(Path path) {
@@ -58,6 +69,30 @@ class MybatisPlusPersistenceConventionsTest {
     private static boolean usesWeakRowMaps(Path path) {
         String source = read(path);
         return source.contains("RowMaps") || source.contains("Map<String, Object>");
+    }
+
+    private static boolean isBusinessPersistenceSource(Path path) {
+        String normalizedPath = normalized(path);
+        String fileName = path.getFileName().toString();
+        return !normalizedPath.contains("/common/src/main/java/com/emall/common/olap/")
+                && (fileName.endsWith("Mapper.java") || fileName.endsWith("Repository.java")
+                        || fileName.endsWith("Entity.java"));
+    }
+
+    private static boolean usesJdbcOrOdbcPrimitive(Path path) {
+        String source = read(path);
+        String normalizedPath = normalized(path).toLowerCase(Locale.ROOT);
+        return normalizedPath.contains("jdbc")
+                || normalizedPath.contains("odbc")
+                || source.contains("JdbcTemplate")
+                || source.contains("DriverManager")
+                || source.contains("PreparedStatement")
+                || source.contains("ResultSet")
+                || source.contains("RowMapper")
+                || source.contains("java.sql.")
+                || source.contains("javax.sql.DataSource")
+                || source.contains("org.springframework.jdbc")
+                || source.contains("ODBC");
     }
 
     private static boolean missingFillStrategy(Path path) {
@@ -74,5 +109,9 @@ class MybatisPlusPersistenceConventionsTest {
         } catch (IOException ex) {
             throw new IllegalStateException("Failed to read " + path, ex);
         }
+    }
+
+    private static String normalized(Path path) {
+        return path.toString().replace('\\', '/');
     }
 }
