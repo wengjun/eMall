@@ -119,6 +119,75 @@ docker build --build-arg MODULE=order -t emall/order:local .
 
 运行时连接配置可以通过环境变量覆盖，本地默认值见 `.env.example`。
 
+## Windows 11 本地启动步骤
+
+Windows 11 下不需要单独安装 MySQL、Redis、Kafka、Nacos、Elasticsearch 或 ClickHouse，推荐全部通过
+Docker Desktop 和根目录 `docker-compose.yml` 启动。这样版本更一致，也便于删除和重建本地环境。
+
+1. 检查 Java、Maven 和 Docker：
+
+```powershell
+java -version
+mvn -version
+docker version
+docker compose version
+```
+
+`docker version` 必须能看到 `Server` 信息。如果只有 `Client`，说明 Docker Desktop daemon 没有正常启动。
+
+2. 启动 Docker Desktop：
+
+- 使用 Linux containers。
+- 推荐启用 WSL2 backend。
+- 如果 Docker Desktop 刚启动，等待 1 到 2 分钟再执行 Maven 集成测试或 `docker compose`。
+
+3. 启动本地基础设施：
+
+```powershell
+docker compose up -d mysql redis kafka nacos elasticsearch clickhouse logstash kibana prometheus grafana
+docker compose ps
+```
+
+4. 编译工程：
+
+```powershell
+mvn clean package
+```
+
+5. 分别启动核心服务。建议每个服务使用一个独立 PowerShell 窗口：
+
+```powershell
+mvn -pl gateway spring-boot:run
+mvn -pl user spring-boot:run
+mvn -pl product spring-boot:run
+mvn -pl inventory spring-boot:run
+mvn -pl order spring-boot:run
+mvn -pl payment spring-boot:run
+```
+
+6. 也可以用 Docker Compose 启动应用服务镜像：
+
+```powershell
+mvn clean package -DskipTests
+docker compose --profile app up -d --build
+docker compose ps
+```
+
+7. 执行验证：
+
+```powershell
+mvn -DskipITs test
+mvn -DskipITs=false test-compile failsafe:integration-test failsafe:verify
+```
+
+常见问题：
+
+- Docker 命令卡住：先关闭 Docker Desktop，再执行 `wsl --shutdown`，然后重新打开 Docker Desktop。
+- 端口占用：用 `netstat -ano | findstr :端口号` 查占用进程，再决定是否关闭对应程序。
+- Testcontainers 被跳过：先确认 `docker version` 有 `Server` 信息，再重新执行集成测试。
+- 中文显示乱码：PowerShell 建议使用 UTF-8 终端，或在 Windows Terminal 中打开 PowerShell。
+- Maven 依赖下载慢：确认 Maven `settings.xml` 已配置国内镜像，并使用本地仓库 `C:\maven-repository`。
+
 ## 代码格式
 
 项目使用 `.editorconfig`、`checkstyle.xml` 和 `eclipse-formatter.xml` 统一代码格式：
