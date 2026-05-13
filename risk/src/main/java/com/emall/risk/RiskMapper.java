@@ -1,7 +1,6 @@
 package com.emall.risk;
 
 import java.util.List;
-import java.util.Map;
 import org.apache.ibatis.annotations.Insert;
 import org.apache.ibatis.annotations.Mapper;
 import org.apache.ibatis.annotations.Param;
@@ -21,15 +20,22 @@ interface RiskMapper {
             """)
     int saveRule(@Param("rule") RiskRule rule);
 
-    @Select("SELECT * FROM risk_rule WHERE rule_id = #{ruleId}")
-    Map<String, Object> findRule(@Param("ruleId") long ruleId);
+    @Select("""
+            SELECT rule_id, scene, rule_code, field_name, operator, threshold_value, risk_level, status, created_at,
+                updated_at
+            FROM risk_rule
+            WHERE rule_id = #{ruleId}
+            """)
+    RiskRule findRule(@Param("ruleId") long ruleId);
 
     @Select("""
-            SELECT * FROM risk_rule
+            SELECT rule_id, scene, rule_code, field_name, operator, threshold_value, risk_level, status, created_at,
+                updated_at
+            FROM risk_rule
             WHERE scene = #{scene} AND status = 'ACTIVE'
             ORDER BY updated_at DESC
             """)
-    List<Map<String, Object>> findActiveRules(@Param("scene") RiskScene scene);
+    List<RiskRule> findActiveRules(@Param("scene") RiskScene scene);
 
     @Insert("""
             INSERT INTO risk_device_reputation (device_id, reputation_score, risky, updated_at)
@@ -40,8 +46,12 @@ interface RiskMapper {
             """)
     int saveDevice(@Param("reputation") DeviceReputation reputation);
 
-    @Select("SELECT * FROM risk_device_reputation WHERE device_id = #{deviceId}")
-    Map<String, Object> findDevice(@Param("deviceId") String deviceId);
+    @Select("""
+            SELECT device_id, reputation_score, risky, updated_at
+            FROM risk_device_reputation
+            WHERE device_id = #{deviceId}
+            """)
+    DeviceReputation findDevice(@Param("deviceId") String deviceId);
 
     @Insert("""
             INSERT INTO risk_event
@@ -54,9 +64,11 @@ interface RiskMapper {
     int saveEvent(@Param("event") RiskEvent event);
 
     @Select("""
-            SELECT * FROM risk_event
+            SELECT event_id, scene, subject_id, device_id, ip, amount, velocity, score, risk_level, reason,
+                occurred_at
+            FROM risk_event
             WHERE subject_id = #{subjectId}
             ORDER BY occurred_at DESC
             """)
-    List<Map<String, Object>> findEvents(@Param("subjectId") String subjectId);
+    List<RiskEvent> findEvents(@Param("subjectId") String subjectId);
 }

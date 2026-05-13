@@ -1,5 +1,6 @@
 package com.emall.cost.repository;
 
+import com.baomidou.mybatisplus.annotation.FieldFill;
 import com.baomidou.mybatisplus.annotation.IdType;
 import com.baomidou.mybatisplus.annotation.TableField;
 import com.baomidou.mybatisplus.annotation.TableId;
@@ -27,7 +28,7 @@ public class CostSignalEntity {
     @TableField("observed_at")
     private LocalDateTime observedAt;
 
-    @TableField("created_at")
+    @TableField(value = "created_at", fill = FieldFill.INSERT)
     private LocalDateTime createdAt;
 
     public Long getSignalId() {

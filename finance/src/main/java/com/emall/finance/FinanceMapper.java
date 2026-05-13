@@ -1,7 +1,6 @@
 package com.emall.finance;
 
 import java.util.List;
-import java.util.Map;
 import org.apache.ibatis.annotations.Insert;
 import org.apache.ibatis.annotations.Mapper;
 import org.apache.ibatis.annotations.Param;
@@ -19,11 +18,18 @@ interface FinanceMapper {
             """)
     int saveAccount(@Param("account") FinanceAccount account);
 
-    @Select("SELECT * FROM finance_account WHERE account_id = #{accountId}")
-    Map<String, Object> findAccount(@Param("accountId") long accountId);
+    @Select("""
+            SELECT account_id, account_type, owner_id, currency, balance, frozen_amount, created_at, updated_at
+            FROM finance_account
+            WHERE account_id = #{accountId}
+            """)
+    FinanceAccount findAccount(@Param("accountId") long accountId);
 
-    @Select("SELECT * FROM finance_account")
-    List<Map<String, Object>> findAccounts();
+    @Select("""
+            SELECT account_id, account_type, owner_id, currency, balance, frozen_amount, created_at, updated_at
+            FROM finance_account
+            """)
+    List<FinanceAccount> findAccounts();
 
     @Insert("""
             INSERT INTO ledger_entry
@@ -33,8 +39,12 @@ interface FinanceMapper {
             """)
     int saveEntry(@Param("entry") LedgerEntry entry);
 
-    @Select("SELECT * FROM ledger_entry WHERE account_id = #{accountId}")
-    List<Map<String, Object>> findEntries(@Param("accountId") long accountId);
+    @Select("""
+            SELECT entry_id, account_id, business_type, business_no, debit_amount, credit_amount, created_at
+            FROM ledger_entry
+            WHERE account_id = #{accountId}
+            """)
+    List<LedgerEntry> findEntries(@Param("accountId") long accountId);
 
     @Insert("""
             INSERT INTO settlement_batch
@@ -46,11 +56,19 @@ interface FinanceMapper {
             """)
     int saveSettlementBatch(@Param("batch") SettlementBatch batch);
 
-    @Select("SELECT * FROM settlement_batch WHERE batch_id = #{batchId}")
-    Map<String, Object> findSettlementBatch(@Param("batchId") long batchId);
+    @Select("""
+            SELECT batch_id, merchant_id, amount, commission_amount, status, settlement_date, created_at, updated_at
+            FROM settlement_batch
+            WHERE batch_id = #{batchId}
+            """)
+    SettlementBatch findSettlementBatch(@Param("batchId") long batchId);
 
-    @Select("SELECT * FROM settlement_batch WHERE merchant_id = #{merchantId}")
-    List<Map<String, Object>> findSettlementBatches(@Param("merchantId") long merchantId);
+    @Select("""
+            SELECT batch_id, merchant_id, amount, commission_amount, status, settlement_date, created_at, updated_at
+            FROM settlement_batch
+            WHERE merchant_id = #{merchantId}
+            """)
+    List<SettlementBatch> findSettlementBatches(@Param("merchantId") long merchantId);
 
     @Insert("""
             INSERT INTO invoice_document
@@ -61,8 +79,12 @@ interface FinanceMapper {
             """)
     int saveInvoice(@Param("invoice") InvoiceDocument invoice);
 
-    @Select("SELECT * FROM invoice_document WHERE invoice_id = #{invoiceId}")
-    Map<String, Object> findInvoice(@Param("invoiceId") long invoiceId);
+    @Select("""
+            SELECT invoice_id, owner_id, amount, tax_no, status, created_at, updated_at
+            FROM invoice_document
+            WHERE invoice_id = #{invoiceId}
+            """)
+    InvoiceDocument findInvoice(@Param("invoiceId") long invoiceId);
 
     @Insert("""
             INSERT INTO clearing_file
@@ -81,9 +103,16 @@ interface FinanceMapper {
             """)
     int saveChargeback(@Param("chargeback") ChargebackCase chargeback);
 
-    @Select("SELECT * FROM chargeback_case WHERE chargeback_id = #{chargebackId}")
-    Map<String, Object> findChargeback(@Param("chargebackId") long chargebackId);
+    @Select("""
+            SELECT chargeback_id, payment_id, amount, reason, status, created_at, updated_at
+            FROM chargeback_case
+            WHERE chargeback_id = #{chargebackId}
+            """)
+    ChargebackCase findChargeback(@Param("chargebackId") long chargebackId);
 
-    @Select("SELECT * FROM chargeback_case")
-    List<Map<String, Object>> findChargebacks();
+    @Select("""
+            SELECT chargeback_id, payment_id, amount, reason, status, created_at, updated_at
+            FROM chargeback_case
+            """)
+    List<ChargebackCase> findChargebacks();
 }

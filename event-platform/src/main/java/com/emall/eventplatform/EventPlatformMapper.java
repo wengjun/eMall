@@ -1,7 +1,6 @@
 package com.emall.eventplatform;
 
 import java.util.List;
-import java.util.Map;
 import org.apache.ibatis.annotations.Insert;
 import org.apache.ibatis.annotations.Mapper;
 import org.apache.ibatis.annotations.Param;
@@ -20,13 +19,17 @@ interface EventPlatformMapper {
     int saveSchema(@Param("schema") EventSchema schema);
 
     @Select("""
-            SELECT * FROM event_schema
+            SELECT schema_id, event_name, version, owner, json_schema, status, created_at, updated_at
+            FROM event_schema
             WHERE event_name = #{eventName} AND version = #{version}
             """)
-    Map<String, Object> findSchema(@Param("eventName") String eventName, @Param("version") int version);
+    EventSchema findSchema(@Param("eventName") String eventName, @Param("version") int version);
 
-    @Select("SELECT * FROM event_schema")
-    List<Map<String, Object>> findSchemas();
+    @Select("""
+            SELECT schema_id, event_name, version, owner, json_schema, status, created_at, updated_at
+            FROM event_schema
+            """)
+    List<EventSchema> findSchemas();
 
     @Insert("""
             INSERT INTO tracking_event
@@ -40,11 +43,18 @@ interface EventPlatformMapper {
     @Select("SELECT COUNT(*) FROM tracking_event WHERE event_key = #{eventKey}")
     long countEventsByKey(@Param("eventKey") String eventKey);
 
-    @Select("SELECT * FROM tracking_event WHERE event_name = #{eventName}")
-    List<Map<String, Object>> findEventsByName(@Param("eventName") String eventName);
+    @Select("""
+            SELECT event_id, event_name, version, event_key, user_key, payload, late_event, occurred_at, ingested_at
+            FROM tracking_event
+            WHERE event_name = #{eventName}
+            """)
+    List<TrackingEvent> findEventsByName(@Param("eventName") String eventName);
 
-    @Select("SELECT * FROM tracking_event")
-    List<Map<String, Object>> findEvents();
+    @Select("""
+            SELECT event_id, event_name, version, event_key, user_key, payload, late_event, occurred_at, ingested_at
+            FROM tracking_event
+            """)
+    List<TrackingEvent> findEvents();
 
     @Insert("""
             INSERT INTO pipeline_offset (offset_id, consumer_group, topic_name, processed_offset, updated_at)
@@ -63,6 +73,9 @@ interface EventPlatformMapper {
             """)
     int saveMaterialization(@Param("materialization") MetricMaterialization materialization);
 
-    @Select("SELECT * FROM metric_materialization")
-    List<Map<String, Object>> findMaterializations();
+    @Select("""
+            SELECT materialization_id, metric_name, window_key, event_count, late_event_count, materialized_at
+            FROM metric_materialization
+            """)
+    List<MetricMaterialization> findMaterializations();
 }

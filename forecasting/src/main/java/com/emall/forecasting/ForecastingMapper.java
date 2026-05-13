@@ -1,7 +1,6 @@
 package com.emall.forecasting;
 
 import java.util.List;
-import java.util.Map;
 import org.apache.ibatis.annotations.Insert;
 import org.apache.ibatis.annotations.Mapper;
 import org.apache.ibatis.annotations.Param;
@@ -18,14 +17,17 @@ interface ForecastingMapper {
     int saveDemandSignal(@Param("signal") DemandSignal signal);
 
     @Select("""
-            SELECT * FROM demand_signal
+            SELECT signal_id, sku_id, region_code, sold_quantity, page_views, signal_date, created_at
+            FROM demand_signal
             WHERE sku_id = #{skuId} AND region_code = #{regionCode}
             """)
-    List<Map<String, Object>> findDemandSignals(@Param("skuId") long skuId,
-            @Param("regionCode") String regionCode);
+    List<DemandSignal> findDemandSignals(@Param("skuId") long skuId, @Param("regionCode") String regionCode);
 
-    @Select("SELECT * FROM demand_signal")
-    List<Map<String, Object>> findDemandSignals();
+    @Select("""
+            SELECT signal_id, sku_id, region_code, sold_quantity, page_views, signal_date, created_at
+            FROM demand_signal
+            """)
+    List<DemandSignal> findDemandSignals();
 
     @Insert("""
             INSERT INTO demand_forecast
@@ -36,8 +38,11 @@ interface ForecastingMapper {
             """)
     int saveDemandForecast(@Param("forecast") DemandForecast forecast);
 
-    @Select("SELECT * FROM demand_forecast")
-    List<Map<String, Object>> findDemandForecasts();
+    @Select("""
+            SELECT forecast_id, sku_id, region_code, forecast_quantity, stockout_risk, forecast_date, created_at
+            FROM demand_forecast
+            """)
+    List<DemandForecast> findDemandForecasts();
 
     @Insert("""
             INSERT INTO replenishment_plan
@@ -47,8 +52,11 @@ interface ForecastingMapper {
             """)
     int saveReplenishmentPlan(@Param("plan") ReplenishmentPlan plan);
 
-    @Select("SELECT * FROM replenishment_plan")
-    List<Map<String, Object>> findReplenishmentPlans();
+    @Select("""
+            SELECT plan_id, sku_id, warehouse_code, recommended_quantity, priority, plan_date, created_at
+            FROM replenishment_plan
+            """)
+    List<ReplenishmentPlan> findReplenishmentPlans();
 
     @Insert("""
             INSERT INTO capacity_forecast
@@ -60,6 +68,10 @@ interface ForecastingMapper {
             """)
     int saveCapacityForecast(@Param("forecast") CapacityForecast forecast);
 
-    @Select("SELECT * FROM capacity_forecast")
-    List<Map<String, Object>> findCapacityForecasts();
+    @Select("""
+            SELECT capacity_forecast_id, warehouse_code, forecast_orders, worker_hours, pressure_level,
+                forecast_date, created_at
+            FROM capacity_forecast
+            """)
+    List<CapacityForecast> findCapacityForecasts();
 }

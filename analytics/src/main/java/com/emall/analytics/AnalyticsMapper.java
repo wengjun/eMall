@@ -1,7 +1,6 @@
 package com.emall.analytics;
 
 import java.util.List;
-import java.util.Map;
 import org.apache.ibatis.annotations.Insert;
 import org.apache.ibatis.annotations.Mapper;
 import org.apache.ibatis.annotations.Param;
@@ -18,11 +17,18 @@ interface AnalyticsMapper {
             """)
     int saveMetric(@Param("metric") MetricDefinition metric);
 
-    @Select("SELECT * FROM metric_definition WHERE metric_id = #{metricId}")
-    Map<String, Object> findMetric(@Param("metricId") long metricId);
+    @Select("""
+            SELECT metric_id, metric_name, owner, expression, status, created_at, updated_at
+            FROM metric_definition
+            WHERE metric_id = #{metricId}
+            """)
+    MetricDefinition findMetric(@Param("metricId") long metricId);
 
-    @Select("SELECT * FROM metric_definition")
-    List<Map<String, Object>> findMetrics();
+    @Select("""
+            SELECT metric_id, metric_name, owner, expression, status, created_at, updated_at
+            FROM metric_definition
+            """)
+    List<MetricDefinition> findMetrics();
 
     @Insert("""
             INSERT INTO metric_point
@@ -40,8 +46,11 @@ interface AnalyticsMapper {
             """)
     int saveDashboard(@Param("dashboard") DashboardDefinition dashboard);
 
-    @Select("SELECT * FROM dashboard_definition")
-    List<Map<String, Object>> findDashboards();
+    @Select("""
+            SELECT dashboard_id, dashboard_name, business_domain, metric_names, created_at
+            FROM dashboard_definition
+            """)
+    List<DashboardDefinition> findDashboards();
 
     @Insert("""
             INSERT INTO anomaly_signal
@@ -51,8 +60,11 @@ interface AnalyticsMapper {
             """)
     int saveAnomaly(@Param("anomaly") AnomalySignal anomaly);
 
-    @Select("SELECT * FROM anomaly_signal")
-    List<Map<String, Object>> findAnomalies();
+    @Select("""
+            SELECT anomaly_id, metric_name, actual_value, expected_value, severity, created_at
+            FROM anomaly_signal
+            """)
+    List<AnomalySignal> findAnomalies();
 
     @Insert("""
             INSERT INTO consent_record (consent_id, user_id, purpose, granted, updated_at)
@@ -71,9 +83,16 @@ interface AnalyticsMapper {
             """)
     int savePrivacyRequest(@Param("request") PrivacyRequest request);
 
-    @Select("SELECT * FROM privacy_request WHERE request_id = #{requestId}")
-    Map<String, Object> findPrivacyRequest(@Param("requestId") long requestId);
+    @Select("""
+            SELECT request_id, user_id, request_type, status, created_at, updated_at
+            FROM privacy_request
+            WHERE request_id = #{requestId}
+            """)
+    PrivacyRequest findPrivacyRequest(@Param("requestId") long requestId);
 
-    @Select("SELECT * FROM privacy_request")
-    List<Map<String, Object>> findPrivacyRequests();
+    @Select("""
+            SELECT request_id, user_id, request_type, status, created_at, updated_at
+            FROM privacy_request
+            """)
+    List<PrivacyRequest> findPrivacyRequests();
 }

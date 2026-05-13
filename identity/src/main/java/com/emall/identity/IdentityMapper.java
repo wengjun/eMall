@@ -1,7 +1,6 @@
 package com.emall.identity;
 
 import java.util.List;
-import java.util.Map;
 import org.apache.ibatis.annotations.Insert;
 import org.apache.ibatis.annotations.Mapper;
 import org.apache.ibatis.annotations.Param;
@@ -19,11 +18,19 @@ interface IdentityMapper {
             """)
     int saveAccount(@Param("account") IdentityAccount account);
 
-    @Select("SELECT * FROM identity_account WHERE account_id = #{accountId}")
-    Map<String, Object> findAccount(@Param("accountId") long accountId);
+    @Select("""
+            SELECT account_id, identity_type, subject, display_name, status, created_at, updated_at
+            FROM identity_account
+            WHERE account_id = #{accountId}
+            """)
+    IdentityAccount findAccount(@Param("accountId") long accountId);
 
-    @Select("SELECT * FROM identity_account WHERE subject = #{subject}")
-    Map<String, Object> findAccountBySubject(@Param("subject") String subject);
+    @Select("""
+            SELECT account_id, identity_type, subject, display_name, status, created_at, updated_at
+            FROM identity_account
+            WHERE subject = #{subject}
+            """)
+    IdentityAccount findAccountBySubject(@Param("subject") String subject);
 
     @Insert("""
             INSERT INTO identity_device_session
@@ -36,8 +43,13 @@ interface IdentityMapper {
             """)
     int saveSession(@Param("session") DeviceSession session);
 
-    @Select("SELECT * FROM identity_device_session WHERE session_id = #{sessionId}")
-    Map<String, Object> findSession(@Param("sessionId") long sessionId);
+    @Select("""
+            SELECT session_id, account_id, device_id, access_token, refresh_token, status, expires_at, created_at,
+                updated_at
+            FROM identity_device_session
+            WHERE session_id = #{sessionId}
+            """)
+    DeviceSession findSession(@Param("sessionId") long sessionId);
 
     @Insert("""
             INSERT INTO identity_permission_grant (grant_id, account_id, scope, resource, created_at)
@@ -46,8 +58,12 @@ interface IdentityMapper {
             """)
     int saveGrant(@Param("grant") PermissionGrant grant);
 
-    @Select("SELECT * FROM identity_permission_grant WHERE account_id = #{accountId}")
-    List<Map<String, Object>> findGrants(@Param("accountId") long accountId);
+    @Select("""
+            SELECT grant_id, account_id, scope, resource, created_at
+            FROM identity_permission_grant
+            WHERE account_id = #{accountId}
+            """)
+    List<PermissionGrant> findGrants(@Param("accountId") long accountId);
 
     @Insert("""
             INSERT INTO identity_service_client
@@ -59,8 +75,12 @@ interface IdentityMapper {
             """)
     int saveServiceClient(@Param("client") ServiceClient client);
 
-    @Select("SELECT * FROM identity_service_client WHERE client_key = #{clientKey}")
-    Map<String, Object> findServiceClient(@Param("clientKey") String clientKey);
+    @Select("""
+            SELECT client_id, client_key, secret_hash, scopes, active, created_at, updated_at
+            FROM identity_service_client
+            WHERE client_key = #{clientKey}
+            """)
+    ServiceClient findServiceClient(@Param("clientKey") String clientKey);
 
     @Insert("""
             INSERT INTO identity_merchant_sub_account
@@ -73,6 +93,10 @@ interface IdentityMapper {
             """)
     int saveSubAccount(@Param("subAccount") MerchantSubAccount subAccount);
 
-    @Select("SELECT * FROM identity_merchant_sub_account WHERE merchant_id = #{merchantId}")
-    List<Map<String, Object>> findSubAccounts(@Param("merchantId") long merchantId);
+    @Select("""
+            SELECT sub_account_id, merchant_id, account_id, role_code, active, created_at, updated_at
+            FROM identity_merchant_sub_account
+            WHERE merchant_id = #{merchantId}
+            """)
+    List<MerchantSubAccount> findSubAccounts(@Param("merchantId") long merchantId);
 }

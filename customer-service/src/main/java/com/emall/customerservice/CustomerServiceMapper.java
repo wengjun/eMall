@@ -1,7 +1,6 @@
 package com.emall.customerservice;
 
 import java.util.List;
-import java.util.Map;
 import org.apache.ibatis.annotations.Insert;
 import org.apache.ibatis.annotations.Mapper;
 import org.apache.ibatis.annotations.Param;
@@ -19,11 +18,18 @@ interface CustomerServiceMapper {
             """)
     int saveTicket(@Param("ticket") ServiceTicket ticket);
 
-    @Select("SELECT * FROM service_ticket WHERE ticket_id = #{ticketId}")
-    Map<String, Object> findTicket(@Param("ticketId") long ticketId);
+    @Select("""
+            SELECT ticket_id, user_id, order_id, category, priority, status, assignee, created_at, updated_at
+            FROM service_ticket
+            WHERE ticket_id = #{ticketId}
+            """)
+    ServiceTicket findTicket(@Param("ticketId") long ticketId);
 
-    @Select("SELECT * FROM service_ticket")
-    List<Map<String, Object>> findTickets();
+    @Select("""
+            SELECT ticket_id, user_id, order_id, category, priority, status, assignee, created_at, updated_at
+            FROM service_ticket
+            """)
+    List<ServiceTicket> findTickets();
 
     @Insert("""
             INSERT INTO arbitration_case
@@ -35,11 +41,18 @@ interface CustomerServiceMapper {
             """)
     int saveArbitration(@Param("arbitration") ArbitrationCase arbitration);
 
-    @Select("SELECT * FROM arbitration_case WHERE arbitration_id = #{arbitrationId}")
-    Map<String, Object> findArbitration(@Param("arbitrationId") long arbitrationId);
+    @Select("""
+            SELECT arbitration_id, ticket_id, merchant_id, reason, status, created_at, updated_at
+            FROM arbitration_case
+            WHERE arbitration_id = #{arbitrationId}
+            """)
+    ArbitrationCase findArbitration(@Param("arbitrationId") long arbitrationId);
 
-    @Select("SELECT * FROM arbitration_case")
-    List<Map<String, Object>> findArbitrations();
+    @Select("""
+            SELECT arbitration_id, ticket_id, merchant_id, reason, status, created_at, updated_at
+            FROM arbitration_case
+            """)
+    List<ArbitrationCase> findArbitrations();
 
     @Insert("""
             INSERT INTO compensation_record
@@ -49,8 +62,11 @@ interface CustomerServiceMapper {
             """)
     int saveCompensation(@Param("compensation") CompensationRecord compensation);
 
-    @Select("SELECT * FROM compensation_record")
-    List<Map<String, Object>> findCompensations();
+    @Select("""
+            SELECT compensation_id, ticket_id, user_id, amount, reason, created_at
+            FROM compensation_record
+            """)
+    List<CompensationRecord> findCompensations();
 
     @Insert("""
             INSERT INTO knowledge_article

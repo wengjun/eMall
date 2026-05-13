@@ -1,7 +1,6 @@
 package com.emall.intelligence;
 
 import java.util.List;
-import java.util.Map;
 import org.apache.ibatis.annotations.Insert;
 import org.apache.ibatis.annotations.Mapper;
 import org.apache.ibatis.annotations.Param;
@@ -19,8 +18,11 @@ interface IntelligenceMapper {
             """)
     int saveUserProfile(@Param("profile") UserProfile profile);
 
-    @Select("SELECT * FROM user_profile")
-    List<Map<String, Object>> findUserProfiles();
+    @Select("""
+            SELECT profile_id, user_id, segment, preferences, privacy_restricted, updated_at
+            FROM user_profile
+            """)
+    List<UserProfile> findUserProfiles();
 
     @Insert("""
             INSERT INTO item_profile
@@ -32,8 +34,11 @@ interface IntelligenceMapper {
             """)
     int saveItemProfile(@Param("profile") ItemProfile profile);
 
-    @Select("SELECT * FROM item_profile")
-    List<Map<String, Object>> findItemProfiles();
+    @Select("""
+            SELECT profile_id, sku_id, category, attributes, quality_score, updated_at
+            FROM item_profile
+            """)
+    List<ItemProfile> findItemProfiles();
 
     @Insert("""
             INSERT INTO feature_definition
@@ -43,8 +48,11 @@ interface IntelligenceMapper {
             """)
     int saveFeature(@Param("feature") FeatureDefinition feature);
 
-    @Select("SELECT * FROM feature_definition")
-    List<Map<String, Object>> findFeatures();
+    @Select("""
+            SELECT feature_id, feature_name, scope, owner, freshness_seconds, created_at
+            FROM feature_definition
+            """)
+    List<FeatureDefinition> findFeatures();
 
     @Insert("""
             INSERT INTO online_feature_value
@@ -64,11 +72,18 @@ interface IntelligenceMapper {
             """)
     int saveModel(@Param("model") ModelDeployment model);
 
-    @Select("SELECT * FROM model_deployment WHERE model_id = #{modelId}")
-    Map<String, Object> findModel(@Param("modelId") long modelId);
+    @Select("""
+            SELECT model_id, model_name, version, use_case, status, approval_ticket, created_at, updated_at
+            FROM model_deployment
+            WHERE model_id = #{modelId}
+            """)
+    ModelDeployment findModel(@Param("modelId") long modelId);
 
-    @Select("SELECT * FROM model_deployment")
-    List<Map<String, Object>> findModels();
+    @Select("""
+            SELECT model_id, model_name, version, use_case, status, approval_ticket, created_at, updated_at
+            FROM model_deployment
+            """)
+    List<ModelDeployment> findModels();
 
     @Insert("""
             INSERT INTO ai_decision
@@ -78,6 +93,9 @@ interface IntelligenceMapper {
             """)
     int saveDecision(@Param("decision") AiDecision decision);
 
-    @Select("SELECT * FROM ai_decision")
-    List<Map<String, Object>> findDecisions();
+    @Select("""
+            SELECT decision_id, use_case, entity_key, decision, score, model_version, created_at
+            FROM ai_decision
+            """)
+    List<AiDecision> findDecisions();
 }

@@ -1,9 +1,11 @@
 package com.emall.pricing.repository;
 
+import com.baomidou.mybatisplus.annotation.FieldFill;
 import com.baomidou.mybatisplus.annotation.IdType;
 import com.baomidou.mybatisplus.annotation.TableField;
 import com.baomidou.mybatisplus.annotation.TableId;
 import com.baomidou.mybatisplus.annotation.TableName;
+import com.baomidou.mybatisplus.annotation.Version;
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
 
@@ -21,13 +23,14 @@ public class PriceBookEntity {
     @TableField("currency")
     private String currency;
 
+    @Version
     @TableField("version")
     private Long version;
 
     @TableField("active")
     private Boolean active;
 
-    @TableField("updated_at")
+    @TableField(value = "updated_at", fill = FieldFill.INSERT_UPDATE)
     private LocalDateTime updatedAt;
 
     public Long getSkuId() {

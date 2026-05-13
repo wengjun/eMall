@@ -1,7 +1,6 @@
 package com.emall.promotion;
 
 import java.util.List;
-import java.util.Map;
 import org.apache.ibatis.annotations.Insert;
 import org.apache.ibatis.annotations.Mapper;
 import org.apache.ibatis.annotations.Param;
@@ -22,16 +21,28 @@ interface PromotionMapper {
             """)
     int saveCampaign(@Param("campaign") PromotionCampaign campaign);
 
-    @Select("SELECT * FROM promotion_campaign WHERE campaign_id = #{campaignId}")
-    Map<String, Object> findCampaign(@Param("campaignId") long campaignId);
+    @Select("""
+            SELECT campaign_id, name, promotion_type, threshold_amount, benefit_value, budget_amount, used_budget,
+                priority, stackable, status, starts_at, ends_at, created_at, updated_at
+            FROM promotion_campaign
+            WHERE campaign_id = #{campaignId}
+            """)
+    PromotionCampaign findCampaign(@Param("campaignId") long campaignId);
 
     @Select("""
-            SELECT * FROM promotion_campaign
+            SELECT campaign_id, name, promotion_type, threshold_amount, benefit_value, budget_amount, used_budget,
+                priority, stackable, status, starts_at, ends_at, created_at, updated_at
+            FROM promotion_campaign
             WHERE status = 'ACTIVE'
             ORDER BY priority ASC
             """)
-    List<Map<String, Object>> findActiveCampaigns();
+    List<PromotionCampaign> findActiveCampaigns();
 
-    @Select("SELECT * FROM promotion_campaign ORDER BY created_at DESC")
-    List<Map<String, Object>> findCampaigns();
+    @Select("""
+            SELECT campaign_id, name, promotion_type, threshold_amount, benefit_value, budget_amount, used_budget,
+                priority, stackable, status, starts_at, ends_at, created_at, updated_at
+            FROM promotion_campaign
+            ORDER BY created_at DESC
+            """)
+    List<PromotionCampaign> findCampaigns();
 }

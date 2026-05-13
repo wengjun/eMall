@@ -1,5 +1,6 @@
 package com.emall.flashsale.repository;
 
+import com.baomidou.mybatisplus.annotation.FieldFill;
 import com.baomidou.mybatisplus.annotation.IdType;
 import com.baomidou.mybatisplus.annotation.TableField;
 import com.baomidou.mybatisplus.annotation.TableId;
@@ -29,7 +30,7 @@ public class FlashSaleStockEntity {
     @TableField("sold_stock")
     private Integer soldStock;
 
-    @TableField("updated_at")
+    @TableField(value = "updated_at", fill = FieldFill.INSERT_UPDATE)
     private LocalDateTime updatedAt;
 
     public Long getCampaignId() {

@@ -1,7 +1,6 @@
 package com.emall.release;
 
 import java.util.List;
-import java.util.Map;
 import org.apache.ibatis.annotations.Insert;
 import org.apache.ibatis.annotations.Mapper;
 import org.apache.ibatis.annotations.Param;
@@ -19,11 +18,18 @@ interface ReleaseMapper {
             """)
     int saveToggle(@Param("toggle") FeatureToggle toggle);
 
-    @Select("SELECT * FROM feature_toggle WHERE toggle_id = #{toggleId}")
-    Map<String, Object> findToggle(@Param("toggleId") long toggleId);
+    @Select("""
+            SELECT toggle_id, flag_key, service_name, status, rollout_percent, created_at, updated_at
+            FROM feature_toggle
+            WHERE toggle_id = #{toggleId}
+            """)
+    FeatureToggle findToggle(@Param("toggleId") long toggleId);
 
-    @Select("SELECT * FROM feature_toggle")
-    List<Map<String, Object>> findToggles();
+    @Select("""
+            SELECT toggle_id, flag_key, service_name, status, rollout_percent, created_at, updated_at
+            FROM feature_toggle
+            """)
+    List<FeatureToggle> findToggles();
 
     @Insert("""
             INSERT INTO rollout_plan
@@ -35,11 +41,18 @@ interface ReleaseMapper {
             """)
     int saveRollout(@Param("rollout") RolloutPlan rollout);
 
-    @Select("SELECT * FROM rollout_plan WHERE rollout_id = #{rolloutId}")
-    Map<String, Object> findRollout(@Param("rolloutId") long rolloutId);
+    @Select("""
+            SELECT rollout_id, service_name, version, strategy, current_percent, status, created_at, updated_at
+            FROM rollout_plan
+            WHERE rollout_id = #{rolloutId}
+            """)
+    RolloutPlan findRollout(@Param("rolloutId") long rolloutId);
 
-    @Select("SELECT * FROM rollout_plan")
-    List<Map<String, Object>> findRollouts();
+    @Select("""
+            SELECT rollout_id, service_name, version, strategy, current_percent, status, created_at, updated_at
+            FROM rollout_plan
+            """)
+    List<RolloutPlan> findRollouts();
 
     @Insert("""
             INSERT INTO message_topic_governance
@@ -51,11 +64,18 @@ interface ReleaseMapper {
             """)
     int saveTopic(@Param("topic") MessageTopicGovernance topic);
 
-    @Select("SELECT * FROM message_topic_governance WHERE topic_id = #{topicId}")
-    Map<String, Object> findTopic(@Param("topicId") long topicId);
+    @Select("""
+            SELECT topic_id, topic_name, owner, schema_version, lag_budget, status, created_at, updated_at
+            FROM message_topic_governance
+            WHERE topic_id = #{topicId}
+            """)
+    MessageTopicGovernance findTopic(@Param("topicId") long topicId);
 
-    @Select("SELECT * FROM message_topic_governance")
-    List<Map<String, Object>> findTopics();
+    @Select("""
+            SELECT topic_id, topic_name, owner, schema_version, lag_budget, status, created_at, updated_at
+            FROM message_topic_governance
+            """)
+    List<MessageTopicGovernance> findTopics();
 
     @Insert("""
             INSERT INTO replay_plan
@@ -66,9 +86,16 @@ interface ReleaseMapper {
             """)
     int saveReplay(@Param("replay") ReplayPlan replay);
 
-    @Select("SELECT * FROM replay_plan WHERE replay_id = #{replayId}")
-    Map<String, Object> findReplay(@Param("replayId") long replayId);
+    @Select("""
+            SELECT replay_id, topic_name, consumer_group, from_offset, to_offset, status, created_at, updated_at
+            FROM replay_plan
+            WHERE replay_id = #{replayId}
+            """)
+    ReplayPlan findReplay(@Param("replayId") long replayId);
 
-    @Select("SELECT * FROM replay_plan")
-    List<Map<String, Object>> findReplays();
+    @Select("""
+            SELECT replay_id, topic_name, consumer_group, from_offset, to_offset, status, created_at, updated_at
+            FROM replay_plan
+            """)
+    List<ReplayPlan> findReplays();
 }

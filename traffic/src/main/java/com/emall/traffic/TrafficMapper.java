@@ -1,7 +1,6 @@
 package com.emall.traffic;
 
 import java.util.List;
-import java.util.Map;
 import org.apache.ibatis.annotations.Insert;
 import org.apache.ibatis.annotations.Mapper;
 import org.apache.ibatis.annotations.Param;
@@ -19,11 +18,18 @@ interface TrafficMapper {
             """)
     int saveUnit(@Param("unit") UnitCell unit);
 
-    @Select("SELECT * FROM unit_cell WHERE unit_code = #{unitCode}")
-    Map<String, Object> findUnit(@Param("unitCode") String unitCode);
+    @Select("""
+            SELECT unit_id, unit_code, region_code, capacity_weight, status, created_at, updated_at
+            FROM unit_cell
+            WHERE unit_code = #{unitCode}
+            """)
+    UnitCell findUnit(@Param("unitCode") String unitCode);
 
-    @Select("SELECT * FROM unit_cell")
-    List<Map<String, Object>> findUnits();
+    @Select("""
+            SELECT unit_id, unit_code, region_code, capacity_weight, status, created_at, updated_at
+            FROM unit_cell
+            """)
+    List<UnitCell> findUnits();
 
     @Insert("""
             INSERT INTO shard_route
@@ -35,8 +41,11 @@ interface TrafficMapper {
             """)
     int saveRoute(@Param("route") ShardRoute route);
 
-    @Select("SELECT * FROM shard_route")
-    List<Map<String, Object>> findRoutes();
+    @Select("""
+            SELECT route_id, domain_name, shard_no, unit_code, database_key, updated_at
+            FROM shard_route
+            """)
+    List<ShardRoute> findRoutes();
 
     @Insert("""
             INSERT INTO traffic_shift
@@ -47,9 +56,16 @@ interface TrafficMapper {
             """)
     int saveShift(@Param("shift") TrafficShift shift);
 
-    @Select("SELECT * FROM traffic_shift WHERE shift_id = #{shiftId}")
-    Map<String, Object> findShift(@Param("shiftId") long shiftId);
+    @Select("""
+            SELECT shift_id, source_unit, target_unit, percent, status, reason, created_at, updated_at
+            FROM traffic_shift
+            WHERE shift_id = #{shiftId}
+            """)
+    TrafficShift findShift(@Param("shiftId") long shiftId);
 
-    @Select("SELECT * FROM traffic_shift")
-    List<Map<String, Object>> findShifts();
+    @Select("""
+            SELECT shift_id, source_unit, target_unit, percent, status, reason, created_at, updated_at
+            FROM traffic_shift
+            """)
+    List<TrafficShift> findShifts();
 }

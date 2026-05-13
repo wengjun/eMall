@@ -1,7 +1,6 @@
 package com.emall.experiment;
 
 import java.util.List;
-import java.util.Map;
 import org.apache.ibatis.annotations.Insert;
 import org.apache.ibatis.annotations.Mapper;
 import org.apache.ibatis.annotations.Param;
@@ -21,15 +20,22 @@ interface ExperimentMapper {
             """)
     int saveExperiment(@Param("experiment") ExperimentDefinition experiment);
 
-    @Select("SELECT * FROM experiment_definition WHERE experiment_id = #{experimentId}")
-    Map<String, Object> findExperiment(@Param("experimentId") long experimentId);
+    @Select("""
+            SELECT experiment_id, scene, name, mutual_exclusion_group, traffic_percent, control_variant,
+                treatment_variant, status, created_at, updated_at
+            FROM experiment_definition
+            WHERE experiment_id = #{experimentId}
+            """)
+    ExperimentDefinition findExperiment(@Param("experimentId") long experimentId);
 
     @Select("""
-            SELECT * FROM experiment_definition
+            SELECT experiment_id, scene, name, mutual_exclusion_group, traffic_percent, control_variant,
+                treatment_variant, status, created_at, updated_at
+            FROM experiment_definition
             WHERE scene = #{scene} AND status = 'ACTIVE'
             ORDER BY updated_at DESC
             """)
-    List<Map<String, Object>> findActiveByScene(@Param("scene") String scene);
+    List<ExperimentDefinition> findActiveByScene(@Param("scene") String scene);
 
     @Insert("""
             INSERT INTO experiment_guardrail
@@ -39,8 +45,12 @@ interface ExperimentMapper {
             """)
     int saveGuardrail(@Param("metric") GuardrailMetric metric);
 
-    @Select("SELECT * FROM experiment_guardrail WHERE experiment_id = #{experimentId}")
-    List<Map<String, Object>> findGuardrails(@Param("experimentId") long experimentId);
+    @Select("""
+            SELECT metric_id, experiment_id, metric_name, direction, threshold_value, created_at
+            FROM experiment_guardrail
+            WHERE experiment_id = #{experimentId}
+            """)
+    List<GuardrailMetric> findGuardrails(@Param("experimentId") long experimentId);
 
     @Insert("""
             INSERT INTO experiment_metric
@@ -50,6 +60,10 @@ interface ExperimentMapper {
             """)
     int saveMetric(@Param("metric") ExperimentMetric metric);
 
-    @Select("SELECT * FROM experiment_metric WHERE experiment_id = #{experimentId}")
-    List<Map<String, Object>> findMetrics(@Param("experimentId") long experimentId);
+    @Select("""
+            SELECT metric_record_id, experiment_id, variant, metric_name, metric_value, recorded_at
+            FROM experiment_metric
+            WHERE experiment_id = #{experimentId}
+            """)
+    List<ExperimentMetric> findMetrics(@Param("experimentId") long experimentId);
 }

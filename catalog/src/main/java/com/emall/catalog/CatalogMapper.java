@@ -1,7 +1,6 @@
 package com.emall.catalog;
 
 import java.util.List;
-import java.util.Map;
 import org.apache.ibatis.annotations.Insert;
 import org.apache.ibatis.annotations.Mapper;
 import org.apache.ibatis.annotations.Param;
@@ -17,8 +16,12 @@ interface CatalogMapper {
             """)
     int saveCategory(@Param("category") CategoryNode category);
 
-    @Select("SELECT * FROM catalog_category WHERE category_id = #{categoryId}")
-    Map<String, Object> findCategory(@Param("categoryId") long categoryId);
+    @Select("""
+            SELECT category_id, parent_id, category_code, name, leaf
+            FROM catalog_category
+            WHERE category_id = #{categoryId}
+            """)
+    CategoryNode findCategory(@Param("categoryId") long categoryId);
 
     @Insert("""
             INSERT INTO catalog_attribute_template
@@ -30,8 +33,12 @@ interface CatalogMapper {
             """)
     int saveTemplate(@Param("template") AttributeTemplate template);
 
-    @Select("SELECT * FROM catalog_attribute_template WHERE category_id = #{categoryId}")
-    Map<String, Object> findTemplate(@Param("categoryId") long categoryId);
+    @Select("""
+            SELECT template_id, category_id, required_attributes, optional_attributes
+            FROM catalog_attribute_template
+            WHERE category_id = #{categoryId}
+            """)
+    AttributeTemplate findTemplate(@Param("categoryId") long categoryId);
 
     @Insert("""
             INSERT INTO catalog_brand_authorization
@@ -59,8 +66,12 @@ interface CatalogMapper {
             """)
     int saveSpu(@Param("spu") Spu spu);
 
-    @Select("SELECT * FROM catalog_spu WHERE spu_id = #{spuId}")
-    Map<String, Object> findSpu(@Param("spuId") long spuId);
+    @Select("""
+            SELECT spu_id, merchant_id, title, category_id, brand_code, status, quality_score, created_at, updated_at
+            FROM catalog_spu
+            WHERE spu_id = #{spuId}
+            """)
+    Spu findSpu(@Param("spuId") long spuId);
 
     @Insert("""
             INSERT INTO catalog_sku (sku_id, spu_id, sku_code, price, attributes, saleable, created_at, updated_at)
@@ -71,8 +82,12 @@ interface CatalogMapper {
             """)
     int saveSku(@Param("sku") Sku sku);
 
-    @Select("SELECT * FROM catalog_sku WHERE spu_id = #{spuId}")
-    List<Map<String, Object>> findSkus(@Param("spuId") long spuId);
+    @Select("""
+            SELECT sku_id, spu_id, sku_code, price, attributes, saleable, created_at, updated_at
+            FROM catalog_sku
+            WHERE spu_id = #{spuId}
+            """)
+    List<Sku> findSkus(@Param("spuId") long spuId);
 
     @Insert("""
             INSERT INTO catalog_listing_violation (violation_id, spu_id, violation_type, reason, created_at)
@@ -81,6 +96,10 @@ interface CatalogMapper {
             """)
     int saveViolation(@Param("violation") ListingViolation violation);
 
-    @Select("SELECT * FROM catalog_listing_violation WHERE spu_id = #{spuId}")
-    List<Map<String, Object>> findViolations(@Param("spuId") long spuId);
+    @Select("""
+            SELECT violation_id, spu_id, violation_type, reason, created_at
+            FROM catalog_listing_violation
+            WHERE spu_id = #{spuId}
+            """)
+    List<ListingViolation> findViolations(@Param("spuId") long spuId);
 }

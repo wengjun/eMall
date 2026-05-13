@@ -1,13 +1,6 @@
 package com.emall.platformops;
 
-import static com.emall.common.persistence.RowMaps.decimalValue;
-import static com.emall.common.persistence.RowMaps.instantValue;
-import static com.emall.common.persistence.RowMaps.intValue;
-import static com.emall.common.persistence.RowMaps.longValue;
-import static com.emall.common.persistence.RowMaps.stringValue;
-
 import java.util.List;
-import java.util.Map;
 import java.util.Optional;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.stereotype.Repository;
@@ -29,12 +22,12 @@ class MybatisPlusPlatformOpsRepository implements PlatformOpsRepository {
 
     @Override
     public Optional<BackupPlan> findBackupPlan(long planId) {
-        return Optional.ofNullable(platformOpsMapper.findBackupPlan(planId)).map(this::mapBackupPlan);
+        return Optional.ofNullable(platformOpsMapper.findBackupPlan(planId));
     }
 
     @Override
     public List<BackupPlan> findBackupPlans() {
-        return platformOpsMapper.findBackupPlans().stream().map(this::mapBackupPlan).toList();
+        return platformOpsMapper.findBackupPlans();
     }
 
     @Override
@@ -45,13 +38,12 @@ class MybatisPlusPlatformOpsRepository implements PlatformOpsRepository {
 
     @Override
     public Optional<DatabaseOperation> findDatabaseOperation(long operationId) {
-        return Optional.ofNullable(platformOpsMapper.findDatabaseOperation(operationId))
-                .map(this::mapDatabaseOperation);
+        return Optional.ofNullable(platformOpsMapper.findDatabaseOperation(operationId));
     }
 
     @Override
     public List<DatabaseOperation> findDatabaseOperations() {
-        return platformOpsMapper.findDatabaseOperations().stream().map(this::mapDatabaseOperation).toList();
+        return platformOpsMapper.findDatabaseOperations();
     }
 
     @Override
@@ -62,12 +54,12 @@ class MybatisPlusPlatformOpsRepository implements PlatformOpsRepository {
 
     @Override
     public Optional<FinOpsAction> findFinOpsAction(long actionId) {
-        return Optional.ofNullable(platformOpsMapper.findFinOpsAction(actionId)).map(this::mapFinOpsAction);
+        return Optional.ofNullable(platformOpsMapper.findFinOpsAction(actionId));
     }
 
     @Override
     public List<FinOpsAction> findFinOpsActions() {
-        return platformOpsMapper.findFinOpsActions().stream().map(this::mapFinOpsAction).toList();
+        return platformOpsMapper.findFinOpsActions();
     }
 
     @Override
@@ -78,40 +70,11 @@ class MybatisPlusPlatformOpsRepository implements PlatformOpsRepository {
 
     @Override
     public Optional<SecurityOperation> findSecurityOperation(long operationId) {
-        return Optional.ofNullable(platformOpsMapper.findSecurityOperation(operationId))
-                .map(this::mapSecurityOperation);
+        return Optional.ofNullable(platformOpsMapper.findSecurityOperation(operationId));
     }
 
     @Override
     public List<SecurityOperation> findSecurityOperations() {
-        return platformOpsMapper.findSecurityOperations().stream().map(this::mapSecurityOperation).toList();
-    }
-
-    private BackupPlan mapBackupPlan(Map<String, Object> row) {
-        return new BackupPlan(longValue(row, "plan_id"), stringValue(row, "database_name"),
-                stringValue(row, "backup_type"), intValue(row, "retention_days"),
-                OpsStatus.valueOf(stringValue(row, "status")), instantValue(row, "created_at"),
-                instantValue(row, "updated_at"));
-    }
-
-    private DatabaseOperation mapDatabaseOperation(Map<String, Object> row) {
-        return new DatabaseOperation(longValue(row, "operation_id"), stringValue(row, "database_name"),
-                stringValue(row, "operation_type"), RiskLevel.valueOf(stringValue(row, "risk_level")),
-                OpsStatus.valueOf(stringValue(row, "status")), stringValue(row, "detail"),
-                instantValue(row, "created_at"), instantValue(row, "updated_at"));
-    }
-
-    private FinOpsAction mapFinOpsAction(Map<String, Object> row) {
-        return new FinOpsAction(longValue(row, "action_id"), stringValue(row, "service_name"),
-                stringValue(row, "action_type"), decimalValue(row, "estimated_saving"),
-                OpsStatus.valueOf(stringValue(row, "status")), instantValue(row, "created_at"),
-                instantValue(row, "updated_at"));
-    }
-
-    private SecurityOperation mapSecurityOperation(Map<String, Object> row) {
-        return new SecurityOperation(longValue(row, "operation_id"), stringValue(row, "service_name"),
-                stringValue(row, "signal_type"), RiskLevel.valueOf(stringValue(row, "risk_level")),
-                OpsStatus.valueOf(stringValue(row, "status")), instantValue(row, "created_at"),
-                instantValue(row, "updated_at"));
+        return platformOpsMapper.findSecurityOperations();
     }
 }

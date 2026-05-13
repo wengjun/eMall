@@ -1,7 +1,6 @@
 package com.emall.advertising;
 
 import java.util.List;
-import java.util.Map;
 import org.apache.ibatis.annotations.Insert;
 import org.apache.ibatis.annotations.Mapper;
 import org.apache.ibatis.annotations.Param;
@@ -21,8 +20,13 @@ interface AdvertisingMapper {
             """)
     int saveCampaign(@Param("campaign") AdCampaign campaign);
 
-    @Select("SELECT * FROM advertising_campaign WHERE campaign_id = #{campaignId}")
-    Map<String, Object> findCampaign(@Param("campaignId") long campaignId);
+    @Select("""
+            SELECT campaign_id, merchant_id, name, daily_budget, used_budget, bid_amount, status, starts_at, ends_at,
+                created_at, updated_at
+            FROM advertising_campaign
+            WHERE campaign_id = #{campaignId}
+            """)
+    AdCampaign findCampaign(@Param("campaignId") long campaignId);
 
     @Insert("""
             INSERT INTO advertising_creative (creative_id, campaign_id, sku_id, title, target_url, active)
@@ -34,10 +38,11 @@ interface AdvertisingMapper {
     int saveCreative(@Param("creative") AdCreative creative);
 
     @Select("""
-            SELECT * FROM advertising_creative
+            SELECT creative_id, campaign_id, sku_id, title, target_url, active
+            FROM advertising_creative
             WHERE campaign_id = #{campaignId} AND active = TRUE
             """)
-    List<Map<String, Object>> findCreatives(@Param("campaignId") long campaignId);
+    List<AdCreative> findCreatives(@Param("campaignId") long campaignId);
 
     @Insert("""
             INSERT INTO advertising_keyword_target (target_id, campaign_id, keyword, bid_multiplier, active)
@@ -48,10 +53,11 @@ interface AdvertisingMapper {
     int saveTarget(@Param("target") KeywordTarget target);
 
     @Select("""
-            SELECT * FROM advertising_keyword_target
+            SELECT target_id, campaign_id, keyword, bid_multiplier, active
+            FROM advertising_keyword_target
             WHERE keyword = #{keyword} AND active = TRUE
             """)
-    List<Map<String, Object>> findTargets(@Param("keyword") String keyword);
+    List<KeywordTarget> findTargets(@Param("keyword") String keyword);
 
     @Insert("""
             INSERT INTO advertising_event (event_id, campaign_id, creative_id, event_type, cost, occurred_at)

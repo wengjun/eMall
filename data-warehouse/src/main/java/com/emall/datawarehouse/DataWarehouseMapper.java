@@ -1,7 +1,6 @@
 package com.emall.datawarehouse;
 
 import java.util.List;
-import java.util.Map;
 import org.apache.ibatis.annotations.Insert;
 import org.apache.ibatis.annotations.Mapper;
 import org.apache.ibatis.annotations.Param;
@@ -19,11 +18,18 @@ interface DataWarehouseMapper {
             """)
     int saveDataset(@Param("dataset") DatasetDefinition dataset);
 
-    @Select("SELECT * FROM dataset_definition WHERE dataset_id = #{datasetId}")
-    Map<String, Object> findDataset(@Param("datasetId") long datasetId);
+    @Select("""
+            SELECT dataset_id, layer, dataset_name, owner, description, retention_days, created_at, updated_at
+            FROM dataset_definition
+            WHERE dataset_id = #{datasetId}
+            """)
+    DatasetDefinition findDataset(@Param("datasetId") long datasetId);
 
-    @Select("SELECT * FROM dataset_definition")
-    List<Map<String, Object>> findDatasets();
+    @Select("""
+            SELECT dataset_id, layer, dataset_name, owner, description, retention_days, created_at, updated_at
+            FROM dataset_definition
+            """)
+    List<DatasetDefinition> findDatasets();
 
     @Insert("""
             INSERT INTO table_partition
@@ -34,8 +40,12 @@ interface DataWarehouseMapper {
             """)
     int savePartition(@Param("partition") TablePartition partition);
 
-    @Select("SELECT * FROM table_partition WHERE dataset_id = #{datasetId}")
-    List<Map<String, Object>> findPartitions(@Param("datasetId") long datasetId);
+    @Select("""
+            SELECT partition_id, dataset_id, partition_key, partition_date, row_count, storage_bytes, created_at
+            FROM table_partition
+            WHERE dataset_id = #{datasetId}
+            """)
+    List<TablePartition> findPartitions(@Param("datasetId") long datasetId);
 
     @Insert("""
             INSERT INTO quality_check (check_id, dataset_id, check_name, status, detail, checked_at)
@@ -44,8 +54,11 @@ interface DataWarehouseMapper {
             """)
     int saveQualityCheck(@Param("check") QualityCheck check);
 
-    @Select("SELECT * FROM quality_check")
-    List<Map<String, Object>> findQualityChecks();
+    @Select("""
+            SELECT check_id, dataset_id, check_name, status, detail, checked_at
+            FROM quality_check
+            """)
+    List<QualityCheck> findQualityChecks();
 
     @Insert("""
             INSERT INTO lineage_edge
@@ -55,6 +68,9 @@ interface DataWarehouseMapper {
             """)
     int saveLineage(@Param("edge") LineageEdge edge);
 
-    @Select("SELECT * FROM lineage_edge")
-    List<Map<String, Object>> findLineage();
+    @Select("""
+            SELECT lineage_id, upstream_dataset_id, downstream_dataset_id, transform_name, created_at
+            FROM lineage_edge
+            """)
+    List<LineageEdge> findLineage();
 }

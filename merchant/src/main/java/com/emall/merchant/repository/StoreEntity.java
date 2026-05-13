@@ -1,5 +1,6 @@
 package com.emall.merchant.repository;
 
+import com.baomidou.mybatisplus.annotation.FieldFill;
 import com.baomidou.mybatisplus.annotation.IdType;
 import com.baomidou.mybatisplus.annotation.TableField;
 import com.baomidou.mybatisplus.annotation.TableId;
@@ -23,10 +24,10 @@ public class StoreEntity {
     @TableField("status")
     private String status;
 
-    @TableField("created_at")
+    @TableField(value = "created_at", fill = FieldFill.INSERT)
     private LocalDateTime createdAt;
 
-    @TableField("updated_at")
+    @TableField(value = "updated_at", fill = FieldFill.INSERT_UPDATE)
     private LocalDateTime updatedAt;
 
     public Long getStoreId() {

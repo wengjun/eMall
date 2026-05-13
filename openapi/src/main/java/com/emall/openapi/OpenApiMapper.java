@@ -2,7 +2,6 @@ package com.emall.openapi;
 
 import java.time.LocalDate;
 import java.util.List;
-import java.util.Map;
 import org.apache.ibatis.annotations.Insert;
 import org.apache.ibatis.annotations.Mapper;
 import org.apache.ibatis.annotations.Param;
@@ -21,11 +20,19 @@ interface OpenApiMapper {
             """)
     int saveApp(@Param("app") OpenApiApp app);
 
-    @Select("SELECT * FROM openapi_app WHERE app_key = #{appKey}")
-    Map<String, Object> findAppByKey(@Param("appKey") String appKey);
+    @Select("""
+            SELECT app_id, merchant_id, app_key, secret_hash, name, scopes, daily_quota, active, created_at, updated_at
+            FROM openapi_app
+            WHERE app_key = #{appKey}
+            """)
+    OpenApiApp findAppByKey(@Param("appKey") String appKey);
 
-    @Select("SELECT * FROM openapi_app WHERE app_id = #{appId}")
-    Map<String, Object> findAppById(@Param("appId") long appId);
+    @Select("""
+            SELECT app_id, merchant_id, app_key, secret_hash, name, scopes, daily_quota, active, created_at, updated_at
+            FROM openapi_app
+            WHERE app_id = #{appId}
+            """)
+    OpenApiApp findAppById(@Param("appId") long appId);
 
     @Insert("""
             INSERT INTO openapi_quota_usage (app_key, usage_date, used_count, daily_quota, allowed)
@@ -37,10 +44,11 @@ interface OpenApiMapper {
     int saveQuota(@Param("usage") ApiQuotaUsage usage);
 
     @Select("""
-            SELECT * FROM openapi_quota_usage
+            SELECT app_key, usage_date, used_count, daily_quota, allowed
+            FROM openapi_quota_usage
             WHERE app_key = #{appKey} AND usage_date = #{usageDate}
             """)
-    Map<String, Object> findQuota(@Param("appKey") String appKey, @Param("usageDate") LocalDate usageDate);
+    ApiQuotaUsage findQuota(@Param("appKey") String appKey, @Param("usageDate") LocalDate usageDate);
 
     @Insert("""
             INSERT INTO openapi_webhook_subscription
@@ -53,14 +61,19 @@ interface OpenApiMapper {
             """)
     int saveSubscription(@Param("subscription") WebhookSubscription subscription);
 
-    @Select("SELECT * FROM openapi_webhook_subscription WHERE subscription_id = #{subscriptionId}")
-    Map<String, Object> findSubscription(@Param("subscriptionId") long subscriptionId);
+    @Select("""
+            SELECT subscription_id, app_id, event_type, target_url, active, created_at, updated_at
+            FROM openapi_webhook_subscription
+            WHERE subscription_id = #{subscriptionId}
+            """)
+    WebhookSubscription findSubscription(@Param("subscriptionId") long subscriptionId);
 
     @Select("""
-            SELECT * FROM openapi_webhook_subscription
+            SELECT subscription_id, app_id, event_type, target_url, active, created_at, updated_at
+            FROM openapi_webhook_subscription
             WHERE app_id = #{appId} AND active = TRUE
             """)
-    List<Map<String, Object>> findActiveSubscriptions(@Param("appId") long appId);
+    List<WebhookSubscription> findActiveSubscriptions(@Param("appId") long appId);
 
     @Insert("""
             INSERT INTO openapi_webhook_delivery
