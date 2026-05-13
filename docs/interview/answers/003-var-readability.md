@@ -123,7 +123,7 @@ long orderId = idGenerator.nextId();
 var repository = createRepository();
 ```
 
-如果 `repository` 是 `OrderRepository` 接口还是 `JdbcOrderRepository` 实现会影响后续理解，
+如果 `repository` 是 `OrderRepository` 接口还是 `MybatisPlusOrderRepository` 实现会影响后续理解，
 最好显式写清。
 
 ## 团队规范应该怎么定？

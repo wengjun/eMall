@@ -295,42 +295,30 @@ public interface OrderRepository {
 }
 ```
 
-Spring JDBC 实现示例：
+MyBatis-Plus 实现示例：
 
 ```java
 @Repository
-public class JdbcOrderRepository implements OrderRepository {
-    private final JdbcTemplate jdbcTemplate;
+public class MybatisPlusOrderRepository implements OrderRepository {
+    private final OrderMapper orderMapper;
 
-    public JdbcOrderRepository(JdbcTemplate jdbcTemplate) {
-        this.jdbcTemplate = jdbcTemplate;
+    public MybatisPlusOrderRepository(OrderMapper orderMapper) {
+        this.orderMapper = orderMapper;
     }
 
     @Override
     public void save(Order order) {
-        jdbcTemplate.update(
-            """
-            insert into orders(order_id, user_id, request_id, status, payable_amount, created_at, updated_at)
-            values (?, ?, ?, ?, ?, ?, ?)
-            """,
-            order.orderId(),
-            order.userId(),
-            order.requestId(),
-            order.status().name(),
-            order.payableAmount(),
-            Timestamp.from(order.createdAt()),
-            Timestamp.from(order.updatedAt())
-        );
+        orderMapper.insert(OrderEntity.from(order));
     }
 }
 ```
 
 学习重点：
 
-- SQL 字段要和表结构对应。
+- Entity 字段要通过 `@TableName`、`@TableId`、`@TableField` 和表结构对应。
 - Repository 不判断订单能不能支付。
 - 业务状态判断放在领域对象或 Service。
-- SQL 异常要转换成业务可理解的错误。
+- 数据库唯一键冲突要转换成幂等更新、重试或业务可理解的错误。
 
 MyBatis Plus 思路：
 
@@ -935,7 +923,7 @@ com.emall.order
 │   └── OrderCompensationJob.java
 ├── repository
 │   ├── OrderRepository.java
-│   └── JdbcOrderRepository.java
+│   └── MybatisPlusOrderRepository.java
 ├── client
 │   ├── InventoryClient.java
 │   ├── PricingClient.java
