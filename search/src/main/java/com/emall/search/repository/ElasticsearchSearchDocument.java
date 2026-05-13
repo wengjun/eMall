@@ -8,8 +8,10 @@ import org.springframework.data.annotation.Id;
 import org.springframework.data.elasticsearch.annotations.Document;
 import org.springframework.data.elasticsearch.annotations.Field;
 import org.springframework.data.elasticsearch.annotations.FieldType;
+import lombok.Getter;
 
 @Document(indexName = "emall-search-document")
+@Getter
 class ElasticsearchSearchDocument {
     @Id
     private String id;
@@ -48,37 +50,5 @@ class ElasticsearchSearchDocument {
 
     SearchDocument toDomain() {
         return new SearchDocument(skuId, title, category, price, tags == null ? Set.of() : tags, saleable, indexedAt);
-    }
-
-    public String getId() {
-        return id;
-    }
-
-    public long getSkuId() {
-        return skuId;
-    }
-
-    public String getTitle() {
-        return title;
-    }
-
-    public String getCategory() {
-        return category;
-    }
-
-    public BigDecimal getPrice() {
-        return price;
-    }
-
-    public Set<String> getTags() {
-        return tags;
-    }
-
-    public boolean isSaleable() {
-        return saleable;
-    }
-
-    public Instant getIndexedAt() {
-        return indexedAt;
     }
 }

@@ -6,8 +6,12 @@ import com.baomidou.mybatisplus.annotation.TableField;
 import com.baomidou.mybatisplus.annotation.TableId;
 import com.baomidou.mybatisplus.annotation.TableName;
 import java.time.LocalDateTime;
+import lombok.Getter;
+import lombok.Setter;
 
 @TableName("flash_sale_stock")
+@Getter
+@Setter
 public class FlashSaleStockEntity {
     @TableId(value = "campaign_id", type = IdType.INPUT)
     private Long campaignId;
@@ -32,68 +36,4 @@ public class FlashSaleStockEntity {
 
     @TableField(value = "updated_at", fill = FieldFill.INSERT_UPDATE)
     private LocalDateTime updatedAt;
-
-    public Long getCampaignId() {
-        return campaignId;
-    }
-
-    public void setCampaignId(Long campaignId) {
-        this.campaignId = campaignId;
-    }
-
-    public Long getSkuId() {
-        return skuId;
-    }
-
-    public void setSkuId(Long skuId) {
-        this.skuId = skuId;
-    }
-
-    public Integer getTotalStock() {
-        return totalStock;
-    }
-
-    public void setTotalStock(Integer totalStock) {
-        this.totalStock = totalStock;
-    }
-
-    public Integer getAvailableStock() {
-        return availableStock;
-    }
-
-    public void setAvailableStock(Integer availableStock) {
-        this.availableStock = availableStock;
-    }
-
-    public Integer getTokenReservedStock() {
-        return tokenReservedStock;
-    }
-
-    public void setTokenReservedStock(Integer tokenReservedStock) {
-        this.tokenReservedStock = tokenReservedStock;
-    }
-
-    public Integer getQueuedStock() {
-        return queuedStock;
-    }
-
-    public void setQueuedStock(Integer queuedStock) {
-        this.queuedStock = queuedStock;
-    }
-
-    public Integer getSoldStock() {
-        return soldStock;
-    }
-
-    public void setSoldStock(Integer soldStock) {
-        this.soldStock = soldStock;
-    }
-
-    public LocalDateTime getUpdatedAt() {
-        return updatedAt;
-    }
-
-    public void setUpdatedAt(LocalDateTime updatedAt) {
-        this.updatedAt = updatedAt;
-    }
 }

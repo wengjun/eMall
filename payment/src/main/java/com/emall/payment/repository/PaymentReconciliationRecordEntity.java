@@ -6,8 +6,12 @@ import com.baomidou.mybatisplus.annotation.TableField;
 import com.baomidou.mybatisplus.annotation.TableId;
 import com.baomidou.mybatisplus.annotation.TableName;
 import java.time.LocalDateTime;
+import lombok.Getter;
+import lombok.Setter;
 
 @TableName("payment_reconciliation_record")
+@Getter
+@Setter
 public class PaymentReconciliationRecordEntity {
     @TableId(value = "record_id", type = IdType.INPUT)
     private Long recordId;
@@ -32,68 +36,4 @@ public class PaymentReconciliationRecordEntity {
 
     @TableField(value = "created_at", fill = FieldFill.INSERT)
     private LocalDateTime createdAt;
-
-    public Long getRecordId() {
-        return recordId;
-    }
-
-    public void setRecordId(Long recordId) {
-        this.recordId = recordId;
-    }
-
-    public Long getStatementId() {
-        return statementId;
-    }
-
-    public void setStatementId(Long statementId) {
-        this.statementId = statementId;
-    }
-
-    public Long getPaymentId() {
-        return paymentId;
-    }
-
-    public void setPaymentId(Long paymentId) {
-        this.paymentId = paymentId;
-    }
-
-    public String getChannelTradeNo() {
-        return channelTradeNo;
-    }
-
-    public void setChannelTradeNo(String channelTradeNo) {
-        this.channelTradeNo = channelTradeNo;
-    }
-
-    public String getStatementType() {
-        return statementType;
-    }
-
-    public void setStatementType(String statementType) {
-        this.statementType = statementType;
-    }
-
-    public String getStatus() {
-        return status;
-    }
-
-    public void setStatus(String status) {
-        this.status = status;
-    }
-
-    public String getMessage() {
-        return message;
-    }
-
-    public void setMessage(String message) {
-        this.message = message;
-    }
-
-    public LocalDateTime getCreatedAt() {
-        return createdAt;
-    }
-
-    public void setCreatedAt(LocalDateTime createdAt) {
-        this.createdAt = createdAt;
-    }
 }

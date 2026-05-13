@@ -7,8 +7,12 @@ import com.baomidou.mybatisplus.annotation.TableId;
 import com.baomidou.mybatisplus.annotation.TableName;
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
+import lombok.Getter;
+import lombok.Setter;
 
 @TableName("cost_signal")
+@Getter
+@Setter
 public class CostSignalEntity {
     @TableId(value = "signal_id", type = IdType.INPUT)
     private Long signalId;
@@ -30,60 +34,4 @@ public class CostSignalEntity {
 
     @TableField(value = "created_at", fill = FieldFill.INSERT)
     private LocalDateTime createdAt;
-
-    public Long getSignalId() {
-        return signalId;
-    }
-
-    public void setSignalId(Long signalId) {
-        this.signalId = signalId;
-    }
-
-    public String getServiceName() {
-        return serviceName;
-    }
-
-    public void setServiceName(String serviceName) {
-        this.serviceName = serviceName;
-    }
-
-    public String getSignalType() {
-        return signalType;
-    }
-
-    public void setSignalType(String signalType) {
-        this.signalType = signalType;
-    }
-
-    public BigDecimal getMetricValue() {
-        return metricValue;
-    }
-
-    public void setMetricValue(BigDecimal metricValue) {
-        this.metricValue = metricValue;
-    }
-
-    public BigDecimal getThresholdValue() {
-        return thresholdValue;
-    }
-
-    public void setThresholdValue(BigDecimal thresholdValue) {
-        this.thresholdValue = thresholdValue;
-    }
-
-    public LocalDateTime getObservedAt() {
-        return observedAt;
-    }
-
-    public void setObservedAt(LocalDateTime observedAt) {
-        this.observedAt = observedAt;
-    }
-
-    public LocalDateTime getCreatedAt() {
-        return createdAt;
-    }
-
-    public void setCreatedAt(LocalDateTime createdAt) {
-        this.createdAt = createdAt;
-    }
 }

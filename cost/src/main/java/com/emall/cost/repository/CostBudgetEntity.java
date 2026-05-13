@@ -7,8 +7,12 @@ import com.baomidou.mybatisplus.annotation.TableId;
 import com.baomidou.mybatisplus.annotation.TableName;
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
+import lombok.Getter;
+import lombok.Setter;
 
 @TableName("cost_budget")
+@Getter
+@Setter
 public class CostBudgetEntity {
     @TableId(value = "budget_id", type = IdType.INPUT)
     private Long budgetId;
@@ -36,76 +40,4 @@ public class CostBudgetEntity {
 
     @TableField(value = "updated_at", fill = FieldFill.INSERT_UPDATE)
     private LocalDateTime updatedAt;
-
-    public Long getBudgetId() {
-        return budgetId;
-    }
-
-    public void setBudgetId(Long budgetId) {
-        this.budgetId = budgetId;
-    }
-
-    public String getServiceName() {
-        return serviceName;
-    }
-
-    public void setServiceName(String serviceName) {
-        this.serviceName = serviceName;
-    }
-
-    public BigDecimal getMonthlyBudget() {
-        return monthlyBudget;
-    }
-
-    public void setMonthlyBudget(BigDecimal monthlyBudget) {
-        this.monthlyBudget = monthlyBudget;
-    }
-
-    public BigDecimal getCurrentSpend() {
-        return currentSpend;
-    }
-
-    public void setCurrentSpend(BigDecimal currentSpend) {
-        this.currentSpend = currentSpend;
-    }
-
-    public String getCurrency() {
-        return currency;
-    }
-
-    public void setCurrency(String currency) {
-        this.currency = currency;
-    }
-
-    public Integer getAlertThresholdPercent() {
-        return alertThresholdPercent;
-    }
-
-    public void setAlertThresholdPercent(Integer alertThresholdPercent) {
-        this.alertThresholdPercent = alertThresholdPercent;
-    }
-
-    public Boolean getActive() {
-        return active;
-    }
-
-    public void setActive(Boolean active) {
-        this.active = active;
-    }
-
-    public LocalDateTime getCreatedAt() {
-        return createdAt;
-    }
-
-    public void setCreatedAt(LocalDateTime createdAt) {
-        this.createdAt = createdAt;
-    }
-
-    public LocalDateTime getUpdatedAt() {
-        return updatedAt;
-    }
-
-    public void setUpdatedAt(LocalDateTime updatedAt) {
-        this.updatedAt = updatedAt;
-    }
 }
