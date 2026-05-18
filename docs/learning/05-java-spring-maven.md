@@ -236,7 +236,8 @@ Spring Boot 配置来源：
 生产建议：
 
 - 密码和密钥不要写死在普通配置。
-- 本地默认值放 `.env.example`。
+- 本机直接运行 Spring Boot 的默认值放 `.env.example`，Docker Compose 容器网络默认值放
+  `ops/env/local.env`。
 - 生产用环境变量或 Secret 覆盖。
 - 配置变更需要审计和回滚。
 

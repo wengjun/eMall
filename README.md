@@ -140,7 +140,11 @@ mvn -pl smoke exec:java
 docker build --build-arg MODULE=order -t emall/order:local .
 ```
 
-运行时连接配置可以通过环境变量覆盖，本地默认值见 `.env.example`。
+运行时连接配置可以通过环境变量覆盖。本机直接运行少量 Spring Boot 模块时，参考 `.env.example`；
+Docker Compose 的公共默认值集中在
+`docker-compose.yml` 顶部的 `x-app-runtime-env` 锚点，本地可覆盖值见
+`ops/env/local.env`。生产环境不要使用这个本地文件，应改用 Kubernetes Secret、ConfigMap、Nacos Config
+或云厂商密钥管理。
 
 ## Windows 11 本地启动步骤
 
@@ -169,6 +173,12 @@ docker compose version
 ```powershell
 docker compose up -d mysql redis kafka nacos elasticsearch clickhouse logstash kibana prometheus grafana
 docker compose ps
+```
+
+如果需要覆盖本地默认连接配置，优先修改 `ops/env/local.env`，然后在命令中显式加载：
+
+```powershell
+docker compose --env-file ops/env/local.env up -d mysql redis kafka nacos
 ```
 
 4. 编译工程：

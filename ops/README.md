@@ -7,7 +7,8 @@
 ## 本地运行
 
 - `../docker-compose.yml`：本地 MySQL、Redis、Kafka、Nacos、Elasticsearch、ClickHouse、ELK、Prometheus、Grafana 和应用服务拓扑。
-- `../.env.example`：本地环境变量默认值示例。
+- `../.env.example`：本机直接运行 Spring Boot 时的 `localhost` 环境变量示例。
+- `env/local.env`：Docker Compose 容器网络下的本地覆盖值，使用 `mysql`、`redis`、`nacos` 等容器服务名。
 - `mysql/init`：本地 MySQL 初始化脚本，为各服务创建独立 schema。
 
 ## 可观测

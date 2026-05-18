@@ -8,7 +8,8 @@
 
 - 文档集中在 `docs`。
 - 运维和部署配置集中在 `ops`。
-- 本地运行配置保留在根目录，例如 `docker-compose.yml` 和 `.env.example`。
+- 本地运行配置保留在根目录和 `ops/env`，例如 `docker-compose.yml`、`.env.example` 和
+  `ops/env/local.env`。
 - Maven 模块目录保持扁平，逻辑分组通过 Maven profile 和文档表达。
 
 ## 本地文件
