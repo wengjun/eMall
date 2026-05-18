@@ -10,6 +10,7 @@ import com.emall.common.rpc.PricingRpcService;
 import java.math.BigDecimal;
 import java.time.Instant;
 import org.apache.dubbo.config.annotation.DubboReference;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestClient;
@@ -19,9 +20,10 @@ public class PricingClient {
     private final RestClient pricingRestClient;
     private final String rpcProtocol;
 
-    @DubboReference(check = false, retries = 0, timeout = 300)
+    @DubboReference(check = false, retries = 0, timeout = 2000)
     private PricingRpcService pricingRpcService;
 
+    @Autowired
     public PricingClient(RestClient pricingRestClient, @Value("${emall.rpc.protocol:http}") String rpcProtocol) {
         this.pricingRestClient = pricingRestClient;
         this.rpcProtocol = rpcProtocol;

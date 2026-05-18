@@ -8,6 +8,7 @@ import com.emall.common.rpc.ReserveInventoryCommand;
 import com.emall.governance.recovery.AdaptiveRecoveryController;
 import java.time.Instant;
 import org.apache.dubbo.config.annotation.DubboReference;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestClient;
@@ -18,9 +19,10 @@ public class InventoryClient {
     private final AdaptiveRecoveryController recoveryController;
     private final String rpcProtocol;
 
-    @DubboReference(check = false, retries = 0, timeout = 500)
+    @DubboReference(check = false, retries = 0, timeout = 2000)
     private InventoryRpcService inventoryRpcService;
 
+    @Autowired
     public InventoryClient(RestClient inventoryRestClient, AdaptiveRecoveryController recoveryController,
             @Value("${emall.rpc.protocol:http}") String rpcProtocol) {
         this.inventoryRestClient = inventoryRestClient;

@@ -5,6 +5,7 @@ import com.alibaba.csp.sentinel.slots.block.BlockException;
 import com.emall.common.rpc.OrderPaymentCommand;
 import com.emall.common.rpc.OrderRpcService;
 import org.apache.dubbo.config.annotation.DubboReference;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestClient;
@@ -14,9 +15,10 @@ public class OrderClient {
     private final RestClient orderRestClient;
     private final String rpcProtocol;
 
-    @DubboReference(check = false, retries = 0, timeout = 500)
+    @DubboReference(check = false, retries = 0, timeout = 2000)
     private OrderRpcService orderRpcService;
 
+    @Autowired
     public OrderClient(RestClient orderRestClient, @Value("${emall.rpc.protocol:http}") String rpcProtocol) {
         this.orderRestClient = orderRestClient;
         this.rpcProtocol = rpcProtocol;
