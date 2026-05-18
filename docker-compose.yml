@@ -114,42 +114,42 @@ services:
       <<: *app-discovery-env
       EMALL_REDIS_HOST: redis
       EMALL_OTLP_TRACES_ENDPOINT: http://otel-collector:4318/v1/traces
-      EMALL_USER_URL: lb://user
-      EMALL_PRODUCT_URL: lb://product
-      EMALL_INVENTORY_URL: lb://inventory
-      EMALL_ORDER_URL: lb://order
-      EMALL_CART_URL: lb://cart
-      EMALL_PAYMENT_URL: lb://payment
-      EMALL_PRICING_URL: lb://pricing
-      EMALL_MARKETING_URL: lb://marketing
-      EMALL_SEARCH_URL: lb://search
-      EMALL_FULFILLMENT_URL: lb://fulfillment
-      EMALL_REVIEW_URL: lb://review
-      EMALL_AFTER_SALES_URL: lb://after-sales
-      EMALL_MERCHANT_URL: lb://merchant
-      EMALL_FLASH_SALE_URL: lb://flash-sale
-      EMALL_RECOMMENDATION_URL: lb://recommendation
-      EMALL_COST_URL: lb://cost
-      EMALL_IDENTITY_URL: lb://identity
-      EMALL_RISK_URL: lb://risk
-      EMALL_OPERATIONS_URL: lb://operations
-      EMALL_OPENAPI_URL: lb://openapi
-      EMALL_CATALOG_URL: lb://catalog
-      EMALL_PROMOTION_URL: lb://promotion
-      EMALL_EXPERIMENT_URL: lb://experiment
-      EMALL_ADVERTISING_URL: lb://advertising
-      EMALL_SUPPLY_CHAIN_URL: lb://supply-chain
-      EMALL_FINANCE_URL: lb://finance
-      EMALL_CUSTOMER_SERVICE_URL: lb://customer-service
-      EMALL_FORECASTING_URL: lb://forecasting
-      EMALL_EVENT_PLATFORM_URL: lb://event-platform
-      EMALL_DATA_WAREHOUSE_URL: lb://data-warehouse
-      EMALL_INTELLIGENCE_URL: lb://intelligence
-      EMALL_ANALYTICS_URL: lb://analytics
-      EMALL_TRAFFIC_URL: lb://traffic
-      EMALL_RELIABILITY_URL: lb://reliability
-      EMALL_RELEASE_URL: lb://release
-      EMALL_PLATFORM_OPS_URL: lb://platform-ops
+      EMALL_USER_URL: http://user-app:8081
+      EMALL_PRODUCT_URL: http://product-app:8082
+      EMALL_INVENTORY_URL: http://inventory-app:8083
+      EMALL_ORDER_URL: http://order-app:8084
+      EMALL_CART_URL: http://cart-app:8085
+      EMALL_PAYMENT_URL: http://payment-app:8086
+      EMALL_PRICING_URL: http://pricing-app:8087
+      EMALL_MARKETING_URL: http://marketing-app:8088
+      EMALL_SEARCH_URL: http://search-app:8089
+      EMALL_FULFILLMENT_URL: http://fulfillment-app:8090
+      EMALL_REVIEW_URL: http://review-app:8091
+      EMALL_AFTER_SALES_URL: http://after-sales-app:8092
+      EMALL_MERCHANT_URL: http://merchant-app:8093
+      EMALL_FLASH_SALE_URL: http://flash-sale-app:8094
+      EMALL_RECOMMENDATION_URL: http://recommendation-app:8095
+      EMALL_COST_URL: http://cost-app:8096
+      EMALL_IDENTITY_URL: http://identity-app:8097
+      EMALL_RISK_URL: http://risk-app:8098
+      EMALL_OPERATIONS_URL: http://operations-app:8099
+      EMALL_OPENAPI_URL: http://openapi-app:8100
+      EMALL_CATALOG_URL: http://catalog-app:8101
+      EMALL_PROMOTION_URL: http://promotion-app:8102
+      EMALL_EXPERIMENT_URL: http://experiment-app:8103
+      EMALL_ADVERTISING_URL: http://advertising-app:8104
+      EMALL_SUPPLY_CHAIN_URL: http://supply-chain-app:8105
+      EMALL_FINANCE_URL: http://finance-app:8106
+      EMALL_CUSTOMER_SERVICE_URL: http://customer-service-app:8107
+      EMALL_FORECASTING_URL: http://forecasting-app:8108
+      EMALL_EVENT_PLATFORM_URL: http://event-platform-app:8109
+      EMALL_DATA_WAREHOUSE_URL: http://data-warehouse-app:8110
+      EMALL_INTELLIGENCE_URL: http://intelligence-app:8111
+      EMALL_ANALYTICS_URL: http://analytics-app:8112
+      EMALL_TRAFFIC_URL: http://traffic-app:8113
+      EMALL_RELIABILITY_URL: http://reliability-app:8114
+      EMALL_RELEASE_URL: http://release-app:8115
+      EMALL_PLATFORM_OPS_URL: http://platform-ops-app:8116
     depends_on:
       - nacos
       - redis
@@ -270,7 +270,7 @@ services:
       - "8084:8084"
     environment:
       <<: *app-discovery-env
-      EMALL_RPC_PROTOCOL: dubbo
+      EMALL_RPC_PROTOCOL: http
       EMALL_DUBBO_REGISTRY_ADDRESS: nacos://nacos:8848
       EMALL_DUBBO_PORT: "-1"
       EMALL_ORDER_DB_URL: jdbc:mysql://mysql:3306/emall_order?useUnicode=true&characterEncoding=utf8&serverTimezone=UTC
@@ -389,7 +389,7 @@ services:
       - "8086:8086"
     environment:
       <<: *app-discovery-env
-      EMALL_RPC_PROTOCOL: dubbo
+      EMALL_RPC_PROTOCOL: http
       EMALL_DUBBO_REGISTRY_ADDRESS: nacos://nacos:8848
       EMALL_DUBBO_PORT: "-1"
       EMALL_PAYMENT_DB_URL: jdbc:mysql://mysql:3306/emall_payment?useUnicode=true&characterEncoding=utf8&serverTimezone=UTC
