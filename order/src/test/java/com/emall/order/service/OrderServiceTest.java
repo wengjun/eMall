@@ -4,6 +4,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 
 import com.emall.common.id.SnowflakeIdGenerator;
 import com.emall.order.domain.Order;
+import com.emall.order.domain.OrderClientType;
 import com.emall.order.domain.OrderStatus;
 import com.emall.order.integration.InventoryClient;
 import com.emall.order.integration.InventoryClient.InventoryReservation;
@@ -31,11 +32,23 @@ class OrderServiceTest {
         Order paid = orderService.pay(created.orderId());
 
         assertThat(duplicate.orderId()).isEqualTo(created.orderId());
+        assertThat(created.clientType()).isEqualTo(OrderClientType.WEB);
         assertThat(created.status()).isEqualTo(OrderStatus.CREATED);
         assertThat(paid.status()).isEqualTo(OrderStatus.PAID);
         assertThat(paid.payableAmount()).isEqualByComparingTo("190.00");
         assertThat(inventoryClient.confirmedRequestId).isEqualTo(created.inventoryReservationId());
         assertThat(outboxRepository.findPublishable(Instant.now(), 10)).hasSize(2);
+        assertThat(outboxRepository.findPublishable(Instant.now(), 10))
+                .extracting(event -> event.payload().get("clientType")).containsOnly("WEB");
+    }
+
+    @Test
+    void shouldCreateAppOrderWithClientTypeInEventPayload() {
+        Order created = orderService.create("app-order-request-001", 70001L, 30001L, 1, OrderClientType.APP);
+
+        assertThat(created.clientType()).isEqualTo(OrderClientType.APP);
+        assertThat(outboxRepository.findPublishable(Instant.now(), 10))
+                .anySatisfy(event -> assertThat(event.payload()).containsEntry("clientType", "APP"));
     }
 
     private static final class FakeInventoryClient extends InventoryClient {

@@ -41,7 +41,7 @@ public final class CheckoutSmokeApplication {
         post("/api/inventory/10001/stock", Map.of("quantity", 10));
 
         JsonNode order = post("/api/orders", Map.of("requestId", "smoke-order-" + suffix, "userId",
-                user.path("data").path("userId").asLong(), "skuId", 10001L, "quantity", 1));
+                user.path("data").path("userId").asLong(), "skuId", 10001L, "quantity", 1, "clientType", "WEB"));
         BigDecimal payableAmount = order.path("data").path("payableAmount").decimalValue();
 
         JsonNode payment = post("/api/payments",

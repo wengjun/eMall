@@ -2,6 +2,7 @@ package com.emall.order.api;
 
 import com.emall.common.api.ApiResponse;
 import com.emall.order.domain.Order;
+import com.emall.order.domain.OrderClientType;
 import com.emall.order.service.OrderService;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotBlank;
@@ -27,8 +28,8 @@ public class OrderController {
     @PostMapping
     @ResponseStatus(HttpStatus.ACCEPTED)
     public ApiResponse<Order> createOrder(@Valid @RequestBody CreateOrderRequest request) {
-        return ApiResponse
-                .ok(orderService.create(request.requestId(), request.userId(), request.skuId(), request.quantity()));
+        return ApiResponse.ok(orderService.create(request.requestId(), request.userId(), request.skuId(),
+                request.quantity(), OrderClientType.defaultIfNull(request.clientType())));
     }
 
     @GetMapping("/{orderId}")
@@ -47,6 +48,6 @@ public class OrderController {
     }
 
     public record CreateOrderRequest(@NotBlank String requestId, @Positive long userId, @Positive long skuId,
-            @Positive int quantity) {
+            @Positive int quantity, OrderClientType clientType) {
     }
 }

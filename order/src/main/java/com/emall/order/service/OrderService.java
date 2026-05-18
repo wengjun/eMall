@@ -7,6 +7,7 @@ import com.emall.common.exception.BusinessException;
 import com.emall.common.id.SnowflakeIdGenerator;
 import com.emall.common.outbox.OutboxRepository;
 import com.emall.order.domain.Order;
+import com.emall.order.domain.OrderClientType;
 import com.emall.order.domain.OrderStatus;
 import com.emall.order.integration.InventoryClient;
 import com.emall.order.integration.InventoryClient.InventoryReservation;
@@ -45,8 +46,15 @@ public class OrderService {
 
     @Transactional
     public synchronized Order create(String requestId, long userId, long skuId, int quantity) {
+        return create(requestId, userId, skuId, quantity, OrderClientType.WEB);
+    }
+
+    @Transactional
+    public synchronized Order create(String requestId, long userId, long skuId, int quantity,
+            OrderClientType clientType) {
         return orderRepository.findByRequestId(requestId)
-                .orElseGet(() -> createOnce(requestId, userId, skuId, quantity));
+                .orElseGet(() -> createOnce(requestId, userId, skuId, quantity,
+                        OrderClientType.defaultIfNull(clientType)));
     }
 
     public Order get(long orderId) {
@@ -117,7 +125,7 @@ public class OrderService {
         return orderRepository.save(order.markPendingRetry(reservation.reason()));
     }
 
-    private Order createOnce(String requestId, long userId, long skuId, int quantity) {
+    private Order createOnce(String requestId, long userId, long skuId, int quantity, OrderClientType clientType) {
         long orderId = idGenerator.nextId();
         String reservationId = "order-" + orderId;
         PriceQuote priceQuote = pricingClient.quote(skuId, quantity);
@@ -129,9 +137,10 @@ public class OrderService {
         OrderStatus status = reservation.reserved() ? OrderStatus.CREATED : OrderStatus.PENDING_RETRY;
         String reason = reservation.reserved() ? null : reservation.reason();
         Order order = orderRepository.save(
-                new Order(orderId, requestId, userId, skuId, quantity, priceQuote.unitPrice(), priceQuote.subtotal(),
-                        promotionQuote.discountAmount(), promotionQuote.payableAmount(), priceQuote.currency(),
-                        priceQuote.priceVersion(), promotionQuote.couponId(), reservationId, status, reason, now, now));
+                new Order(orderId, requestId, userId, skuId, quantity, clientType, priceQuote.unitPrice(),
+                        priceQuote.subtotal(), promotionQuote.discountAmount(), promotionQuote.payableAmount(),
+                        priceQuote.currency(), priceQuote.priceVersion(), promotionQuote.couponId(), reservationId,
+                        status, reason, now, now));
         if (order.status() == OrderStatus.CREATED) {
             appendEvent(order, EventTypes.ORDER_CREATED);
         }
@@ -163,6 +172,7 @@ public class OrderService {
                 String.valueOf(order.orderId()), eventType,
                 Map.ofEntries(Map.entry("orderId", order.orderId()), Map.entry("userId", order.userId()),
                         Map.entry("skuId", order.skuId()), Map.entry("quantity", order.quantity()),
+                        Map.entry("clientType", order.clientType().name()),
                         Map.entry("unitPrice", order.unitPrice()), Map.entry("subtotalAmount", order.subtotalAmount()),
                         Map.entry("discountAmount", order.discountAmount()),
                         Map.entry("payableAmount", order.payableAmount()), Map.entry("currency", order.currency()),

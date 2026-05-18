@@ -29,6 +29,9 @@ public class OrderEntity {
     @TableField("quantity")
     private Integer quantity;
 
+    @TableField("client_type")
+    private String clientType;
+
     @TableField("unit_price")
     private BigDecimal unitPrice;
 
