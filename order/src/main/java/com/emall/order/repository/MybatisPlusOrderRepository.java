@@ -3,6 +3,7 @@ package com.emall.order.repository;
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import com.baomidou.mybatisplus.core.conditions.update.UpdateWrapper;
 import com.emall.order.domain.Order;
+import com.emall.order.domain.OrderClientContext;
 import com.emall.order.domain.OrderClientType;
 import com.emall.order.domain.OrderStatus;
 import java.time.LocalDateTime;
@@ -31,6 +32,8 @@ public class MybatisPlusOrderRepository implements OrderRepository {
             int updated = orderMapper.update(null, new UpdateWrapper<OrderEntity>()
                     .set("unit_price", entity.getUnitPrice())
                     .set("client_type", entity.getClientType())
+                    .set("device_id", entity.getDeviceId())
+                    .set("channel", entity.getChannel())
                     .set("subtotal_amount", entity.getSubtotalAmount())
                     .set("discount_amount", entity.getDiscountAmount())
                     .set("payable_amount", entity.getPayableAmount())
@@ -75,7 +78,10 @@ public class MybatisPlusOrderRepository implements OrderRepository {
         entity.setUserId(order.userId());
         entity.setSkuId(order.skuId());
         entity.setQuantity(order.quantity());
-        entity.setClientType(OrderClientType.defaultIfNull(order.clientType()).name());
+        OrderClientContext clientContext = OrderClientContext.of(order.clientType(), order.deviceId(), order.channel());
+        entity.setClientType(clientContext.clientType().name());
+        entity.setDeviceId(clientContext.deviceId());
+        entity.setChannel(clientContext.channel());
         entity.setUnitPrice(order.unitPrice());
         entity.setSubtotalAmount(order.subtotalAmount());
         entity.setDiscountAmount(order.discountAmount());
@@ -92,10 +98,12 @@ public class MybatisPlusOrderRepository implements OrderRepository {
     }
 
     private Order toDomain(OrderEntity entity) {
+        OrderClientContext clientContext =
+                OrderClientContext.of(toClientType(entity.getClientType()), entity.getDeviceId(), entity.getChannel());
         return new Order(entity.getOrderId(), entity.getRequestId(), entity.getUserId(), entity.getSkuId(),
-                entity.getQuantity(), toClientType(entity.getClientType()), entity.getUnitPrice(),
-                entity.getSubtotalAmount(), entity.getDiscountAmount(), entity.getPayableAmount(),
-                entity.getCurrency(), entity.getPriceVersion(), entity.getCouponId(),
+                entity.getQuantity(), clientContext.clientType(), clientContext.deviceId(), clientContext.channel(),
+                entity.getUnitPrice(), entity.getSubtotalAmount(), entity.getDiscountAmount(),
+                entity.getPayableAmount(), entity.getCurrency(), entity.getPriceVersion(), entity.getCouponId(),
                 entity.getInventoryReservationId(), OrderStatus.valueOf(entity.getStatus()),
                 entity.getFailureReason(), entity.getCreatedAt().toInstant(ZoneOffset.UTC),
                 entity.getUpdatedAt().toInstant(ZoneOffset.UTC));

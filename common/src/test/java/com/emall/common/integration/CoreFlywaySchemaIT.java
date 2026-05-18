@@ -24,7 +24,7 @@ class CoreFlywaySchemaIT {
 
     private static final List<SchemaTarget> SCHEMAS = List.of(new SchemaTarget("emall_user_it", "user", 2),
             new SchemaTarget("emall_product_it", "product", 3), new SchemaTarget("emall_inventory_it", "inventory", 2),
-            new SchemaTarget("emall_order_it", "order", 3), new SchemaTarget("emall_payment_it", "payment", 3),
+            new SchemaTarget("emall_order_it", "order", 4), new SchemaTarget("emall_payment_it", "payment", 3),
             new SchemaTarget("emall_search_it", "search", 2),
             new SchemaTarget("emall_fulfillment_it", "fulfillment", 2));
 

@@ -12,6 +12,7 @@
 - [学习手册](learning/README.md)：按主题拆分后的深入学习文档，适合系统学习。
 - [国内互联网技术栈适配](domestic-stack.md)：Sentinel、MyBatis-Plus、Nacos、Dubbo、Elasticsearch、ClickHouse 和 ELK 的接入说明。
 - [持久层规范](persistence-conventions.md)：MyBatis-Plus、强类型 Mapper、审计字段、乐观锁和 SQL 约定。
+- [Web/App 下单 API 契约](api/web-app-checkout.openapi.yml)：浏览器和手机 App 统一下单接口、请求头、请求体和响应结构。
 - [国内生产扩展说明](domestic-stack.md#生产扩展基线)：分库分表、多级缓存、Redis Cluster 和 Helm 部署基线。
 - [模块清单](modules.md)：所有 Maven 模块、职责分组和构建 profile。
 - [路线图](roadmap.md)：P0 到 P14 的阶段规划和完成标记。

@@ -4,6 +4,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 
 import com.emall.common.id.SnowflakeIdGenerator;
 import com.emall.order.domain.Order;
+import com.emall.order.domain.OrderClientContext;
 import com.emall.order.domain.OrderClientType;
 import com.emall.order.domain.OrderStatus;
 import com.emall.order.integration.InventoryClient;
@@ -33,6 +34,8 @@ class OrderServiceTest {
 
         assertThat(duplicate.orderId()).isEqualTo(created.orderId());
         assertThat(created.clientType()).isEqualTo(OrderClientType.WEB);
+        assertThat(created.deviceId()).isEqualTo(OrderClientContext.UNKNOWN_DEVICE);
+        assertThat(created.channel()).isEqualTo(OrderClientContext.DIRECT_CHANNEL);
         assertThat(created.status()).isEqualTo(OrderStatus.CREATED);
         assertThat(paid.status()).isEqualTo(OrderStatus.PAID);
         assertThat(paid.payableAmount()).isEqualByComparingTo("190.00");
@@ -40,15 +43,22 @@ class OrderServiceTest {
         assertThat(outboxRepository.findPublishable(Instant.now(), 10)).hasSize(2);
         assertThat(outboxRepository.findPublishable(Instant.now(), 10))
                 .extracting(event -> event.payload().get("clientType")).containsOnly("WEB");
+        assertThat(outboxRepository.findPublishable(Instant.now(), 10))
+                .extracting(event -> event.payload().get("deviceId"))
+                .containsOnly(OrderClientContext.UNKNOWN_DEVICE);
     }
 
     @Test
     void shouldCreateAppOrderWithClientTypeInEventPayload() {
-        Order created = orderService.create("app-order-request-001", 70001L, 30001L, 1, OrderClientType.APP);
+        OrderClientContext context = OrderClientContext.of(OrderClientType.APP, "ios-device-001", "ios-app");
+        Order created = orderService.create("app-order-request-001", 70001L, 30001L, 1, context);
 
         assertThat(created.clientType()).isEqualTo(OrderClientType.APP);
+        assertThat(created.deviceId()).isEqualTo("ios-device-001");
+        assertThat(created.channel()).isEqualTo("ios-app");
         assertThat(outboxRepository.findPublishable(Instant.now(), 10))
-                .anySatisfy(event -> assertThat(event.payload()).containsEntry("clientType", "APP"));
+                .anySatisfy(event -> assertThat(event.payload()).containsEntry("clientType", "APP")
+                        .containsEntry("deviceId", "ios-device-001").containsEntry("channel", "ios-app"));
     }
 
     private static final class FakeInventoryClient extends InventoryClient {

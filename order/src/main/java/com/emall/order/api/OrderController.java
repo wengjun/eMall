@@ -2,6 +2,7 @@ package com.emall.order.api;
 
 import com.emall.common.api.ApiResponse;
 import com.emall.order.domain.Order;
+import com.emall.order.domain.OrderClientContext;
 import com.emall.order.domain.OrderClientType;
 import com.emall.order.service.OrderService;
 import jakarta.validation.Valid;
@@ -12,6 +13,7 @@ import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestHeader;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestController;
@@ -27,9 +29,13 @@ public class OrderController {
 
     @PostMapping
     @ResponseStatus(HttpStatus.ACCEPTED)
-    public ApiResponse<Order> createOrder(@Valid @RequestBody CreateOrderRequest request) {
+    public ApiResponse<Order> createOrder(@Valid @RequestBody CreateOrderRequest request,
+            @RequestHeader(value = "X-Device-Id", required = false) String deviceIdHeader,
+            @RequestHeader(value = "X-Client-Channel", required = false) String channelHeader) {
+        OrderClientContext context = OrderClientContext.of(request.clientType(),
+                firstPresent(request.deviceId(), deviceIdHeader), firstPresent(request.channel(), channelHeader));
         return ApiResponse.ok(orderService.create(request.requestId(), request.userId(), request.skuId(),
-                request.quantity(), OrderClientType.defaultIfNull(request.clientType())));
+                request.quantity(), context));
     }
 
     @GetMapping("/{orderId}")
@@ -48,6 +54,10 @@ public class OrderController {
     }
 
     public record CreateOrderRequest(@NotBlank String requestId, @Positive long userId, @Positive long skuId,
-            @Positive int quantity, OrderClientType clientType) {
+            @Positive int quantity, OrderClientType clientType, String deviceId, String channel) {
+    }
+
+    private String firstPresent(String bodyValue, String headerValue) {
+        return bodyValue == null || bodyValue.isBlank() ? headerValue : bodyValue;
     }
 }

@@ -32,6 +32,12 @@ public class OrderEntity {
     @TableField("client_type")
     private String clientType;
 
+    @TableField("device_id")
+    private String deviceId;
+
+    @TableField("channel")
+    private String channel;
+
     @TableField("unit_price")
     private BigDecimal unitPrice;
 

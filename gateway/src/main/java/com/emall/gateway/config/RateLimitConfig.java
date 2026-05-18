@@ -19,10 +19,13 @@ public class RateLimitConfig {
 
     private String rateLimitKey(ServerWebExchange exchange, String user) {
         ServerHttpRequest request = exchange.getRequest();
+        String clientType = Optional.ofNullable(request.getHeaders().getFirst("X-Client-Type")).orElse("UNKNOWN");
+        String channel = Optional.ofNullable(request.getHeaders().getFirst("X-Client-Channel")).orElse("direct");
         String deviceId = Optional.ofNullable(request.getHeaders().getFirst("X-Device-Id")).orElse("unknown-device");
         String skuId = Optional.ofNullable(request.getQueryParams().getFirst("skuId"))
                 .orElseGet(() -> skuFromPath(request.getPath().value()));
-        return "user=" + user + "|device=" + deviceId + "|sku=" + skuId + "|ip=" + clientIp(exchange);
+        return "user=" + user + "|client=" + clientType + "|channel=" + channel + "|device=" + deviceId + "|sku="
+                + skuId + "|ip=" + clientIp(exchange);
     }
 
     private String clientIp(ServerWebExchange exchange) {

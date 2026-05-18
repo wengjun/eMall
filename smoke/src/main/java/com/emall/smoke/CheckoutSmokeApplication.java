@@ -41,7 +41,8 @@ public final class CheckoutSmokeApplication {
         post("/api/inventory/10001/stock", Map.of("quantity", 10));
 
         JsonNode order = post("/api/orders", Map.of("requestId", "smoke-order-" + suffix, "userId",
-                user.path("data").path("userId").asLong(), "skuId", 10001L, "quantity", 1, "clientType", "WEB"));
+                user.path("data").path("userId").asLong(), "skuId", 10001L, "quantity", 1, "clientType", "WEB",
+                "deviceId", "java-smoke", "channel", "web-smoke"));
         BigDecimal payableAmount = order.path("data").path("payableAmount").decimalValue();
 
         JsonNode payment = post("/api/payments",
@@ -67,6 +68,7 @@ public final class CheckoutSmokeApplication {
     private JsonNode post(String path, Object body) throws IOException, InterruptedException {
         HttpRequest request = HttpRequest.newBuilder(URI.create(baseUrl + path)).timeout(Duration.ofSeconds(10))
                 .header("Content-Type", "application/json").header("X-Device-Id", "java-smoke")
+                .header("X-Client-Channel", "web-smoke")
                 .POST(HttpRequest.BodyPublishers.ofString(OBJECT_MAPPER.writeValueAsString(body))).build();
         HttpResponse<String> response = httpClient.send(request, HttpResponse.BodyHandlers.ofString());
         if (response.statusCode() < 200 || response.statusCode() >= 300) {

@@ -1,0 +1,150 @@
+openapi: 3.1.0
+info:
+  title: eMall Web 和 App 下单 API
+  version: 0.1.0
+  description: 浏览器和手机 App 下单流量共用的后端 API 契约。
+servers:
+  - url: https://api.emall.example.com
+    description: 生产 HTTPS 入口，通过 Kubernetes Gateway API 和云厂商 ALB 暴露。
+paths:
+  /api/orders:
+    post:
+      summary: 从 Web 或手机 App 幂等创建订单。
+      operationId: createOrder
+      parameters:
+        - name: X-Device-Id
+          in: header
+          required: false
+          schema:
+            type: string
+          description: 稳定的客户端设备标识，用于限流、风控和审计。
+        - name: X-Client-Type
+          in: header
+          required: false
+          schema:
+            $ref: "#/components/schemas/OrderClientType"
+          description: 边缘流量治理使用的客户端类型。业务归档以请求体中的 clientType 为准。
+        - name: X-Client-Channel
+          in: header
+          required: false
+          schema:
+            type: string
+          description: 渠道，例如 pc-web、h5、ios-app、android-app 或 mini-program。
+        - name: X-Request-Id
+          in: header
+          required: false
+          schema:
+            type: string
+          description: 可选传输请求 ID。业务幂等仍使用请求体中的 requestId。
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateOrderRequest"
+            examples:
+              web:
+                summary: 浏览器下单
+                value:
+                  requestId: web-order-001
+                  userId: 70001
+                  skuId: 30001
+                  quantity: 1
+                  clientType: WEB
+                  deviceId: web-device-001
+                  channel: pc-web
+              app:
+                summary: 手机 App 下单
+                value:
+                  requestId: app-order-001
+                  userId: 70001
+                  skuId: 30001
+                  quantity: 1
+                  clientType: APP
+                  deviceId: ios-device-001
+                  channel: ios-app
+      responses:
+        "202":
+          description: 订单已受理。
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/OrderResponse"
+        "400":
+          description: 请求参数非法。
+        "409":
+          description: 业务冲突，例如价格状态或库存状态不满足下单条件。
+components:
+  schemas:
+    OrderClientType:
+      type: string
+      enum:
+        - WEB
+        - APP
+    CreateOrderRequest:
+      type: object
+      required:
+        - requestId
+        - userId
+        - skuId
+        - quantity
+      properties:
+        requestId:
+          type: string
+          description: 业务幂等键。重复使用同一个 requestId 会返回同一笔订单。
+        userId:
+          type: integer
+          format: int64
+        skuId:
+          type: integer
+          format: int64
+        quantity:
+          type: integer
+          minimum: 1
+        clientType:
+          $ref: "#/components/schemas/OrderClientType"
+        deviceId:
+          type: string
+          description: 可选请求体设备 ID。未传时回退到 X-Device-Id，再回退到 unknown-device。
+        channel:
+          type: string
+          description: 可选请求体渠道。未传时回退到 X-Client-Channel，再回退到 direct。
+    OrderResponse:
+      type: object
+      properties:
+        success:
+          type: boolean
+        code:
+          type: string
+        message:
+          type: string
+        data:
+          $ref: "#/components/schemas/Order"
+    Order:
+      type: object
+      properties:
+        orderId:
+          type: integer
+          format: int64
+        requestId:
+          type: string
+        userId:
+          type: integer
+          format: int64
+        skuId:
+          type: integer
+          format: int64
+        quantity:
+          type: integer
+        clientType:
+          $ref: "#/components/schemas/OrderClientType"
+        deviceId:
+          type: string
+        channel:
+          type: string
+        payableAmount:
+          type: number
+        currency:
+          type: string
+        status:
+          type: string

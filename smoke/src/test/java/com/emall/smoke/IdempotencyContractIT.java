@@ -26,11 +26,13 @@ class IdempotencyContractIT {
 
         Map<String, Object> orderRequest =
                 Map.of("requestId", "idem-order-" + suffix, "userId", userId, "skuId", skuId, "quantity", 1,
-                        "clientType", "APP");
+                        "clientType", "APP", "deviceId", "app-device-" + suffix, "channel", "android-app");
         JsonNode firstOrder = ProductionHttpGate.postJson(baseUrl, "/api/orders", orderRequest, null);
         JsonNode secondOrder = ProductionHttpGate.postJson(baseUrl, "/api/orders", orderRequest, null);
         assertThat(firstOrder.path("data").path("clientType").asText()).isEqualTo("APP");
         assertThat(secondOrder.path("data").path("clientType").asText()).isEqualTo("APP");
+        assertThat(firstOrder.path("data").path("deviceId").asText()).startsWith("app-device-");
+        assertThat(firstOrder.path("data").path("channel").asText()).isEqualTo("android-app");
         assertThat(secondOrder.path("data").path("orderId").asLong())
                 .isEqualTo(firstOrder.path("data").path("orderId").asLong());
 
