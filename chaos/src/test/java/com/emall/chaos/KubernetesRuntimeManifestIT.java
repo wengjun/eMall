@@ -50,4 +50,21 @@ class KubernetesRuntimeManifestIT {
                 .contains("/actuator/health/readiness").contains("/actuator/health/liveness");
         assertThat(hpa).contains("kind: HorizontalPodAutoscaler").contains("averageUtilization");
     }
+
+    @Test
+    void shouldExposePublicTrafficThroughGatewayApiAndAlb() throws IOException {
+        Path gatewayApi = MANIFEST_DIR.resolve("gateway-api.yml");
+
+        assertThat(gatewayApi).exists().isRegularFile();
+        assertThat(MANIFEST_DIR.resolve("ingress.yml")).doesNotExist();
+
+        String content = Files.readString(gatewayApi);
+        assertThat(content).contains("apiVersion: gateway.networking.k8s.io/v1")
+                .contains("kind: Gateway").contains("gatewayClassName: alb").contains("protocol: HTTPS")
+                .contains("mode: Terminate").contains("kind: HTTPRoute").contains("RequestRedirect")
+                .contains("scheme: https").contains("statusCode: 301").contains("ResponseHeaderModifier")
+                .contains("Strict-Transport-Security").contains("backendRefs:").contains("name: gateway")
+                .contains("port: 8080");
+        assertThat(content).doesNotContain("kind: Ingress").doesNotContain("nginx.ingress.kubernetes.io");
+    }
 }

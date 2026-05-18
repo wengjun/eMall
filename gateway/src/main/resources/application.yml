@@ -30,6 +30,7 @@ spring:
         port: ${EMALL_SENTINEL_API_PORT:8719}
     gateway:
       default-filters:
+        - SecureHeaders
         - name: RequestRateLimiter
           args:
             key-resolver: "#{@userOrIpKeyResolver}"

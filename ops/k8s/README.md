@@ -17,23 +17,25 @@
 - ServiceAccount。
 - NetworkPolicy。
 - 安全上下文。
-- TLS ingress 示例。
+- Kubernetes Gateway API HTTPS/TLS 入口、HTTP 强制跳转和 HSTS 示例。
 - 混沌工程示例。
 - 灰度发布和服务网格相关示例。
 
 ## 建议应用顺序
 
-1. 先创建 namespace、Secret、ConfigMap 和 ServiceAccount。
-2. 再部署 MySQL、Redis、Kafka、Nacos、Elasticsearch 等基础设施，或者接入外部托管服务。
-3. 部署核心服务：gateway、user、product、inventory、order、payment。
-4. 部署扩展服务：search、fulfillment、review、after-sales、merchant 等。
-5. 部署观测组件和告警规则。
-6. 最后再启用 HPA、PDB、NetworkPolicy、灰度和混沌演练。
+1. 先安装 Gateway API CRD 和云厂商 ALB 控制器，确认集群存在可用的 `GatewayClass`。
+2. 创建 namespace、Secret、ConfigMap 和 ServiceAccount。
+3. 再部署 MySQL、Redis、Kafka、Nacos、Elasticsearch 等基础设施，或者接入外部托管服务。
+4. 部署核心服务：gateway、user、product、inventory、order、payment。
+5. 部署 `gateway-api.yml`，暴露公网 HTTPS 入口。
+6. 部署扩展服务：search、fulfillment、review、after-sales、merchant 等。
+7. 部署观测组件和告警规则。
+8. 最后再启用 HPA、PDB、NetworkPolicy、灰度和混沌演练。
 
 ## 生产前必须修改
 
 - 镜像仓库和镜像 tag。
-- 域名、TLS 证书和 Ingress。
+- 域名、TLS 证书、GatewayClass 和 ALB 控制器。
 - Secret、数据库密码、内部运维 token。
 - 资源 requests/limits。
 - HPA 指标和阈值。
@@ -47,3 +49,4 @@
 - 不要在没有容量验证的情况下启用自动扩容。
 - 不要在真实生产直接执行混沌清单。
 - 不要让内部运维接口暴露到公网。
+- Web 和手机 App 的公网请求只暴露 `https://api.emall.example.com`，TLS 在 Kubernetes Gateway API + 云厂商 ALB 层终止，内部继续转发到 `gateway:8080`。

@@ -18,7 +18,7 @@ class ProgressiveDeliveryManifestIT {
 
         assertThat(orderCanary).contains("kind: Rollout").contains("canary:").contains("setWeight: 5")
                 .contains("setWeight: 20").contains("setWeight: 50").contains("templateName: emall-http-slo")
-                .contains("abortScaleDownDelaySeconds: 30");
+                .contains("abortScaleDownDelaySeconds: 30").doesNotContain("stableIngress").doesNotContain("nginx:");
         assertThat(paymentBlueGreen).contains("blueGreen:").contains("autoPromotionEnabled: false")
                 .contains("prePromotionAnalysis:").contains("templateName: payment-preview-smoke")
                 .contains("templateName: emall-payment-slo");

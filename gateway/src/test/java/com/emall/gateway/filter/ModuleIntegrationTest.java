@@ -28,4 +28,13 @@ class ModuleIntegrationTest {
         assertThat(application).contains("nacos:").contains("EMALL_NACOS_DISCOVERY_ENABLED")
                 .contains("uri: ${EMALL_ORDER_URL:lb://order}").contains("uri: ${EMALL_PAYMENT_URL:lb://payment}");
     }
+
+    @Test
+    void shouldApplySecureHeadersAtGatewayEdge() throws IOException {
+        Path moduleRoot = Path.of("").toAbsolutePath();
+        String application = Files.readString(moduleRoot.resolve("src/main/resources/application.yml"));
+
+        assertThat(application).contains("default-filters:").contains("- SecureHeaders")
+                .contains("RequestRateLimiter");
+    }
 }

@@ -12,11 +12,6 @@ spec:
       app: order
   strategy:
     canary:
-      stableService: order
-      canaryService: order-canary
-      trafficRouting:
-        nginx:
-          stableIngress: emall-gateway
       steps:
         - setWeight: 5
         - pause:
@@ -86,14 +81,3 @@ spec:
               cpu: "2"
               memory: 2Gi
 ---
-apiVersion: v1
-kind: Service
-metadata:
-  name: order-canary
-spec:
-  selector:
-    app: order
-  ports:
-    - name: http
-      port: 8084
-      targetPort: 8084
