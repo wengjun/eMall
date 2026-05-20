@@ -150,11 +150,6 @@ record TradeTransition(TradeState from, TradeState to, String reason) {
 - 最后用一句话收束：先用简单可靠方案闭环，再用指标驱动演进，而不是提前复杂化。
 
 ## 补强索引
-
-重复补强内容已合并到 [面试补强共享框架](../deepening-framework.md)。
-
-整理标记：重复内容已合并
-
 本题复习重点：业务数据写成功但 MQ 发送失败怎么办？
 
 - 先看本文的题目专属答案，再按共享框架补齐项目落点、失败路径、取舍和验收。

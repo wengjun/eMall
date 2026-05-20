@@ -2,7 +2,7 @@
 
 [项目首页](../README.md) | [学习手册](learning/README.md) | [运维配置索引](../ops/README.md)
 
-本文是项目文档入口。建议先从架构、深度设计、模块清单和路线图读起，再看运维、测试、数据和安全文档。
+本文是项目文档入口。建议先从架构、深度设计、模块清单和生产检查清单读起，再看运维、测试、数据和安全文档。
 
 ## 建议先读
 
@@ -13,9 +13,9 @@
 - [国内互联网技术栈适配](domestic-stack.md)：Sentinel、MyBatis-Plus、Nacos、Dubbo、Elasticsearch、ClickHouse 和 ELK 的接入说明。
 - [持久层规范](persistence-conventions.md)：MyBatis-Plus、强类型 Mapper、审计字段、乐观锁和 SQL 约定。
 - [Web/App 下单 API 契约](api/web-app-checkout.openapi.yml)：浏览器和手机 App 统一下单接口、请求头、请求体和响应结构。
+- [容量验证说明](capacity-verification.md)：Java 压测工具、容量指标、结果记录和 100 万并发扩展路径。
 - [国内生产扩展说明](domestic-stack.md#生产扩展基线)：分库分表、多级缓存、Redis Cluster 和 Helm 部署基线。
 - [模块清单](modules.md)：所有 Maven 模块、职责分组和构建 profile。
-- [路线图](roadmap.md)：P0 到 P14 的阶段规划、能力边界和长期演进方向。
 - [生产检查清单](production-checklist.md)：上线前需要检查的核心事项。
 
 ## 构建和验证
@@ -35,9 +35,11 @@
 - [数据平台](data-platform.md)：分库分表、归档、冷热分层、Outbox 和异步同步。
 - [多区域策略](multi-region-strategy.md)：区域归属、路由规则和故障切换边界。
 
-## 路线规划
+## 架构决策
 
-- [未来路线 Backlog](future-roadmap.md)：非必需的远期能力清单。
+- [ADR 001：核心交易一致性方案](adr/001-core-transaction-consistency.md)：为什么不用强 2PC。
+- [ADR 002：Outbox 和消息消费幂等](adr/002-outbox-and-message-idempotency.md)：事件可靠发布和幂等消费取舍。
+- [ADR 003：Sentinel 动态治理和平滑恢复](adr/003-sentinel-and-adaptive-recovery.md)：限流、熔断、降级和恢复策略。
 
 ## 部署资产
 

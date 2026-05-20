@@ -20,29 +20,6 @@
 - `chaos`：混沌清单、Kubernetes 清单、Docker Compose 拓扑、可观测配置、安全和灰度清单。
 - 所有业务模块：至少有基础模块集成测试，用于验证模块可编译、可加载和核心服务可用。
 
-## 生产集成测试 Backlog
-
-以下 PIT 项均已在文档和测试中建立完成标记：
-
-- PIT-00：集成测试总入口和执行规范。
-- PIT-01：数据库迁移和 schema 验证。
-- PIT-02：Redis 运行时原语。
-- PIT-03：Kafka Outbox 发布。
-- PIT-04：核心交易 E2E。
-- PIT-05：补偿恢复。
-- PIT-06：支付对账。
-- PIT-07：可观测性。
-- PIT-08：网关路由契约。
-- PIT-09：幂等契约。
-- PIT-10：内部操作安全。
-- PIT-11：混沌清单覆盖。
-- PIT-12：Kubernetes 运行时清单。
-- PIT-13：Docker Compose 拓扑。
-- PIT-14：Prometheus 和 Grafana 配置。
-- PIT-15：密钥和服务网格安全。
-- PIT-16：灰度发布清单。
-- PIT-17：生产集成测试完成标记。
-
 ## 环境开关
 
 Smoke 集成测试默认不会访问真实环境，必须显式设置环境变量：
@@ -74,13 +51,3 @@ mvn -pl smoke -DskipITs=false verify
 
 当前机器如果 Docker Desktop 未启动，Testcontainers 测试会自动跳过。此时 `mvn verify -DskipITs=false`
 仍然可以通过，但不能说明真实 MySQL、Redis、Kafka 集成路径已经执行。
-
-## 最近一次本地结果
-
-2026-05-07 在 Docker Desktop 可用的本地环境中验证：
-
-- 完整构建：`mvn verify -DskipITs=false`，43 个模块全部通过，130 个测试，0 failures，0 errors，7 skipped。
-- Surefire 阶段：`mvn -DskipITs test`，113 个测试，0 failures，0 errors，0 skipped。
-- Failsafe 阶段：`mvn -DskipITs=false test-compile failsafe:integration-test failsafe:verify`，17 个测试，
-  0 failures，0 errors，7 skipped。
-- 7 个 skipped 都来自 `smoke` 模块真实服务端到端测试；未设置 `EMALL_RUN_*_IT` 时按设计跳过。
