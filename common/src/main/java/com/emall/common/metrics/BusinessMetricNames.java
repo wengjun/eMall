@@ -21,6 +21,14 @@ public final class BusinessMetricNames {
     public static final String SEARCH_PRODUCT_EVENT_DUPLICATED = "emall_search_product_event_duplicated_total";
     public static final String SEARCH_PRODUCT_EVENT_FAILED = "emall_search_product_event_failed_total";
     public static final String SEARCH_PRODUCT_EVENT_DEAD = "emall_search_product_event_dead_total";
+    public static final String MESSAGE_CONSUMED = "emall_message_consumed_total";
+    public static final String MESSAGE_DUPLICATED = "emall_message_duplicated_total";
+    public static final String MESSAGE_FAILED = "emall_message_failed_total";
+    public static final String MESSAGE_DEAD = "emall_message_dead_total";
+    public static final String COUPON_RESERVED = "emall_coupon_reserved_total";
+    public static final String COUPON_CONFIRMED = "emall_coupon_confirmed_total";
+    public static final String COUPON_RELEASED = "emall_coupon_released_total";
+    public static final String ORDER_PENDING_RETRY = "emall_order_pending_retry_total";
 
     private BusinessMetricNames() {
     }

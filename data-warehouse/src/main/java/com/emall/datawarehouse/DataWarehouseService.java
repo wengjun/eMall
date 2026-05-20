@@ -1,11 +1,13 @@
 package com.emall.datawarehouse;
 
 import com.emall.common.api.ErrorCode;
+import com.emall.common.event.OutboxEvent;
 import com.emall.common.exception.BusinessException;
 import com.emall.common.id.SnowflakeIdGenerator;
 import com.emall.common.privacy.SensitiveDataType;
 import java.time.Instant;
 import java.time.LocalDate;
+import java.time.ZoneOffset;
 import java.util.Locale;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -73,6 +75,19 @@ class DataWarehouseService {
                         normalize(downstreamField), sensitivity, normalize(transformName), Instant.now()));
     }
 
+    @Transactional
+    TablePartition recordBusinessEvent(OutboxEvent event) {
+        DatasetDefinition dataset =
+                repository.findDatasets().stream()
+                        .filter(candidate -> candidate.datasetName().equals(datasetName(event))).findFirst()
+                        .orElseGet(() -> repository.saveDataset(new DatasetDefinition(idGenerator.nextId(),
+                                WarehouseLayer.ODS, datasetName(event), "event-consumer", "core business event stream",
+                                365, Instant.now(), Instant.now())));
+        return repository.savePartition(
+                new TablePartition(idGenerator.nextId(), dataset.datasetId(), normalize(event.eventType()),
+                        LocalDate.ofInstant(event.createdAt(), ZoneOffset.UTC), 1L, 0L, Instant.now()));
+    }
+
     WarehouseSummary summary() {
         int failedChecks = (int) repository.findQualityChecks().stream()
                 .filter(check -> check.status() == QualityStatus.FAIL).count();
@@ -100,5 +115,9 @@ class DataWarehouseService {
             throw new BusinessException(ErrorCode.BAD_REQUEST, "warehouse value must not be blank");
         }
         return normalized;
+    }
+
+    private String datasetName(OutboxEvent event) {
+        return normalize("core_" + event.aggregateType() + "_events");
     }
 }

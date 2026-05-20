@@ -1,4 +1,4 @@
-package com.emall.search.repository;
+package com.emall.common.messaging;
 
 public enum ProcessedMessageStatus {
     PROCESSING,

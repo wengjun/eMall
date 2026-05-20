@@ -1,6 +1,7 @@
 package com.emall.analytics;
 
 import com.emall.common.api.ErrorCode;
+import com.emall.common.event.OutboxEvent;
 import com.emall.common.exception.BusinessException;
 import com.emall.common.id.SnowflakeIdGenerator;
 import com.emall.common.privacy.SensitiveDataMasker;
@@ -40,6 +41,13 @@ class AnalyticsService {
         requireApprovedMetric(metricName);
         return repository.saveMetricPoint(new MetricPoint(idGenerator.nextId(), normalize(metricName),
                 SensitiveDataMasker.maskFreeText(normalize(dimensionKey)), metricValue, eventTime, Instant.now()));
+    }
+
+    @Transactional
+    MetricPoint recordBusinessEvent(OutboxEvent event) {
+        return repository.saveMetricPoint(new MetricPoint(idGenerator.nextId(), "core.event." + event.eventType(),
+                SensitiveDataMasker.maskFreeText(event.aggregateType() + ":" + event.aggregateId()), BigDecimal.ONE,
+                event.createdAt(), Instant.now()));
     }
 
     @Transactional

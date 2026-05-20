@@ -19,6 +19,7 @@ import com.emall.order.integration.InventoryClient;
 import com.emall.order.integration.InventoryClient.InventoryReservation;
 import com.emall.order.integration.InventoryClient.ReserveInventoryRequest;
 import com.emall.order.integration.MarketingClient;
+import com.emall.order.integration.MarketingClient.CouponReservation;
 import com.emall.order.integration.MarketingClient.PromotionQuote;
 import com.emall.order.integration.PricingClient;
 import com.emall.order.integration.PricingClient.PriceQuote;
@@ -86,6 +87,36 @@ class OrderServiceTest {
     }
 
     @Test
+    void shouldReleaseCouponAndCreatePendingRetryWhenInventoryReserveFails() {
+        FakeInventoryClient failingInventoryClient = new FakeInventoryClient();
+        failingInventoryClient.reserveStatus = "UNAVAILABLE";
+        FakeMarketingClient marketingClient = new FakeMarketingClient();
+        OrderService service = new OrderService(new InMemoryOrderRepository(), new InMemoryOutboxRepository(),
+                new SnowflakeIdGenerator(4), failingInventoryClient, new FakePricingClient(), marketingClient);
+
+        Order created = service.create("pending-request-001", 70001L, 30001L, 1);
+
+        assertThat(created.status()).isEqualTo(OrderStatus.PENDING_RETRY);
+        assertThat(created.discountAmount()).isZero();
+        assertThat(created.couponId()).isNull();
+        assertThat(marketingClient.releasedReservationId).isEqualTo("pending-request-001");
+    }
+
+    @Test
+    void shouldMarkPendingRetryWhenCouponConfirmFails() {
+        FakeMarketingClient marketingClient = new FakeMarketingClient();
+        marketingClient.confirmSuccessful = false;
+        OrderService service = new OrderService(new InMemoryOrderRepository(), new InMemoryOutboxRepository(),
+                new SnowflakeIdGenerator(5), new FakeInventoryClient(), new FakePricingClient(), marketingClient);
+        Order created = service.create("coupon-confirm-request-001", 70001L, 30001L, 1);
+
+        Order paid = service.pay(created.orderId());
+
+        assertThat(paid.status()).isEqualTo(OrderStatus.PENDING_RETRY);
+        assertThat(paid.failureReason()).isEqualTo("coupon confirm pending");
+    }
+
+    @Test
     void shouldRejectSameRequestIdWithDifferentCreatePayload() {
         orderService.create("order-request-002", 70001L, 30001L, 1);
 
@@ -100,7 +131,8 @@ class OrderServiceTest {
                 new SnowflakeIdGenerator(33), inventoryClient, new FakePricingClient(), new FakeMarketingClient(),
                 routingOperations, OwnershipGuard.noop(), BusinessMetrics.noop(), IdentityAccessGuard.noop(),
                 RiskGuard.noop(), new IdempotencyService(new InMemoryIdempotencyRepository(), Clock.systemUTC(),
-                        Duration.ofSeconds(30), Duration.ofDays(1)));
+                        Duration.ofSeconds(30), Duration.ofDays(1)),
+                OrderSubmissionGuard.noop());
         Order created = service.create("route-request-001", 70001L, 30001L, 1);
 
         routingOperations.clear();
@@ -113,6 +145,7 @@ class OrderServiceTest {
     private static final class FakeInventoryClient extends InventoryClient {
         private String confirmedRequestId;
         private String releasedRequestId;
+        private String reserveStatus = "RESERVED";
 
         private FakeInventoryClient() {
             super(null, null);
@@ -121,8 +154,8 @@ class OrderServiceTest {
         @Override
         public InventoryReservation reserve(ReserveInventoryRequest request) {
             Instant now = Instant.now();
-            return new InventoryReservation(request.requestId(), request.skuId(), request.quantity(), "RESERVED", null,
-                    now.plusSeconds(900), now, now);
+            return new InventoryReservation(request.requestId(), request.skuId(), request.quantity(), reserveStatus,
+                    "RESERVED".equals(reserveStatus) ? null : "DOWNSTREAM_UNAVAILABLE", now.plusSeconds(900), now, now);
         }
 
         @Override
@@ -154,6 +187,9 @@ class OrderServiceTest {
     }
 
     private static final class FakeMarketingClient extends MarketingClient {
+        private boolean confirmSuccessful = true;
+        private String releasedReservationId;
+
         private FakeMarketingClient() {
             super(null);
         }
@@ -162,6 +198,24 @@ class OrderServiceTest {
         public PromotionQuote quote(long userId, BigDecimal orderAmount) {
             return new PromotionQuote(userId, orderAmount, new BigDecimal("10.00"),
                     orderAmount.subtract(new BigDecimal("10.00")), "coupon-001", Instant.now());
+        }
+
+        @Override
+        public CouponReservation reserveCoupon(String reservationId, long userId, String couponId,
+                BigDecimal orderAmount, long orderId) {
+            return new CouponReservation(reservationId, userId, couponId, "RESERVED", new BigDecimal("10.00"), orderId,
+                    Instant.now(), null);
+        }
+
+        @Override
+        public boolean confirmCoupon(String reservationId, String couponId, long orderId) {
+            return confirmSuccessful;
+        }
+
+        @Override
+        public boolean releaseCoupon(String reservationId, String couponId, long orderId) {
+            releasedReservationId = reservationId;
+            return true;
         }
     }
 

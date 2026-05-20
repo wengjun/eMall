@@ -1,17 +1,19 @@
 package com.emall.fulfillment.repository;
 
-import java.util.Set;
-import java.util.concurrent.ConcurrentHashMap;
+import java.time.Clock;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.stereotype.Repository;
 
 @Repository
 @ConditionalOnProperty(name = "emall.storage", havingValue = "memory")
-public class InMemoryProcessedMessageRepository implements ProcessedMessageRepository {
-    private final Set<String> processed = ConcurrentHashMap.newKeySet();
+public class InMemoryProcessedMessageRepository extends com.emall.common.messaging.InMemoryProcessedMessageRepository
+        implements
+            ProcessedMessageRepository {
+    public InMemoryProcessedMessageRepository() {
+        super();
+    }
 
-    @Override
-    public boolean markProcessing(String messageId) {
-        return processed.add(messageId);
+    public InMemoryProcessedMessageRepository(Clock clock) {
+        super(clock);
     }
 }

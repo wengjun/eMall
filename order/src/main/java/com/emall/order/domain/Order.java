@@ -24,6 +24,7 @@ public record Order(long orderId, String requestId, long userId, long skuId, int
     }
 
     private Order withStatus(OrderStatus newStatus, String newFailureReason) {
+        OrderStateMachine.requireTransition(status, newStatus);
         return new Order(orderId, requestId, userId, skuId, quantity, clientType, deviceId, channel, unitPrice,
                 subtotalAmount, discountAmount, payableAmount, currency, priceVersion, couponId, inventoryReservationId,
                 newStatus, newFailureReason, createdAt, Instant.now());

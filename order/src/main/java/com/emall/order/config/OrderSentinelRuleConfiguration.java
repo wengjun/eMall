@@ -11,7 +11,9 @@ import java.util.List;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.cloud.context.config.annotation.RefreshScope;
+import org.springframework.cloud.context.environment.EnvironmentChangeEvent;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.context.event.EventListener;
 
 @Configuration
 @ConditionalOnProperty(name = "spring.cloud.sentinel.enabled", havingValue = "true")
@@ -32,6 +34,11 @@ public class OrderSentinelRuleConfiguration {
         DegradeRuleManager.loadRules(List.of(degrade("order.inventory.reserve", 0.5, 30, 50),
                 degrade("order.inventory.confirm", 0.5, 30, 50), degrade("order.inventory.release", 0.5, 30, 50),
                 degrade("order.pricing.quote", 0.5, 10, 20), degrade("order.marketing.quote", 0.5, 10, 20)));
+    }
+
+    @EventListener(EnvironmentChangeEvent.class)
+    void reloadRules() {
+        loadRules();
     }
 
     private FlowRule flow(String resource, double qps) {

@@ -4,6 +4,8 @@ import com.emall.common.id.SnowflakeIdGenerator;
 import com.emall.common.web.OutboundHttpClientFactory;
 import com.emall.governance.recovery.AdaptiveRecoveryController;
 import com.emall.governance.recovery.AdaptiveRecoveryPolicy;
+import com.emall.order.service.OrderSubmissionGuard;
+import java.time.Duration;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -37,5 +39,11 @@ public class OrderConfig {
     @Bean
     AdaptiveRecoveryController inventoryRecoveryController() {
         return new AdaptiveRecoveryController(AdaptiveRecoveryPolicy.standard());
+    }
+
+    @Bean
+    OrderSubmissionGuard orderSubmissionGuard(
+            @Value("${emall.capacity.order.max-submissions-per-user-per-minute:60}") int maxRequests) {
+        return new OrderSubmissionGuard(maxRequests, Duration.ofMinutes(1));
     }
 }

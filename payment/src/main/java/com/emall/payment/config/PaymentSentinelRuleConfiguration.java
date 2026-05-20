@@ -11,7 +11,9 @@ import java.util.List;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.cloud.context.config.annotation.RefreshScope;
+import org.springframework.cloud.context.environment.EnvironmentChangeEvent;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.context.event.EventListener;
 
 @Configuration
 @ConditionalOnProperty(name = "spring.cloud.sentinel.enabled", havingValue = "true")
@@ -28,6 +30,11 @@ public class PaymentSentinelRuleConfiguration {
     void loadRules() {
         FlowRuleManager.loadRules(List.of(flow("payment.order.pay", 5000)));
         DegradeRuleManager.loadRules(List.of(degrade("payment.order.pay", 0.5, 30, 20)));
+    }
+
+    @EventListener(EnvironmentChangeEvent.class)
+    void reloadRules() {
+        loadRules();
     }
 
     private FlowRule flow(String resource, double qps) {

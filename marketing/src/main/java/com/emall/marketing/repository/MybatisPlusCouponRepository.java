@@ -29,8 +29,9 @@ public class MybatisPlusCouponRepository implements CouponRepository {
         } catch (DuplicateKeyException ex) {
             couponMapper.update(null,
                     new UpdateWrapper<CouponEntity>().set("status", entity.getStatus())
-                            .set("expires_at", entity.getExpiresAt()).set("updated_at", entity.getUpdatedAt())
-                            .eq("coupon_id", entity.getCouponId()));
+                            .set("expires_at", entity.getExpiresAt()).set("reservation_id", entity.getReservationId())
+                            .set("reserved_order_id", entity.getReservedOrderId())
+                            .set("updated_at", entity.getUpdatedAt()).eq("coupon_id", entity.getCouponId()));
         }
         return coupon;
     }
@@ -54,6 +55,8 @@ public class MybatisPlusCouponRepository implements CouponRepository {
         entity.setDiscountAmount(coupon.discountAmount());
         entity.setStatus(coupon.status().name());
         entity.setExpiresAt(LocalDateTime.ofInstant(coupon.expiresAt(), ZoneOffset.UTC));
+        entity.setReservationId(coupon.reservationId());
+        entity.setReservedOrderId(coupon.reservedOrderId() == 0L ? null : coupon.reservedOrderId());
         entity.setUpdatedAt(LocalDateTime.ofInstant(coupon.updatedAt(), ZoneOffset.UTC));
         return entity;
     }
@@ -61,6 +64,8 @@ public class MybatisPlusCouponRepository implements CouponRepository {
     private Coupon toDomain(CouponEntity entity) {
         return new Coupon(entity.getCouponId(), entity.getUserId(), entity.getThresholdAmount(),
                 entity.getDiscountAmount(), CouponStatus.valueOf(entity.getStatus()),
-                entity.getExpiresAt().toInstant(ZoneOffset.UTC), entity.getUpdatedAt().toInstant(ZoneOffset.UTC));
+                entity.getExpiresAt().toInstant(ZoneOffset.UTC), entity.getReservationId(),
+                entity.getReservedOrderId() == null ? 0L : entity.getReservedOrderId(),
+                entity.getUpdatedAt().toInstant(ZoneOffset.UTC));
     }
 }

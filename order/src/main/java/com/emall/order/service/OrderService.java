@@ -27,11 +27,9 @@ import com.emall.order.integration.InventoryClient;
 import com.emall.order.integration.InventoryClient.InventoryReservation;
 import com.emall.order.integration.InventoryClient.ReserveInventoryRequest;
 import com.emall.order.integration.MarketingClient;
-import com.emall.order.integration.MarketingClient.PromotionQuote;
 import com.emall.order.integration.PricingClient;
-import com.emall.order.integration.PricingClient.PriceQuote;
 import com.emall.order.repository.OrderRepository;
-import java.math.BigDecimal;
+import com.emall.order.workflow.OrderCreateWorkflow;
 import java.time.Clock;
 import java.time.Duration;
 import java.time.Instant;
@@ -56,13 +54,15 @@ public class OrderService {
     private final IdentityAccessGuard identityAccessGuard;
     private final RiskGuard riskGuard;
     private final IdempotencyService idempotencyService;
+    private final OrderCreateWorkflow orderCreateWorkflow;
+    private final OrderSubmissionGuard orderSubmissionGuard;
 
     public OrderService(OrderRepository orderRepository, OutboxRepository outboxRepository,
             SnowflakeIdGenerator idGenerator, InventoryClient inventoryClient, PricingClient pricingClient,
             MarketingClient marketingClient) {
         this(orderRepository, outboxRepository, idGenerator, inventoryClient, pricingClient, marketingClient,
                 ShardRoutingOperations.noop(), OwnershipGuard.noop(), BusinessMetrics.noop(),
-                IdentityAccessGuard.noop(), RiskGuard.noop(), localIdempotencyService());
+                IdentityAccessGuard.noop(), RiskGuard.noop(), localIdempotencyService(), OrderSubmissionGuard.noop());
     }
 
     @Autowired
@@ -70,7 +70,7 @@ public class OrderService {
             SnowflakeIdGenerator idGenerator, InventoryClient inventoryClient, PricingClient pricingClient,
             MarketingClient marketingClient, ShardRoutingOperations shardRoutingOperations,
             OwnershipGuard ownershipGuard, BusinessMetrics businessMetrics, IdentityAccessGuard identityAccessGuard,
-            RiskGuard riskGuard, IdempotencyService idempotencyService) {
+            RiskGuard riskGuard, IdempotencyService idempotencyService, OrderSubmissionGuard orderSubmissionGuard) {
         this.orderRepository = orderRepository;
         this.outboxRepository = outboxRepository;
         this.idGenerator = idGenerator;
@@ -83,6 +83,9 @@ public class OrderService {
         this.identityAccessGuard = identityAccessGuard;
         this.riskGuard = riskGuard;
         this.idempotencyService = idempotencyService;
+        this.orderSubmissionGuard = orderSubmissionGuard;
+        this.orderCreateWorkflow = new OrderCreateWorkflow(orderRepository, outboxRepository, idGenerator,
+                inventoryClient, pricingClient, marketingClient, businessMetrics, riskGuard);
     }
 
     @Transactional
@@ -107,6 +110,7 @@ public class OrderService {
         OrderClientContext safeContext = clientContext == null ? OrderClientContext.webDefault() : clientContext;
         ClientTrustContext safeTrustContext = normalizeTrustContext(trustContext, userId, safeContext);
         identityAccessGuard.requireAccess(safeTrustContext, userId, "order:create", "user:" + userId);
+        orderSubmissionGuard.check(userId);
         IdempotencyKey key = IdempotencyKey.of("order", String.valueOf(userId), requestId, "create");
         String requestDigest = idempotencyService.digest("userId=" + userId + ",skuId=" + skuId + ",quantity="
                 + quantity + ",clientType=" + safeContext.clientType() + ",deviceId=" + safeContext.deviceId()
@@ -124,7 +128,8 @@ public class OrderService {
             ownershipGuard.checkWrite("order", userId);
             return orderRepository.findByRequestId(requestId)
                     .map(existing -> validateIdempotentCreate(existing, userId, skuId, quantity, safeContext))
-                    .orElseGet(() -> createOnce(requestId, userId, skuId, quantity, safeContext, safeTrustContext));
+                    .orElseGet(() -> orderCreateWorkflow.create(requestId, userId, skuId, quantity, safeContext,
+                            safeTrustContext));
         });
     }
 
@@ -171,6 +176,12 @@ public class OrderService {
                     ? pending
                     : get(order.orderId());
         }
+        if (!marketingClient.confirmCoupon(order.requestId(), order.couponId(), order.orderId())) {
+            Order pending = order.markPendingRetry("coupon confirm pending");
+            return orderRepository.updateStatus(order.orderId(), OrderStatus.CREATED, pending)
+                    ? pending
+                    : get(order.orderId());
+        }
         Order paid = order.markPaid();
         if (!orderRepository.updateStatus(order.orderId(), OrderStatus.CREATED, paid)) {
             return get(order.orderId());
@@ -197,6 +208,12 @@ public class OrderService {
         InventoryReservation reservation = inventoryClient.release(order.inventoryReservationId());
         if (reservation == null || !reservation.released()) {
             Order pending = order.markPendingRetry("inventory release pending");
+            return orderRepository.updateStatus(order.orderId(), order.status(), pending)
+                    ? pending
+                    : get(order.orderId());
+        }
+        if (!marketingClient.releaseCoupon(order.requestId(), order.couponId(), order.orderId())) {
+            Order pending = order.markPendingRetry("coupon release pending");
             return orderRepository.updateStatus(order.orderId(), order.status(), pending)
                     ? pending
                     : get(order.orderId());
@@ -245,34 +262,6 @@ public class OrderService {
                 : get(order.orderId());
     }
 
-    private Order createOnce(String requestId, long userId, long skuId, int quantity, OrderClientContext clientContext,
-            ClientTrustContext trustContext) {
-        long orderId = idGenerator.nextId();
-        String reservationId = requestId;
-        PriceQuote priceQuote = pricingClient.quote(skuId, quantity);
-        PromotionQuote promotionQuote = marketingClient.quote(userId, priceQuote.subtotal());
-        validatePayableAmount(priceQuote, promotionQuote);
-        riskGuard.check(new RiskEvaluationRequest(RiskScene.ORDER_CREATE, trustContext.subjectId(userId),
-                trustContext.deviceId(), trustContext.sourceIp(), promotionQuote.payableAmount(), quantity));
-        InventoryReservation reservation =
-                inventoryClient.reserve(new ReserveInventoryRequest(reservationId, skuId, quantity));
-        Instant now = Instant.now();
-        OrderStatus status = reservation.reserved() ? OrderStatus.CREATED : OrderStatus.PENDING_RETRY;
-        String reason = reservation.reserved() ? null : reservation.reason();
-        Order order = orderRepository.save(new Order(orderId, requestId, userId, skuId, quantity,
-                clientContext.clientType(), clientContext.deviceId(), clientContext.channel(), priceQuote.unitPrice(),
-                priceQuote.subtotal(), promotionQuote.discountAmount(), promotionQuote.payableAmount(),
-                priceQuote.currency(), priceQuote.priceVersion(), promotionQuote.couponId(), reservationId, status,
-                reason, now, now));
-        orderRepository.saveRoute(order.orderId(), order.requestId(), order.userId());
-        if (order.status() == OrderStatus.CREATED) {
-            appendEvent(order, EventTypes.ORDER_CREATED);
-            businessMetrics.increment(BusinessMetricNames.ORDER_CREATED, "client_type", order.clientType().name(),
-                    "channel", order.channel());
-        }
-        return order;
-    }
-
     private Order validateIdempotentCreate(Order existing, long userId, long skuId, int quantity,
             OrderClientContext clientContext) {
         if (existing.userId() != userId || existing.skuId() != skuId || existing.quantity() != quantity
@@ -293,6 +282,9 @@ public class OrderService {
     private Order payAfterRetry(Order order) {
         InventoryReservation reservation = inventoryClient.confirm(order.inventoryReservationId());
         if (reservation != null && reservation.confirmed()) {
+            if (!marketingClient.confirmCoupon(order.requestId(), order.couponId(), order.orderId())) {
+                return order;
+            }
             Order paid = order.markPaid();
             if (!orderRepository.updateStatus(order.orderId(), OrderStatus.PENDING_RETRY, paid)) {
                 return get(order.orderId());
@@ -307,6 +299,9 @@ public class OrderService {
     private Order cancelAfterRetry(Order order) {
         InventoryReservation reservation = inventoryClient.release(order.inventoryReservationId());
         if (reservation != null && reservation.released()) {
+            if (!marketingClient.releaseCoupon(order.requestId(), order.couponId(), order.orderId())) {
+                return order;
+            }
             Order cancelled = order.markCancelled();
             if (!orderRepository.updateStatus(order.orderId(), OrderStatus.PENDING_RETRY, cancelled)) {
                 return get(order.orderId());
@@ -328,16 +323,10 @@ public class OrderService {
                         Map.entry("subtotalAmount", order.subtotalAmount()),
                         Map.entry("discountAmount", order.discountAmount()),
                         Map.entry("payableAmount", order.payableAmount()), Map.entry("currency", order.currency()),
-                        Map.entry("priceVersion", order.priceVersion()), Map.entry("status", order.status().name()))));
-    }
-
-    private void validatePayableAmount(PriceQuote priceQuote, PromotionQuote promotionQuote) {
-        if (promotionQuote.payableAmount().compareTo(BigDecimal.ZERO) <= 0) {
-            throw new BusinessException(ErrorCode.CONFLICT, "payable amount must be positive");
-        }
-        if (promotionQuote.payableAmount().compareTo(priceQuote.subtotal()) > 0) {
-            throw new BusinessException(ErrorCode.CONFLICT, "payable amount cannot exceed subtotal");
-        }
+                        Map.entry("priceVersion", order.priceVersion()),
+                        Map.entry("couponId", order.couponId() == null ? "" : order.couponId()),
+                        Map.entry("inventoryReservationId", order.inventoryReservationId()),
+                        Map.entry("status", order.status().name()))));
     }
 
     private long orderRouteKey(long orderId) {

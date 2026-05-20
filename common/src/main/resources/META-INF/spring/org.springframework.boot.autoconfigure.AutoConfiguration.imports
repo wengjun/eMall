@@ -2,6 +2,7 @@ com.emall.common.archive.ArchiveAutoConfiguration
 com.emall.common.crypto.FieldEncryptionAutoConfiguration
 com.emall.common.idempotency.IdempotencyAutoConfiguration
 com.emall.common.metrics.BusinessMetricsAutoConfiguration
+com.emall.common.messaging.MessagingAutoConfiguration
 com.emall.common.mybatis.MybatisPlusAutoConfiguration
 com.emall.common.olap.ClickHouseAutoConfiguration
 com.emall.common.region.OwnershipAutoConfiguration

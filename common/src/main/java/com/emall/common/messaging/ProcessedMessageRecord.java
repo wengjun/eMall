@@ -1,4 +1,4 @@
-package com.emall.search.repository;
+package com.emall.common.messaging;
 
 import com.baomidou.mybatisplus.annotation.FieldFill;
 import com.baomidou.mybatisplus.annotation.IdType;
@@ -12,11 +12,11 @@ import lombok.Setter;
 @TableName("processed_message")
 @Getter
 @Setter
-public class SearchProcessedMessageEntity {
+public class ProcessedMessageRecord {
     @TableId(value = "message_id", type = IdType.INPUT)
     private String messageId;
 
-    @TableField("processed_at")
+    @TableField(value = "processed_at", fill = FieldFill.INSERT)
     private LocalDateTime processedAt;
 
     @TableField("status")

@@ -1,6 +1,7 @@
 package com.emall.marketing.api;
 
 import com.emall.common.api.ApiResponse;
+import com.emall.common.rpc.CouponReservationView;
 import com.emall.marketing.domain.Coupon;
 import com.emall.marketing.domain.PromotionQuote;
 import com.emall.marketing.service.MarketingService;
@@ -52,6 +53,32 @@ public class MarketingController {
         return ApiResponse.ok(marketingService.redeem(couponId, request.orderAmount()));
     }
 
+    @PostMapping("/coupons/{couponId}/reservations")
+    public ApiResponse<CouponReservationView> reserveCoupon(@PathVariable String couponId,
+            @Valid @RequestBody ReserveCouponRequest request) {
+        return ApiResponse.ok(toReservationView(marketingService.reserveCoupon(request.reservationId(),
+                request.userId(), couponId, request.orderAmount(), request.orderId())));
+    }
+
+    @PostMapping("/coupons/{couponId}/reservations/{reservationId}/confirm")
+    public ApiResponse<CouponReservationView> confirmCoupon(@PathVariable String couponId,
+            @PathVariable String reservationId, @Valid @RequestBody CouponReservationDecisionRequest request) {
+        return ApiResponse
+                .ok(toReservationView(marketingService.confirmCoupon(reservationId, couponId, request.orderId())));
+    }
+
+    @PostMapping("/coupons/{couponId}/reservations/{reservationId}/release")
+    public ApiResponse<CouponReservationView> releaseCoupon(@PathVariable String couponId,
+            @PathVariable String reservationId, @Valid @RequestBody CouponReservationDecisionRequest request) {
+        return ApiResponse
+                .ok(toReservationView(marketingService.releaseCoupon(reservationId, couponId, request.orderId())));
+    }
+
+    private CouponReservationView toReservationView(Coupon coupon) {
+        return new CouponReservationView(coupon.reservationId(), coupon.userId(), coupon.couponId(),
+                coupon.status().name(), coupon.discountAmount(), coupon.reservedOrderId(), coupon.updatedAt());
+    }
+
     public record IssueCouponRequest(@Positive long userId, @NotNull @DecimalMin("0.00") BigDecimal thresholdAmount,
             @NotNull @DecimalMin("0.01") BigDecimal discountAmount, @NotNull @Future Instant expiresAt) {
     }
@@ -60,5 +87,12 @@ public class MarketingController {
     }
 
     public record RedeemCouponRequest(@NotNull @DecimalMin("0.01") BigDecimal orderAmount) {
+    }
+
+    public record ReserveCouponRequest(@NotNull String reservationId, @Positive long userId,
+            @NotNull @DecimalMin("0.01") BigDecimal orderAmount, @Positive long orderId) {
+    }
+
+    public record CouponReservationDecisionRequest(@Positive long orderId) {
     }
 }

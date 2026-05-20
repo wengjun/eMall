@@ -13,12 +13,14 @@ public record FulfillmentOrder(long fulfillmentId, long orderId, long userId, lo
     }
 
     public FulfillmentOrder ship(String newCarrier, String newTrackingNo) {
+        FulfillmentStateMachine.requireTransition(status, ShipmentStatus.SHIPPED);
         return new FulfillmentOrder(fulfillmentId, orderId, userId, skuId, quantity, destinationRegionCode,
                 warehouseCode, plannedCarrier, estimatedSlaHours, newCarrier, newTrackingNo, ShipmentStatus.SHIPPED,
                 createdAt, Instant.now());
     }
 
     public FulfillmentOrder deliver() {
+        FulfillmentStateMachine.requireTransition(status, ShipmentStatus.DELIVERED);
         return new FulfillmentOrder(fulfillmentId, orderId, userId, skuId, quantity, destinationRegionCode,
                 warehouseCode, plannedCarrier, estimatedSlaHours, carrier, trackingNo, ShipmentStatus.DELIVERED,
                 createdAt, Instant.now());
