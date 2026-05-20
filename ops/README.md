@@ -55,3 +55,10 @@ mvn -Pstable-runtime verify
 docker version
 docker ps
 ```
+
+Windows 11 + Docker Desktop 场景下，如果 Maven/Testcontainers 没有自动识别 Docker Linux Engine，在当前 PowerShell 中先设置：
+
+```powershell
+$env:DOCKER_HOST='npipe:////./pipe/dockerDesktopLinuxEngine'
+mvn -DskipITs=false verify
+```

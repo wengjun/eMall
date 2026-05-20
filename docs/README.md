@@ -15,14 +15,12 @@
 - [Web/App 下单 API 契约](api/web-app-checkout.openapi.yml)：浏览器和手机 App 统一下单接口、请求头、请求体和响应结构。
 - [国内生产扩展说明](domestic-stack.md#生产扩展基线)：分库分表、多级缓存、Redis Cluster 和 Helm 部署基线。
 - [模块清单](modules.md)：所有 Maven 模块、职责分组和构建 profile。
-- [路线图](roadmap.md)：P0 到 P14 的阶段规划和完成标记。
+- [路线图](roadmap.md)：P0 到 P14 的阶段规划、能力边界和长期演进方向。
 - [生产检查清单](production-checklist.md)：上线前需要检查的核心事项。
-- [仓库整理说明](repository-cleanup.md)：文档、配置和本地文件的整理原则。
 
 ## 构建和验证
 
 - [集成测试](integration-testing.md)：生产级集成测试清单、执行方式和环境开关。
-- [稳定运行就绪度](stable-runtime-readiness.md)：稳定运行所需范围、完成标记和上线前缺口。
 
 ## 运维
 
@@ -37,10 +35,9 @@
 - [数据平台](data-platform.md)：分库分表、归档、冷热分层、Outbox 和异步同步。
 - [多区域策略](multi-region-strategy.md)：区域归属、路由规则和故障切换边界。
 
-## 阶段说明
+## 路线规划
 
 - [未来路线 Backlog](future-roadmap.md)：非必需的远期能力清单。
-- [阶段说明](phase-notes.md)：P4 到 P8 的模块说明和生产扩展边界。
 
 ## 部署资产
 
