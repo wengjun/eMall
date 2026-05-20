@@ -3,6 +3,7 @@ package com.emall.datawarehouse;
 import com.emall.common.api.ErrorCode;
 import com.emall.common.exception.BusinessException;
 import com.emall.common.id.SnowflakeIdGenerator;
+import com.emall.common.privacy.SensitiveDataType;
 import java.time.Instant;
 import java.time.LocalDate;
 import java.util.Locale;
@@ -33,7 +34,10 @@ class DataWarehouseService {
     @Transactional
     TablePartition addPartition(long datasetId, String partitionKey, LocalDate partitionDate, long rowCount,
             long storageBytes) {
-        requireDataset(datasetId);
+        DatasetDefinition dataset = requireDataset(datasetId);
+        if (dataset.layer() == WarehouseLayer.ADS && hasFailedQualityCheck(datasetId)) {
+            throw new BusinessException(ErrorCode.CONFLICT, "failed quality check blocks report partition");
+        }
         return repository.savePartition(new TablePartition(idGenerator.nextId(), datasetId, normalize(partitionKey),
                 partitionDate, Math.max(0, rowCount), Math.max(0, storageBytes), Instant.now()));
     }
@@ -41,8 +45,14 @@ class DataWarehouseService {
     @Transactional
     QualityCheck recordQualityCheck(long datasetId, String checkName, QualityStatus status, String detail) {
         requireDataset(datasetId);
-        return repository.saveQualityCheck(
+        QualityCheck check = repository.saveQualityCheck(
                 new QualityCheck(idGenerator.nextId(), datasetId, normalize(checkName), status, detail, Instant.now()));
+        if (status == QualityStatus.FAIL) {
+            Instant now = Instant.now();
+            repository.saveQualityAlert(new QualityAlert(idGenerator.nextId(), datasetId, check.checkId(), "critical",
+                    detail, QualityAlertStatus.OPEN, now, now));
+        }
+        return check;
     }
 
     @Transactional
@@ -53,18 +63,35 @@ class DataWarehouseService {
                 normalize(transformName), Instant.now()));
     }
 
+    @Transactional
+    FieldLineage addFieldLineage(long upstreamDatasetId, String upstreamField, long downstreamDatasetId,
+            String downstreamField, SensitiveDataType sensitivity, String transformName) {
+        requireDataset(upstreamDatasetId);
+        requireDataset(downstreamDatasetId);
+        return repository.saveFieldLineage(
+                new FieldLineage(idGenerator.nextId(), upstreamDatasetId, normalize(upstreamField), downstreamDatasetId,
+                        normalize(downstreamField), sensitivity, normalize(transformName), Instant.now()));
+    }
+
     WarehouseSummary summary() {
         int failedChecks = (int) repository.findQualityChecks().stream()
                 .filter(check -> check.status() == QualityStatus.FAIL).count();
+        int openAlerts = (int) repository.findQualityAlerts().stream()
+                .filter(alert -> alert.status() == QualityAlertStatus.OPEN).count();
         int partitions = repository.findDatasets().stream()
                 .mapToInt(dataset -> repository.findPartitions(dataset.datasetId()).size()).sum();
         return new WarehouseSummary(repository.findDatasets().size(), partitions, failedChecks,
-                repository.findLineage().size());
+                repository.findLineage().size(), repository.findFieldLineage().size(), openAlerts);
     }
 
     private DatasetDefinition requireDataset(long datasetId) {
         return repository.findDataset(datasetId)
                 .orElseThrow(() -> new BusinessException(ErrorCode.NOT_FOUND, "warehouse dataset not found"));
+    }
+
+    private boolean hasFailedQualityCheck(long datasetId) {
+        return repository.findQualityChecks().stream()
+                .anyMatch(check -> check.datasetId() == datasetId && check.status() == QualityStatus.FAIL);
     }
 
     private String normalize(String value) {

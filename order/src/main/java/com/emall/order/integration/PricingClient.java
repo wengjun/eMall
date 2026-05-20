@@ -62,8 +62,10 @@ public class PricingClient {
     }
 
     private PriceQuote toLocal(PriceQuoteView view) {
-        return view == null ? null : new PriceQuote(view.skuId(), view.unitPrice(), view.quantity(), view.subtotal(),
-                view.currency(), view.priceVersion(), view.quotedAt());
+        return view == null
+                ? null
+                : new PriceQuote(view.skuId(), view.unitPrice(), view.quantity(), view.subtotal(), view.currency(),
+                        view.priceVersion(), view.quotedAt());
     }
 
     public record QuoteRequest(long skuId, int quantity) {

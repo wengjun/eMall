@@ -10,6 +10,7 @@ import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
 import java.time.Duration;
+import java.time.Instant;
 import java.util.Map;
 
 public final class CheckoutSmokeApplication {
@@ -40,9 +41,10 @@ public final class CheckoutSmokeApplication {
 
         post("/api/inventory/10001/stock", Map.of("quantity", 10));
 
-        JsonNode order = post("/api/orders", Map.of("requestId", "smoke-order-" + suffix, "userId",
-                user.path("data").path("userId").asLong(), "skuId", 10001L, "quantity", 1, "clientType", "WEB",
-                "deviceId", "java-smoke", "channel", "web-smoke"));
+        JsonNode order = post("/api/orders",
+                Map.of("requestId", "smoke-order-" + suffix, "userId", user.path("data").path("userId").asLong(),
+                        "skuId", 10001L, "quantity", 1, "clientType", "WEB", "deviceId", "java-smoke", "channel",
+                        "web-smoke"));
         BigDecimal payableAmount = order.path("data").path("payableAmount").decimalValue();
 
         JsonNode payment = post("/api/payments",
@@ -50,8 +52,15 @@ public final class CheckoutSmokeApplication {
                         "userId", user.path("data").path("userId").asLong(), "amount", payableAmount, "channel",
                         "mock"));
 
-        JsonNode callback = post("/api/payments/" + payment.path("data").path("paymentId").asLong() + "/callbacks",
-                Map.of("channelTradeNo", "trade-" + suffix, "paidAmount", payableAmount));
+        long paymentId = payment.path("data").path("paymentId").asLong();
+        String channelTradeNo = "trade-" + suffix;
+        Instant callbackTimestamp = Instant.now();
+        String callbackNonce = "smoke-nonce-" + suffix;
+        String signature = PaymentCallbackSignature.sign("mock", channelTradeNo, paymentId, payableAmount,
+                callbackTimestamp, callbackNonce);
+        JsonNode callback = post("/api/payments/" + paymentId + "/callbacks",
+                Map.of("channel", "mock", "channelTradeNo", channelTradeNo, "paidAmount", payableAmount, "timestamp",
+                        callbackTimestamp, "nonce", callbackNonce, "signature", signature));
 
         String status = callback.path("data").path("status").asText();
         if (!"SUCCEEDED".equals(status)) {
@@ -61,7 +70,7 @@ public final class CheckoutSmokeApplication {
         JsonNode fulfillment = awaitFulfillment(order.path("data").path("orderId").asLong());
 
         System.out.printf("Smoke checkout succeeded. orderId=%d, paymentId=%d, fulfillmentId=%d%n",
-                order.path("data").path("orderId").asLong(), payment.path("data").path("paymentId").asLong(),
+                order.path("data").path("orderId").asLong(), paymentId,
                 fulfillment.path("data").path("fulfillmentId").asLong());
     }
 

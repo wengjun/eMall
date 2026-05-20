@@ -1,6 +1,7 @@
 package com.emall.release;
 
 import java.time.Instant;
+import java.math.BigDecimal;
 
 enum RolloutStatus {
     PLANNED,
@@ -8,6 +9,19 @@ enum RolloutStatus {
     PAUSED,
     COMPLETED,
     ROLLED_BACK
+}
+
+enum ReleaseGuardStage {
+    PRE_TRAFFIC,
+    CANARY,
+    ROLLBACK_RECOVERY
+}
+
+enum ReleaseGuardDecision {
+    PASS,
+    BLOCK,
+    PAUSE,
+    ROLLBACK
 }
 
 enum ToggleStatus {
@@ -52,5 +66,15 @@ record ReplayPlan(long replayId, String topicName, String consumerGroup, long fr
     }
 }
 
+record ReleaseGuardRecord(long guardId, long rolloutId, String serviceName, ReleaseGuardStage stage,
+        ReleaseGuardDecision decision, Boolean sloPassed, Boolean alertsClear, Boolean capacityReady,
+        Boolean dependenciesHealthy, BigDecimal errorRate, Integer latencyP95Ms, BigDecimal businessSuccessRate,
+        Boolean compensationTriggered, Boolean messageReplayChecked, Boolean downstreamRecovered, String reason,
+        Instant createdAt) {
+}
+
 record ReleaseSummary(int enabledFlags, int runningRollouts, int activeTopics, int openReplays) {
+}
+
+record ReleaseGuardSummary(int passedGuards, int blockedGuards, int pausedGuards, int rollbackGuards) {
 }

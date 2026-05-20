@@ -24,4 +24,20 @@ class TrafficServiceTest {
         assertThat(summary.runningShifts()).isEqualTo(1);
         assertThat(summary.isolatedUnits()).isEqualTo(1);
     }
+
+    @Test
+    void managesDynamicControlRules() {
+        service.registerUnit("unit-a", "east", 100);
+
+        TrafficControlRule rule = service.upsertControlRule("flash-sale.enqueue", ControlRuleType.RATE_LIMIT,
+                "campaign", "90001", 100000, "unit-a", true);
+        service.changeControlRule(rule.ruleId(), false);
+
+        assertThat(service.controlRules()).singleElement().satisfies(controlRule -> {
+            assertThat(controlRule.resource()).isEqualTo("flash-sale.enqueue");
+            assertThat(controlRule.type()).isEqualTo(ControlRuleType.RATE_LIMIT);
+            assertThat(controlRule.enabled()).isFalse();
+        });
+        assertThat(service.summary().controlRules()).isEqualTo(1);
+    }
 }

@@ -28,23 +28,18 @@ public class MybatisPlusDistributedTaskLock implements DistributedTaskLock {
             taskLockMapper.insert(new ScheduledTaskLockRecord(lockName, ownerId, lockedUntil, now));
             return true;
         } catch (DuplicateKeyException ex) {
-            return taskLockMapper.update(null, new UpdateWrapper<ScheduledTaskLockRecord>()
-                    .set("owner_id", ownerId)
-                    .set("locked_until", lockedUntil)
-                    .set("updated_at", now)
-                    .eq("lock_name", lockName)
-                    .le("locked_until", now)) == 1;
+            return taskLockMapper.update(null,
+                    new UpdateWrapper<ScheduledTaskLockRecord>().set("owner_id", ownerId)
+                            .set("locked_until", lockedUntil).set("updated_at", now).eq("lock_name", lockName)
+                            .le("locked_until", now)) == 1;
         }
     }
 
     @Override
     public void unlock(String lockName) {
         LocalDateTime now = databaseTime(clock.instant());
-        taskLockMapper.update(null, new UpdateWrapper<ScheduledTaskLockRecord>()
-                .set("locked_until", now)
-                .set("updated_at", now)
-                .eq("lock_name", lockName)
-                .eq("owner_id", ownerId));
+        taskLockMapper.update(null, new UpdateWrapper<ScheduledTaskLockRecord>().set("locked_until", now)
+                .set("updated_at", now).eq("lock_name", lockName).eq("owner_id", ownerId));
     }
 
     private LocalDateTime databaseTime(Instant instant) {

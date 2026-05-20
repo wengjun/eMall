@@ -38,16 +38,13 @@ public class MybatisPlusFlashSaleRepository implements FlashSaleRepository {
         try {
             campaignMapper.insert(entity);
         } catch (DuplicateKeyException ex) {
-            campaignMapper.update(null, new UpdateWrapper<FlashSaleCampaignEntity>()
-                    .set("name", entity.getName())
-                    .set("starts_at", entity.getStartsAt())
-                    .set("ends_at", entity.getEndsAt())
-                    .set("per_user_limit", entity.getPerUserLimit())
-                    .set("token_ttl_seconds", entity.getTokenTtlSeconds())
-                    .set("queue_capacity", entity.getQueueCapacity())
-                    .set("status", entity.getStatus())
-                    .set("updated_at", entity.getUpdatedAt())
-                    .eq("campaign_id", entity.getCampaignId()));
+            campaignMapper.update(null,
+                    new UpdateWrapper<FlashSaleCampaignEntity>().set("name", entity.getName())
+                            .set("starts_at", entity.getStartsAt()).set("ends_at", entity.getEndsAt())
+                            .set("per_user_limit", entity.getPerUserLimit())
+                            .set("token_ttl_seconds", entity.getTokenTtlSeconds())
+                            .set("queue_capacity", entity.getQueueCapacity()).set("status", entity.getStatus())
+                            .set("updated_at", entity.getUpdatedAt()).eq("campaign_id", entity.getCampaignId()));
         }
         return campaign;
     }
@@ -63,14 +60,12 @@ public class MybatisPlusFlashSaleRepository implements FlashSaleRepository {
         try {
             stockMapper.insert(entity);
         } catch (DuplicateKeyException ex) {
-            stockMapper.update(null, new UpdateWrapper<FlashSaleStockEntity>()
-                    .set("total_stock", entity.getTotalStock())
-                    .set("available_stock", entity.getAvailableStock())
-                    .set("token_reserved_stock", entity.getTokenReservedStock())
-                    .set("queued_stock", entity.getQueuedStock())
-                    .set("sold_stock", entity.getSoldStock())
-                    .set("updated_at", entity.getUpdatedAt())
-                    .eq("campaign_id", entity.getCampaignId()));
+            stockMapper.update(null,
+                    new UpdateWrapper<FlashSaleStockEntity>().set("total_stock", entity.getTotalStock())
+                            .set("available_stock", entity.getAvailableStock())
+                            .set("token_reserved_stock", entity.getTokenReservedStock())
+                            .set("queued_stock", entity.getQueuedStock()).set("sold_stock", entity.getSoldStock())
+                            .set("updated_at", entity.getUpdatedAt()).eq("campaign_id", entity.getCampaignId()));
         }
         return stock;
     }
@@ -82,24 +77,52 @@ public class MybatisPlusFlashSaleRepository implements FlashSaleRepository {
 
     @Override
     public boolean reserveTokenStock(long campaignId, int quantity) {
-        int updated = stockMapper.update(null, new UpdateWrapper<FlashSaleStockEntity>()
-                .setSql("available_stock = available_stock - {0}", quantity)
-                .setSql("token_reserved_stock = token_reserved_stock + {0}", quantity)
-                .set("updated_at", LocalDateTime.now(ZoneOffset.UTC))
-                .eq("campaign_id", campaignId)
-                .ge("available_stock", quantity));
+        int updated = stockMapper.update(null,
+                new UpdateWrapper<FlashSaleStockEntity>().setSql("available_stock = available_stock - {0}", quantity)
+                        .setSql("token_reserved_stock = token_reserved_stock + {0}", quantity)
+                        .set("updated_at", LocalDateTime.now(ZoneOffset.UTC)).eq("campaign_id", campaignId)
+                        .ge("available_stock", quantity));
         return updated == 1;
     }
 
     @Override
+    public void releaseTokenStock(long campaignId, int quantity) {
+        stockMapper.update(null,
+                new UpdateWrapper<FlashSaleStockEntity>().setSql("available_stock = available_stock + {0}", quantity)
+                        .setSql("token_reserved_stock = GREATEST(token_reserved_stock - {0}, 0)", quantity)
+                        .set("updated_at", LocalDateTime.now(ZoneOffset.UTC)).eq("campaign_id", campaignId));
+    }
+
+    @Override
     public boolean moveTokenStockToQueue(long campaignId, int quantity) {
-        int updated = stockMapper.update(null, new UpdateWrapper<FlashSaleStockEntity>()
-                .setSql("token_reserved_stock = token_reserved_stock - {0}", quantity)
-                .setSql("queued_stock = queued_stock + {0}", quantity)
-                .set("updated_at", LocalDateTime.now(ZoneOffset.UTC))
-                .eq("campaign_id", campaignId)
-                .ge("token_reserved_stock", quantity));
+        int updated = stockMapper.update(null,
+                new UpdateWrapper<FlashSaleStockEntity>()
+                        .setSql("token_reserved_stock = token_reserved_stock - {0}", quantity)
+                        .setSql("queued_stock = queued_stock + {0}", quantity)
+                        .set("updated_at", LocalDateTime.now(ZoneOffset.UTC)).eq("campaign_id", campaignId)
+                        .ge("token_reserved_stock", quantity));
         return updated == 1;
+    }
+
+    @Override
+    public void releaseQueuedStock(long campaignId, int quantity) {
+        stockMapper.update(null,
+                new UpdateWrapper<FlashSaleStockEntity>()
+                        .setSql("token_reserved_stock = token_reserved_stock + {0}", quantity)
+                        .setSql("queued_stock = GREATEST(queued_stock - {0}, 0)", quantity)
+                        .set("updated_at", LocalDateTime.now(ZoneOffset.UTC)).eq("campaign_id", campaignId));
+    }
+
+    @Override
+    public boolean markTokenUsed(String token) {
+        return tokenMapper.update(null, new UpdateWrapper<FlashSaleTokenEntity>().set("used", true)
+                .set("updated_at", LocalDateTime.now(ZoneOffset.UTC)).eq("token", token).eq("used", false)) == 1;
+    }
+
+    @Override
+    public void unmarkTokenUsed(String token) {
+        tokenMapper.update(null, new UpdateWrapper<FlashSaleTokenEntity>().set("used", false)
+                .set("updated_at", LocalDateTime.now(ZoneOffset.UTC)).eq("token", token));
     }
 
     @Override
@@ -108,25 +131,27 @@ public class MybatisPlusFlashSaleRepository implements FlashSaleRepository {
         try {
             tokenMapper.insert(entity);
         } catch (DuplicateKeyException ex) {
-            tokenMapper.update(null, new UpdateWrapper<FlashSaleTokenEntity>()
-                    .set("used", entity.getUsed())
-                    .set("updated_at", entity.getUpdatedAt())
-                    .eq("token_id", entity.getTokenId()));
+            tokenMapper.update(null, new UpdateWrapper<FlashSaleTokenEntity>().set("used", entity.getUsed())
+                    .set("updated_at", entity.getUpdatedAt()).eq("token_id", entity.getTokenId()));
         }
         return token;
     }
 
     @Override
+    public Optional<FlashSaleToken> findTokenById(long tokenId) {
+        return Optional.ofNullable(tokenMapper.selectById(tokenId)).map(this::toDomain);
+    }
+
+    @Override
     public Optional<FlashSaleToken> findToken(String token) {
-        return Optional.ofNullable(tokenMapper.selectOne(
-                new QueryWrapper<FlashSaleTokenEntity>().eq("token", token))).map(this::toDomain);
+        return Optional.ofNullable(tokenMapper.selectOne(new QueryWrapper<FlashSaleTokenEntity>().eq("token", token)))
+                .map(this::toDomain);
     }
 
     @Override
     public int countTokensByUser(long campaignId, long userId) {
-        Long count = tokenMapper.selectCount(new QueryWrapper<FlashSaleTokenEntity>()
-                .eq("campaign_id", campaignId)
-                .eq("user_id", userId));
+        Long count = tokenMapper.selectCount(
+                new QueryWrapper<FlashSaleTokenEntity>().eq("campaign_id", campaignId).eq("user_id", userId));
         return count.intValue();
     }
 
@@ -136,12 +161,24 @@ public class MybatisPlusFlashSaleRepository implements FlashSaleRepository {
         try {
             orderRequestMapper.insert(entity);
         } catch (DuplicateKeyException ex) {
-            orderRequestMapper.update(null, new UpdateWrapper<FlashSaleOrderRequestEntity>()
-                    .set("status", entity.getStatus())
-                    .set("updated_at", entity.getUpdatedAt())
-                    .eq("request_id", entity.getRequestId()));
+            orderRequestMapper.update(null,
+                    new UpdateWrapper<FlashSaleOrderRequestEntity>().set("status", entity.getStatus())
+                            .set("updated_at", entity.getUpdatedAt()).eq("request_id", entity.getRequestId()));
         }
         return request;
+    }
+
+    @Override
+    public void deleteOrderRequest(long requestId) {
+        orderRequestMapper.deleteById(requestId);
+    }
+
+    @Override
+    public Optional<FlashSaleOrderRequest> findOrderRequestByToken(String token) {
+        return Optional
+                .ofNullable(orderRequestMapper
+                        .selectOne(new QueryWrapper<FlashSaleOrderRequestEntity>().eq("token", token)))
+                .map(this::toDomain);
     }
 
     @Override
@@ -152,17 +189,14 @@ public class MybatisPlusFlashSaleRepository implements FlashSaleRepository {
     @Override
     public List<FlashSaleOrderRequest> findQueuedRequests(long campaignId, int limit) {
         return orderRequestMapper.selectList(new QueryWrapper<FlashSaleOrderRequestEntity>()
-                .eq("campaign_id", campaignId)
-                .eq("status", FlashSaleRequestStatus.QUEUED.name())
-                .orderByAsc("created_at", "request_id")
-                .last("LIMIT " + limit)).stream().map(this::toDomain).toList();
+                .eq("campaign_id", campaignId).eq("status", FlashSaleRequestStatus.QUEUED.name())
+                .orderByAsc("created_at", "request_id").last("LIMIT " + limit)).stream().map(this::toDomain).toList();
     }
 
     @Override
     public int countQueuedRequests(long campaignId) {
         Long count = orderRequestMapper.selectCount(new QueryWrapper<FlashSaleOrderRequestEntity>()
-                .eq("campaign_id", campaignId)
-                .eq("status", FlashSaleRequestStatus.QUEUED.name()));
+                .eq("campaign_id", campaignId).eq("status", FlashSaleRequestStatus.QUEUED.name()));
         return count.intValue();
     }
 

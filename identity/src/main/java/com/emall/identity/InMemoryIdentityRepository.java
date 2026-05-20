@@ -44,6 +44,11 @@ class InMemoryIdentityRepository implements IdentityRepository {
     }
 
     @Override
+    public Optional<DeviceSession> findSessionByAccessToken(String accessToken) {
+        return sessions.values().stream().filter(session -> session.accessToken().equals(accessToken)).findFirst();
+    }
+
+    @Override
     public PermissionGrant saveGrant(PermissionGrant grant) {
         grants.put(grant.grantId(), grant);
         return grant;

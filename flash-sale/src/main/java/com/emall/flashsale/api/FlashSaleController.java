@@ -1,6 +1,8 @@
 package com.emall.flashsale.api;
 
 import com.emall.common.api.ApiResponse;
+import com.emall.common.idempotency.IdempotencyHeaders;
+import com.emall.common.trust.ClientTrustContext;
 import com.emall.flashsale.domain.CampaignStatus;
 import com.emall.flashsale.domain.FlashSaleCampaign;
 import com.emall.flashsale.domain.FlashSaleOrderRequest;
@@ -20,6 +22,7 @@ import org.springframework.web.bind.annotation.PatchMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestHeader;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.ResponseStatus;
@@ -66,14 +69,34 @@ public class FlashSaleController {
     @PostMapping("/campaigns/{campaignId}/tokens")
     @ResponseStatus(HttpStatus.CREATED)
     public ApiResponse<FlashSaleToken> issueToken(@PathVariable long campaignId,
-            @Valid @RequestBody IssueTokenRequest request) {
-        return ApiResponse.ok(flashSaleService.issueToken(campaignId, request.userId(), request.quantity()));
+            @Valid @RequestBody IssueTokenRequest request,
+            @RequestHeader(value = "Authorization", required = false) String authorization,
+            @RequestHeader(value = "X-Account-Id", required = false) Long accountId,
+            @RequestHeader(value = "X-Device-Id", required = false) String deviceId,
+            @RequestHeader(value = "X-Client-Channel", required = false) String channel,
+            @RequestHeader(value = "X-Forwarded-For", required = false) String forwardedFor,
+            @RequestHeader(value = "X-Real-IP", required = false) String realIp,
+            @RequestHeader(value = IdempotencyHeaders.IDEMPOTENCY_KEY, required = false) String idempotencyKey) {
+        ClientTrustContext trustContext = ClientTrustContext.fromBearerHeader(accountId, authorization, deviceId,
+                firstPresent(forwardedFor, realIp), channel);
+        return ApiResponse.ok(flashSaleService.issueToken(firstPresent(request.requestId(), idempotencyKey), campaignId,
+                request.userId(), request.quantity(), trustContext));
     }
 
     @PostMapping("/orders")
     @ResponseStatus(HttpStatus.ACCEPTED)
-    public ApiResponse<FlashSaleOrderRequest> enqueueOrder(@Valid @RequestBody EnqueueOrderRequest request) {
-        return ApiResponse.ok(flashSaleService.enqueueOrder(request.token()));
+    public ApiResponse<FlashSaleOrderRequest> enqueueOrder(@Valid @RequestBody EnqueueOrderRequest request,
+            @RequestHeader(value = "Authorization", required = false) String authorization,
+            @RequestHeader(value = "X-Account-Id", required = false) Long accountId,
+            @RequestHeader(value = "X-Device-Id", required = false) String deviceId,
+            @RequestHeader(value = "X-Client-Channel", required = false) String channel,
+            @RequestHeader(value = "X-Forwarded-For", required = false) String forwardedFor,
+            @RequestHeader(value = "X-Real-IP", required = false) String realIp,
+            @RequestHeader(value = IdempotencyHeaders.IDEMPOTENCY_KEY, required = false) String idempotencyKey) {
+        ClientTrustContext trustContext = ClientTrustContext.fromBearerHeader(accountId, authorization, deviceId,
+                firstPresent(forwardedFor, realIp), channel);
+        return ApiResponse.ok(flashSaleService.enqueueOrder(firstPresent(request.requestId(), idempotencyKey),
+                request.token(), trustContext));
     }
 
     @GetMapping("/orders/{requestId}")
@@ -99,9 +122,13 @@ public class FlashSaleController {
     public record PreallocateStockRequest(@Positive int totalStock) {
     }
 
-    public record IssueTokenRequest(@Positive long userId, @Positive int quantity) {
+    public record IssueTokenRequest(String requestId, @Positive long userId, @Positive int quantity) {
     }
 
-    public record EnqueueOrderRequest(@NotBlank String token) {
+    public record EnqueueOrderRequest(String requestId, @NotBlank String token) {
+    }
+
+    private String firstPresent(String first, String second) {
+        return first == null || first.isBlank() ? second : first;
     }
 }

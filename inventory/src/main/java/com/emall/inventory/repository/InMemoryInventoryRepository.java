@@ -60,9 +60,101 @@ public class InMemoryInventoryRepository implements InventoryRepository {
     }
 
     @Override
+    public boolean reserveItem(long skuId, int quantity) {
+        AtomicFlag updated = new AtomicFlag();
+        items.computeIfPresent(skuId, (key, item) -> {
+            if (item.available() < quantity) {
+                return item;
+            }
+            updated.mark();
+            return item.reserve(quantity);
+        });
+        return updated.value();
+    }
+
+    @Override
+    public boolean confirmItem(long skuId, int quantity) {
+        AtomicFlag updated = new AtomicFlag();
+        items.computeIfPresent(skuId, (key, item) -> {
+            if (item.reserved() < quantity) {
+                return item;
+            }
+            updated.mark();
+            return item.confirm(quantity);
+        });
+        return updated.value();
+    }
+
+    @Override
+    public boolean releaseItem(long skuId, int quantity) {
+        AtomicFlag updated = new AtomicFlag();
+        items.computeIfPresent(skuId, (key, item) -> {
+            if (item.reserved() < quantity) {
+                return item;
+            }
+            updated.mark();
+            return item.release(quantity);
+        });
+        return updated.value();
+    }
+
+    @Override
+    public boolean reserveBucket(long skuId, int bucketNo, int quantity) {
+        AtomicFlag updated = new AtomicFlag();
+        buckets.computeIfPresent(bucketKey(skuId, bucketNo), (key, bucket) -> {
+            if (bucket.available() < quantity) {
+                return bucket;
+            }
+            updated.mark();
+            return bucket.reserve(quantity);
+        });
+        return updated.value();
+    }
+
+    @Override
+    public boolean confirmBucket(long skuId, int bucketNo, int quantity) {
+        AtomicFlag updated = new AtomicFlag();
+        buckets.computeIfPresent(bucketKey(skuId, bucketNo), (key, bucket) -> {
+            if (bucket.reserved() < quantity) {
+                return bucket;
+            }
+            updated.mark();
+            return bucket.confirm(quantity);
+        });
+        return updated.value();
+    }
+
+    @Override
+    public boolean releaseBucket(long skuId, int bucketNo, int quantity) {
+        AtomicFlag updated = new AtomicFlag();
+        buckets.computeIfPresent(bucketKey(skuId, bucketNo), (key, bucket) -> {
+            if (bucket.reserved() < quantity) {
+                return bucket;
+            }
+            updated.mark();
+            return bucket.release(quantity);
+        });
+        return updated.value();
+    }
+
+    @Override
     public InventoryReservation saveReservation(InventoryReservation reservation) {
         reservations.put(reservation.requestId(), reservation);
         return reservation;
+    }
+
+    @Override
+    public boolean updateReservationStatus(String requestId, ReservationStatus expectedStatus,
+            InventoryReservation reservation) {
+        AtomicFlag updated = new AtomicFlag();
+        reservations.computeIfPresent(requestId, (key, existing) -> {
+            if (existing.status() != expectedStatus) {
+                return existing;
+            }
+            updated.mark();
+            return reservation;
+        });
+        return updated.value();
     }
 
     @Override
@@ -79,5 +171,17 @@ public class InMemoryInventoryRepository implements InventoryRepository {
 
     private String bucketKey(long skuId, int bucketNo) {
         return skuId + ":" + bucketNo;
+    }
+
+    private static final class AtomicFlag {
+        private boolean value;
+
+        void mark() {
+            value = true;
+        }
+
+        boolean value() {
+            return value;
+        }
     }
 }

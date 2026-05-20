@@ -56,4 +56,20 @@ class MybatisPlusTrafficRepository implements TrafficRepository {
     public List<TrafficShift> findShifts() {
         return trafficMapper.findShifts();
     }
+
+    @Override
+    public TrafficControlRule saveControlRule(TrafficControlRule rule) {
+        trafficMapper.saveControlRule(rule);
+        return rule;
+    }
+
+    @Override
+    public Optional<TrafficControlRule> findControlRule(long ruleId) {
+        return Optional.ofNullable(trafficMapper.findControlRule(ruleId));
+    }
+
+    @Override
+    public List<TrafficControlRule> findControlRules() {
+        return trafficMapper.findControlRules();
+    }
 }

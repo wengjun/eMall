@@ -1,0 +1,21 @@
+CREATE TABLE outbox_event (
+    event_id VARCHAR(128) NOT NULL,
+    aggregate_type VARCHAR(64) NOT NULL,
+    aggregate_id VARCHAR(128) NOT NULL,
+    event_type VARCHAR(128) NOT NULL,
+    shard_id INT NOT NULL DEFAULT 0,
+    payload TEXT NOT NULL,
+    status VARCHAR(32) NOT NULL,
+    retry_count INT NOT NULL,
+    next_retry_at TIMESTAMP(6) NOT NULL,
+    claimed_by VARCHAR(128),
+    claimed_until TIMESTAMP(6),
+    published_at TIMESTAMP(6),
+    error_code VARCHAR(64),
+    last_error VARCHAR(512),
+    created_at TIMESTAMP(6) NOT NULL,
+    updated_at TIMESTAMP(6) NOT NULL,
+    PRIMARY KEY (event_id),
+    KEY idx_outbox_publishable (status, next_retry_at, created_at),
+    KEY idx_outbox_claim (status, shard_id, next_retry_at, claimed_until, created_at)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;

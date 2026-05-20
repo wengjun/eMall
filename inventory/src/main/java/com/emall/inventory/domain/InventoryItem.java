@@ -2,12 +2,12 @@ package com.emall.inventory.domain;
 
 import java.time.Instant;
 
-public record InventoryItem(long skuId, int total, int reserved, int sold, Instant updatedAt) {
-    public int available() {
+public record InventoryItem(long skuId, long total, long reserved, long sold, Instant updatedAt) {
+    public long available() {
         return total - reserved - sold;
     }
 
-    public InventoryItem add(int quantity) {
+    public InventoryItem add(long quantity) {
         return new InventoryItem(skuId, total + quantity, reserved, sold, Instant.now());
     }
 

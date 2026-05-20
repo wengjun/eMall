@@ -1,5 +1,6 @@
 package com.emall.openapi;
 
+import java.time.Instant;
 import java.time.LocalDate;
 import java.util.List;
 import org.apache.ibatis.annotations.Insert;
@@ -11,24 +12,28 @@ import org.apache.ibatis.annotations.Select;
 interface OpenApiMapper {
     @Insert("""
             INSERT INTO openapi_app
-                (app_id, merchant_id, app_key, secret_hash, name, scopes, daily_quota, active,
+                (app_id, merchant_id, app_key, secret_hash, secret_ciphertext, name, scopes, daily_quota, active,
                 created_at, updated_at)
-            VALUES (#{app.appId}, #{app.merchantId}, #{app.appKey}, #{app.secretHash}, #{app.name},
-                #{app.scopes}, #{app.dailyQuota}, #{app.active}, #{app.createdAt}, #{app.updatedAt})
-            ON DUPLICATE KEY UPDATE name = VALUES(name), scopes = VALUES(scopes),
+            VALUES (#{app.appId}, #{app.merchantId}, #{app.appKey}, #{app.secretHash},
+                #{app.secretCiphertext}, #{app.name}, #{app.scopes}, #{app.dailyQuota}, #{app.active},
+                #{app.createdAt}, #{app.updatedAt})
+            ON DUPLICATE KEY UPDATE secret_hash = VALUES(secret_hash),
+                secret_ciphertext = VALUES(secret_ciphertext), name = VALUES(name), scopes = VALUES(scopes),
                 daily_quota = VALUES(daily_quota), active = VALUES(active), updated_at = VALUES(updated_at)
             """)
     int saveApp(@Param("app") OpenApiApp app);
 
     @Select("""
-            SELECT app_id, merchant_id, app_key, secret_hash, name, scopes, daily_quota, active, created_at, updated_at
+            SELECT app_id, merchant_id, app_key, secret_hash, secret_ciphertext, name, scopes, daily_quota, active,
+                created_at, updated_at
             FROM openapi_app
             WHERE app_key = #{appKey}
             """)
     OpenApiApp findAppByKey(@Param("appKey") String appKey);
 
     @Select("""
-            SELECT app_id, merchant_id, app_key, secret_hash, name, scopes, daily_quota, active, created_at, updated_at
+            SELECT app_id, merchant_id, app_key, secret_hash, secret_ciphertext, name, scopes, daily_quota, active,
+                created_at, updated_at
             FROM openapi_app
             WHERE app_id = #{appId}
             """)
@@ -49,6 +54,13 @@ interface OpenApiMapper {
             WHERE app_key = #{appKey} AND usage_date = #{usageDate}
             """)
     ApiQuotaUsage findQuota(@Param("appKey") String appKey, @Param("usageDate") LocalDate usageDate);
+
+    @Insert("""
+            INSERT IGNORE INTO openapi_nonce (app_key, nonce, request_path, expires_at, used_at)
+            VALUES (#{appKey}, #{nonce}, #{requestPath}, #{expiresAt}, CURRENT_TIMESTAMP(6))
+            """)
+    int saveNonceIfAbsent(@Param("appKey") String appKey, @Param("nonce") String nonce,
+            @Param("requestPath") String requestPath, @Param("expiresAt") Instant expiresAt);
 
     @Insert("""
             INSERT INTO openapi_webhook_subscription

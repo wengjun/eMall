@@ -54,6 +54,18 @@ public class InMemoryFlashSaleRepository implements FlashSaleRepository {
     }
 
     @Override
+    public synchronized void releaseTokenStock(long campaignId, int quantity) {
+        FlashSaleStock stock = stocks.get(campaignId);
+        if (stock == null) {
+            return;
+        }
+        stocks.put(campaignId,
+                new FlashSaleStock(stock.campaignId(), stock.skuId(), stock.totalStock(),
+                        stock.availableStock() + quantity, Math.max(0, stock.tokenReservedStock() - quantity),
+                        stock.queuedStock(), stock.soldStock(), stock.updatedAt()));
+    }
+
+    @Override
     public synchronized boolean moveTokenStockToQueue(long campaignId, int quantity) {
         FlashSaleStock stock = stocks.get(campaignId);
         if (stock == null || stock.tokenReservedStock() < quantity) {
@@ -64,9 +76,49 @@ public class InMemoryFlashSaleRepository implements FlashSaleRepository {
     }
 
     @Override
+    public synchronized void releaseQueuedStock(long campaignId, int quantity) {
+        FlashSaleStock stock = stocks.get(campaignId);
+        if (stock == null) {
+            return;
+        }
+        stocks.put(campaignId,
+                new FlashSaleStock(stock.campaignId(), stock.skuId(), stock.totalStock(), stock.availableStock(),
+                        stock.tokenReservedStock() + quantity, Math.max(0, stock.queuedStock() - quantity),
+                        stock.soldStock(), stock.updatedAt()));
+    }
+
+    @Override
+    public boolean markTokenUsed(String token) {
+        AtomicFlag updated = new AtomicFlag();
+        tokens.computeIfPresent(token, (key, existing) -> {
+            if (existing.used()) {
+                return existing;
+            }
+            updated.mark();
+            return existing.use();
+        });
+        return updated.value();
+    }
+
+    @Override
+    public void unmarkTokenUsed(String token) {
+        tokens.computeIfPresent(token,
+                (key, existing) -> existing.used()
+                        ? new FlashSaleToken(existing.tokenId(), existing.campaignId(), existing.userId(),
+                                existing.skuId(), existing.quantity(), existing.token(), existing.expiresAt(), false,
+                                existing.createdAt(), existing.updatedAt())
+                        : existing);
+    }
+
+    @Override
     public FlashSaleToken saveToken(FlashSaleToken token) {
         tokens.put(token.token(), token);
         return token;
+    }
+
+    @Override
+    public Optional<FlashSaleToken> findTokenById(long tokenId) {
+        return tokens.values().stream().filter(token -> token.tokenId() == tokenId).findFirst();
     }
 
     @Override
@@ -87,6 +139,16 @@ public class InMemoryFlashSaleRepository implements FlashSaleRepository {
     }
 
     @Override
+    public void deleteOrderRequest(long requestId) {
+        requests.remove(requestId);
+    }
+
+    @Override
+    public Optional<FlashSaleOrderRequest> findOrderRequestByToken(String token) {
+        return requests.values().stream().filter(request -> request.token().equals(token)).findFirst();
+    }
+
+    @Override
     public Optional<FlashSaleOrderRequest> findOrderRequest(long requestId) {
         return Optional.ofNullable(requests.get(requestId));
     }
@@ -104,5 +166,17 @@ public class InMemoryFlashSaleRepository implements FlashSaleRepository {
     public int countQueuedRequests(long campaignId) {
         return (int) requests.values().stream().filter(request -> request.campaignId() == campaignId)
                 .filter(request -> request.status() == FlashSaleRequestStatus.QUEUED).count();
+    }
+
+    private static final class AtomicFlag {
+        private boolean value;
+
+        void mark() {
+            value = true;
+        }
+
+        boolean value() {
+            return value;
+        }
     }
 }

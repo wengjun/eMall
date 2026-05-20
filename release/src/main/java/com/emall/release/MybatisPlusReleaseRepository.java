@@ -77,4 +77,20 @@ class MybatisPlusReleaseRepository implements ReleaseRepository {
     public List<ReplayPlan> findReplays() {
         return releaseMapper.findReplays();
     }
+
+    @Override
+    public ReleaseGuardRecord saveGuard(ReleaseGuardRecord guard) {
+        releaseMapper.saveGuard(guard);
+        return guard;
+    }
+
+    @Override
+    public List<ReleaseGuardRecord> findGuards(long rolloutId) {
+        return releaseMapper.findGuards(rolloutId);
+    }
+
+    @Override
+    public List<ReleaseGuardRecord> findGuards() {
+        return releaseMapper.findAllGuards();
+    }
 }

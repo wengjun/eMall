@@ -7,6 +7,8 @@ import java.util.Optional;
 public interface CartRepository {
     CartItem save(CartItem item);
 
+    Optional<CartItem> addQuantity(CartItem item, int maxQuantity);
+
     Optional<CartItem> find(long userId, long skuId);
 
     List<CartItem> findByUserId(long userId);

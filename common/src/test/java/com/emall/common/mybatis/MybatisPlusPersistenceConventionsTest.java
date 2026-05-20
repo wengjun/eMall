@@ -16,46 +16,37 @@ class MybatisPlusPersistenceConventionsTest {
     @Test
     void mappersAndRepositoriesShouldNotUseWeakRowMaps() throws IOException {
         List<Path> violations = javaFiles().filter(MybatisPlusPersistenceConventionsTest::isMapperOrRepository)
-                .filter(MybatisPlusPersistenceConventionsTest::usesWeakRowMaps)
-                .toList();
+                .filter(MybatisPlusPersistenceConventionsTest::usesWeakRowMaps).toList();
 
         assertThat(violations).isEmpty();
     }
 
     @Test
     void mappersShouldUseExplicitColumnsInsteadOfSelectStar() throws IOException {
-        List<Path> violations = javaFiles()
-                .filter(path -> path.getFileName().toString().endsWith("Mapper.java"))
-                .filter(path -> read(path).contains("SELECT *"))
-                .toList();
+        List<Path> violations = javaFiles().filter(path -> path.getFileName().toString().endsWith("Mapper.java"))
+                .filter(path -> read(path).contains("SELECT *")).toList();
 
         assertThat(violations).isEmpty();
     }
 
     @Test
     void timestampEntitiesShouldDeclareMybatisPlusFillStrategy() throws IOException {
-        List<Path> violations = javaFiles()
-                .filter(path -> path.getFileName().toString().endsWith("Entity.java"))
-                .filter(MybatisPlusPersistenceConventionsTest::missingFillStrategy)
-                .toList();
+        List<Path> violations = javaFiles().filter(path -> path.getFileName().toString().endsWith("Entity.java"))
+                .filter(MybatisPlusPersistenceConventionsTest::missingFillStrategy).toList();
 
         assertThat(violations).isEmpty();
     }
 
     @Test
     void businessPersistenceShouldNotUseJdbcOrOdbcPrimitives() throws IOException {
-        List<Path> violations = javaFiles()
-                .filter(MybatisPlusPersistenceConventionsTest::isBusinessPersistenceSource)
-                .filter(MybatisPlusPersistenceConventionsTest::usesJdbcOrOdbcPrimitive)
-                .toList();
+        List<Path> violations = javaFiles().filter(MybatisPlusPersistenceConventionsTest::isBusinessPersistenceSource)
+                .filter(MybatisPlusPersistenceConventionsTest::usesJdbcOrOdbcPrimitive).toList();
 
         assertThat(violations).isEmpty();
     }
 
     private static Stream<Path> javaFiles() throws IOException {
-        return Files.walk(PROJECT_ROOT)
-                .filter(Files::isRegularFile)
-                .filter(path -> path.toString().endsWith(".java"))
+        return Files.walk(PROJECT_ROOT).filter(Files::isRegularFile).filter(path -> path.toString().endsWith(".java"))
                 .filter(path -> !normalized(path).contains("/target/"))
                 .filter(path -> normalized(path).contains("/src/main/java/"));
     }
@@ -82,16 +73,10 @@ class MybatisPlusPersistenceConventionsTest {
     private static boolean usesJdbcOrOdbcPrimitive(Path path) {
         String source = read(path);
         String normalizedPath = normalized(path).toLowerCase(Locale.ROOT);
-        return normalizedPath.contains("jdbc")
-                || normalizedPath.contains("odbc")
-                || source.contains("JdbcTemplate")
-                || source.contains("DriverManager")
-                || source.contains("PreparedStatement")
-                || source.contains("ResultSet")
-                || source.contains("RowMapper")
-                || source.contains("java.sql.")
-                || source.contains("javax.sql.DataSource")
-                || source.contains("org.springframework.jdbc")
+        return normalizedPath.contains("jdbc") || normalizedPath.contains("odbc") || source.contains("JdbcTemplate")
+                || source.contains("DriverManager") || source.contains("PreparedStatement")
+                || source.contains("ResultSet") || source.contains("RowMapper") || source.contains("java.sql.")
+                || source.contains("javax.sql.DataSource") || source.contains("org.springframework.jdbc")
                 || source.contains("ODBC");
     }
 

@@ -14,7 +14,7 @@ import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean
 import org.springframework.context.annotation.Bean;
 
 @AutoConfiguration(before = TaskLockAutoConfiguration.class)
-@ConditionalOnClass({ BaseMapper.class, SqlSessionTemplate.class })
+@ConditionalOnClass({BaseMapper.class, SqlSessionTemplate.class})
 public class MybatisPlusTaskLockAutoConfiguration {
     @Bean
     @ConditionalOnMissingBean
@@ -27,8 +27,8 @@ public class MybatisPlusTaskLockAutoConfiguration {
     @ConditionalOnMissingBean(DistributedTaskLock.class)
     public DistributedTaskLock mybatisPlusDistributedTaskLock(SqlSessionTemplate sqlSessionTemplate, Clock clock) {
         registerTaskLockMapper(sqlSessionTemplate);
-        return new MybatisPlusDistributedTaskLock(
-                sqlSessionTemplate.getMapper(ScheduledTaskLockMapper.class), clock, ownerId());
+        return new MybatisPlusDistributedTaskLock(sqlSessionTemplate.getMapper(ScheduledTaskLockMapper.class), clock,
+                ownerId());
     }
 
     private void registerTaskLockMapper(SqlSessionTemplate sqlSessionTemplate) {

@@ -85,10 +85,9 @@ class MybatisPlusDistributedTaskLockTest {
         when(sqlSessionTemplate.getMapper(ScheduledTaskLockMapper.class)).thenReturn(taskLockMapper);
 
         new ApplicationContextRunner()
-                .withConfiguration(AutoConfigurations.of(
-                        MybatisPlusTaskLockAutoConfiguration.class, TaskLockAutoConfiguration.class))
-                .withBean(SqlSessionTemplate.class, () -> sqlSessionTemplate)
-                .run(context -> {
+                .withConfiguration(AutoConfigurations.of(MybatisPlusTaskLockAutoConfiguration.class,
+                        TaskLockAutoConfiguration.class))
+                .withBean(SqlSessionTemplate.class, () -> sqlSessionTemplate).run(context -> {
                     assertThat(context).hasSingleBean(DistributedTaskLock.class);
                     assertThat(context.getBean(DistributedTaskLock.class))
                             .isInstanceOf(MybatisPlusDistributedTaskLock.class);

@@ -16,6 +16,10 @@ class ReleaseMetrics {
                     .register(registry);
             Gauge.builder("emall_release_open_replays", releaseService, service -> service.summary().openReplays())
                     .register(registry);
+            Gauge.builder("emall_release_guard_pauses", releaseService,
+                    service -> service.guardSummary().pausedGuards()).register(registry);
+            Gauge.builder("emall_release_guard_rollbacks", releaseService,
+                    service -> service.guardSummary().rollbackGuards()).register(registry);
         };
     }
 }

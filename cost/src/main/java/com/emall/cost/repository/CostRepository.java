@@ -5,6 +5,7 @@ import com.emall.cost.domain.CostBudget;
 import com.emall.cost.domain.CostOptimizationAction;
 import com.emall.cost.domain.CostSignal;
 import com.emall.cost.domain.CostSignalType;
+import com.emall.cost.domain.ServiceCapacityBaseline;
 import java.util.List;
 import java.util.Optional;
 
@@ -25,4 +26,8 @@ public interface CostRepository {
             CostActionType actionType);
 
     List<CostOptimizationAction> findActiveActionsByService(String serviceName);
+
+    ServiceCapacityBaseline saveCapacityBaseline(ServiceCapacityBaseline baseline);
+
+    Optional<ServiceCapacityBaseline> findLatestCapacityBaseline(String serviceName);
 }

@@ -1,0 +1,20 @@
+CREATE TABLE service_capacity_baseline (
+    baseline_id BIGINT NOT NULL,
+    service_name VARCHAR(64) NOT NULL,
+    safe_qps INT NOT NULL,
+    peak_qps INT NOT NULL,
+    current_qps INT NOT NULL,
+    current_replicas INT NOT NULL,
+    max_replicas INT NOT NULL,
+    cpu_utilization DECIMAL(10, 6) NOT NULL,
+    memory_utilization DECIMAL(10, 6) NOT NULL,
+    monthly_cost DECIMAL(18, 6) NOT NULL,
+    slo_protected BOOLEAN NOT NULL,
+    risk_level VARCHAR(32) NOT NULL,
+    recommendation VARCHAR(512) NOT NULL,
+    observed_at TIMESTAMP(6) NOT NULL,
+    created_at TIMESTAMP(6) NOT NULL,
+    PRIMARY KEY (baseline_id),
+    KEY idx_capacity_baseline_service_time (service_name, observed_at),
+    KEY idx_capacity_baseline_risk (risk_level, observed_at)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;

@@ -53,6 +53,17 @@ class MybatisPlusDataWarehouseRepository implements DataWarehouseRepository {
     }
 
     @Override
+    public QualityAlert saveQualityAlert(QualityAlert alert) {
+        dataWarehouseMapper.saveQualityAlert(alert);
+        return alert;
+    }
+
+    @Override
+    public List<QualityAlert> findQualityAlerts() {
+        return dataWarehouseMapper.findQualityAlerts();
+    }
+
+    @Override
     public LineageEdge saveLineage(LineageEdge edge) {
         dataWarehouseMapper.saveLineage(edge);
         return edge;
@@ -61,5 +72,16 @@ class MybatisPlusDataWarehouseRepository implements DataWarehouseRepository {
     @Override
     public List<LineageEdge> findLineage() {
         return dataWarehouseMapper.findLineage();
+    }
+
+    @Override
+    public FieldLineage saveFieldLineage(FieldLineage lineage) {
+        dataWarehouseMapper.saveFieldLineage(lineage);
+        return lineage;
+    }
+
+    @Override
+    public List<FieldLineage> findFieldLineage() {
+        return dataWarehouseMapper.findFieldLineage();
     }
 }

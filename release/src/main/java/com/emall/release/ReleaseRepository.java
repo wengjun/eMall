@@ -27,4 +27,10 @@ interface ReleaseRepository {
     Optional<ReplayPlan> findReplay(long replayId);
 
     List<ReplayPlan> findReplays();
+
+    ReleaseGuardRecord saveGuard(ReleaseGuardRecord guard);
+
+    List<ReleaseGuardRecord> findGuards(long rolloutId);
+
+    List<ReleaseGuardRecord> findGuards();
 }

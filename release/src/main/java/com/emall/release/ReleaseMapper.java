@@ -98,4 +98,36 @@ interface ReleaseMapper {
             FROM replay_plan
             """)
     List<ReplayPlan> findReplays();
+
+    @Insert("""
+            INSERT INTO release_guard_record
+                (guard_id, rollout_id, service_name, stage, decision, slo_passed, alerts_clear, capacity_ready,
+                 dependencies_healthy, error_rate, latency_p95_ms, business_success_rate, compensation_triggered,
+                 message_replay_checked, downstream_recovered, reason, created_at)
+            VALUES
+                (#{guard.guardId}, #{guard.rolloutId}, #{guard.serviceName}, #{guard.stage}, #{guard.decision},
+                 #{guard.sloPassed}, #{guard.alertsClear}, #{guard.capacityReady}, #{guard.dependenciesHealthy},
+                 #{guard.errorRate}, #{guard.latencyP95Ms}, #{guard.businessSuccessRate},
+                 #{guard.compensationTriggered}, #{guard.messageReplayChecked}, #{guard.downstreamRecovered},
+                 #{guard.reason}, #{guard.createdAt})
+            """)
+    int saveGuard(@Param("guard") ReleaseGuardRecord guard);
+
+    @Select("""
+            SELECT guard_id, rollout_id, service_name, stage, decision, slo_passed, alerts_clear, capacity_ready,
+                dependencies_healthy, error_rate, latency_p95_ms, business_success_rate, compensation_triggered,
+                message_replay_checked, downstream_recovered, reason, created_at
+            FROM release_guard_record
+            WHERE rollout_id = #{rolloutId}
+            ORDER BY created_at DESC
+            """)
+    List<ReleaseGuardRecord> findGuards(@Param("rolloutId") long rolloutId);
+
+    @Select("""
+            SELECT guard_id, rollout_id, service_name, stage, decision, slo_passed, alerts_clear, capacity_ready,
+                dependencies_healthy, error_rate, latency_p95_ms, business_success_rate, compensation_triggered,
+                message_replay_checked, downstream_recovered, reason, created_at
+            FROM release_guard_record
+            """)
+    List<ReleaseGuardRecord> findAllGuards();
 }

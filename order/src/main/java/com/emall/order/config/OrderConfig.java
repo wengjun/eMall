@@ -1,7 +1,7 @@
 package com.emall.order.config;
 
 import com.emall.common.id.SnowflakeIdGenerator;
-import com.emall.common.web.TraceIdClientHttpRequestInterceptor;
+import com.emall.common.web.OutboundHttpClientFactory;
 import com.emall.governance.recovery.AdaptiveRecoveryController;
 import com.emall.governance.recovery.AdaptiveRecoveryPolicy;
 import org.springframework.beans.factory.annotation.Value;
@@ -17,21 +17,21 @@ public class OrderConfig {
     }
 
     @Bean
-    RestClient inventoryRestClient(@Value("${emall.downstream.inventory-url}") String inventoryUrl) {
-        return RestClient.builder().baseUrl(inventoryUrl).requestInterceptor(new TraceIdClientHttpRequestInterceptor())
-                .build();
+    RestClient inventoryRestClient(OutboundHttpClientFactory httpClientFactory,
+            @Value("${emall.downstream.inventory-url}") String inventoryUrl) {
+        return httpClientFactory.restClient("inventory", inventoryUrl);
     }
 
     @Bean
-    RestClient pricingRestClient(@Value("${emall.downstream.pricing-url}") String pricingUrl) {
-        return RestClient.builder().baseUrl(pricingUrl).requestInterceptor(new TraceIdClientHttpRequestInterceptor())
-                .build();
+    RestClient pricingRestClient(OutboundHttpClientFactory httpClientFactory,
+            @Value("${emall.downstream.pricing-url}") String pricingUrl) {
+        return httpClientFactory.restClient("pricing", pricingUrl);
     }
 
     @Bean
-    RestClient marketingRestClient(@Value("${emall.downstream.marketing-url}") String marketingUrl) {
-        return RestClient.builder().baseUrl(marketingUrl).requestInterceptor(new TraceIdClientHttpRequestInterceptor())
-                .build();
+    RestClient marketingRestClient(OutboundHttpClientFactory httpClientFactory,
+            @Value("${emall.downstream.marketing-url}") String marketingUrl) {
+        return httpClientFactory.restClient("marketing", marketingUrl);
     }
 
     @Bean

@@ -29,16 +29,14 @@ public class MybatisPlusSearchRepository implements SearchRepository {
         try {
             searchDocumentMapper.insert(entity);
         } catch (DuplicateKeyException ex) {
-            searchDocumentMapper.update(null, new UpdateWrapper<SearchDocumentEntity>()
-                    .set("title", entity.getTitle())
-                    .set("category", entity.getCategory())
-                    .set("price", entity.getPrice())
-                    .set("tags", entity.getTags())
-                    .set("saleable", entity.getSaleable())
-                    .set("indexed_at", entity.getIndexedAt())
-                    .eq("sku_id", entity.getSkuId()));
+            searchDocumentMapper.update(null,
+                    new UpdateWrapper<SearchDocumentEntity>().set("title", entity.getTitle())
+                            .set("category", entity.getCategory()).set("price", entity.getPrice())
+                            .set("tags", entity.getTags()).set("saleable", entity.getSaleable())
+                            .set("event_version", entity.getVersion()).set("indexed_at", entity.getIndexedAt())
+                            .eq("sku_id", entity.getSkuId()).le("event_version", entity.getVersion()));
         }
-        return document;
+        return findBySkuId(document.skuId()).orElse(document);
     }
 
     @Override
@@ -49,11 +47,12 @@ public class MybatisPlusSearchRepository implements SearchRepository {
     @Override
     public List<SearchDocument> search(String keyword, int limit) {
         String pattern = keyword == null ? "" : keyword;
-        return searchDocumentMapper.selectList(new QueryWrapper<SearchDocumentEntity>()
-                .eq("saleable", true)
-                .and(query -> query.like("title", pattern).or().like("category", pattern).or().like("tags", pattern))
-                .orderByDesc("indexed_at")
-                .last("LIMIT " + limit)).stream().map(this::toDomain).toList();
+        return searchDocumentMapper
+                .selectList(new QueryWrapper<SearchDocumentEntity>().eq("saleable", true)
+                        .and(query -> query.like("title", pattern).or().like("category", pattern).or().like("tags",
+                                pattern))
+                        .orderByDesc("indexed_at").last("LIMIT " + limit))
+                .stream().map(this::toDomain).toList();
     }
 
     @Override
@@ -69,13 +68,15 @@ public class MybatisPlusSearchRepository implements SearchRepository {
         entity.setPrice(document.price());
         entity.setTags(serialize(document.tags()));
         entity.setSaleable(document.saleable());
+        entity.setVersion(document.version());
         entity.setIndexedAt(LocalDateTime.ofInstant(document.indexedAt(), ZoneOffset.UTC));
         return entity;
     }
 
     private SearchDocument toDomain(SearchDocumentEntity entity) {
         return new SearchDocument(entity.getSkuId(), entity.getTitle(), entity.getCategory(), entity.getPrice(),
-                deserialize(entity.getTags()), entity.getSaleable(), entity.getIndexedAt().toInstant(ZoneOffset.UTC));
+                deserialize(entity.getTags()), entity.getSaleable(), entity.getVersion(),
+                entity.getIndexedAt().toInstant(ZoneOffset.UTC));
     }
 
     private String serialize(Set<String> tags) {

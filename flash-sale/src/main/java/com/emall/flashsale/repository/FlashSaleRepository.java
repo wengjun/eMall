@@ -18,15 +18,29 @@ public interface FlashSaleRepository {
 
     boolean reserveTokenStock(long campaignId, int quantity);
 
+    void releaseTokenStock(long campaignId, int quantity);
+
     boolean moveTokenStockToQueue(long campaignId, int quantity);
 
+    void releaseQueuedStock(long campaignId, int quantity);
+
+    boolean markTokenUsed(String token);
+
+    void unmarkTokenUsed(String token);
+
     FlashSaleToken saveToken(FlashSaleToken token);
+
+    Optional<FlashSaleToken> findTokenById(long tokenId);
 
     Optional<FlashSaleToken> findToken(String token);
 
     int countTokensByUser(long campaignId, long userId);
 
     FlashSaleOrderRequest saveOrderRequest(FlashSaleOrderRequest request);
+
+    void deleteOrderRequest(long requestId);
+
+    Optional<FlashSaleOrderRequest> findOrderRequestByToken(String token);
 
     Optional<FlashSaleOrderRequest> findOrderRequest(long requestId);
 

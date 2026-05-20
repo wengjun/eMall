@@ -4,6 +4,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import java.math.BigDecimal;
+import java.time.Instant;
 import java.util.Map;
 import org.junit.jupiter.api.Test;
 
@@ -24,9 +25,8 @@ class IdempotencyContractIT {
                 null);
         ProductionHttpGate.postJson(baseUrl, "/api/inventory/" + skuId + "/stock", Map.of("quantity", 5), null);
 
-        Map<String, Object> orderRequest =
-                Map.of("requestId", "idem-order-" + suffix, "userId", userId, "skuId", skuId, "quantity", 1,
-                        "clientType", "APP", "deviceId", "app-device-" + suffix, "channel", "android-app");
+        Map<String, Object> orderRequest = Map.of("requestId", "idem-order-" + suffix, "userId", userId, "skuId", skuId,
+                "quantity", 1, "clientType", "APP", "deviceId", "app-device-" + suffix, "channel", "android-app");
         JsonNode firstOrder = ProductionHttpGate.postJson(baseUrl, "/api/orders", orderRequest, null);
         JsonNode secondOrder = ProductionHttpGate.postJson(baseUrl, "/api/orders", orderRequest, null);
         assertThat(firstOrder.path("data").path("clientType").asText()).isEqualTo("APP");
@@ -45,8 +45,13 @@ class IdempotencyContractIT {
                 .isEqualTo(firstPayment.path("data").path("paymentId").asLong());
 
         long paymentId = firstPayment.path("data").path("paymentId").asLong();
-        Map<String, Object> callbackRequest = Map.of("channelTradeNo", "idem-trade-" + suffix, "paidAmount",
-                firstOrder.path("data").path("payableAmount").decimalValue());
+        String channelTradeNo = "idem-trade-" + suffix;
+        BigDecimal paidAmount = firstOrder.path("data").path("payableAmount").decimalValue();
+        Instant timestamp = Instant.now();
+        String nonce = "idem-nonce-" + suffix;
+        Map<String, Object> callbackRequest = Map.of("channel", "mock", "channelTradeNo", channelTradeNo, "paidAmount",
+                paidAmount, "timestamp", timestamp, "nonce", nonce, "signature",
+                PaymentCallbackSignature.sign("mock", channelTradeNo, paymentId, paidAmount, timestamp, nonce));
         JsonNode firstCallback = ProductionHttpGate.postJson(baseUrl, "/api/payments/" + paymentId + "/callbacks",
                 callbackRequest, null);
         JsonNode secondCallback = ProductionHttpGate.postJson(baseUrl, "/api/payments/" + paymentId + "/callbacks",

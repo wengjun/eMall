@@ -85,6 +85,7 @@ public final class CheckoutLoadTestApplication {
             case READ_HEAVY -> sendReadHeavy(requestNo);
             case PAYMENT_CALLBACKS -> sendPaymentCallback(requestNo);
             case MQ_BACKLOG -> sendProductChange(requestNo);
+            case FLASH_SALE_HOTSPOT -> sendFlashSaleHotspot(requestNo);
         };
     }
 
@@ -145,6 +146,16 @@ public final class CheckoutLoadTestApplication {
         String title = "loadtest product title " + requestNo;
         return sendAsync(started, request("/api/products/" + options.skuId() + "/title")
                 .header("X-Device-Id", deviceId(requestNo)).method("PATCH", jsonBody(Map.of("title", title))));
+    }
+
+    private CompletableFuture<Result> sendFlashSaleHotspot(int requestNo) {
+        long started = System.nanoTime();
+        long campaignId = options.flashSaleCampaignId();
+        long userId = options.userId() + requestNo;
+        return sendAsync(started,
+                request("/api/flash-sales/campaigns/" + campaignId + "/tokens")
+                        .header("X-Device-Id", deviceId(requestNo)).header("X-Client-Channel", "flash-sale-hotspot")
+                        .POST(jsonBody(Map.of("userId", userId, "quantity", options.quantity()))));
     }
 
     private HttpRequest.Builder request(String path) {
@@ -208,13 +219,41 @@ public final class CheckoutLoadTestApplication {
         long success = results.stream().filter(Result::success).count();
         long failed = total - success;
         double errorRate = total == 0 ? 0.0 : (double) failed / total;
+        LoadTestReport report = buildReport(results, elapsed);
         System.out.printf("%s load test completed in %d ms%n", options.scenario().cliName(), elapsed.toMillis());
         System.out.printf("requests=%d, success=%d, failed=%d, errorRate=%.4f%n", total, success, failed, errorRate);
-        System.out.printf("p50=%d ms, p95=%d ms, p99=%d ms%n", percentile(latencies, 50), percentile(latencies, 95),
-                percentile(latencies, 99));
-        if (errorRate > options.maxErrorRate()) {
+        System.out.printf("p50=%d ms, p95=%d ms, p99=%d ms%n", report.p50Millis(), report.p95Millis(),
+                report.p99Millis());
+        System.out.printf("safeQps=%.2f, bottleneck=%s%n", report.safeQps(), report.bottleneck());
+        if (report.errorRate() > options.maxErrorRate()) {
             throw new IllegalStateException("error rate exceeded threshold " + options.maxErrorRate());
         }
+    }
+
+    private LoadTestReport buildReport(List<Result> results, Duration elapsed) {
+        List<Long> latencies = results.stream().map(Result::latencyMillis).sorted(Comparator.naturalOrder()).toList();
+        long total = results.size();
+        long success = results.stream().filter(Result::success).count();
+        long failed = total - success;
+        double elapsedSeconds = Math.max(0.001, elapsed.toNanos() / 1_000_000_000.0);
+        double errorRate = total == 0 ? 0.0 : (double) failed / total;
+        long p50 = percentile(latencies, 50);
+        long p95 = percentile(latencies, 95);
+        long p99 = percentile(latencies, 99);
+        String bottleneck = bottleneck(errorRate, p95);
+        double measuredQps = success / elapsedSeconds;
+        double safeQps = "none".equals(bottleneck) ? measuredQps : measuredQps * 0.8;
+        return new LoadTestReport(total, success, failed, errorRate, p50, p95, p99, safeQps, bottleneck);
+    }
+
+    private String bottleneck(double errorRate, long p95Millis) {
+        if (errorRate > options.maxErrorRate()) {
+            return "error-rate";
+        }
+        if (p95Millis > options.maxP95Millis()) {
+            return "latency-p95";
+        }
+        return "none";
     }
 
     private long percentile(List<Long> values, int percentile) {
@@ -257,7 +296,8 @@ public final class CheckoutLoadTestApplication {
         READ_HEAVY("read-heavy"),
         HOT_SKU("hot-sku"),
         PAYMENT_CALLBACKS("payment-callbacks"),
-        MQ_BACKLOG("mq-backlog");
+        MQ_BACKLOG("mq-backlog"),
+        FLASH_SALE_HOTSPOT("flash-sale-hotspot");
 
         private final String cliName;
 
@@ -285,10 +325,14 @@ public final class CheckoutLoadTestApplication {
         }
     }
 
+    private record LoadTestReport(long requests, long success, long failed, double errorRate, long p50Millis,
+            long p95Millis, long p99Millis, double safeQps, String bottleneck) {
+    }
+
     private record LoadTestOptions(String baseUrl, int ratePerSecond, Duration duration, int maxConcurrency,
             LoadScenario scenario, long userId, long skuId, long orderIdBase, int quantity, double maxErrorRate,
             boolean bootstrapData, int bootstrapStock, BigDecimal listPrice, BigDecimal salePrice, String currency,
-            String keyword, String paymentChannel) {
+            String keyword, String paymentChannel, long flashSaleCampaignId, long maxP95Millis) {
         static LoadTestOptions from(String[] args) {
             return new LoadTestOptions(value(args, 0, env("EMALL_BASE_URL", "http://localhost:8080")),
                     integer(args, 1, env("EMALL_LOAD_RATE", "100")),
@@ -304,7 +348,9 @@ public final class CheckoutLoadTestApplication {
                     Integer.parseInt(env("EMALL_LOAD_BOOTSTRAP_STOCK", "1000000")),
                     new BigDecimal(env("EMALL_LOAD_LIST_PRICE", "3999.00")),
                     new BigDecimal(env("EMALL_LOAD_SALE_PRICE", "3799.00")), env("EMALL_LOAD_CURRENCY", "CNY"),
-                    env("EMALL_LOAD_KEYWORD", "phone"), env("EMALL_LOAD_PAYMENT_CHANNEL", "loadtest"));
+                    env("EMALL_LOAD_KEYWORD", "phone"), env("EMALL_LOAD_PAYMENT_CHANNEL", "loadtest"),
+                    Long.parseLong(env("EMALL_FLASH_SALE_CAMPAIGN_ID", "90001")),
+                    Long.parseLong(env("EMALL_LOAD_MAX_P95_MS", "500")));
         }
 
         private static String value(String[] args, int index, String defaultValue) {

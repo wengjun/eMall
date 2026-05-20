@@ -30,6 +30,27 @@ class OpenApiServiceTest {
     }
 
     @Test
+    void authenticatesSignedRequestWithNonceScopeAndQuota() {
+        AppRegistration registration = service.registerApp(1001L, "seller-api", "order:create,order:read", 1);
+        long timestamp = Instant.now().getEpochSecond();
+        String signature = service.signatureFixture(registration.appSecret(), registration.app().appKey(),
+                "/open/orders", "nonce-2", timestamp);
+
+        ApiRequestAuthentication accepted = service.authenticateRequest(registration.app().appKey(), "/open/orders",
+                "nonce-2", timestamp, signature, "order:create");
+        ApiRequestAuthentication replayed = service.authenticateRequest(registration.app().appKey(), "/open/orders",
+                "nonce-2", timestamp, signature, "order:create");
+        String secondSignature = service.signatureFixture(registration.appSecret(), registration.app().appKey(),
+                "/open/orders", "nonce-3", timestamp);
+        ApiRequestAuthentication quotaExceeded = service.authenticateRequest(registration.app().appKey(),
+                "/open/orders", "nonce-3", timestamp, secondSignature, "order:create");
+
+        assertThat(accepted.allowed()).isTrue();
+        assertThat(replayed.reason()).isEqualTo("nonce-replayed");
+        assertThat(quotaExceeded.reason()).isEqualTo("quota-exceeded");
+    }
+
+    @Test
     void recordsWebhookSubscriptionAndDelivery() {
         AppRegistration registration = service.registerApp(1001L, "seller-api", "order:read", 100);
 

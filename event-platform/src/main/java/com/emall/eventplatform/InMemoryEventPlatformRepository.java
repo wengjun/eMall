@@ -11,6 +11,7 @@ import org.springframework.stereotype.Repository;
 @ConditionalOnProperty(name = "emall.storage", havingValue = "memory")
 class InMemoryEventPlatformRepository implements EventPlatformRepository {
     private final ConcurrentMap<Long, EventSchema> schemas = new ConcurrentHashMap<>();
+    private final ConcurrentMap<Long, EventFieldClassification> classifications = new ConcurrentHashMap<>();
     private final ConcurrentMap<Long, TrackingEvent> events = new ConcurrentHashMap<>();
     private final ConcurrentMap<Long, PipelineOffset> offsets = new ConcurrentHashMap<>();
     private final ConcurrentMap<Long, MetricMaterialization> materializations = new ConcurrentHashMap<>();
@@ -30,6 +31,24 @@ class InMemoryEventPlatformRepository implements EventPlatformRepository {
     @Override
     public List<EventSchema> findSchemas() {
         return List.copyOf(schemas.values());
+    }
+
+    @Override
+    public EventFieldClassification saveFieldClassification(EventFieldClassification classification) {
+        classifications.put(classification.classificationId(), classification);
+        return classification;
+    }
+
+    @Override
+    public List<EventFieldClassification> findFieldClassifications() {
+        return List.copyOf(classifications.values());
+    }
+
+    @Override
+    public List<EventFieldClassification> findFieldClassifications(String eventName, int version) {
+        return classifications.values().stream().filter(
+                classification -> classification.eventName().equals(eventName) && classification.version() == version)
+                .toList();
     }
 
     @Override

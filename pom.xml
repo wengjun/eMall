@@ -344,6 +344,7 @@
                 <module>reliability</module>
                 <module>release</module>
                 <module>platform-ops</module>
+                <module>migration-runner</module>
                 <module>smoke</module>
                 <module>loadtest</module>
             </modules>
@@ -422,11 +423,13 @@
                 <module>reliability</module>
                 <module>release</module>
                 <module>platform-ops</module>
+                <module>migration-runner</module>
             </modules>
         </profile>
         <profile>
             <id>tools</id>
             <modules>
+                <module>migration-runner</module>
                 <module>smoke</module>
                 <module>loadtest</module>
             </modules>

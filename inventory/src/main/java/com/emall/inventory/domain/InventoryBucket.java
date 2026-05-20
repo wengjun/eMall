@@ -2,12 +2,12 @@ package com.emall.inventory.domain;
 
 import java.time.Instant;
 
-public record InventoryBucket(long skuId, int bucketNo, int total, int reserved, int sold, Instant updatedAt) {
-    public int available() {
+public record InventoryBucket(long skuId, int bucketNo, long total, long reserved, long sold, Instant updatedAt) {
+    public long available() {
         return total - reserved - sold;
     }
 
-    public InventoryBucket add(int quantity) {
+    public InventoryBucket add(long quantity) {
         return new InventoryBucket(skuId, bucketNo, total + quantity, reserved, sold, Instant.now());
     }
 

@@ -1,5 +1,6 @@
 package com.emall.openapi;
 
+import java.time.Instant;
 import java.time.LocalDate;
 import java.util.List;
 import java.util.Optional;
@@ -13,6 +14,7 @@ import org.springframework.stereotype.Repository;
 class InMemoryOpenApiRepository implements OpenApiRepository {
     private final ConcurrentMap<String, OpenApiApp> apps = new ConcurrentHashMap<>();
     private final ConcurrentMap<String, ApiQuotaUsage> quotas = new ConcurrentHashMap<>();
+    private final ConcurrentMap<String, Instant> nonces = new ConcurrentHashMap<>();
     private final ConcurrentMap<Long, WebhookSubscription> subscriptions = new ConcurrentHashMap<>();
     private final ConcurrentMap<Long, WebhookDelivery> deliveries = new ConcurrentHashMap<>();
 
@@ -41,6 +43,11 @@ class InMemoryOpenApiRepository implements OpenApiRepository {
     @Override
     public Optional<ApiQuotaUsage> findQuota(String appKey, LocalDate usageDate) {
         return Optional.ofNullable(quotas.get(quotaKey(appKey, usageDate)));
+    }
+
+    @Override
+    public boolean saveNonceIfAbsent(String appKey, String nonce, String requestPath, Instant expiresAt) {
+        return nonces.putIfAbsent(appKey + ":" + nonce, expiresAt) == null;
     }
 
     @Override

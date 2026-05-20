@@ -8,6 +8,10 @@ logging:
 spring:
   application:
     name: flash-sale
+  data:
+    redis:
+      host: ${EMALL_REDIS_HOST:localhost}
+      port: ${EMALL_REDIS_PORT:6379}
   cloud:
     nacos:
       server-addr: ${EMALL_NACOS_SERVER_ADDR:localhost:8848}
@@ -29,10 +33,47 @@ spring:
     username: ${EMALL_DB_USERNAME:root}
     password: ${EMALL_DB_PASSWORD:root}
   flyway:
-    enabled: true
+    enabled: ${EMALL_FLYWAY_ENABLED:false}
 
 emall:
   storage: jdbc
+  sharding:
+    enabled: ${EMALL_SHARDING_ENABLED:false}
+    database-prefix: ${EMALL_FLASH_SALE_DB_SHARD_PREFIX:emall_flash_sale}
+    database-shard-count: ${EMALL_DB_SHARD_COUNT:16}
+    logical-shard-count: ${EMALL_LOGICAL_SHARD_COUNT:64}
+    default-cell-id: ${EMALL_CELL_ID:cell-a}
+    tables:
+      flash_sale_campaign:
+        table-prefix: flash_sale_campaign
+        table-shard-count: ${EMALL_TABLE_SHARD_COUNT:64}
+      flash_sale_stock:
+        table-prefix: flash_sale_stock
+        table-shard-count: ${EMALL_TABLE_SHARD_COUNT:64}
+      flash_sale_token:
+        table-prefix: flash_sale_token
+        table-shard-count: ${EMALL_TABLE_SHARD_COUNT:64}
+      flash_sale_order_request:
+        table-prefix: flash_sale_order_request
+        table-shard-count: ${EMALL_TABLE_SHARD_COUNT:64}
+  ownership:
+    enabled: ${EMALL_OWNERSHIP_ENABLED:false}
+    current-region: ${EMALL_CURRENT_REGION:default-region}
+    current-cell: ${EMALL_CURRENT_CELL:default-cell}
+  flash-sale:
+    runtime: ${EMALL_FLASH_SALE_RUNTIME:redis}
+    order-topic: ${EMALL_FLASH_SALE_ORDER_TOPIC:emall.flash-sale.orders}
+    security:
+      token-secret: ${EMALL_FLASH_SALE_TOKEN_SECRET:local-dev-flash-sale-token-secret}
+  trust:
+    identity:
+      enabled: ${EMALL_TRUST_IDENTITY_ENABLED:false}
+      base-url: ${EMALL_IDENTITY_URL:http://localhost:8097}
+      fail-closed: ${EMALL_TRUST_IDENTITY_FAIL_CLOSED:true}
+    risk:
+      enabled: ${EMALL_TRUST_RISK_ENABLED:false}
+      base-url: ${EMALL_RISK_URL:http://localhost:8098}
+      fail-closed: ${EMALL_TRUST_RISK_FAIL_CLOSED:true}
 
 management:
   metrics:

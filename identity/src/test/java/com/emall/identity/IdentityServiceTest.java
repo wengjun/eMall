@@ -41,4 +41,18 @@ class IdentityServiceTest {
         assertThat(subAccount.roleCode()).isEqualTo("store-admin");
         assertThat(client.secretHash()).hasSize(64);
     }
+
+    @Test
+    void validatesActiveSessionWithPermissionGrant() {
+        IdentityAccount account = service.createAccount(IdentityType.CUSTOMER, "customer-2", "Customer Two");
+        service.grantPermission(account.accountId(), "order:create", "user:" + account.accountId());
+        AuthToken token = service.login("customer-2", "device-2");
+
+        SessionValidation validation =
+                service.validateSession(token.accessToken(), "order:create", "user:" + account.accountId());
+
+        assertThat(validation.allowed()).isTrue();
+        assertThat(validation.accountId()).isEqualTo(account.accountId());
+        assertThat(validation.deviceId()).isEqualTo("device-2");
+    }
 }

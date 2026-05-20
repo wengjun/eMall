@@ -7,8 +7,7 @@ import java.time.ZoneOffset;
 public abstract class MybatisPlusOperationAuditRepositorySupport implements OperationAuditRepository {
     private final BaseMapper<OperationAuditRecordEntity> operationAuditMapper;
 
-    protected MybatisPlusOperationAuditRepositorySupport(
-            BaseMapper<OperationAuditRecordEntity> operationAuditMapper) {
+    protected MybatisPlusOperationAuditRepositorySupport(BaseMapper<OperationAuditRecordEntity> operationAuditMapper) {
         this.operationAuditMapper = operationAuditMapper;
     }
 
@@ -22,6 +21,10 @@ public abstract class MybatisPlusOperationAuditRepositorySupport implements Oper
         entity.setAffected(record.affected());
         entity.setSuccess(record.success());
         entity.setMessage(record.message());
+        entity.setRole(record.role());
+        entity.setApprovalId(record.approvalId());
+        entity.setSourceIdentity(record.sourceIdentity());
+        entity.setParameterDigest(record.parameterDigest());
         entity.setExecutedAt(LocalDateTime.ofInstant(record.executedAt(), ZoneOffset.UTC));
         operationAuditMapper.insert(entity);
         return record;

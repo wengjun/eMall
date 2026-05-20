@@ -11,8 +11,7 @@ import org.springframework.stereotype.Repository;
 public class MybatisPlusFulfillmentProcessedMessageRepository implements ProcessedMessageRepository {
     private final FulfillmentProcessedMessageMapper processedMessageMapper;
 
-    public MybatisPlusFulfillmentProcessedMessageRepository(
-            FulfillmentProcessedMessageMapper processedMessageMapper) {
+    public MybatisPlusFulfillmentProcessedMessageRepository(FulfillmentProcessedMessageMapper processedMessageMapper) {
         this.processedMessageMapper = processedMessageMapper;
     }
 

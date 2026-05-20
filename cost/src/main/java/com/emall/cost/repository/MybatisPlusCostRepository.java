@@ -8,6 +8,8 @@ import com.emall.cost.domain.CostBudget;
 import com.emall.cost.domain.CostOptimizationAction;
 import com.emall.cost.domain.CostSignal;
 import com.emall.cost.domain.CostSignalType;
+import com.emall.cost.domain.CapacityRiskLevel;
+import com.emall.cost.domain.ServiceCapacityBaseline;
 import java.time.LocalDateTime;
 import java.time.ZoneOffset;
 import java.util.List;
@@ -22,12 +24,14 @@ public class MybatisPlusCostRepository implements CostRepository {
     private final CostSignalMapper signalMapper;
     private final CostBudgetMapper budgetMapper;
     private final CostOptimizationActionMapper actionMapper;
+    private final CostCapacityBaselineMapper capacityBaselineMapper;
 
     public MybatisPlusCostRepository(CostSignalMapper signalMapper, CostBudgetMapper budgetMapper,
-            CostOptimizationActionMapper actionMapper) {
+            CostOptimizationActionMapper actionMapper, CostCapacityBaselineMapper capacityBaselineMapper) {
         this.signalMapper = signalMapper;
         this.budgetMapper = budgetMapper;
         this.actionMapper = actionMapper;
+        this.capacityBaselineMapper = capacityBaselineMapper;
     }
 
     @Override
@@ -38,10 +42,8 @@ public class MybatisPlusCostRepository implements CostRepository {
 
     @Override
     public List<CostSignal> findSignalsByService(String serviceName, int limit) {
-        return signalMapper.selectList(new QueryWrapper<CostSignalEntity>()
-                .eq("service_name", serviceName)
-                .orderByDesc("observed_at")
-                .last("LIMIT " + limit)).stream().map(this::toDomain).toList();
+        return signalMapper.selectList(new QueryWrapper<CostSignalEntity>().eq("service_name", serviceName)
+                .orderByDesc("observed_at").last("LIMIT " + limit)).stream().map(this::toDomain).toList();
     }
 
     @Override
@@ -50,14 +52,12 @@ public class MybatisPlusCostRepository implements CostRepository {
         try {
             budgetMapper.insert(entity);
         } catch (DuplicateKeyException ex) {
-            budgetMapper.update(null, new UpdateWrapper<CostBudgetEntity>()
-                    .set("monthly_budget", entity.getMonthlyBudget())
-                    .set("current_spend", entity.getCurrentSpend())
-                    .set("currency", entity.getCurrency())
-                    .set("alert_threshold_percent", entity.getAlertThresholdPercent())
-                    .set("active", entity.getActive())
-                    .set("updated_at", entity.getUpdatedAt())
-                    .eq("budget_id", entity.getBudgetId()));
+            budgetMapper.update(null,
+                    new UpdateWrapper<CostBudgetEntity>().set("monthly_budget", entity.getMonthlyBudget())
+                            .set("current_spend", entity.getCurrentSpend()).set("currency", entity.getCurrency())
+                            .set("alert_threshold_percent", entity.getAlertThresholdPercent())
+                            .set("active", entity.getActive()).set("updated_at", entity.getUpdatedAt())
+                            .eq("budget_id", entity.getBudgetId()));
         }
         return budget;
     }
@@ -65,9 +65,7 @@ public class MybatisPlusCostRepository implements CostRepository {
     @Override
     public Optional<CostBudget> findActiveBudget(String serviceName) {
         return Optional.ofNullable(budgetMapper.selectOne(new QueryWrapper<CostBudgetEntity>()
-                .eq("service_name", serviceName)
-                .eq("active", true)
-                .last("LIMIT 1"))).map(this::toDomain);
+                .eq("service_name", serviceName).eq("active", true).last("LIMIT 1"))).map(this::toDomain);
     }
 
     @Override
@@ -76,12 +74,10 @@ public class MybatisPlusCostRepository implements CostRepository {
         try {
             actionMapper.insert(entity);
         } catch (DuplicateKeyException ex) {
-            actionMapper.update(null, new UpdateWrapper<CostOptimizationActionEntity>()
-                    .set("status", entity.getStatus())
-                    .set("priority", entity.getPriority())
-                    .set("description", entity.getDescription())
-                    .set("updated_at", entity.getUpdatedAt())
-                    .eq("action_id", entity.getActionId()));
+            actionMapper.update(null,
+                    new UpdateWrapper<CostOptimizationActionEntity>().set("status", entity.getStatus())
+                            .set("priority", entity.getPriority()).set("description", entity.getDescription())
+                            .set("updated_at", entity.getUpdatedAt()).eq("action_id", entity.getActionId()));
         }
         return action;
     }
@@ -94,22 +90,33 @@ public class MybatisPlusCostRepository implements CostRepository {
     @Override
     public Optional<CostOptimizationAction> findActiveAction(String serviceName, CostSignalType signalType,
             CostActionType actionType) {
-        return Optional.ofNullable(actionMapper.selectOne(new QueryWrapper<CostOptimizationActionEntity>()
-                .eq("service_name", serviceName)
-                .eq("signal_type", signalType.name())
-                .eq("action_type", actionType.name())
-                .in("status", CostActionStatus.OPEN.name(), CostActionStatus.ACKNOWLEDGED.name())
-                .orderByDesc("updated_at")
-                .last("LIMIT 1"))).map(this::toDomain);
+        return Optional.ofNullable(
+                actionMapper.selectOne(new QueryWrapper<CostOptimizationActionEntity>().eq("service_name", serviceName)
+                        .eq("signal_type", signalType.name()).eq("action_type", actionType.name())
+                        .in("status", CostActionStatus.OPEN.name(), CostActionStatus.ACKNOWLEDGED.name())
+                        .orderByDesc("updated_at").last("LIMIT 1")))
+                .map(this::toDomain);
     }
 
     @Override
     public List<CostOptimizationAction> findActiveActionsByService(String serviceName) {
-        return actionMapper.selectList(new QueryWrapper<CostOptimizationActionEntity>()
-                .eq("service_name", serviceName)
-                .in("status", CostActionStatus.OPEN.name(), CostActionStatus.ACKNOWLEDGED.name())
-                .orderByAsc("priority")
+        return actionMapper.selectList(new QueryWrapper<CostOptimizationActionEntity>().eq("service_name", serviceName)
+                .in("status", CostActionStatus.OPEN.name(), CostActionStatus.ACKNOWLEDGED.name()).orderByAsc("priority")
                 .orderByDesc("updated_at")).stream().map(this::toDomain).toList();
+    }
+
+    @Override
+    public ServiceCapacityBaseline saveCapacityBaseline(ServiceCapacityBaseline baseline) {
+        capacityBaselineMapper.insert(toEntity(baseline));
+        return baseline;
+    }
+
+    @Override
+    public Optional<ServiceCapacityBaseline> findLatestCapacityBaseline(String serviceName) {
+        return Optional
+                .ofNullable(capacityBaselineMapper.selectOne(new QueryWrapper<CostCapacityBaselineEntity>()
+                        .eq("service_name", serviceName).orderByDesc("observed_at").last("LIMIT 1")))
+                .map(this::toDomain);
     }
 
     private CostSignalEntity toEntity(CostSignal signal) {
@@ -169,5 +176,33 @@ public class MybatisPlusCostRepository implements CostRepository {
                 CostSignalType.valueOf(entity.getSignalType()), CostActionType.valueOf(entity.getActionType()),
                 CostActionStatus.valueOf(entity.getStatus()), entity.getPriority(), entity.getDescription(),
                 entity.getCreatedAt().toInstant(ZoneOffset.UTC), entity.getUpdatedAt().toInstant(ZoneOffset.UTC));
+    }
+
+    private CostCapacityBaselineEntity toEntity(ServiceCapacityBaseline baseline) {
+        CostCapacityBaselineEntity entity = new CostCapacityBaselineEntity();
+        entity.setBaselineId(baseline.baselineId());
+        entity.setServiceName(baseline.serviceName());
+        entity.setSafeQps(baseline.safeQps());
+        entity.setPeakQps(baseline.peakQps());
+        entity.setCurrentQps(baseline.currentQps());
+        entity.setCurrentReplicas(baseline.currentReplicas());
+        entity.setMaxReplicas(baseline.maxReplicas());
+        entity.setCpuUtilization(baseline.cpuUtilization());
+        entity.setMemoryUtilization(baseline.memoryUtilization());
+        entity.setMonthlyCost(baseline.monthlyCost());
+        entity.setSloProtected(baseline.sloProtected());
+        entity.setRiskLevel(baseline.riskLevel().name());
+        entity.setRecommendation(baseline.recommendation());
+        entity.setObservedAt(LocalDateTime.ofInstant(baseline.observedAt(), ZoneOffset.UTC));
+        entity.setCreatedAt(LocalDateTime.ofInstant(baseline.createdAt(), ZoneOffset.UTC));
+        return entity;
+    }
+
+    private ServiceCapacityBaseline toDomain(CostCapacityBaselineEntity entity) {
+        return new ServiceCapacityBaseline(entity.getBaselineId(), entity.getServiceName(), entity.getSafeQps(),
+                entity.getPeakQps(), entity.getCurrentQps(), entity.getCurrentReplicas(), entity.getMaxReplicas(),
+                entity.getCpuUtilization(), entity.getMemoryUtilization(), entity.getMonthlyCost(),
+                entity.getSloProtected(), CapacityRiskLevel.valueOf(entity.getRiskLevel()), entity.getRecommendation(),
+                entity.getObservedAt().toInstant(ZoneOffset.UTC), entity.getCreatedAt().toInstant(ZoneOffset.UTC));
     }
 }

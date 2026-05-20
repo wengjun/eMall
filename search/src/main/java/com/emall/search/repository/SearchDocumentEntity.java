@@ -31,6 +31,9 @@ public class SearchDocumentEntity {
     @TableField("saleable")
     private Boolean saleable;
 
+    @TableField("event_version")
+    private Long version;
+
     @TableField("indexed_at")
     private LocalDateTime indexedAt;
 }

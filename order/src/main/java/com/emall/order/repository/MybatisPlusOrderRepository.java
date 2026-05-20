@@ -18,9 +18,11 @@ import org.springframework.stereotype.Repository;
 @ConditionalOnProperty(name = "emall.storage", havingValue = "jdbc", matchIfMissing = true)
 public class MybatisPlusOrderRepository implements OrderRepository {
     private final OrderMapper orderMapper;
+    private final OrderRouteMapper routeMapper;
 
-    public MybatisPlusOrderRepository(OrderMapper orderMapper) {
+    public MybatisPlusOrderRepository(OrderMapper orderMapper, OrderRouteMapper routeMapper) {
         this.orderMapper = orderMapper;
+        this.routeMapper = routeMapper;
     }
 
     @Override
@@ -29,27 +31,35 @@ public class MybatisPlusOrderRepository implements OrderRepository {
         try {
             orderMapper.insert(entity);
         } catch (DuplicateKeyException ex) {
-            int updated = orderMapper.update(null, new UpdateWrapper<OrderEntity>()
-                    .set("unit_price", entity.getUnitPrice())
-                    .set("client_type", entity.getClientType())
-                    .set("device_id", entity.getDeviceId())
-                    .set("channel", entity.getChannel())
-                    .set("subtotal_amount", entity.getSubtotalAmount())
-                    .set("discount_amount", entity.getDiscountAmount())
-                    .set("payable_amount", entity.getPayableAmount())
-                    .set("currency", entity.getCurrency())
-                    .set("price_version", entity.getPriceVersion())
-                    .set("coupon_id", entity.getCouponId())
-                    .set("inventory_reservation_id", entity.getInventoryReservationId())
-                    .set("status", entity.getStatus())
-                    .set("failure_reason", entity.getFailureReason())
-                    .set("updated_at", entity.getUpdatedAt())
-                    .eq("order_id", entity.getOrderId()));
+            int updated = orderMapper.update(null,
+                    new UpdateWrapper<OrderEntity>().set("unit_price", entity.getUnitPrice())
+                            .set("client_type", entity.getClientType()).set("device_id", entity.getDeviceId())
+                            .set("channel", entity.getChannel()).set("subtotal_amount", entity.getSubtotalAmount())
+                            .set("discount_amount", entity.getDiscountAmount())
+                            .set("payable_amount", entity.getPayableAmount()).set("currency", entity.getCurrency())
+                            .set("price_version", entity.getPriceVersion()).set("coupon_id", entity.getCouponId())
+                            .set("inventory_reservation_id", entity.getInventoryReservationId())
+                            .set("status", entity.getStatus()).set("failure_reason", entity.getFailureReason())
+                            .set("updated_at", entity.getUpdatedAt()).eq("order_id", entity.getOrderId()));
             if (updated == 0) {
                 return findByRequestId(order.requestId()).orElseThrow(() -> ex);
             }
         }
         return order;
+    }
+
+    @Override
+    public void saveRoute(long orderId, String requestId, long userId) {
+        OrderRouteEntity route = new OrderRouteEntity();
+        route.setOrderId(orderId);
+        route.setRequestId(requestId);
+        route.setUserId(userId);
+        route.setCreatedAt(LocalDateTime.now(ZoneOffset.UTC));
+        try {
+            routeMapper.insert(route);
+        } catch (DuplicateKeyException ex) {
+            // The route index is idempotent for retried create requests.
+        }
     }
 
     @Override
@@ -59,16 +69,35 @@ public class MybatisPlusOrderRepository implements OrderRepository {
 
     @Override
     public Optional<Order> findByRequestId(String requestId) {
-        return Optional.ofNullable(orderMapper.selectOne(new QueryWrapper<OrderEntity>()
-                .eq("request_id", requestId))).map(this::toDomain);
+        return Optional.ofNullable(orderMapper.selectOne(new QueryWrapper<OrderEntity>().eq("request_id", requestId)))
+                .map(this::toDomain);
+    }
+
+    @Override
+    public Optional<Long> findRouteUserIdByOrderId(long orderId) {
+        return Optional.ofNullable(routeMapper.selectById(orderId)).map(OrderRouteEntity::getUserId);
+    }
+
+    @Override
+    public Optional<Long> findRouteUserIdByRequestId(String requestId) {
+        return Optional
+                .ofNullable(routeMapper.selectOne(new QueryWrapper<OrderRouteEntity>().eq("request_id", requestId)))
+                .map(OrderRouteEntity::getUserId);
+    }
+
+    @Override
+    public boolean updateStatus(long orderId, OrderStatus expectedStatus, Order order) {
+        OrderEntity entity = toEntity(order);
+        return orderMapper.update(null,
+                new UpdateWrapper<OrderEntity>().set("status", entity.getStatus())
+                        .set("failure_reason", entity.getFailureReason()).set("updated_at", entity.getUpdatedAt())
+                        .eq("order_id", orderId).eq("status", expectedStatus.name())) == 1;
     }
 
     @Override
     public List<Order> findByStatus(OrderStatus status, int limit) {
-        return orderMapper.selectList(new QueryWrapper<OrderEntity>()
-                .eq("status", status.name())
-                .orderByAsc("updated_at")
-                .last("LIMIT " + limit)).stream().map(this::toDomain).toList();
+        return orderMapper.selectList(new QueryWrapper<OrderEntity>().eq("status", status.name())
+                .orderByAsc("updated_at").last("LIMIT " + limit)).stream().map(this::toDomain).toList();
     }
 
     private OrderEntity toEntity(Order order) {
@@ -104,9 +133,8 @@ public class MybatisPlusOrderRepository implements OrderRepository {
                 entity.getQuantity(), clientContext.clientType(), clientContext.deviceId(), clientContext.channel(),
                 entity.getUnitPrice(), entity.getSubtotalAmount(), entity.getDiscountAmount(),
                 entity.getPayableAmount(), entity.getCurrency(), entity.getPriceVersion(), entity.getCouponId(),
-                entity.getInventoryReservationId(), OrderStatus.valueOf(entity.getStatus()),
-                entity.getFailureReason(), entity.getCreatedAt().toInstant(ZoneOffset.UTC),
-                entity.getUpdatedAt().toInstant(ZoneOffset.UTC));
+                entity.getInventoryReservationId(), OrderStatus.valueOf(entity.getStatus()), entity.getFailureReason(),
+                entity.getCreatedAt().toInstant(ZoneOffset.UTC), entity.getUpdatedAt().toInstant(ZoneOffset.UTC));
     }
 
     private OrderClientType toClientType(String clientType) {

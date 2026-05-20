@@ -22,9 +22,9 @@ class ElasticsearchSearchRepositoryTest {
     @Test
     void shouldSaveFindSearchAndDeleteThroughElasticsearch() {
         SearchDocument phone = new SearchDocument(30001L, "flagship phone", "digital", new BigDecimal("3799.00"),
-                Set.of("phone", "hot"), true, Instant.now());
+                Set.of("phone", "hot"), true, 10L, Instant.now());
         SearchDocument hidden = new SearchDocument(30002L, "hidden phone", "digital", new BigDecimal("2999.00"),
-                Set.of("phone"), false, Instant.now());
+                Set.of("phone"), false, 11L, Instant.now());
         when(documentRepository.save(org.mockito.ArgumentMatchers.any(ElasticsearchSearchDocument.class)))
                 .thenAnswer(invocation -> invocation.getArgument(0));
         when(documentRepository.findById("30001")).thenReturn(Optional.of(ElasticsearchSearchDocument.from(phone)));

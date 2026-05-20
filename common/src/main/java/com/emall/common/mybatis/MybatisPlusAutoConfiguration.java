@@ -4,6 +4,7 @@ import com.baomidou.mybatisplus.annotation.DbType;
 import com.baomidou.mybatisplus.core.handlers.MetaObjectHandler;
 import com.baomidou.mybatisplus.extension.plugins.MybatisPlusInterceptor;
 import com.baomidou.mybatisplus.extension.plugins.inner.BlockAttackInnerInterceptor;
+import com.baomidou.mybatisplus.extension.plugins.inner.DynamicTableNameInnerInterceptor;
 import com.baomidou.mybatisplus.extension.plugins.inner.IllegalSQLInnerInterceptor;
 import com.baomidou.mybatisplus.extension.plugins.inner.OptimisticLockerInnerInterceptor;
 import com.baomidou.mybatisplus.extension.plugins.inner.PaginationInnerInterceptor;
@@ -11,22 +12,25 @@ import java.time.Clock;
 import java.time.LocalDateTime;
 import java.time.ZoneOffset;
 import org.apache.ibatis.reflection.MetaObject;
+import org.springframework.beans.factory.ObjectProvider;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.autoconfigure.AutoConfiguration;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnClass;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 
 @AutoConfiguration
-@ConditionalOnClass({ MybatisPlusInterceptor.class, PaginationInnerInterceptor.class })
+@ConditionalOnClass({MybatisPlusInterceptor.class, PaginationInnerInterceptor.class})
 public class MybatisPlusAutoConfiguration {
     @Bean
     @ConditionalOnMissingBean
     public MybatisPlusInterceptor mybatisPlusInterceptor(
-            @Value("${emall.mybatis-plus.illegal-sql-check:false}") boolean illegalSqlCheckEnabled) {
+            @Value("${emall.mybatis-plus.illegal-sql-check:false}") boolean illegalSqlCheckEnabled,
+            ObjectProvider<DynamicTableNameInnerInterceptor> dynamicTableNameInterceptor) {
         MybatisPlusInterceptor interceptor = new MybatisPlusInterceptor();
         interceptor.addInnerInterceptor(new OptimisticLockerInnerInterceptor());
         interceptor.addInnerInterceptor(new BlockAttackInnerInterceptor());
+        dynamicTableNameInterceptor.ifAvailable(interceptor::addInnerInterceptor);
         if (illegalSqlCheckEnabled) {
             interceptor.addInnerInterceptor(new IllegalSQLInnerInterceptor());
         }

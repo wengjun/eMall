@@ -18,7 +18,15 @@ interface DataWarehouseRepository {
 
     List<QualityCheck> findQualityChecks();
 
+    QualityAlert saveQualityAlert(QualityAlert alert);
+
+    List<QualityAlert> findQualityAlerts();
+
     LineageEdge saveLineage(LineageEdge lineage);
 
     List<LineageEdge> findLineage();
+
+    FieldLineage saveFieldLineage(FieldLineage lineage);
+
+    List<FieldLineage> findFieldLineage();
 }

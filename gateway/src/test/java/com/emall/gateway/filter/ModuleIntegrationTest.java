@@ -34,7 +34,6 @@ class ModuleIntegrationTest {
         Path moduleRoot = Path.of("").toAbsolutePath();
         String application = Files.readString(moduleRoot.resolve("src/main/resources/application.yml"));
 
-        assertThat(application).contains("default-filters:").contains("- SecureHeaders")
-                .contains("RequestRateLimiter");
+        assertThat(application).contains("default-filters:").contains("- SecureHeaders").contains("RequestRateLimiter");
     }
 }

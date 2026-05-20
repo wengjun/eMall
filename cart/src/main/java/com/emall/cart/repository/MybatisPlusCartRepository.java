@@ -26,28 +26,43 @@ public class MybatisPlusCartRepository implements CartRepository {
         try {
             cartItemMapper.insert(entity);
         } catch (DuplicateKeyException ex) {
-            cartItemMapper.update(null, new UpdateWrapper<CartItemEntity>()
-                    .set("quantity", entity.getQuantity())
-                    .set("selected", entity.getSelected())
-                    .set("updated_at", entity.getUpdatedAt())
-                    .eq("user_id", entity.getUserId())
-                    .eq("sku_id", entity.getSkuId()));
+            cartItemMapper.update(null,
+                    new UpdateWrapper<CartItemEntity>().set("quantity", entity.getQuantity())
+                            .set("selected", entity.getSelected()).set("updated_at", entity.getUpdatedAt())
+                            .eq("user_id", entity.getUserId()).eq("sku_id", entity.getSkuId()));
         }
         return item;
     }
 
     @Override
+    public Optional<CartItem> addQuantity(CartItem item, int maxQuantity) {
+        CartItemEntity entity = toEntity(item);
+        try {
+            cartItemMapper.insert(entity);
+            return Optional.of(item);
+        } catch (DuplicateKeyException ex) {
+            int updated = cartItemMapper.update(null,
+                    new UpdateWrapper<CartItemEntity>().setSql("quantity = quantity + {0}", item.quantity())
+                            .set("selected", entity.getSelected()).set("updated_at", entity.getUpdatedAt())
+                            .eq("user_id", entity.getUserId()).eq("sku_id", entity.getSkuId())
+                            .le("quantity", maxQuantity - item.quantity()));
+            return updated == 1 ? find(item.userId(), item.skuId()) : Optional.empty();
+        }
+    }
+
+    @Override
     public Optional<CartItem> find(long userId, long skuId) {
-        return Optional.ofNullable(cartItemMapper.selectOne(new QueryWrapper<CartItemEntity>()
-                .eq("user_id", userId)
-                .eq("sku_id", skuId))).map(this::toDomain);
+        return Optional
+                .ofNullable(cartItemMapper
+                        .selectOne(new QueryWrapper<CartItemEntity>().eq("user_id", userId).eq("sku_id", skuId)))
+                .map(this::toDomain);
     }
 
     @Override
     public List<CartItem> findByUserId(long userId) {
-        return cartItemMapper.selectList(new QueryWrapper<CartItemEntity>()
-                .eq("user_id", userId)
-                .orderByDesc("updated_at")).stream().map(this::toDomain).toList();
+        return cartItemMapper
+                .selectList(new QueryWrapper<CartItemEntity>().eq("user_id", userId).orderByDesc("updated_at")).stream()
+                .map(this::toDomain).toList();
     }
 
     @Override

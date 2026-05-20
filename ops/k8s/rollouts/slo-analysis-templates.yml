@@ -58,3 +58,96 @@ spec:
               application="payment",
               uri="/api/payments/{paymentId}/callbacks"
             }[5m]))
+---
+apiVersion: argoproj.io/v1alpha1
+kind: AnalysisTemplate
+metadata:
+  name: emall-release-pretraffic-guard
+spec:
+  args:
+    - name: rollout-id
+    - name: slo-passed
+      value: "true"
+    - name: alerts-clear
+      value: "true"
+    - name: capacity-ready
+      value: "true"
+    - name: dependencies-healthy
+      value: "true"
+  metrics:
+    - name: release-pretraffic-guard
+      count: 1
+      successCondition: result == "PASS"
+      failureCondition: result == "BLOCK"
+      provider:
+        web:
+          url: http://release:8115/api/release/rollouts/{{args.rollout-id}}/guards/pre-traffic
+          method: POST
+          jsonPath: "{$.data.decision}"
+          body: |
+            {
+              "sloPassed": {{args.slo-passed}},
+              "alertsClear": {{args.alerts-clear}},
+              "capacityReady": {{args.capacity-ready}},
+              "dependenciesHealthy": {{args.dependencies-healthy}}
+            }
+---
+apiVersion: argoproj.io/v1alpha1
+kind: AnalysisTemplate
+metadata:
+  name: emall-release-canary-guard
+spec:
+  args:
+    - name: rollout-id
+    - name: observed-percent
+    - name: error-rate
+    - name: latency-p95-ms
+    - name: business-success-rate
+  metrics:
+    - name: release-canary-guard
+      interval: 1m
+      count: 1
+      successCondition: result == "PASS"
+      failureCondition: result == "PAUSE" || result == "ROLLBACK"
+      provider:
+        web:
+          url: http://release:8115/api/release/rollouts/{{args.rollout-id}}/guards/canary
+          method: POST
+          jsonPath: "{$.data.decision}"
+          body: |
+            {
+              "observedPercent": {{args.observed-percent}},
+              "errorRate": {{args.error-rate}},
+              "latencyP95Ms": {{args.latency-p95-ms}},
+              "businessSuccessRate": {{args.business-success-rate}}
+            }
+---
+apiVersion: argoproj.io/v1alpha1
+kind: AnalysisTemplate
+metadata:
+  name: emall-release-rollback-recovery-guard
+spec:
+  args:
+    - name: rollout-id
+    - name: compensation-triggered
+      value: "true"
+    - name: message-replay-checked
+      value: "true"
+    - name: downstream-recovered
+      value: "true"
+  metrics:
+    - name: release-rollback-recovery-guard
+      count: 1
+      successCondition: result == "PASS"
+      failureCondition: result == "BLOCK"
+      provider:
+        web:
+          url: http://release:8115/api/release/rollouts/{{args.rollout-id}}/guards/rollback-recovery
+          method: POST
+          jsonPath: "{$.data.decision}"
+          body: |
+            {
+              "compensationTriggered": {{args.compensation-triggered}},
+              "messageReplayChecked": {{args.message-replay-checked}},
+              "downstreamRecovered": {{args.downstream-recovered}}
+            }

@@ -34,8 +34,7 @@ public class InventoryClient {
         this(inventoryRestClient, recoveryController, "http");
     }
 
-    @SentinelResource(value = "order.inventory.reserve", blockHandler = "blockReserve",
-            fallback = "fallbackReserve")
+    @SentinelResource(value = "order.inventory.reserve", blockHandler = "blockReserve", fallback = "fallbackReserve")
     public InventoryReservation reserve(ReserveInventoryRequest request) {
         if (!recoveryController.allowRequest()) {
             return InventoryReservation.unavailable(request.requestId(), request.skuId(), request.quantity(),
@@ -73,8 +72,7 @@ public class InventoryClient {
                 "SENTINEL_BLOCKED_FOR_ASYNC_RETRY");
     }
 
-    @SentinelResource(value = "order.inventory.confirm", blockHandler = "blockConfirm",
-            fallback = "fallbackConfirm")
+    @SentinelResource(value = "order.inventory.confirm", blockHandler = "blockConfirm", fallback = "fallbackConfirm")
     public InventoryReservation confirm(String requestId) {
         if (!recoveryController.allowRequest()) {
             return InventoryReservation.unavailable(requestId, 0L, 0, "DOWNSTREAM_RECOVERING");
@@ -106,8 +104,7 @@ public class InventoryClient {
         return InventoryReservation.unavailable(requestId, 0L, 0, "CONFIRM_SENTINEL_BLOCKED_FOR_ASYNC_RETRY");
     }
 
-    @SentinelResource(value = "order.inventory.release", blockHandler = "blockRelease",
-            fallback = "fallbackRelease")
+    @SentinelResource(value = "order.inventory.release", blockHandler = "blockRelease", fallback = "fallbackRelease")
     public InventoryReservation release(String requestId) {
         if (!recoveryController.allowRequest()) {
             return InventoryReservation.unavailable(requestId, 0L, 0, "DOWNSTREAM_RECOVERING");
@@ -144,8 +141,10 @@ public class InventoryClient {
     }
 
     private InventoryReservation toLocal(InventoryReservationView view) {
-        return view == null ? null : new InventoryReservation(view.requestId(), view.skuId(), view.quantity(),
-                view.status(), view.reason(), view.expiresAt(), view.createdAt(), view.updatedAt());
+        return view == null
+                ? null
+                : new InventoryReservation(view.requestId(), view.skuId(), view.quantity(), view.status(),
+                        view.reason(), view.expiresAt(), view.createdAt(), view.updatedAt());
     }
 
     public record ReserveInventoryRequest(String requestId, long skuId, int quantity) {

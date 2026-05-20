@@ -27,8 +27,8 @@ public class ScheduledTaskLockRecord {
     public ScheduledTaskLockRecord() {
     }
 
-    public ScheduledTaskLockRecord(
-            String lockName, String ownerId, LocalDateTime lockedUntil, LocalDateTime updatedAt) {
+    public ScheduledTaskLockRecord(String lockName, String ownerId, LocalDateTime lockedUntil,
+            LocalDateTime updatedAt) {
         this.lockName = lockName;
         this.ownerId = ownerId;
         this.lockedUntil = lockedUntil;

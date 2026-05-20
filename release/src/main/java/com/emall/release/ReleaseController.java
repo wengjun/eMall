@@ -2,11 +2,15 @@ package com.emall.release;
 
 import com.emall.common.api.ApiResponse;
 import jakarta.validation.Valid;
+import jakarta.validation.constraints.DecimalMax;
+import jakarta.validation.constraints.DecimalMin;
 import jakarta.validation.constraints.Max;
 import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Positive;
 import jakarta.validation.constraints.PositiveOrZero;
+import java.math.BigDecimal;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PatchMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -48,6 +52,32 @@ class ReleaseController {
         return ApiResponse.ok(releaseService.changeRollout(rolloutId, request.status(), request.currentPercent()));
     }
 
+    @PostMapping("/rollouts/{rolloutId}/guards/pre-traffic")
+    ApiResponse<ReleaseGuardRecord> evaluatePreTrafficGuard(@PathVariable long rolloutId,
+            @Valid @RequestBody EvaluatePreTrafficGuardRequest request) {
+        return ApiResponse.ok(releaseService.evaluatePreTrafficGuard(rolloutId, request.sloPassed(),
+                request.alertsClear(), request.capacityReady(), request.dependenciesHealthy()));
+    }
+
+    @PostMapping("/rollouts/{rolloutId}/guards/canary")
+    ApiResponse<ReleaseGuardRecord> evaluateCanaryGuard(@PathVariable long rolloutId,
+            @Valid @RequestBody EvaluateCanaryGuardRequest request) {
+        return ApiResponse.ok(releaseService.evaluateCanaryGuard(rolloutId, request.observedPercent(),
+                request.errorRate(), request.latencyP95Ms(), request.businessSuccessRate()));
+    }
+
+    @PostMapping("/rollouts/{rolloutId}/guards/rollback-recovery")
+    ApiResponse<ReleaseGuardRecord> verifyRollbackRecovery(@PathVariable long rolloutId,
+            @Valid @RequestBody VerifyRollbackRecoveryRequest request) {
+        return ApiResponse.ok(releaseService.verifyRollbackRecovery(rolloutId, request.compensationTriggered(),
+                request.messageReplayChecked(), request.downstreamRecovered()));
+    }
+
+    @GetMapping("/rollouts/{rolloutId}/guards")
+    ApiResponse<Iterable<ReleaseGuardRecord>> findRolloutGuards(@PathVariable long rolloutId) {
+        return ApiResponse.ok(releaseService.findRolloutGuards(rolloutId));
+    }
+
     @PostMapping("/topics")
     ApiResponse<MessageTopicGovernance> registerTopic(@Valid @RequestBody RegisterTopicRequest request) {
         return ApiResponse.ok(releaseService.registerTopic(request.topicName(), request.owner(),
@@ -77,6 +107,11 @@ class ReleaseController {
         return ApiResponse.ok(releaseService.summary());
     }
 
+    @GetMapping("/guards/summary")
+    ApiResponse<ReleaseGuardSummary> guardSummary() {
+        return ApiResponse.ok(releaseService.guardSummary());
+    }
+
     record CreateToggleRequest(@NotBlank String flagKey, @NotBlank String serviceName, ToggleStatus status,
             @Min(0) @Max(100) int rolloutPercent) {
     }
@@ -89,6 +124,19 @@ class ReleaseController {
     }
 
     record ChangeRolloutRequest(RolloutStatus status, @Min(0) @Max(100) int currentPercent) {
+    }
+
+    record EvaluatePreTrafficGuardRequest(boolean sloPassed, boolean alertsClear, boolean capacityReady,
+            boolean dependenciesHealthy) {
+    }
+
+    record EvaluateCanaryGuardRequest(@Min(0) @Max(100) int observedPercent,
+            @NotNull @DecimalMin("0.0") @DecimalMax("1.0") BigDecimal errorRate, @PositiveOrZero int latencyP95Ms,
+            @NotNull @DecimalMin("0.0") @DecimalMax("1.0") BigDecimal businessSuccessRate) {
+    }
+
+    record VerifyRollbackRecoveryRequest(boolean compensationTriggered, boolean messageReplayChecked,
+            boolean downstreamRecovered) {
     }
 
     record RegisterTopicRequest(@NotBlank String topicName, @NotBlank String owner, @NotBlank String schemaVersion,

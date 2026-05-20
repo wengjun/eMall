@@ -35,6 +35,12 @@ class OpenApiController {
                 request.requestPath(), request.nonce(), request.timestamp(), request.signature()));
     }
 
+    @PostMapping("/requests/authenticate")
+    ApiResponse<ApiRequestAuthentication> authenticateRequest(@Valid @RequestBody AuthenticateRequest request) {
+        return ApiResponse.ok(openApiService.authenticateRequest(request.appKey(), request.requestPath(),
+                request.nonce(), request.timestamp(), request.signature(), request.scope()));
+    }
+
     @PostMapping("/apps/{appKey}/quota")
     ApiResponse<ApiQuotaUsage> consumeQuota(@PathVariable String appKey) {
         return ApiResponse.ok(openApiService.consumeQuota(appKey));
@@ -63,6 +69,10 @@ class OpenApiController {
 
     record VerifySignatureRequest(@NotBlank String appKey, @NotBlank String appSecret, @NotBlank String requestPath,
             @NotBlank String nonce, @Min(1) long timestamp, @NotBlank String signature) {
+    }
+
+    record AuthenticateRequest(@NotBlank String appKey, @NotBlank String requestPath, @NotBlank String nonce,
+            @Min(1) long timestamp, @NotBlank String signature, @NotBlank String scope) {
     }
 
     record SubscribeWebhookRequest(@NotBlank String eventType, @NotBlank String targetUrl) {

@@ -67,10 +67,29 @@ class IdentityService {
         requireAccount(accountId);
         String normalizedScope = normalize(scope);
         String normalizedResource = normalizeResource(resource);
-        boolean allowed =
-                repository.findGrants(accountId).stream().anyMatch(grant -> grant.scope().equals(normalizedScope)
-                        && ("*".equals(grant.resource()) || grant.resource().equals(normalizedResource)));
+        boolean allowed = hasGrant(accountId, normalizedScope, normalizedResource);
         return new AccessDecision(accountId, normalizedScope, normalizedResource, allowed);
+    }
+
+    SessionValidation validateSession(String accessToken, String scope, String resource) {
+        DeviceSession session = repository.findSessionByAccessToken(normalizeToken(accessToken))
+                .orElseThrow(() -> new BusinessException(ErrorCode.UNAUTHORIZED, "identity session not found"));
+        IdentityAccount account = requireAccount(session.accountId());
+        if (account.status() != IdentityStatus.ACTIVE) {
+            return new SessionValidation(account.accountId(), account.subject(), session.deviceId(), false,
+                    "account-not-active");
+        }
+        if (session.status() != SessionStatus.ACTIVE) {
+            return new SessionValidation(account.accountId(), account.subject(), session.deviceId(), false,
+                    "session-not-active");
+        }
+        if (!session.expiresAt().isAfter(Instant.now())) {
+            return new SessionValidation(account.accountId(), account.subject(), session.deviceId(), false,
+                    "session-expired");
+        }
+        boolean allowed = hasGrant(account.accountId(), normalize(scope), normalizeResource(resource));
+        return new SessionValidation(account.accountId(), account.subject(), session.deviceId(), allowed,
+                allowed ? "allowed" : "permission-denied");
     }
 
     @Transactional
@@ -93,6 +112,11 @@ class IdentityService {
                 .orElseThrow(() -> new BusinessException(ErrorCode.NOT_FOUND, "identity account not found"));
     }
 
+    private boolean hasGrant(long accountId, String scope, String resource) {
+        return repository.findGrants(accountId).stream().anyMatch(grant -> grant.scope().equals(scope)
+                && ("*".equals(grant.resource()) || grant.resource().equals(resource)));
+    }
+
     private String tokenValue() {
         return UUID.randomUUID().toString().replace("-", "");
     }
@@ -101,6 +125,14 @@ class IdentityService {
         String normalized = value == null ? "" : value.trim().toLowerCase(Locale.ROOT);
         if (normalized.isBlank()) {
             throw new BusinessException(ErrorCode.BAD_REQUEST, "identity value must not be blank");
+        }
+        return normalized;
+    }
+
+    private String normalizeToken(String value) {
+        String normalized = value == null ? "" : value.trim();
+        if (normalized.isBlank()) {
+            throw new BusinessException(ErrorCode.BAD_REQUEST, "identity token must not be blank");
         }
         return normalized;
     }

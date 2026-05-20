@@ -14,11 +14,35 @@ global:
     EMALL_NACOS_NAMESPACE: public
     EMALL_NACOS_GROUP: DEFAULT_GROUP
     EMALL_RPC_PROTOCOL: dubbo
+    EMALL_FLYWAY_ENABLED: "false"
+    EMALL_SHARDING_ENABLED: "true"
+    EMALL_LOGICAL_SHARD_COUNT: "64"
+    EMALL_DB_SHARD_COUNT: "16"
+    EMALL_TABLE_SHARD_COUNT: "64"
+    EMALL_OUTBOX_TABLE_SHARD_COUNT: "64"
+    EMALL_OWNERSHIP_ENABLED: "true"
+    EMALL_CURRENT_REGION: cn-east-1
+    EMALL_CURRENT_CELL: cell-a
+    EMALL_HTTP_CONNECT_TIMEOUT: 300ms
+    EMALL_HTTP_READ_TIMEOUT: 800ms
+    EMALL_HTTP_MAX_CONNECTIONS: "1024"
+    EMALL_HTTP_BULKHEAD_MAX_CONCURRENT: "512"
+    EMALL_HTTP_MAX_ATTEMPTS: "2"
+    EMALL_HTTP_RETRY_BACKOFF: 50ms
+    EMALL_INTERNAL_REQUIRE_APPROVAL: "true"
+    EMALL_TRUST_IDENTITY_ENABLED: "true"
+    EMALL_TRUST_IDENTITY_FAIL_CLOSED: "true"
+    EMALL_TRUST_RISK_ENABLED: "true"
+    EMALL_TRUST_RISK_FAIL_CLOSED: "true"
+    EMALL_IDENTITY_URL: http://identity:8097
+    EMALL_RISK_URL: http://risk:8098
+    EMALL_FIELD_ENCRYPTION_KEY: change-me-with-kms-managed-secret
     EMALL_DUBBO_REGISTRY_ADDRESS: nacos://nacos:8848
     EMALL_DUBBO_PORT: "-1"
     EMALL_KAFKA_BOOTSTRAP_SERVERS: kafka:9092
     EMALL_REDIS_CLUSTER_NODES: redis-cluster:6379
     EMALL_ELASTICSEARCH_URL: http://elasticsearch:9200
+    EMALL_PRODUCT_EVENTS_CONSUMER_MAX_ATTEMPTS: "4"
     EMALL_CLICKHOUSE_URL: jdbc:clickhouse://clickhouse:8123/emall
     EMALL_OTLP_TRACES_ENDPOINT: http://otel-collector:4318/v1/traces
 
@@ -67,3 +91,12 @@ services:
     port: 8091
   - name: after-sales
     port: 8092
+  - name: flash-sale
+    port: 8094
+    replicas: 4
+  - name: identity
+    port: 8097
+  - name: risk
+    port: 8098
+  - name: openapi
+    port: 8100

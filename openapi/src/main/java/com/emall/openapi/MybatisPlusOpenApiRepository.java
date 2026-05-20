@@ -1,5 +1,6 @@
 package com.emall.openapi;
 
+import java.time.Instant;
 import java.time.LocalDate;
 import java.util.List;
 import java.util.Optional;
@@ -40,6 +41,11 @@ class MybatisPlusOpenApiRepository implements OpenApiRepository {
     @Override
     public Optional<ApiQuotaUsage> findQuota(String appKey, LocalDate usageDate) {
         return Optional.ofNullable(openApiMapper.findQuota(appKey, usageDate));
+    }
+
+    @Override
+    public boolean saveNonceIfAbsent(String appKey, String nonce, String requestPath, Instant expiresAt) {
+        return openApiMapper.saveNonceIfAbsent(appKey, nonce, requestPath, expiresAt) == 1;
     }
 
     @Override

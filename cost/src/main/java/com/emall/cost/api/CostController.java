@@ -1,12 +1,14 @@
 package com.emall.cost.api;
 
 import com.emall.common.api.ApiResponse;
+import com.emall.cost.domain.CapacitySummary;
 import com.emall.cost.domain.CostActionStatus;
 import com.emall.cost.domain.CostBudget;
 import com.emall.cost.domain.CostOptimizationAction;
 import com.emall.cost.domain.CostSignal;
 import com.emall.cost.domain.CostSignalType;
 import com.emall.cost.domain.CostSummary;
+import com.emall.cost.domain.ServiceCapacityBaseline;
 import com.emall.cost.service.CostGovernanceService;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.DecimalMin;
@@ -73,6 +75,21 @@ public class CostController {
         return ApiResponse.ok(costGovernanceService.summary(serviceName));
     }
 
+    @PostMapping("/capacity-baselines")
+    @ResponseStatus(HttpStatus.ACCEPTED)
+    public ApiResponse<ServiceCapacityBaseline> recordCapacityBaseline(
+            @Valid @RequestBody RecordCapacityBaselineRequest request) {
+        return ApiResponse.ok(costGovernanceService.recordCapacityBaseline(request.serviceName(), request.safeQps(),
+                request.peakQps(), request.currentQps(), request.currentReplicas(), request.maxReplicas(),
+                request.cpuUtilization(), request.memoryUtilization(), request.monthlyCost(), request.sloProtected(),
+                request.observedAt()));
+    }
+
+    @GetMapping("/services/{serviceName}/capacity")
+    public ApiResponse<CapacitySummary> capacitySummary(@PathVariable String serviceName) {
+        return ApiResponse.ok(costGovernanceService.capacitySummary(serviceName));
+    }
+
     public record RecordSignalRequest(@NotBlank String serviceName, @NotNull CostSignalType signalType,
             @NotNull @DecimalMin("0.000000") BigDecimal metricValue,
             @NotNull @DecimalMin("0.000000") BigDecimal thresholdValue,
@@ -86,5 +103,13 @@ public class CostController {
     }
 
     public record ChangeActionStatusRequest(@NotNull CostActionStatus status) {
+    }
+
+    public record RecordCapacityBaselineRequest(@NotBlank String serviceName, @Min(1) int safeQps, @Min(1) int peakQps,
+            @Min(0) int currentQps, @Min(1) int currentReplicas, @Min(1) int maxReplicas,
+            @NotNull @DecimalMin("0.000000") BigDecimal cpuUtilization,
+            @NotNull @DecimalMin("0.000000") BigDecimal memoryUtilization,
+            @NotNull @DecimalMin("0.000000") BigDecimal monthlyCost, boolean sloProtected,
+            @NotNull @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) Instant observedAt) {
     }
 }

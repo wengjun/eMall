@@ -21,8 +21,9 @@ public class ProductOperationsController extends InternalOperationsControllerSup
 
     public ProductOperationsController(OutboxPublisher outboxPublisher,
             OperationAuditRepository operationAuditRepository,
-            @Value("${emall.internal.operations-token}") String operationsToken) {
-        super(operationAuditRepository, "product", operationsToken);
+            @Value("${emall.internal.operations-token}") String operationsToken,
+            @Value("${emall.internal.require-approval:false}") boolean approvalRequired) {
+        super(operationAuditRepository, "product", operationsToken, approvalRequired);
         this.outboxPublisher = outboxPublisher;
     }
 
@@ -31,8 +32,12 @@ public class ProductOperationsController extends InternalOperationsControllerSup
             @RequestParam(defaultValue = "100") @Positive @Max(1000) int limit,
             @RequestHeader("X-Internal-Token") String token,
             @RequestHeader(value = "X-Operator", defaultValue = "unknown") String operator,
-            @RequestHeader(value = "X-Trace-Id", required = false) String traceId) {
-        return execute(token, operator, traceId, "outbox.publish", () -> outboxPublisher.publishBatch(limit));
+            @RequestHeader(value = "X-Trace-Id", required = false) String traceId,
+            @RequestHeader(value = "X-Operator-Role", defaultValue = "ops-admin") String role,
+            @RequestHeader(value = "X-Approval-Id", required = false) String approvalId,
+            @RequestHeader(value = "X-Source-Identity", required = false) String sourceIdentity) {
+        return execute(token, operator, traceId, role, approvalId, sourceIdentity, "limit=" + limit, "outbox.publish",
+                () -> outboxPublisher.publishBatch(limit));
     }
 
     @PostMapping("/outbox/retry-failed")
@@ -40,7 +45,11 @@ public class ProductOperationsController extends InternalOperationsControllerSup
             @RequestParam(defaultValue = "100") @Positive @Max(1000) int limit,
             @RequestHeader("X-Internal-Token") String token,
             @RequestHeader(value = "X-Operator", defaultValue = "unknown") String operator,
-            @RequestHeader(value = "X-Trace-Id", required = false) String traceId) {
-        return execute(token, operator, traceId, "outbox.retry-failed", () -> outboxPublisher.retryFailedNow(limit));
+            @RequestHeader(value = "X-Trace-Id", required = false) String traceId,
+            @RequestHeader(value = "X-Operator-Role", defaultValue = "ops-admin") String role,
+            @RequestHeader(value = "X-Approval-Id", required = false) String approvalId,
+            @RequestHeader(value = "X-Source-Identity", required = false) String sourceIdentity) {
+        return execute(token, operator, traceId, role, approvalId, sourceIdentity, "limit=" + limit,
+                "outbox.retry-failed", () -> outboxPublisher.retryFailedNow(limit));
     }
 }

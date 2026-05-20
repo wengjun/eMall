@@ -2,9 +2,13 @@ package com.emall.common.integration;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
+import java.io.IOException;
+import java.nio.file.Files;
 import java.nio.file.Path;
 import java.time.Duration;
+import java.util.Comparator;
 import java.util.List;
+import java.util.stream.Stream;
 import javax.sql.DataSource;
 import org.flywaydb.core.Flyway;
 import org.flywaydb.core.api.output.MigrateResult;
@@ -22,11 +26,7 @@ class CoreFlywaySchemaIT {
     static final MySQLContainer<?> mysql = new MySQLContainer<>("mysql:8.4").withDatabaseName("emall_schema_it")
             .withUsername("root").withPassword("emall").withStartupTimeout(Duration.ofMinutes(2));
 
-    private static final List<SchemaTarget> SCHEMAS = List.of(new SchemaTarget("emall_user_it", "user", 2),
-            new SchemaTarget("emall_product_it", "product", 3), new SchemaTarget("emall_inventory_it", "inventory", 2),
-            new SchemaTarget("emall_order_it", "order", 4), new SchemaTarget("emall_payment_it", "payment", 3),
-            new SchemaTarget("emall_search_it", "search", 2),
-            new SchemaTarget("emall_fulfillment_it", "fulfillment", 2));
+    private static final Path REPOSITORY_ROOT = Path.of("..").toAbsolutePath().normalize();
 
     @BeforeAll
     static void startMysql() {
@@ -43,10 +43,10 @@ class CoreFlywaySchemaIT {
     }
 
     @Test
-    void shouldApplyCoreServiceFlywayMigrationsOnMysql() {
+    void shouldApplyAllServiceFlywayMigrationsOnMysql() {
         JdbcTemplate admin = new JdbcTemplate(dataSource("emall_schema_it"));
 
-        for (SchemaTarget schema : SCHEMAS) {
+        for (SchemaTarget schema : schemaTargets()) {
             admin.execute("create database if not exists " + schema.databaseName());
             MigrateResult result = Flyway.configure()
                     .dataSource(jdbcUrl(schema.databaseName()), mysql.getUsername(), mysql.getPassword())
@@ -68,7 +68,7 @@ class CoreFlywaySchemaIT {
     }
 
     private String migrationPath(String moduleName) {
-        return Path.of("..", moduleName, "src/main/resources/db/migration").toAbsolutePath().normalize().toString();
+        return REPOSITORY_ROOT.resolve(moduleName).resolve("src/main/resources/db/migration").toString();
     }
 
     private DataSource dataSource(String databaseName) {
@@ -79,6 +79,27 @@ class CoreFlywaySchemaIT {
     private String jdbcUrl(String databaseName) {
         return "jdbc:mysql://" + mysql.getHost() + ":" + mysql.getMappedPort(3306) + "/" + databaseName
                 + "?useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=UTC";
+    }
+
+    private List<SchemaTarget> schemaTargets() {
+        try (Stream<Path> modules = Files.list(REPOSITORY_ROOT)) {
+            return modules.filter(path -> Files.isDirectory(path.resolve("src/main/resources/db/migration")))
+                    .map(this::schemaTarget).sorted(Comparator.comparing(SchemaTarget::moduleName)).toList();
+        } catch (IOException ex) {
+            throw new IllegalStateException("failed to discover Flyway migration targets", ex);
+        }
+    }
+
+    private SchemaTarget schemaTarget(Path modulePath) {
+        String moduleName = modulePath.getFileName().toString();
+        Path migrationDirectory = modulePath.resolve("src/main/resources/db/migration");
+        try (Stream<Path> migrations = Files.list(migrationDirectory)) {
+            int migrationCount = Math.toIntExact(
+                    migrations.filter(path -> path.getFileName().toString().matches("V\\d+__.*\\.sql")).count());
+            return new SchemaTarget("emall_" + moduleName.replace('-', '_') + "_it", moduleName, migrationCount);
+        } catch (IOException ex) {
+            throw new IllegalStateException("failed to count Flyway migrations for " + moduleName, ex);
+        }
     }
 
     private record SchemaTarget(String databaseName, String moduleName, int expectedMigrations) {

@@ -6,6 +6,7 @@ import jakarta.validation.constraints.Max;
 import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Positive;
+import java.util.List;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PatchMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -57,6 +58,23 @@ class TrafficController {
         return ApiResponse.ok(trafficService.summary());
     }
 
+    @PostMapping("/control-rules")
+    ApiResponse<TrafficControlRule> upsertControlRule(@Valid @RequestBody UpsertControlRuleRequest request) {
+        return ApiResponse.ok(trafficService.upsertControlRule(request.resource(), request.type(), request.dimension(),
+                request.matchValue(), request.threshold(), request.unitCode(), request.enabled()));
+    }
+
+    @PatchMapping("/control-rules/{ruleId}/enabled")
+    ApiResponse<TrafficControlRule> changeControlRule(@PathVariable long ruleId,
+            @Valid @RequestBody ChangeControlRuleRequest request) {
+        return ApiResponse.ok(trafficService.changeControlRule(ruleId, request.enabled()));
+    }
+
+    @GetMapping("/control-rules")
+    ApiResponse<List<TrafficControlRule>> controlRules() {
+        return ApiResponse.ok(trafficService.controlRules());
+    }
+
     record RegisterUnitRequest(@NotBlank String unitCode, @NotBlank String regionCode, @Positive int capacityWeight) {
     }
 
@@ -69,5 +87,12 @@ class TrafficController {
     }
 
     record ChangeShiftStatusRequest(ShiftStatus status) {
+    }
+
+    record UpsertControlRuleRequest(@NotBlank String resource, ControlRuleType type, @NotBlank String dimension,
+            @NotBlank String matchValue, @Positive int threshold, @NotBlank String unitCode, boolean enabled) {
+    }
+
+    record ChangeControlRuleRequest(boolean enabled) {
     }
 }

@@ -1,5 +1,6 @@
 package com.emall.eventplatform;
 
+import com.emall.common.privacy.SensitiveDataType;
 import java.time.Instant;
 
 enum SchemaStatus {
@@ -16,6 +17,10 @@ record EventSchema(long schemaId, String eventName, int version, String owner, S
     }
 }
 
+record EventFieldClassification(long classificationId, String eventName, int version, String fieldName,
+        SensitiveDataType sensitivity, boolean required, boolean exportedToWarehouse, Instant createdAt) {
+}
+
 record TrackingEvent(long eventId, String eventName, int version, String eventKey, String userKey, String payload,
         boolean lateEvent, Instant occurredAt, Instant ingestedAt) {
 }
@@ -27,5 +32,6 @@ record MetricMaterialization(long materializationId, String metricName, String w
         long lateEventCount, Instant materializedAt) {
 }
 
-record EventPlatformSummary(int activeSchemas, int ingestedEvents, int lateEvents, int materializedMetrics) {
+record EventPlatformSummary(int activeSchemas, int ingestedEvents, int lateEvents, int materializedMetrics,
+        int classifiedFields) {
 }

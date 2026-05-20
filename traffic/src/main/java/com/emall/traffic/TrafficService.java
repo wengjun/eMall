@@ -59,13 +59,37 @@ class TrafficService {
         return repository.saveUnit(requireUnit(unitCode).changeStatus(UnitStatus.ISOLATED));
     }
 
+    @Transactional
+    TrafficControlRule upsertControlRule(String resource, ControlRuleType type, String dimension, String matchValue,
+            int threshold, String unitCode, boolean enabled) {
+        if (threshold <= 0) {
+            throw new BusinessException(ErrorCode.BAD_REQUEST, "control threshold must be positive");
+        }
+        requireUnit(unitCode);
+        Instant now = Instant.now();
+        return repository.saveControlRule(new TrafficControlRule(idGenerator.nextId(), normalize(resource), type,
+                normalize(dimension), normalize(matchValue), threshold, normalize(unitCode), enabled, now, now));
+    }
+
+    @Transactional
+    TrafficControlRule changeControlRule(long ruleId, boolean enabled) {
+        TrafficControlRule rule = repository.findControlRule(ruleId)
+                .orElseThrow(() -> new BusinessException(ErrorCode.NOT_FOUND, "traffic control rule not found"));
+        return repository.saveControlRule(rule.changeEnabled(enabled));
+    }
+
+    java.util.List<TrafficControlRule> controlRules() {
+        return repository.findControlRules();
+    }
+
     TrafficSummary summary() {
         int active = (int) repository.findUnits().stream().filter(unit -> unit.status() == UnitStatus.ACTIVE).count();
         int isolated =
                 (int) repository.findUnits().stream().filter(unit -> unit.status() == UnitStatus.ISOLATED).count();
         int running =
                 (int) repository.findShifts().stream().filter(shift -> shift.status() == ShiftStatus.RUNNING).count();
-        return new TrafficSummary(active, repository.findRoutes().size(), running, isolated);
+        return new TrafficSummary(active, repository.findRoutes().size(), running, isolated,
+                repository.findControlRules().size());
     }
 
     private UnitCell requireUnit(String unitCode) {

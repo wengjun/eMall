@@ -19,6 +19,10 @@ public class ElasticsearchSearchRepository implements SearchRepository {
 
     @Override
     public SearchDocument save(SearchDocument document) {
+        Optional<SearchDocument> existing = findBySkuId(document.skuId());
+        if (existing.isPresent() && existing.get().version() > document.version()) {
+            return existing.get();
+        }
         return repository.save(ElasticsearchSearchDocument.from(document)).toDomain();
     }
 

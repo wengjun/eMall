@@ -32,6 +32,34 @@ interface EventPlatformMapper {
     List<EventSchema> findSchemas();
 
     @Insert("""
+            INSERT INTO event_field_classification
+                (classification_id, event_name, version, field_name, sensitivity, required, exported_to_warehouse,
+                 created_at)
+            VALUES (#{classification.classificationId}, #{classification.eventName}, #{classification.version},
+                #{classification.fieldName}, #{classification.sensitivity}, #{classification.required},
+                #{classification.exportedToWarehouse}, #{classification.createdAt})
+            ON DUPLICATE KEY UPDATE sensitivity = VALUES(sensitivity), required = VALUES(required),
+                exported_to_warehouse = VALUES(exported_to_warehouse)
+            """)
+    int saveFieldClassification(@Param("classification") EventFieldClassification classification);
+
+    @Select("""
+            SELECT classification_id, event_name, version, field_name, sensitivity, required, exported_to_warehouse,
+                created_at
+            FROM event_field_classification
+            """)
+    List<EventFieldClassification> findFieldClassifications();
+
+    @Select("""
+            SELECT classification_id, event_name, version, field_name, sensitivity, required, exported_to_warehouse,
+                created_at
+            FROM event_field_classification
+            WHERE event_name = #{eventName} AND version = #{version}
+            """)
+    List<EventFieldClassification> findFieldClassificationsBySchema(@Param("eventName") String eventName,
+            @Param("version") int version);
+
+    @Insert("""
             INSERT INTO tracking_event
                 (event_id, event_name, version, event_key, user_key, payload, late_event, occurred_at,
                 ingested_at)

@@ -34,4 +34,25 @@ class CartServiceTest {
         assertThatThrownBy(() -> cartService.update(70001L, 30001L, 1, true)).isInstanceOf(BusinessException.class)
                 .hasMessageContaining("cart item not found");
     }
+
+    @Test
+    void shouldRejectItemQuantityAboveLimit() {
+        cartService.add(70001L, 30001L, 999);
+
+        assertThatThrownBy(() -> cartService.add(70001L, 30001L, 1)).isInstanceOf(BusinessException.class)
+                .hasMessageContaining("item quantity limit exceeded");
+        assertThat(cartService.list(70001L).items()).singleElement()
+                .satisfies(item -> assertThat(item.quantity()).isEqualTo(999));
+    }
+
+    @Test
+    void shouldRejectNewLineWhenCartLineLimitIsReached() {
+        for (int index = 0; index < 500; index++) {
+            cartService.add(70002L, 40000L + index, 1);
+        }
+
+        assertThatThrownBy(() -> cartService.add(70002L, 50001L, 1)).isInstanceOf(BusinessException.class)
+                .hasMessageContaining("cart line limit exceeded");
+        assertThat(cartService.add(70002L, 40000L, 1).quantity()).isEqualTo(2);
+    }
 }

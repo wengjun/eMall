@@ -26,11 +26,10 @@ public class MybatisPlusAfterSalesRepository implements AfterSalesRepository {
         try {
             afterSalesRequestMapper.insert(entity);
         } catch (DuplicateKeyException ex) {
-            afterSalesRequestMapper.update(null, new UpdateWrapper<AfterSalesRequestEntity>()
-                    .set("status", entity.getStatus())
-                    .set("reason", entity.getReason())
-                    .set("updated_at", entity.getUpdatedAt())
-                    .eq("request_id", entity.getRequestId()));
+            afterSalesRequestMapper.update(null,
+                    new UpdateWrapper<AfterSalesRequestEntity>().set("status", entity.getStatus())
+                            .set("reason", entity.getReason()).set("updated_at", entity.getUpdatedAt())
+                            .eq("request_id", entity.getRequestId()));
         }
         return request;
     }
@@ -57,10 +56,9 @@ public class MybatisPlusAfterSalesRepository implements AfterSalesRepository {
     }
 
     private AfterSalesRequest toDomain(AfterSalesRequestEntity entity) {
-        return new AfterSalesRequest(entity.getRequestId(), entity.getOrderId(), entity.getUserId(),
-                entity.getSkuId(), entity.getQuantity(), entity.getRefundAmount(),
-                AfterSalesType.valueOf(entity.getType()), AfterSalesStatus.valueOf(entity.getStatus()),
-                entity.getReason(), entity.getCreatedAt().toInstant(ZoneOffset.UTC),
-                entity.getUpdatedAt().toInstant(ZoneOffset.UTC));
+        return new AfterSalesRequest(entity.getRequestId(), entity.getOrderId(), entity.getUserId(), entity.getSkuId(),
+                entity.getQuantity(), entity.getRefundAmount(), AfterSalesType.valueOf(entity.getType()),
+                AfterSalesStatus.valueOf(entity.getStatus()), entity.getReason(),
+                entity.getCreatedAt().toInstant(ZoneOffset.UTC), entity.getUpdatedAt().toInstant(ZoneOffset.UTC));
     }
 }

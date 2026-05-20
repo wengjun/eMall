@@ -13,7 +13,9 @@ class InMemoryDataWarehouseRepository implements DataWarehouseRepository {
     private final ConcurrentMap<Long, DatasetDefinition> datasets = new ConcurrentHashMap<>();
     private final ConcurrentMap<Long, TablePartition> partitions = new ConcurrentHashMap<>();
     private final ConcurrentMap<Long, QualityCheck> checks = new ConcurrentHashMap<>();
+    private final ConcurrentMap<Long, QualityAlert> qualityAlerts = new ConcurrentHashMap<>();
     private final ConcurrentMap<Long, LineageEdge> lineage = new ConcurrentHashMap<>();
+    private final ConcurrentMap<Long, FieldLineage> fieldLineage = new ConcurrentHashMap<>();
 
     @Override
     public DatasetDefinition saveDataset(DatasetDefinition dataset) {
@@ -54,6 +56,17 @@ class InMemoryDataWarehouseRepository implements DataWarehouseRepository {
     }
 
     @Override
+    public QualityAlert saveQualityAlert(QualityAlert alert) {
+        qualityAlerts.put(alert.alertId(), alert);
+        return alert;
+    }
+
+    @Override
+    public List<QualityAlert> findQualityAlerts() {
+        return List.copyOf(qualityAlerts.values());
+    }
+
+    @Override
     public LineageEdge saveLineage(LineageEdge edge) {
         lineage.put(edge.lineageId(), edge);
         return edge;
@@ -62,5 +75,16 @@ class InMemoryDataWarehouseRepository implements DataWarehouseRepository {
     @Override
     public List<LineageEdge> findLineage() {
         return List.copyOf(lineage.values());
+    }
+
+    @Override
+    public FieldLineage saveFieldLineage(FieldLineage lineage) {
+        fieldLineage.put(lineage.lineageId(), lineage);
+        return lineage;
+    }
+
+    @Override
+    public List<FieldLineage> findFieldLineage() {
+        return List.copyOf(fieldLineage.values());
     }
 }

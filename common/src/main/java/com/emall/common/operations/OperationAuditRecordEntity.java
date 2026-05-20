@@ -36,6 +36,18 @@ public class OperationAuditRecordEntity {
     @TableField("message")
     private String message;
 
+    @TableField("role")
+    private String role;
+
+    @TableField("approval_id")
+    private String approvalId;
+
+    @TableField("source_identity")
+    private String sourceIdentity;
+
+    @TableField("parameter_digest")
+    private String parameterDigest;
+
     @TableField("executed_at")
     private LocalDateTime executedAt;
 }

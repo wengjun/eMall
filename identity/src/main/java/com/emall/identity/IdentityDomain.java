@@ -52,3 +52,6 @@ record AuthToken(long sessionId, String accessToken, String refreshToken, Instan
 
 record AccessDecision(long accountId, String scope, String resource, boolean allowed) {
 }
+
+record SessionValidation(long accountId, String subject, String deviceId, boolean allowed, String reason) {
+}

@@ -38,6 +38,12 @@ class IdentityController {
         return ApiResponse.ok(identityService.revokeSession(sessionId));
     }
 
+    @PostMapping("/sessions/validate")
+    ApiResponse<SessionValidation> validateSession(@Valid @RequestBody ValidateSessionRequest request) {
+        return ApiResponse
+                .ok(identityService.validateSession(request.accessToken(), request.scope(), request.resource()));
+    }
+
     @PostMapping("/accounts/{accountId}/permissions")
     ApiResponse<PermissionGrant> grantPermission(@PathVariable long accountId,
             @Valid @RequestBody GrantPermissionRequest request) {
@@ -67,6 +73,9 @@ class IdentityController {
     }
 
     record LoginRequest(@NotBlank String subject, @NotBlank String deviceId) {
+    }
+
+    record ValidateSessionRequest(@NotBlank String accessToken, @NotBlank String scope, @NotBlank String resource) {
     }
 
     record GrantPermissionRequest(@NotBlank String scope, @NotBlank String resource) {

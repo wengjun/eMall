@@ -31,6 +31,22 @@ class MybatisPlusEventPlatformRepository implements EventPlatformRepository {
     }
 
     @Override
+    public EventFieldClassification saveFieldClassification(EventFieldClassification classification) {
+        eventPlatformMapper.saveFieldClassification(classification);
+        return classification;
+    }
+
+    @Override
+    public List<EventFieldClassification> findFieldClassifications() {
+        return eventPlatformMapper.findFieldClassifications();
+    }
+
+    @Override
+    public List<EventFieldClassification> findFieldClassifications(String eventName, int version) {
+        return eventPlatformMapper.findFieldClassificationsBySchema(eventName, version);
+    }
+
+    @Override
     public TrackingEvent saveEvent(TrackingEvent event) {
         eventPlatformMapper.saveEvent(event);
         return event;

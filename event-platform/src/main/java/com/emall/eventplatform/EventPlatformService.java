@@ -3,6 +3,8 @@ package com.emall.eventplatform;
 import com.emall.common.api.ErrorCode;
 import com.emall.common.exception.BusinessException;
 import com.emall.common.id.SnowflakeIdGenerator;
+import com.emall.common.privacy.SensitiveDataMasker;
+import com.emall.common.privacy.SensitiveDataType;
 import java.time.Duration;
 import java.time.Instant;
 import java.util.Locale;
@@ -37,10 +39,18 @@ class EventPlatformService {
     }
 
     @Transactional
+    EventFieldClassification classifyField(String eventName, int version, String fieldName,
+            SensitiveDataType sensitivity, boolean required, boolean exportedToWarehouse) {
+        requireSchema(eventName, version);
+        return repository
+                .saveFieldClassification(new EventFieldClassification(idGenerator.nextId(), normalize(eventName),
+                        version, normalize(fieldName), sensitivity, required, exportedToWarehouse, Instant.now()));
+    }
+
+    @Transactional
     TrackingEvent ingestEvent(String eventName, int version, String eventKey, String userKey, String payload,
             Instant occurredAt) {
-        EventSchema schema = repository.findSchema(normalize(eventName), version)
-                .orElseThrow(() -> new BusinessException(ErrorCode.NOT_FOUND, "event schema not found"));
+        EventSchema schema = requireSchema(eventName, version);
         if (schema.status() != SchemaStatus.ACTIVE) {
             throw new BusinessException(ErrorCode.CONFLICT, "event schema is not active");
         }
@@ -49,8 +59,9 @@ class EventPlatformService {
         }
         Instant now = Instant.now();
         boolean lateEvent = occurredAt.isBefore(now.minus(Duration.ofHours(24)));
-        return repository.saveEvent(new TrackingEvent(idGenerator.nextId(), schema.eventName(), version,
-                normalize(eventKey), normalize(userKey), payload, lateEvent, occurredAt, now));
+        return repository
+                .saveEvent(new TrackingEvent(idGenerator.nextId(), schema.eventName(), version, normalize(eventKey),
+                        normalize(userKey), SensitiveDataMasker.maskFreeText(payload), lateEvent, occurredAt, now));
     }
 
     @Transactional
@@ -73,7 +84,12 @@ class EventPlatformService {
                 .filter(schema -> schema.status() == SchemaStatus.ACTIVE).count();
         int lateEvents = (int) repository.findEvents().stream().filter(TrackingEvent::lateEvent).count();
         return new EventPlatformSummary(activeSchemas, repository.findEvents().size(), lateEvents,
-                repository.findMaterializations().size());
+                repository.findMaterializations().size(), repository.findFieldClassifications().size());
+    }
+
+    private EventSchema requireSchema(String eventName, int version) {
+        return repository.findSchema(normalize(eventName), version)
+                .orElseThrow(() -> new BusinessException(ErrorCode.NOT_FOUND, "event schema not found"));
     }
 
     private String normalize(String value) {

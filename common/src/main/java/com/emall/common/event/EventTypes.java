@@ -10,6 +10,7 @@ public final class EventTypes {
     public static final String PAYMENT_SUCCEEDED = "payment.succeeded";
     public static final String PAYMENT_REFUNDED = "payment.refunded";
     public static final String PRODUCT_CHANGED = "product.changed";
+    public static final String FLASH_SALE_ORDER_QUEUED = "flash-sale.order.queued";
 
     private EventTypes() {
     }

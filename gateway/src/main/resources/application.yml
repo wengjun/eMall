@@ -183,6 +183,17 @@ spring:
           predicates:
             - Path=/api/platform-ops/**
 
+emall:
+  gateway:
+    rate-limit:
+      include-client-type: ${EMALL_RATE_LIMIT_INCLUDE_CLIENT_TYPE:true}
+      include-channel: ${EMALL_RATE_LIMIT_INCLUDE_CHANNEL:true}
+      include-device: ${EMALL_RATE_LIMIT_INCLUDE_DEVICE:true}
+      include-sku: ${EMALL_RATE_LIMIT_INCLUDE_SKU:true}
+      include-campaign: ${EMALL_RATE_LIMIT_INCLUDE_CAMPAIGN:true}
+      include-region-cell: ${EMALL_RATE_LIMIT_INCLUDE_REGION_CELL:true}
+      include-ip: ${EMALL_RATE_LIMIT_INCLUDE_IP:true}
+
 management:
   metrics:
     tags:

@@ -1,0 +1,39 @@
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: emall-migration-runner
+  labels:
+    app.kubernetes.io/name: emall
+    app.kubernetes.io/component: migration-runner
+spec:
+  backoffLimit: 0
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: emall
+        app.kubernetes.io/component: migration-runner
+    spec:
+      restartPolicy: Never
+      serviceAccountName: emall-migration-runner
+      containers:
+        - name: migration-runner
+          image: emall/migration-runner:latest
+          imagePullPolicy: IfNotPresent
+          env:
+            - name: EMALL_MIGRATION_OPERATOR
+              valueFrom:
+                fieldRef:
+                  fieldPath: metadata.annotations['emall.io/operator']
+            - name: EMALL_MIGRATION_SERVICES
+              value: "order,inventory,payment,product,pricing,search,user,cart,flash-sale"
+            - name: EMALL_MIGRATION_REGIONS
+              value: "cn-east-1,cn-south-1"
+            - name: EMALL_MIGRATION_SHARDS
+              value: "0,1,2,3,4,5,6,7"
+            - name: EMALL_MIGRATION_JDBC_URL_TEMPLATE
+              value: "jdbc:mysql://mysql-{region}-{shard}.emall-db:3306/emall_{service}_{shard}?useUnicode=true&characterEncoding=utf8&serverTimezone=UTC"
+            - name: EMALL_MIGRATION_LOCATIONS
+              value: "filesystem:/migrations/{service}"
+          envFrom:
+            - secretRef:
+                name: emall-db-credential

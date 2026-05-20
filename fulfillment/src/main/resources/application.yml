@@ -29,7 +29,7 @@ spring:
     username: ${EMALL_DB_USERNAME:root}
     password: ${EMALL_DB_PASSWORD:root}
   flyway:
-    enabled: true
+    enabled: ${EMALL_FLYWAY_ENABLED:false}
   kafka:
     bootstrap-servers: ${EMALL_KAFKA_BOOTSTRAP_SERVERS:localhost:9092}
     consumer:

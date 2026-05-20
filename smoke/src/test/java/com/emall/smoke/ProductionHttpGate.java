@@ -49,6 +49,13 @@ final class ProductionHttpGate {
         return sendApiRequest(request, "POST " + path);
     }
 
+    static JsonNode patchJson(String baseUrl, String path, Object body, String token)
+            throws IOException, InterruptedException {
+        HttpRequest request = requestBuilder(baseUrl, path, token).header("Content-Type", "application/json")
+                .method("PATCH", HttpRequest.BodyPublishers.ofString(OBJECT_MAPPER.writeValueAsString(body))).build();
+        return sendApiRequest(request, "PATCH " + path);
+    }
+
     static JsonNode getJson(String baseUrl, String path) throws IOException, InterruptedException {
         HttpRequest request = HttpRequest.newBuilder(URI.create(trimTrailingSlash(baseUrl) + path))
                 .timeout(Duration.ofSeconds(10)).GET().build();

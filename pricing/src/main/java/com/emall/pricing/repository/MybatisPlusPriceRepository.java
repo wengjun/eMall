@@ -24,14 +24,11 @@ public class MybatisPlusPriceRepository implements PriceRepository {
         try {
             priceBookMapper.insert(entity);
         } catch (DuplicateKeyException ex) {
-            priceBookMapper.update(null, new UpdateWrapper<PriceBookEntity>()
-                    .set("list_price", entity.getListPrice())
-                    .set("sale_price", entity.getSalePrice())
-                    .set("currency", entity.getCurrency())
-                    .set("version", entity.getVersion())
-                    .set("active", entity.getActive())
-                    .set("updated_at", entity.getUpdatedAt())
-                    .eq("sku_id", entity.getSkuId()));
+            priceBookMapper.update(null,
+                    new UpdateWrapper<PriceBookEntity>().set("list_price", entity.getListPrice())
+                            .set("sale_price", entity.getSalePrice()).set("currency", entity.getCurrency())
+                            .set("version", entity.getVersion()).set("active", entity.getActive())
+                            .set("updated_at", entity.getUpdatedAt()).eq("sku_id", entity.getSkuId()));
         }
         return priceBook;
     }

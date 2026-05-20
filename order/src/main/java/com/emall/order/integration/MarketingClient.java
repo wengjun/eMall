@@ -38,8 +38,7 @@ public class MarketingClient {
             result = toLocal(marketingRpcService.quote(new PromotionQuoteCommand(userId, orderAmount)));
         } else {
             PromotionQuoteResponse response = marketingRestClient.post().uri("/api/marketing/quotes")
-                    .body(new PromotionQuoteRequest(userId, orderAmount)).retrieve()
-                    .body(PromotionQuoteResponse.class);
+                    .body(new PromotionQuoteRequest(userId, orderAmount)).retrieve().body(PromotionQuoteResponse.class);
             result = response == null ? null : response.data();
         }
         return result == null ? PromotionQuote.none(userId, orderAmount) : result;
@@ -58,8 +57,10 @@ public class MarketingClient {
     }
 
     private PromotionQuote toLocal(PromotionQuoteView view) {
-        return view == null ? null : new PromotionQuote(view.userId(), view.orderAmount(), view.discountAmount(),
-                view.payableAmount(), view.couponId(), view.quotedAt());
+        return view == null
+                ? null
+                : new PromotionQuote(view.userId(), view.orderAmount(), view.discountAmount(), view.payableAmount(),
+                        view.couponId(), view.quotedAt());
     }
 
     public record PromotionQuoteRequest(long userId, BigDecimal orderAmount) {

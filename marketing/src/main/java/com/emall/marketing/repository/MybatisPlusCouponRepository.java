@@ -27,11 +27,10 @@ public class MybatisPlusCouponRepository implements CouponRepository {
         try {
             couponMapper.insert(entity);
         } catch (DuplicateKeyException ex) {
-            couponMapper.update(null, new UpdateWrapper<CouponEntity>()
-                    .set("status", entity.getStatus())
-                    .set("expires_at", entity.getExpiresAt())
-                    .set("updated_at", entity.getUpdatedAt())
-                    .eq("coupon_id", entity.getCouponId()));
+            couponMapper.update(null,
+                    new UpdateWrapper<CouponEntity>().set("status", entity.getStatus())
+                            .set("expires_at", entity.getExpiresAt()).set("updated_at", entity.getUpdatedAt())
+                            .eq("coupon_id", entity.getCouponId()));
         }
         return coupon;
     }
@@ -43,9 +42,8 @@ public class MybatisPlusCouponRepository implements CouponRepository {
 
     @Override
     public List<Coupon> findByUserId(long userId) {
-        return couponMapper.selectList(new QueryWrapper<CouponEntity>()
-                .eq("user_id", userId)
-                .orderByDesc("updated_at")).stream().map(this::toDomain).toList();
+        return couponMapper.selectList(new QueryWrapper<CouponEntity>().eq("user_id", userId).orderByDesc("updated_at"))
+                .stream().map(this::toDomain).toList();
     }
 
     private CouponEntity toEntity(Coupon coupon) {

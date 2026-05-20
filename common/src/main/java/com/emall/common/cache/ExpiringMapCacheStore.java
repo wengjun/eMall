@@ -40,8 +40,13 @@ public final class ExpiringMapCacheStore<K, V> implements TwoLevelCache.CacheSto
 
     @Override
     public void put(K key, V value) {
+        put(key, value, ttl);
+    }
+
+    @Override
+    public void put(K key, V value, Duration entryTtl) {
         entries.put(key, new Entry<>(Objects.requireNonNull(value, "value must not be null"),
-                Instant.now(clock).plus(ttl)));
+                Instant.now(clock).plus(entryTtl == null ? ttl : entryTtl)));
     }
 
     @Override

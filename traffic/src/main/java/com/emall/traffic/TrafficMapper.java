@@ -68,4 +68,30 @@ interface TrafficMapper {
             FROM traffic_shift
             """)
     List<TrafficShift> findShifts();
+
+    @Insert("""
+            INSERT INTO traffic_control_rule
+                (rule_id, resource, type, dimension, match_value, threshold_value, unit_code, enabled, created_at,
+                    updated_at)
+            VALUES (#{rule.ruleId}, #{rule.resource}, #{rule.type}, #{rule.dimension}, #{rule.matchValue},
+                #{rule.threshold}, #{rule.unitCode}, #{rule.enabled}, #{rule.createdAt}, #{rule.updatedAt})
+            ON DUPLICATE KEY UPDATE threshold_value = VALUES(threshold_value), unit_code = VALUES(unit_code),
+                enabled = VALUES(enabled), updated_at = VALUES(updated_at)
+            """)
+    int saveControlRule(@Param("rule") TrafficControlRule rule);
+
+    @Select("""
+            SELECT rule_id, resource, type, dimension, match_value, threshold_value AS threshold,
+                unit_code, enabled, created_at, updated_at
+            FROM traffic_control_rule
+            WHERE rule_id = #{ruleId}
+            """)
+    TrafficControlRule findControlRule(@Param("ruleId") long ruleId);
+
+    @Select("""
+            SELECT rule_id, resource, type, dimension, match_value, threshold_value AS threshold,
+                unit_code, enabled, created_at, updated_at
+            FROM traffic_control_rule
+            """)
+    List<TrafficControlRule> findControlRules();
 }

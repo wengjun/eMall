@@ -24,6 +24,9 @@ public class OutboxEventRecord {
     @TableField("event_type")
     private String eventType;
 
+    @TableField("shard_id")
+    private Integer shardId;
+
     @TableField("payload")
     private String payload;
 
@@ -35,6 +38,21 @@ public class OutboxEventRecord {
 
     @TableField("next_retry_at")
     private LocalDateTime nextRetryAt;
+
+    @TableField("claimed_by")
+    private String claimedBy;
+
+    @TableField("claimed_until")
+    private LocalDateTime claimedUntil;
+
+    @TableField("published_at")
+    private LocalDateTime publishedAt;
+
+    @TableField("error_code")
+    private String errorCode;
+
+    @TableField("last_error")
+    private String lastError;
 
     @TableField("created_at")
     private LocalDateTime createdAt;

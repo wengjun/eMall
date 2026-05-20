@@ -1,20 +1,30 @@
 package com.emall.inventory.service;
 
+import com.emall.common.api.ErrorCode;
 import com.emall.common.event.EventTypes;
 import com.emall.common.event.OutboxEvent;
-import com.emall.common.api.ErrorCode;
 import com.emall.common.exception.BusinessException;
 import com.emall.common.id.SnowflakeIdGenerator;
+import com.emall.common.idempotency.IdempotencyExecutor;
+import com.emall.common.idempotency.IdempotencyKey;
+import com.emall.common.idempotency.IdempotencyService;
+import com.emall.common.idempotency.InMemoryIdempotencyRepository;
+import com.emall.common.metrics.BusinessMetricNames;
+import com.emall.common.metrics.BusinessMetrics;
 import com.emall.common.outbox.OutboxRepository;
+import com.emall.common.region.OwnershipGuard;
+import com.emall.common.sharding.ShardRoutingOperations;
 import com.emall.inventory.domain.InventoryBucket;
 import com.emall.inventory.domain.InventoryItem;
 import com.emall.inventory.domain.InventoryReservation;
 import com.emall.inventory.domain.ReservationStatus;
 import com.emall.inventory.repository.InventoryRepository;
+import java.time.Clock;
 import java.time.Duration;
 import java.time.Instant;
 import java.util.List;
 import java.util.Map;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -23,36 +33,71 @@ public class InventoryService {
     private final InventoryRepository inventoryRepository;
     private final OutboxRepository outboxRepository;
     private final SnowflakeIdGenerator idGenerator;
+    private final ShardRoutingOperations shardRoutingOperations;
+    private final OwnershipGuard ownershipGuard;
+    private final BusinessMetrics businessMetrics;
+    private final IdempotencyService idempotencyService;
 
     public InventoryService(InventoryRepository inventoryRepository, OutboxRepository outboxRepository,
             SnowflakeIdGenerator idGenerator) {
+        this(inventoryRepository, outboxRepository, idGenerator, ShardRoutingOperations.noop(), OwnershipGuard.noop(),
+                BusinessMetrics.noop(), localIdempotencyService());
+    }
+
+    @Autowired
+    public InventoryService(InventoryRepository inventoryRepository, OutboxRepository outboxRepository,
+            SnowflakeIdGenerator idGenerator, ShardRoutingOperations shardRoutingOperations,
+            OwnershipGuard ownershipGuard, BusinessMetrics businessMetrics, IdempotencyService idempotencyService) {
         this.inventoryRepository = inventoryRepository;
         this.outboxRepository = outboxRepository;
         this.idGenerator = idGenerator;
+        this.shardRoutingOperations = shardRoutingOperations;
+        this.ownershipGuard = ownershipGuard;
+        this.businessMetrics = businessMetrics;
+        this.idempotencyService = idempotencyService;
     }
 
     public InventoryItem get(long skuId) {
-        return inventoryRepository.findItem(skuId)
-                .orElseThrow(() -> new BusinessException(ErrorCode.NOT_FOUND, "inventory item not found"));
+        return shardRoutingOperations.execute("inventory_item", skuId, () -> inventoryRepository.findItem(skuId)
+                .orElseThrow(() -> new BusinessException(ErrorCode.NOT_FOUND, "inventory item not found")));
     }
 
     @Transactional
-    public synchronized InventoryItem addStock(long skuId, int quantity) {
-        InventoryItem item =
-                inventoryRepository.findItem(skuId).orElse(new InventoryItem(skuId, 0, 0, 0, Instant.now()));
-        return inventoryRepository.saveItem(item.add(quantity));
+    public InventoryItem addStock(long skuId, int quantity) {
+        return shardRoutingOperations.execute("inventory_item", skuId, () -> {
+            ownershipGuard.checkWrite("inventory", skuId);
+            InventoryItem item =
+                    inventoryRepository.findItem(skuId).orElse(new InventoryItem(skuId, 0, 0, 0, Instant.now()));
+            return inventoryRepository.saveItem(item.add(quantity));
+        });
     }
 
     @Transactional
-    public synchronized List<InventoryBucket> initializeBuckets(long skuId, int bucketCount) {
+    public List<InventoryBucket> initializeBuckets(long skuId, int bucketCount) {
+        return shardRoutingOperations.execute("inventory_item", skuId,
+                () -> initializeBucketsInShard(skuId, bucketCount));
+    }
+
+    private List<InventoryBucket> initializeBucketsInShard(long skuId, int bucketCount) {
+        ownershipGuard.checkWrite("inventory", skuId);
         if (bucketCount < 2 || bucketCount > 256) {
             throw new BusinessException(ErrorCode.BAD_REQUEST, "bucket count must be between 2 and 256");
         }
+        List<InventoryBucket> existingBuckets = inventoryRepository.findBuckets(skuId);
+        if (!existingBuckets.isEmpty()) {
+            if (existingBuckets.size() > bucketCount) {
+                throw new BusinessException(ErrorCode.CONFLICT, "bucket count cannot be reduced online");
+            }
+            for (int bucketNo = existingBuckets.size(); bucketNo < bucketCount; bucketNo++) {
+                inventoryRepository.saveBucket(new InventoryBucket(skuId, bucketNo, 0, 0, 0, Instant.now()));
+            }
+            return inventoryRepository.findBuckets(skuId);
+        }
         InventoryItem item = get(skuId);
-        int baseQuantity = item.available() / bucketCount;
-        int remainder = item.available() % bucketCount;
+        long baseQuantity = item.available() / bucketCount;
+        long remainder = item.available() % bucketCount;
         for (int bucketNo = 0; bucketNo < bucketCount; bucketNo++) {
-            int quantity = baseQuantity + (bucketNo < remainder ? 1 : 0);
+            long quantity = baseQuantity + (bucketNo < remainder ? 1 : 0);
             InventoryBucket bucket = inventoryRepository.findBucket(skuId, bucketNo)
                     .orElse(new InventoryBucket(skuId, bucketNo, 0, 0, 0, Instant.now()));
             inventoryRepository.saveBucket(bucket.add(quantity));
@@ -61,17 +106,36 @@ public class InventoryService {
     }
 
     public List<InventoryBucket> buckets(long skuId) {
-        return inventoryRepository.findBuckets(skuId);
+        return shardRoutingOperations.execute("inventory_bucket", skuId, () -> inventoryRepository.findBuckets(skuId));
     }
 
     @Transactional
-    public synchronized InventoryReservation reserve(String requestId, long skuId, int quantity) {
-        return inventoryRepository.findReservation(requestId).orElseGet(() -> reserveOnce(requestId, skuId, quantity));
+    public InventoryReservation reserve(String requestId, long skuId, int quantity) {
+        IdempotencyKey key = IdempotencyKey.of("inventory", String.valueOf(skuId), requestId, "reserve");
+        String requestDigest = idempotencyService.digest("skuId=" + skuId + ",quantity=" + quantity);
+        return IdempotencyExecutor.execute(idempotencyService, key, "InventoryReservation", String.valueOf(skuId),
+                requestDigest, () -> reserveIdempotent(requestId, skuId, quantity), ignored -> reservation(requestId),
+                reservation -> idempotencyService
+                        .digest("requestId=" + reservation.requestId() + ",status=" + reservation.status()));
+    }
+
+    private InventoryReservation reserveIdempotent(String requestId, long skuId, int quantity) {
+        return shardRoutingOperations.execute("inventory_item", skuId, () -> {
+            ownershipGuard.checkWrite("inventory", skuId);
+            return inventoryRepository.findReservation(requestId)
+                    .map(existing -> validateIdempotentReserve(existing, skuId, quantity))
+                    .orElseGet(() -> reserveOnce(requestId, skuId, quantity));
+        });
     }
 
     @Transactional
-    public synchronized InventoryReservation confirm(String requestId) {
+    public InventoryReservation confirm(String requestId) {
         InventoryReservation reservation = reservation(requestId);
+        return shardRoutingOperations.execute("inventory_item", reservation.skuId(), () -> confirmInShard(reservation));
+    }
+
+    private InventoryReservation confirmInShard(InventoryReservation reservation) {
+        ownershipGuard.checkWrite("inventory", reservation.skuId());
         if (reservation.status() == ReservationStatus.CONFIRMED) {
             return reservation;
         }
@@ -79,21 +143,32 @@ public class InventoryService {
             throw new BusinessException(ErrorCode.CONFLICT,
                     "reservation cannot be confirmed from " + reservation.status());
         }
-        if (reservation.bucketNo() == null) {
-            InventoryItem item = get(reservation.skuId()).confirm(reservation.quantity());
-            inventoryRepository.saveItem(item);
-        } else {
-            InventoryBucket bucket = bucket(reservation).confirm(reservation.quantity());
-            inventoryRepository.saveBucket(bucket);
+        boolean stockUpdated = reservation.bucketNo() == null
+                ? inventoryRepository.confirmItem(reservation.skuId(), reservation.quantity())
+                : inventoryRepository.confirmBucket(reservation.skuId(), reservation.bucketNo(),
+                        reservation.quantity());
+        if (!stockUpdated) {
+            throw new BusinessException(ErrorCode.CONFLICT, "insufficient reserved stock");
         }
-        InventoryReservation confirmed = inventoryRepository.saveReservation(reservation.confirm());
+        InventoryReservation confirmed = reservation.confirm();
+        if (!inventoryRepository.updateReservationStatus(reservation.requestId(), ReservationStatus.RESERVED,
+                confirmed)) {
+            throw new BusinessException(ErrorCode.CONFLICT, "reservation status changed during confirm");
+        }
         appendEvent(confirmed, EventTypes.INVENTORY_CONFIRMED);
+        businessMetrics.increment(BusinessMetricNames.INVENTORY_CONFIRMED, "bucketed",
+                reservation.bucketNo() == null ? "false" : "true");
         return confirmed;
     }
 
     @Transactional
-    public synchronized InventoryReservation release(String requestId) {
+    public InventoryReservation release(String requestId) {
         InventoryReservation reservation = reservation(requestId);
+        return shardRoutingOperations.execute("inventory_item", reservation.skuId(), () -> releaseInShard(reservation));
+    }
+
+    private InventoryReservation releaseInShard(InventoryReservation reservation) {
+        ownershipGuard.checkWrite("inventory", reservation.skuId());
         if (reservation.status() == ReservationStatus.RELEASED) {
             return reservation;
         }
@@ -103,15 +178,21 @@ public class InventoryService {
         if (reservation.status() == ReservationStatus.REJECTED) {
             return reservation;
         }
-        if (reservation.bucketNo() == null) {
-            InventoryItem item = get(reservation.skuId()).release(reservation.quantity());
-            inventoryRepository.saveItem(item);
-        } else {
-            InventoryBucket bucket = bucket(reservation).release(reservation.quantity());
-            inventoryRepository.saveBucket(bucket);
+        boolean stockUpdated = reservation.bucketNo() == null
+                ? inventoryRepository.releaseItem(reservation.skuId(), reservation.quantity())
+                : inventoryRepository.releaseBucket(reservation.skuId(), reservation.bucketNo(),
+                        reservation.quantity());
+        if (!stockUpdated) {
+            throw new BusinessException(ErrorCode.CONFLICT, "insufficient reserved stock");
         }
-        InventoryReservation released = inventoryRepository.saveReservation(reservation.release());
+        InventoryReservation released = reservation.release();
+        if (!inventoryRepository.updateReservationStatus(reservation.requestId(), ReservationStatus.RESERVED,
+                released)) {
+            throw new BusinessException(ErrorCode.CONFLICT, "reservation status changed during release");
+        }
         appendEvent(released, EventTypes.INVENTORY_RELEASED);
+        businessMetrics.increment(BusinessMetricNames.INVENTORY_RELEASED, "bucketed",
+                reservation.bucketNo() == null ? "false" : "true");
         return released;
     }
 
@@ -121,38 +202,45 @@ public class InventoryService {
             return reserveBucket(requestId, skuId, quantity);
         }
         InventoryItem item = get(skuId);
-        if (item.available() < quantity) {
+        if (item.available() < quantity || !inventoryRepository.reserveItem(skuId, quantity)) {
+            businessMetrics.increment(BusinessMetricNames.INVENTORY_REJECTED, "reason", "insufficient_stock");
             return inventoryRepository
                     .saveReservation(InventoryReservation.rejected(requestId, skuId, quantity, "INSUFFICIENT_STOCK"));
         }
-        inventoryRepository.saveItem(item.reserve(quantity));
         InventoryReservation reservation = inventoryRepository.saveReservation(InventoryReservation.reserved(requestId,
                 skuId, quantity, null, Instant.now().plus(Duration.ofMinutes(15))));
         appendEvent(reservation, EventTypes.INVENTORY_RESERVED);
+        businessMetrics.increment(BusinessMetricNames.INVENTORY_RESERVED, "bucketed", "false");
         return reservation;
     }
 
     private InventoryReservation reserveBucket(String requestId, long skuId, int quantity) {
-        InventoryBucket bucket = inventoryRepository.findReservableBucket(skuId, quantity).orElse(null);
-        if (bucket == null) {
-            return inventoryRepository.saveReservation(
-                    InventoryReservation.rejected(requestId, skuId, quantity, "INSUFFICIENT_BUCKET_STOCK"));
+        for (InventoryBucket bucket : inventoryRepository.findBuckets(skuId)) {
+            if (bucket.available() >= quantity
+                    && inventoryRepository.reserveBucket(skuId, bucket.bucketNo(), quantity)) {
+                InventoryReservation reservation =
+                        inventoryRepository.saveReservation(InventoryReservation.reserved(requestId, skuId, quantity,
+                                bucket.bucketNo(), Instant.now().plus(Duration.ofMinutes(15))));
+                appendEvent(reservation, EventTypes.INVENTORY_RESERVED);
+                businessMetrics.increment(BusinessMetricNames.INVENTORY_RESERVED, "bucketed", "true");
+                return reservation;
+            }
         }
-        inventoryRepository.saveBucket(bucket.reserve(quantity));
-        InventoryReservation reservation = inventoryRepository.saveReservation(InventoryReservation.reserved(requestId,
-                skuId, quantity, bucket.bucketNo(), Instant.now().plus(Duration.ofMinutes(15))));
-        appendEvent(reservation, EventTypes.INVENTORY_RESERVED);
-        return reservation;
+        businessMetrics.increment(BusinessMetricNames.INVENTORY_REJECTED, "reason", "insufficient_bucket_stock");
+        return inventoryRepository.saveReservation(
+                InventoryReservation.rejected(requestId, skuId, quantity, "INSUFFICIENT_BUCKET_STOCK"));
+    }
+
+    private InventoryReservation validateIdempotentReserve(InventoryReservation existing, long skuId, int quantity) {
+        if (existing.skuId() != skuId || existing.quantity() != quantity) {
+            throw new BusinessException(ErrorCode.CONFLICT, "requestId already used by different reservation request");
+        }
+        return existing;
     }
 
     private InventoryReservation reservation(String requestId) {
         return inventoryRepository.findReservation(requestId)
                 .orElseThrow(() -> new BusinessException(ErrorCode.NOT_FOUND, "reservation not found"));
-    }
-
-    private InventoryBucket bucket(InventoryReservation reservation) {
-        return inventoryRepository.findBucket(reservation.skuId(), reservation.bucketNo())
-                .orElseThrow(() -> new BusinessException(ErrorCode.NOT_FOUND, "inventory bucket not found"));
     }
 
     private void appendEvent(InventoryReservation reservation, String eventType) {
@@ -162,5 +250,10 @@ public class InventoryService {
                         reservation.quantity(), "bucketNo",
                         reservation.bucketNo() == null ? "" : reservation.bucketNo(), "status",
                         reservation.status().name())));
+    }
+
+    private static IdempotencyService localIdempotencyService() {
+        return new IdempotencyService(new InMemoryIdempotencyRepository(), Clock.systemUTC(), Duration.ofSeconds(30),
+                Duration.ofDays(1));
     }
 }

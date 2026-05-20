@@ -1,8 +1,12 @@
 package com.emall.cost.service;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
+import com.emall.common.exception.BusinessException;
 import com.emall.common.id.SnowflakeIdGenerator;
+import com.emall.cost.domain.CapacityRiskLevel;
+import com.emall.cost.domain.CapacitySummary;
 import com.emall.cost.domain.CostActionStatus;
 import com.emall.cost.domain.CostActionType;
 import com.emall.cost.domain.CostBudget;
@@ -66,5 +70,56 @@ class CostGovernanceServiceTest {
 
         assertThat(completed.status()).isEqualTo(CostActionStatus.COMPLETED);
         assertThat(service.findActiveActions("fulfillment")).isEmpty();
+    }
+
+    @Test
+    void recordsCapacityBaselineAndFlagsHpaRisk() {
+        service.recordCapacityBaseline("order", 100000, 120000, 85000, 9, 10, new BigDecimal("0.72"),
+                new BigDecimal("0.68"), new BigDecimal("12000"), true, Instant.now());
+
+        CapacitySummary summary = service.capacitySummary("order");
+        List<CostOptimizationAction> actions = service.findActiveActions("order");
+
+        assertThat(summary.riskLevel()).isEqualTo(CapacityRiskLevel.HPA_NEAR_LIMIT);
+        assertThat(summary.hpaWatermark()).isEqualByComparingTo("0.900000");
+        assertThat(actions).singleElement()
+                .satisfies(action -> assertThat(action.actionType()).isEqualTo(CostActionType.REVIEW_HPA_LIMIT));
+    }
+
+    @Test
+    void marksIdleCapacityWithSloSafeRecommendation() {
+        service.recordCapacityBaseline("search", 100000, 120000, 10000, 6, 20, new BigDecimal("0.20"),
+                new BigDecimal("0.22"), new BigDecimal("8000"), true, Instant.now());
+
+        CapacitySummary summary = service.capacitySummary("search");
+
+        assertThat(summary.riskLevel()).isEqualTo(CapacityRiskLevel.IDLE_RESOURCE);
+        assertThat(summary.recommendation()).contains("SLO guard");
+        assertThat(service.findActiveActions("search")).singleElement()
+                .satisfies(action -> assertThat(action.actionType()).isEqualTo(CostActionType.REDUCE_IDLE_REPLICAS));
+    }
+
+    @Test
+    void flagsScaleOutRequiredBeforeTrafficExceedsSafeEnvelope() {
+        service.recordCapacityBaseline("payment", 100000, 150000, 95000, 8, 20, new BigDecimal("0.65"),
+                new BigDecimal("0.62"), new BigDecimal("18000"), true, Instant.now());
+
+        CapacitySummary summary = service.capacitySummary("payment");
+
+        assertThat(summary.riskLevel()).isEqualTo(CapacityRiskLevel.SCALE_OUT_REQUIRED);
+        assertThat(summary.recommendation()).contains("Scale out");
+        assertThat(service.findActiveActions("payment")).singleElement()
+                .satisfies(action -> assertThat(action.actionType()).isEqualTo(CostActionType.SCALE_SERVICE_REPLICAS));
+    }
+
+    @Test
+    void rejectsInvalidCapacityBaselineInputs() {
+        assertThatThrownBy(() -> service.recordCapacityBaseline("order", 100000, 120000, 85000, 11, 10,
+                new BigDecimal("0.72"), new BigDecimal("0.68"), new BigDecimal("12000"), true, Instant.now()))
+                .isInstanceOf(BusinessException.class).hasMessageContaining("current replicas");
+
+        assertThatThrownBy(() -> service.recordCapacityBaseline("order", 100000, 120000, 85000, 9, 10,
+                new BigDecimal("1.20"), new BigDecimal("0.68"), new BigDecimal("12000"), true, Instant.now()))
+                .isInstanceOf(BusinessException.class).hasMessageContaining("cpu utilization");
     }
 }

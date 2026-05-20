@@ -22,14 +22,13 @@ class OrderControllerTest {
 
     @Test
     void shouldDefaultMissingClientTypeToWebForLegacyClients() {
-        Order order = newOrder(OrderClientType.WEB, OrderClientContext.UNKNOWN_DEVICE,
-                OrderClientContext.DIRECT_CHANNEL);
+        Order order =
+                newOrder(OrderClientType.WEB, OrderClientContext.UNKNOWN_DEVICE, OrderClientContext.DIRECT_CHANNEL);
         OrderClientContext expectedContext = OrderClientContext.webDefault();
         when(orderService.create("legacy-web-request", 70001L, 30001L, 1, expectedContext)).thenReturn(order);
 
-        ApiResponse<Order> response =
-                controller.createOrder(new CreateOrderRequest("legacy-web-request", 70001L, 30001L, 1, null, null,
-                        null), null, null);
+        ApiResponse<Order> response = controller.createOrder(
+                new CreateOrderRequest("legacy-web-request", 70001L, 30001L, 1, null, null, null), null, null);
 
         assertThat(response.data().clientType()).isEqualTo(OrderClientType.WEB);
         assertThat(response.data().deviceId()).isEqualTo(OrderClientContext.UNKNOWN_DEVICE);
@@ -43,9 +42,8 @@ class OrderControllerTest {
         OrderClientContext expectedContext = OrderClientContext.of(OrderClientType.APP, "ios-device-001", "jd-app");
         when(orderService.create("app-request", 70001L, 30001L, 1, expectedContext)).thenReturn(order);
 
-        ApiResponse<Order> response =
-                controller.createOrder(new CreateOrderRequest("app-request", 70001L, 30001L, 1, OrderClientType.APP,
-                        "ios-device-001", "jd-app"), null, null);
+        ApiResponse<Order> response = controller.createOrder(new CreateOrderRequest("app-request", 70001L, 30001L, 1,
+                OrderClientType.APP, "ios-device-001", "jd-app"), null, null);
 
         assertThat(response.data().clientType()).isEqualTo(OrderClientType.APP);
         assertThat(response.data().deviceId()).isEqualTo("ios-device-001");
@@ -59,9 +57,9 @@ class OrderControllerTest {
         OrderClientContext expectedContext = OrderClientContext.of(OrderClientType.WEB, "web-device-001", "pc-web");
         when(orderService.create("web-request", 70001L, 30001L, 1, expectedContext)).thenReturn(order);
 
-        ApiResponse<Order> response =
-                controller.createOrder(new CreateOrderRequest("web-request", 70001L, 30001L, 1, OrderClientType.WEB,
-                        null, null), "web-device-001", "pc-web");
+        ApiResponse<Order> response = controller.createOrder(
+                new CreateOrderRequest("web-request", 70001L, 30001L, 1, OrderClientType.WEB, null, null),
+                "web-device-001", "pc-web");
 
         assertThat(response.data().deviceId()).isEqualTo("web-device-001");
         assertThat(response.data().channel()).isEqualTo("pc-web");

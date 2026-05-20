@@ -29,14 +29,10 @@ public class MybatisPlusUserRepository implements UserRepository {
         try {
             userAccountMapper.insert(entity);
         } catch (DuplicateKeyException ex) {
-            userAccountMapper.update(null, new UpdateWrapper<UserAccountEntity>()
-                    .set("mobile", entity.getMobile())
-                    .set("mobile_ciphertext", entity.getMobileCiphertext())
-                    .set("mobile_hash", entity.getMobileHash())
-                    .set("nickname", entity.getNickname())
-                    .set("status", entity.getStatus())
-                    .set("updated_at", entity.getUpdatedAt())
-                    .eq("user_id", entity.getUserId()));
+            userAccountMapper.update(null, new UpdateWrapper<UserAccountEntity>().set("mobile", entity.getMobile())
+                    .set("mobile_ciphertext", entity.getMobileCiphertext()).set("mobile_hash", entity.getMobileHash())
+                    .set("nickname", entity.getNickname()).set("status", entity.getStatus())
+                    .set("updated_at", entity.getUpdatedAt()).eq("user_id", entity.getUserId()));
         }
         return user;
     }
@@ -49,10 +45,10 @@ public class MybatisPlusUserRepository implements UserRepository {
     @Override
     public Optional<UserAccount> findByMobile(String mobile) {
         String mobileHash = fieldEncryptor.lookupHash(mobile);
-        return Optional.ofNullable(userAccountMapper.selectOne(new QueryWrapper<UserAccountEntity>()
-                .eq("mobile_hash", mobileHash)
-                .or()
-                .eq("mobile", mobile))).map(this::toDomain);
+        return Optional
+                .ofNullable(userAccountMapper.selectOne(
+                        new QueryWrapper<UserAccountEntity>().eq("mobile_hash", mobileHash).or().eq("mobile", mobile)))
+                .map(this::toDomain);
     }
 
     private UserAccountEntity toEntity(UserAccount user) {
@@ -74,8 +70,7 @@ public class MybatisPlusUserRepository implements UserRepository {
         String mobile = encryptedMobile == null || encryptedMobile.isBlank()
                 ? entity.getMobile()
                 : fieldEncryptor.decrypt(encryptedMobile);
-        return new UserAccount(entity.getUserId(), mobile, entity.getNickname(),
-                UserStatus.valueOf(entity.getStatus()), entity.getCreatedAt().toInstant(ZoneOffset.UTC),
-                entity.getUpdatedAt().toInstant(ZoneOffset.UTC));
+        return new UserAccount(entity.getUserId(), mobile, entity.getNickname(), UserStatus.valueOf(entity.getStatus()),
+                entity.getCreatedAt().toInstant(ZoneOffset.UTC), entity.getUpdatedAt().toInstant(ZoneOffset.UTC));
     }
 }

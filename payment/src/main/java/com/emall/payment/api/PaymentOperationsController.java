@@ -33,8 +33,9 @@ public class PaymentOperationsController extends InternalOperationsControllerSup
 
     public PaymentOperationsController(PaymentCompensationJob paymentCompensationJob, OutboxPublisher outboxPublisher,
             PaymentService paymentService, OperationAuditRepository operationAuditRepository,
-            @Value("${emall.internal.operations-token}") String operationsToken) {
-        super(operationAuditRepository, "payment", operationsToken);
+            @Value("${emall.internal.operations-token}") String operationsToken,
+            @Value("${emall.internal.require-approval:false}") boolean approvalRequired) {
+        super(operationAuditRepository, "payment", operationsToken, approvalRequired);
         this.paymentCompensationJob = paymentCompensationJob;
         this.outboxPublisher = outboxPublisher;
         this.paymentService = paymentService;
@@ -45,21 +46,28 @@ public class PaymentOperationsController extends InternalOperationsControllerSup
             @RequestParam(defaultValue = "100") @Positive @Max(1000) int limit,
             @RequestHeader("X-Internal-Token") String token,
             @RequestHeader(value = "X-Operator", defaultValue = "unknown") String operator,
-            @RequestHeader(value = "X-Trace-Id", required = false) String traceId) {
-        return execute(token, operator, traceId, "payments.retry-order-confirmation",
-                () -> paymentCompensationJob.retryOrderConfirmation(limit));
+            @RequestHeader(value = "X-Trace-Id", required = false) String traceId,
+            @RequestHeader(value = "X-Operator-Role", defaultValue = "ops-admin") String role,
+            @RequestHeader(value = "X-Approval-Id", required = false) String approvalId,
+            @RequestHeader(value = "X-Source-Identity", required = false) String sourceIdentity) {
+        return execute(token, operator, traceId, role, approvalId, sourceIdentity, "limit=" + limit,
+                "payments.retry-order-confirmation", () -> paymentCompensationJob.retryOrderConfirmation(limit));
     }
 
     @PostMapping("/payments/channel-statements")
     public ApiResponse<OperationResult> ingestChannelStatement(@Valid @RequestBody ChannelStatementRequest request,
             @RequestHeader("X-Internal-Token") String token,
             @RequestHeader(value = "X-Operator", defaultValue = "unknown") String operator,
-            @RequestHeader(value = "X-Trace-Id", required = false) String traceId) {
-        return execute(token, operator, traceId, "payments.ingest-channel-statement", () -> {
-            paymentService.ingestChannelStatement(request.channel(), request.channelTradeNo(), request.paymentId(),
-                    request.amount(), request.statementType(), request.occurredAt());
-            return 1;
-        });
+            @RequestHeader(value = "X-Trace-Id", required = false) String traceId,
+            @RequestHeader(value = "X-Operator-Role", defaultValue = "ops-admin") String role,
+            @RequestHeader(value = "X-Approval-Id", required = false) String approvalId,
+            @RequestHeader(value = "X-Source-Identity", required = false) String sourceIdentity) {
+        return execute(token, operator, traceId, role, approvalId, sourceIdentity, "paymentId=" + request.paymentId(),
+                "payments.ingest-channel-statement", () -> {
+                    paymentService.ingestChannelStatement(request.channel(), request.channelTradeNo(),
+                            request.paymentId(), request.amount(), request.statementType(), request.occurredAt());
+                    return 1;
+                });
     }
 
     @PostMapping("/payments/reconcile-channel-statements")
@@ -67,8 +75,12 @@ public class PaymentOperationsController extends InternalOperationsControllerSup
             @RequestParam(defaultValue = "100") @Positive @Max(1000) int limit,
             @RequestHeader("X-Internal-Token") String token,
             @RequestHeader(value = "X-Operator", defaultValue = "unknown") String operator,
-            @RequestHeader(value = "X-Trace-Id", required = false) String traceId) {
-        return execute(token, operator, traceId, "payments.reconcile-channel-statements",
+            @RequestHeader(value = "X-Trace-Id", required = false) String traceId,
+            @RequestHeader(value = "X-Operator-Role", defaultValue = "ops-admin") String role,
+            @RequestHeader(value = "X-Approval-Id", required = false) String approvalId,
+            @RequestHeader(value = "X-Source-Identity", required = false) String sourceIdentity) {
+        return execute(token, operator, traceId, role, approvalId, sourceIdentity, "limit=" + limit,
+                "payments.reconcile-channel-statements",
                 () -> paymentCompensationJob.reconcileChannelStatements(limit));
     }
 
@@ -77,8 +89,12 @@ public class PaymentOperationsController extends InternalOperationsControllerSup
             @RequestParam(defaultValue = "100") @Positive @Max(1000) int limit,
             @RequestHeader("X-Internal-Token") String token,
             @RequestHeader(value = "X-Operator", defaultValue = "unknown") String operator,
-            @RequestHeader(value = "X-Trace-Id", required = false) String traceId) {
-        return execute(token, operator, traceId, "outbox.publish", () -> outboxPublisher.publishBatch(limit));
+            @RequestHeader(value = "X-Trace-Id", required = false) String traceId,
+            @RequestHeader(value = "X-Operator-Role", defaultValue = "ops-admin") String role,
+            @RequestHeader(value = "X-Approval-Id", required = false) String approvalId,
+            @RequestHeader(value = "X-Source-Identity", required = false) String sourceIdentity) {
+        return execute(token, operator, traceId, role, approvalId, sourceIdentity, "limit=" + limit, "outbox.publish",
+                () -> outboxPublisher.publishBatch(limit));
     }
 
     @PostMapping("/outbox/retry-failed")
@@ -86,8 +102,12 @@ public class PaymentOperationsController extends InternalOperationsControllerSup
             @RequestParam(defaultValue = "100") @Positive @Max(1000) int limit,
             @RequestHeader("X-Internal-Token") String token,
             @RequestHeader(value = "X-Operator", defaultValue = "unknown") String operator,
-            @RequestHeader(value = "X-Trace-Id", required = false) String traceId) {
-        return execute(token, operator, traceId, "outbox.retry-failed", () -> outboxPublisher.retryFailedNow(limit));
+            @RequestHeader(value = "X-Trace-Id", required = false) String traceId,
+            @RequestHeader(value = "X-Operator-Role", defaultValue = "ops-admin") String role,
+            @RequestHeader(value = "X-Approval-Id", required = false) String approvalId,
+            @RequestHeader(value = "X-Source-Identity", required = false) String sourceIdentity) {
+        return execute(token, operator, traceId, role, approvalId, sourceIdentity, "limit=" + limit,
+                "outbox.retry-failed", () -> outboxPublisher.retryFailedNow(limit));
     }
 
     public record ChannelStatementRequest(@NotBlank String channel, @NotBlank String channelTradeNo,

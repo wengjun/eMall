@@ -1,7 +1,14 @@
+com.emall.common.archive.ArchiveAutoConfiguration
 com.emall.common.crypto.FieldEncryptionAutoConfiguration
+com.emall.common.idempotency.IdempotencyAutoConfiguration
+com.emall.common.metrics.BusinessMetricsAutoConfiguration
 com.emall.common.mybatis.MybatisPlusAutoConfiguration
 com.emall.common.olap.ClickHouseAutoConfiguration
+com.emall.common.region.OwnershipAutoConfiguration
 com.emall.common.runtime.ProductionRuntimeGuardAutoConfiguration
+com.emall.common.sharding.ShardRoutingAutoConfiguration
 com.emall.common.task.MybatisPlusTaskLockAutoConfiguration
 com.emall.common.task.TaskLockAutoConfiguration
+com.emall.common.trust.TrustAutoConfiguration
+com.emall.common.web.OutboundClientAutoConfiguration
 com.emall.common.web.CommonWebAutoConfiguration

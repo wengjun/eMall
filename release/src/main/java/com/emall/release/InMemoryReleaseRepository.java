@@ -14,6 +14,7 @@ class InMemoryReleaseRepository implements ReleaseRepository {
     private final ConcurrentMap<Long, RolloutPlan> rollouts = new ConcurrentHashMap<>();
     private final ConcurrentMap<Long, MessageTopicGovernance> topics = new ConcurrentHashMap<>();
     private final ConcurrentMap<Long, ReplayPlan> replays = new ConcurrentHashMap<>();
+    private final ConcurrentMap<Long, ReleaseGuardRecord> guards = new ConcurrentHashMap<>();
 
     @Override
     public FeatureToggle saveToggle(FeatureToggle toggle) {
@@ -77,5 +78,21 @@ class InMemoryReleaseRepository implements ReleaseRepository {
     @Override
     public List<ReplayPlan> findReplays() {
         return List.copyOf(replays.values());
+    }
+
+    @Override
+    public ReleaseGuardRecord saveGuard(ReleaseGuardRecord guard) {
+        guards.put(guard.guardId(), guard);
+        return guard;
+    }
+
+    @Override
+    public List<ReleaseGuardRecord> findGuards(long rolloutId) {
+        return guards.values().stream().filter(guard -> guard.rolloutId() == rolloutId).toList();
+    }
+
+    @Override
+    public List<ReleaseGuardRecord> findGuards() {
+        return List.copyOf(guards.values());
     }
 }

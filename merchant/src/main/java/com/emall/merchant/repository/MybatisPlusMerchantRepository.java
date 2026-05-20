@@ -43,12 +43,10 @@ public class MybatisPlusMerchantRepository implements MerchantRepository {
         try {
             merchantMapper.insert(entity);
         } catch (DuplicateKeyException ex) {
-            merchantMapper.update(null, new UpdateWrapper<MerchantEntity>()
-                    .set("name", entity.getName())
-                    .set("contact_email", entity.getContactEmail())
-                    .set("status", entity.getStatus())
-                    .set("updated_at", entity.getUpdatedAt())
-                    .eq("merchant_id", entity.getMerchantId()));
+            merchantMapper.update(null,
+                    new UpdateWrapper<MerchantEntity>().set("name", entity.getName())
+                            .set("contact_email", entity.getContactEmail()).set("status", entity.getStatus())
+                            .set("updated_at", entity.getUpdatedAt()).eq("merchant_id", entity.getMerchantId()));
         }
         return merchant;
     }
@@ -64,12 +62,10 @@ public class MybatisPlusMerchantRepository implements MerchantRepository {
         try {
             storeMapper.insert(entity);
         } catch (DuplicateKeyException ex) {
-            storeMapper.update(null, new UpdateWrapper<StoreEntity>()
-                    .set("name", entity.getName())
-                    .set("description", entity.getDescription())
-                    .set("status", entity.getStatus())
-                    .set("updated_at", entity.getUpdatedAt())
-                    .eq("store_id", entity.getStoreId()));
+            storeMapper.update(null,
+                    new UpdateWrapper<StoreEntity>().set("name", entity.getName())
+                            .set("description", entity.getDescription()).set("status", entity.getStatus())
+                            .set("updated_at", entity.getUpdatedAt()).eq("store_id", entity.getStoreId()));
         }
         return store;
     }
@@ -81,28 +77,23 @@ public class MybatisPlusMerchantRepository implements MerchantRepository {
 
     @Override
     public List<Store> findStoresByMerchant(long merchantId) {
-        return storeMapper.selectList(new QueryWrapper<StoreEntity>()
-                .eq("merchant_id", merchantId)
-                .orderByDesc("created_at")).stream().map(this::toDomain).toList();
+        return storeMapper
+                .selectList(new QueryWrapper<StoreEntity>().eq("merchant_id", merchantId).orderByDesc("created_at"))
+                .stream().map(this::toDomain).toList();
     }
 
     @Override
     public CommissionRule saveCommissionRule(CommissionRule rule) {
         CommissionRuleEntity entity = toEntity(rule);
-        commissionRuleMapper.update(null, new UpdateWrapper<CommissionRuleEntity>()
-                .set("active", false)
-                .set("updated_at", entity.getUpdatedAt())
-                .eq("merchant_id", entity.getMerchantId())
-                .eq("active", true));
+        commissionRuleMapper.update(null, new UpdateWrapper<CommissionRuleEntity>().set("active", false)
+                .set("updated_at", entity.getUpdatedAt()).eq("merchant_id", entity.getMerchantId()).eq("active", true));
         try {
             commissionRuleMapper.insert(entity);
         } catch (DuplicateKeyException ex) {
-            commissionRuleMapper.update(null, new UpdateWrapper<CommissionRuleEntity>()
-                    .set("rate", entity.getRate())
-                    .set("active", entity.getActive())
-                    .set("effective_from", entity.getEffectiveFrom())
-                    .set("updated_at", entity.getUpdatedAt())
-                    .eq("rule_id", entity.getRuleId()));
+            commissionRuleMapper.update(null,
+                    new UpdateWrapper<CommissionRuleEntity>().set("rate", entity.getRate())
+                            .set("active", entity.getActive()).set("effective_from", entity.getEffectiveFrom())
+                            .set("updated_at", entity.getUpdatedAt()).eq("rule_id", entity.getRuleId()));
         }
         return rule;
     }
@@ -110,10 +101,8 @@ public class MybatisPlusMerchantRepository implements MerchantRepository {
     @Override
     public Optional<CommissionRule> findActiveCommissionRule(long merchantId) {
         return Optional.ofNullable(commissionRuleMapper.selectOne(new QueryWrapper<CommissionRuleEntity>()
-                .eq("merchant_id", merchantId)
-                .eq("active", true)
-                .orderByDesc("effective_from")
-                .last("LIMIT 1"))).map(this::toDomain);
+                .eq("merchant_id", merchantId).eq("active", true).orderByDesc("effective_from").last("LIMIT 1")))
+                .map(this::toDomain);
     }
 
     @Override
@@ -122,10 +111,8 @@ public class MybatisPlusMerchantRepository implements MerchantRepository {
         try {
             settlementMapper.insert(entity);
         } catch (DuplicateKeyException ex) {
-            settlementMapper.update(null, new UpdateWrapper<SettlementEntity>()
-                    .set("status", entity.getStatus())
-                    .set("updated_at", entity.getUpdatedAt())
-                    .eq("settlement_id", entity.getSettlementId()));
+            settlementMapper.update(null, new UpdateWrapper<SettlementEntity>().set("status", entity.getStatus())
+                    .set("updated_at", entity.getUpdatedAt()).eq("settlement_id", entity.getSettlementId()));
         }
         return settlement;
     }
@@ -137,9 +124,10 @@ public class MybatisPlusMerchantRepository implements MerchantRepository {
 
     @Override
     public List<Settlement> findSettlementsByMerchant(long merchantId) {
-        return settlementMapper.selectList(new QueryWrapper<SettlementEntity>()
-                .eq("merchant_id", merchantId)
-                .orderByDesc("created_at")).stream().map(this::toDomain).toList();
+        return settlementMapper
+                .selectList(
+                        new QueryWrapper<SettlementEntity>().eq("merchant_id", merchantId).orderByDesc("created_at"))
+                .stream().map(this::toDomain).toList();
     }
 
     @Override
@@ -148,19 +136,17 @@ public class MybatisPlusMerchantRepository implements MerchantRepository {
         try {
             invoiceMapper.insert(entity);
         } catch (DuplicateKeyException ex) {
-            invoiceMapper.update(null, new UpdateWrapper<InvoiceEntity>()
-                    .set("status", entity.getStatus())
-                    .set("updated_at", entity.getUpdatedAt())
-                    .eq("invoice_id", entity.getInvoiceId()));
+            invoiceMapper.update(null, new UpdateWrapper<InvoiceEntity>().set("status", entity.getStatus())
+                    .set("updated_at", entity.getUpdatedAt()).eq("invoice_id", entity.getInvoiceId()));
         }
         return invoice;
     }
 
     @Override
     public List<Invoice> findInvoicesByMerchant(long merchantId) {
-        return invoiceMapper.selectList(new QueryWrapper<InvoiceEntity>()
-                .eq("merchant_id", merchantId)
-                .orderByDesc("created_at")).stream().map(this::toDomain).toList();
+        return invoiceMapper
+                .selectList(new QueryWrapper<InvoiceEntity>().eq("merchant_id", merchantId).orderByDesc("created_at"))
+                .stream().map(this::toDomain).toList();
     }
 
     private MerchantEntity toEntity(Merchant merchant) {

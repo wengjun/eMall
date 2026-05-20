@@ -1,6 +1,7 @@
 package com.emall.datawarehouse;
 
 import com.emall.common.api.ApiResponse;
+import com.emall.common.privacy.SensitiveDataType;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.NotBlank;
@@ -45,6 +46,13 @@ class DataWarehouseController {
                 request.downstreamDatasetId(), request.transformName()));
     }
 
+    @PostMapping("/field-lineage")
+    ApiResponse<FieldLineage> addFieldLineage(@Valid @RequestBody AddFieldLineageRequest request) {
+        return ApiResponse.ok(dataWarehouseService.addFieldLineage(request.upstreamDatasetId(), request.upstreamField(),
+                request.downstreamDatasetId(), request.downstreamField(), request.sensitivity(),
+                request.transformName()));
+    }
+
     @GetMapping("/summary")
     ApiResponse<WarehouseSummary> summary() {
         return ApiResponse.ok(dataWarehouseService.summary());
@@ -63,6 +71,11 @@ class DataWarehouseController {
     }
 
     record AddLineageRequest(@Positive long upstreamDatasetId, @Positive long downstreamDatasetId,
+            @NotBlank String transformName) {
+    }
+
+    record AddFieldLineageRequest(@Positive long upstreamDatasetId, @NotBlank String upstreamField,
+            @Positive long downstreamDatasetId, @NotBlank String downstreamField, SensitiveDataType sensitivity,
             @NotBlank String transformName) {
     }
 }

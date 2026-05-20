@@ -5,6 +5,8 @@ import com.baomidou.mybatisplus.core.conditions.update.UpdateWrapper;
 import com.emall.payment.domain.PaymentChannelStatement;
 import com.emall.payment.domain.PaymentLedgerEntry;
 import com.emall.payment.domain.PaymentReconciliationRecord;
+import com.emall.payment.domain.PaymentRefundOrder;
+import com.emall.payment.domain.PaymentRefundStatus;
 import com.emall.payment.domain.StatementType;
 import java.time.Instant;
 import java.time.LocalDateTime;
@@ -18,16 +20,48 @@ import org.springframework.stereotype.Repository;
 @Repository
 @ConditionalOnProperty(name = "emall.storage", havingValue = "jdbc", matchIfMissing = true)
 public class MybatisPlusPaymentSettlementRepository implements PaymentSettlementRepository {
+    private final PaymentRefundOrderMapper refundOrderMapper;
     private final PaymentLedgerEntryMapper ledgerEntryMapper;
     private final PaymentChannelStatementMapper statementMapper;
     private final PaymentReconciliationRecordMapper reconciliationRecordMapper;
 
-    public MybatisPlusPaymentSettlementRepository(PaymentLedgerEntryMapper ledgerEntryMapper,
-            PaymentChannelStatementMapper statementMapper,
+    public MybatisPlusPaymentSettlementRepository(PaymentRefundOrderMapper refundOrderMapper,
+            PaymentLedgerEntryMapper ledgerEntryMapper, PaymentChannelStatementMapper statementMapper,
             PaymentReconciliationRecordMapper reconciliationRecordMapper) {
+        this.refundOrderMapper = refundOrderMapper;
         this.ledgerEntryMapper = ledgerEntryMapper;
         this.statementMapper = statementMapper;
         this.reconciliationRecordMapper = reconciliationRecordMapper;
+    }
+
+    @Override
+    public PaymentRefundOrder saveRefundIfAbsent(PaymentRefundOrder refundOrder) {
+        try {
+            refundOrderMapper.insert(toEntity(refundOrder));
+            return refundOrder;
+        } catch (DuplicateKeyException ignored) {
+            return toRefundDomain(refundOrderMapper
+                    .selectOne(new QueryWrapper<PaymentRefundOrderEntity>().eq("request_id", refundOrder.requestId())));
+        }
+    }
+
+    @Override
+    public boolean updateRefundStatus(long refundId, PaymentRefundStatus expectedStatus,
+            PaymentRefundOrder refundOrder) {
+        PaymentRefundOrderEntity entity = toEntity(refundOrder);
+        return refundOrderMapper.update(null,
+                new UpdateWrapper<PaymentRefundOrderEntity>().set("channel_refund_no", entity.getChannelRefundNo())
+                        .set("status", entity.getStatus()).set("reason", entity.getReason())
+                        .set("updated_at", entity.getUpdatedAt()).eq("refund_id", refundId)
+                        .eq("status", expectedStatus.name())) == 1;
+    }
+
+    @Override
+    public Optional<PaymentRefundOrder> findRefundByRequestId(String requestId) {
+        return Optional
+                .ofNullable(refundOrderMapper
+                        .selectOne(new QueryWrapper<PaymentRefundOrderEntity>().eq("request_id", requestId)))
+                .map(this::toRefundDomain);
     }
 
     @Override
@@ -50,17 +84,14 @@ public class MybatisPlusPaymentSettlementRepository implements PaymentSettlement
 
     @Override
     public List<PaymentChannelStatement> findUnreconciledStatements(int limit) {
-        return statementMapper.selectList(new QueryWrapper<PaymentChannelStatementEntity>()
-                .eq("reconciled", false)
-                .orderByAsc("occurred_at")
-                .last("LIMIT " + limit)).stream().map(this::toDomain).toList();
+        return statementMapper.selectList(new QueryWrapper<PaymentChannelStatementEntity>().eq("reconciled", false)
+                .orderByAsc("occurred_at").last("LIMIT " + limit)).stream().map(this::toDomain).toList();
     }
 
     @Override
     public Optional<PaymentChannelStatement> findUnreconciledStatementById(long statementId) {
         return Optional.ofNullable(statementMapper.selectOne(new QueryWrapper<PaymentChannelStatementEntity>()
-                .eq("statement_id", statementId)
-                .eq("reconciled", false))).map(this::toDomain);
+                .eq("statement_id", statementId).eq("reconciled", false))).map(this::toDomain);
     }
 
     @Override
@@ -74,8 +105,7 @@ public class MybatisPlusPaymentSettlementRepository implements PaymentSettlement
 
     @Override
     public void markStatementReconciled(long statementId) {
-        statementMapper.update(null, new UpdateWrapper<PaymentChannelStatementEntity>()
-                .set("reconciled", true)
+        statementMapper.update(null, new UpdateWrapper<PaymentChannelStatementEntity>().set("reconciled", true)
                 .eq("statement_id", statementId));
     }
 
@@ -86,12 +116,35 @@ public class MybatisPlusPaymentSettlementRepository implements PaymentSettlement
         entity.setOrderId(entry.orderId());
         entity.setUserId(entry.userId());
         entity.setDirection(entry.direction().name());
+        entity.setAccountCode(entry.accountCode());
         entity.setAmount(entry.amount());
         entity.setCurrency(entry.currency());
         entity.setBusinessType(entry.businessType());
         entity.setReferenceId(entry.referenceId());
         entity.setCreatedAt(databaseTime(entry.createdAt()));
         return entity;
+    }
+
+    private PaymentRefundOrderEntity toEntity(PaymentRefundOrder refundOrder) {
+        PaymentRefundOrderEntity entity = new PaymentRefundOrderEntity();
+        entity.setRefundId(refundOrder.refundId());
+        entity.setPaymentId(refundOrder.paymentId());
+        entity.setRequestId(refundOrder.requestId());
+        entity.setChannel(refundOrder.channel());
+        entity.setChannelRefundNo(refundOrder.channelRefundNo());
+        entity.setAmount(refundOrder.amount());
+        entity.setStatus(refundOrder.status().name());
+        entity.setReason(refundOrder.reason());
+        entity.setCreatedAt(databaseTime(refundOrder.createdAt()));
+        entity.setUpdatedAt(databaseTime(refundOrder.updatedAt()));
+        return entity;
+    }
+
+    private PaymentRefundOrder toRefundDomain(PaymentRefundOrderEntity entity) {
+        return new PaymentRefundOrder(entity.getRefundId(), entity.getPaymentId(), entity.getRequestId(),
+                entity.getChannel(), entity.getChannelRefundNo(), entity.getAmount(),
+                PaymentRefundStatus.valueOf(entity.getStatus()), entity.getReason(), domainTime(entity.getCreatedAt()),
+                domainTime(entity.getUpdatedAt()));
     }
 
     private PaymentChannelStatementEntity toEntity(PaymentChannelStatement statement) {

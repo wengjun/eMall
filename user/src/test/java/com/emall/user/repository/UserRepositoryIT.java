@@ -15,7 +15,7 @@ import org.springframework.test.context.DynamicPropertyRegistry;
 import org.springframework.test.context.DynamicPropertySource;
 import org.testcontainers.containers.MySQLContainer;
 
-@SpringBootTest(properties = "emall.storage=jdbc")
+@SpringBootTest(properties = {"emall.storage=jdbc", "spring.flyway.enabled=true"})
 @EnabledIf("dockerIsAvailable")
 class UserRepositoryIT {
     static final MySQLContainer<?> mysql = new MySQLContainer<>("mysql:8.4").withDatabaseName("emall_user")

@@ -39,26 +39,24 @@ public class MybatisPlusRecommendationRepository implements RecommendationReposi
         try {
             preferenceMapper.insert(entity);
         } catch (DuplicateKeyException ex) {
-            preferenceMapper.update(null, new UpdateWrapper<UserPreferenceEntity>()
-                    .set("affinity_score", entity.getAffinityScore())
-                    .set("updated_at", entity.getUpdatedAt())
-                    .eq("user_id", entity.getUserId())
-                    .eq("category_code", entity.getCategoryCode()));
+            preferenceMapper.update(null,
+                    new UpdateWrapper<UserPreferenceEntity>().set("affinity_score", entity.getAffinityScore())
+                            .set("updated_at", entity.getUpdatedAt()).eq("user_id", entity.getUserId())
+                            .eq("category_code", entity.getCategoryCode()));
         }
         return preference;
     }
 
     @Override
     public Optional<UserPreference> findUserPreference(long userId, String categoryCode) {
-        return Optional.ofNullable(preferenceMapper.selectOne(new QueryWrapper<UserPreferenceEntity>()
-                .eq("user_id", userId)
-                .eq("category_code", categoryCode))).map(this::toDomain);
+        return Optional.ofNullable(preferenceMapper.selectOne(
+                new QueryWrapper<UserPreferenceEntity>().eq("user_id", userId).eq("category_code", categoryCode)))
+                .map(this::toDomain);
     }
 
     @Override
     public List<UserPreference> findUserPreferences(long userId) {
-        return preferenceMapper.selectList(new QueryWrapper<UserPreferenceEntity>()
-                .eq("user_id", userId)
+        return preferenceMapper.selectList(new QueryWrapper<UserPreferenceEntity>().eq("user_id", userId)
                 .orderByDesc("affinity_score", "updated_at")).stream().map(this::toDomain).toList();
     }
 
@@ -68,13 +66,11 @@ public class MybatisPlusRecommendationRepository implements RecommendationReposi
         try {
             itemFeatureMapper.insert(entity);
         } catch (DuplicateKeyException ex) {
-            itemFeatureMapper.update(null, new UpdateWrapper<ItemFeatureEntity>()
-                    .set("category_code", entity.getCategoryCode())
-                    .set("base_score", entity.getBaseScore())
-                    .set("popularity_score", entity.getPopularityScore())
-                    .set("active", entity.getActive())
-                    .set("updated_at", entity.getUpdatedAt())
-                    .eq("sku_id", entity.getSkuId()));
+            itemFeatureMapper.update(null,
+                    new UpdateWrapper<ItemFeatureEntity>().set("category_code", entity.getCategoryCode())
+                            .set("base_score", entity.getBaseScore())
+                            .set("popularity_score", entity.getPopularityScore()).set("active", entity.getActive())
+                            .set("updated_at", entity.getUpdatedAt()).eq("sku_id", entity.getSkuId()));
         }
         return feature;
     }
@@ -86,11 +82,10 @@ public class MybatisPlusRecommendationRepository implements RecommendationReposi
 
     @Override
     public List<ItemFeature> findActiveItemFeatures(int limit) {
-        return itemFeatureMapper.selectList(new QueryWrapper<ItemFeatureEntity>()
-                .eq("active", true)
-                .orderByDesc("popularity_score", "base_score")
-                .orderByAsc("sku_id")
-                .last("LIMIT " + limit)).stream().map(this::toDomain).toList();
+        return itemFeatureMapper
+                .selectList(new QueryWrapper<ItemFeatureEntity>().eq("active", true)
+                        .orderByDesc("popularity_score", "base_score").orderByAsc("sku_id").last("LIMIT " + limit))
+                .stream().map(this::toDomain).toList();
     }
 
     @Override
@@ -105,14 +100,12 @@ public class MybatisPlusRecommendationRepository implements RecommendationReposi
         try {
             experimentMapper.insert(entity);
         } catch (DuplicateKeyException ex) {
-            experimentMapper.update(null, new UpdateWrapper<RecommendationExperimentEntity>()
-                    .set("name", entity.getName())
-                    .set("traffic_percent", entity.getTrafficPercent())
-                    .set("control_strategy", entity.getControlStrategy())
-                    .set("treatment_strategy", entity.getTreatmentStrategy())
-                    .set("status", entity.getStatus())
-                    .set("updated_at", entity.getUpdatedAt())
-                    .eq("experiment_id", entity.getExperimentId()));
+            experimentMapper.update(null,
+                    new UpdateWrapper<RecommendationExperimentEntity>().set("name", entity.getName())
+                            .set("traffic_percent", entity.getTrafficPercent())
+                            .set("control_strategy", entity.getControlStrategy())
+                            .set("treatment_strategy", entity.getTreatmentStrategy()).set("status", entity.getStatus())
+                            .set("updated_at", entity.getUpdatedAt()).eq("experiment_id", entity.getExperimentId()));
         }
         return experiment;
     }
@@ -124,11 +117,10 @@ public class MybatisPlusRecommendationRepository implements RecommendationReposi
 
     @Override
     public Optional<Experiment> findActiveExperiment(String scene) {
-        return Optional.ofNullable(experimentMapper.selectOne(new QueryWrapper<RecommendationExperimentEntity>()
-                .eq("scene", scene)
-                .eq("status", ExperimentStatus.ACTIVE.name())
-                .orderByDesc("updated_at")
-                .last("LIMIT 1"))).map(this::toDomain);
+        return Optional.ofNullable(
+                experimentMapper.selectOne(new QueryWrapper<RecommendationExperimentEntity>().eq("scene", scene)
+                        .eq("status", ExperimentStatus.ACTIVE.name()).orderByDesc("updated_at").last("LIMIT 1")))
+                .map(this::toDomain);
     }
 
     private UserPreferenceEntity toEntity(UserPreference preference) {
@@ -194,8 +186,8 @@ public class MybatisPlusRecommendationRepository implements RecommendationReposi
     }
 
     private Experiment toDomain(RecommendationExperimentEntity entity) {
-        return new Experiment(entity.getExperimentId(), entity.getScene(), entity.getName(),
-                entity.getTrafficPercent(), entity.getControlStrategy(), entity.getTreatmentStrategy(),
+        return new Experiment(entity.getExperimentId(), entity.getScene(), entity.getName(), entity.getTrafficPercent(),
+                entity.getControlStrategy(), entity.getTreatmentStrategy(),
                 ExperimentStatus.valueOf(entity.getStatus()), entity.getCreatedAt().toInstant(ZoneOffset.UTC),
                 entity.getUpdatedAt().toInstant(ZoneOffset.UTC));
     }

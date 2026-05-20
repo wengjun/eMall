@@ -1,0 +1,24 @@
+spring:
+  application:
+    name: migration-runner
+  main:
+    web-application-type: none
+  flyway:
+    enabled: false
+
+emall:
+  migration:
+    dry-run: ${EMALL_MIGRATION_DRY_RUN:false}
+    baseline-on-migrate: ${EMALL_MIGRATION_BASELINE_ON_MIGRATE:true}
+    operator: ${EMALL_MIGRATION_OPERATOR:unknown}
+    jdbc-url-template: ${EMALL_MIGRATION_JDBC_URL_TEMPLATE:}
+    username: ${EMALL_DB_USERNAME:root}
+    password: ${EMALL_DB_PASSWORD:root}
+    history-table: ${EMALL_MIGRATION_HISTORY_TABLE:flyway_schema_history}
+    create-physical-tables: ${EMALL_MIGRATION_CREATE_PHYSICAL_TABLES:false}
+    default-table-shard-count: ${EMALL_TABLE_SHARD_COUNT:64}
+    cell-id: ${EMALL_CELL_ID:cell-a}
+    services: ${EMALL_MIGRATION_SERVICES:}
+    regions: ${EMALL_MIGRATION_REGIONS:default}
+    shards: ${EMALL_MIGRATION_SHARDS:0}
+    locations: ${EMALL_MIGRATION_LOCATIONS:filesystem:/migrations/{service}}

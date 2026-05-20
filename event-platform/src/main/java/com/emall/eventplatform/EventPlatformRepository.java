@@ -10,6 +10,12 @@ interface EventPlatformRepository {
 
     List<EventSchema> findSchemas();
 
+    EventFieldClassification saveFieldClassification(EventFieldClassification classification);
+
+    List<EventFieldClassification> findFieldClassifications();
+
+    List<EventFieldClassification> findFieldClassifications(String eventName, int version);
+
     TrackingEvent saveEvent(TrackingEvent event);
 
     boolean eventExists(String eventKey);

@@ -27,13 +27,11 @@ public class MybatisPlusProductRepository implements ProductRepository {
         try {
             productMapper.insert(entity);
         } catch (DuplicateKeyException ex) {
-            productMapper.update(null, new UpdateWrapper<ProductEntity>()
-                    .set("title", entity.getTitle())
-                    .set("category", entity.getCategory())
-                    .set("price", entity.getPrice())
-                    .set("status", entity.getStatus())
-                    .set("updated_at", entity.getUpdatedAt())
-                    .eq("sku_id", entity.getSkuId()));
+            productMapper.update(null,
+                    new UpdateWrapper<ProductEntity>().set("title", entity.getTitle())
+                            .set("category", entity.getCategory()).set("price", entity.getPrice())
+                            .set("status", entity.getStatus()).set("updated_at", entity.getUpdatedAt())
+                            .eq("sku_id", entity.getSkuId()));
         }
         return product;
     }
@@ -46,10 +44,8 @@ public class MybatisPlusProductRepository implements ProductRepository {
     @Override
     public List<Product> search(String keyword, int limit) {
         String pattern = keyword == null ? "" : keyword;
-        return productMapper.selectList(new QueryWrapper<ProductEntity>()
-                .eq("status", ProductStatus.ON_SALE.name())
-                .and(query -> query.like("title", pattern).or().like("category", pattern))
-                .orderByDesc("updated_at")
+        return productMapper.selectList(new QueryWrapper<ProductEntity>().eq("status", ProductStatus.ON_SALE.name())
+                .and(query -> query.like("title", pattern).or().like("category", pattern)).orderByDesc("updated_at")
                 .last("LIMIT " + limit)).stream().map(this::toDomain).toList();
     }
 

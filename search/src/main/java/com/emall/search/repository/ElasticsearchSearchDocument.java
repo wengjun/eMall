@@ -27,6 +27,8 @@ class ElasticsearchSearchDocument {
     private Set<String> tags;
     @Field(type = FieldType.Boolean)
     private boolean saleable;
+    @Field(type = FieldType.Long)
+    private long version;
     @Field(type = FieldType.Date)
     private Instant indexedAt;
 
@@ -41,6 +43,7 @@ class ElasticsearchSearchDocument {
         this.price = document.price();
         this.tags = document.tags();
         this.saleable = document.saleable();
+        this.version = document.version();
         this.indexedAt = document.indexedAt();
     }
 
@@ -49,6 +52,7 @@ class ElasticsearchSearchDocument {
     }
 
     SearchDocument toDomain() {
-        return new SearchDocument(skuId, title, category, price, tags == null ? Set.of() : tags, saleable, indexedAt);
+        return new SearchDocument(skuId, title, category, price, tags == null ? Set.of() : tags, saleable, version,
+                indexedAt);
     }
 }

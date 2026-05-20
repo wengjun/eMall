@@ -1,9 +1,11 @@
 package com.emall.eventplatform;
 
 import com.emall.common.api.ApiResponse;
+import com.emall.common.privacy.SensitiveDataType;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.NotNull;
 import java.time.Instant;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PatchMapping;
@@ -30,6 +32,12 @@ class EventPlatformController {
     @PatchMapping("/schemas/activate")
     ApiResponse<EventSchema> activateSchema(@Valid @RequestBody ActivateSchemaRequest request) {
         return ApiResponse.ok(eventPlatformService.activateSchema(request.eventName(), request.version()));
+    }
+
+    @PostMapping("/field-classifications")
+    ApiResponse<EventFieldClassification> classifyField(@Valid @RequestBody ClassifyFieldRequest request) {
+        return ApiResponse.ok(eventPlatformService.classifyField(request.eventName(), request.version(),
+                request.fieldName(), request.sensitivity(), request.required(), request.exportedToWarehouse()));
     }
 
     @PostMapping("/events")
@@ -60,6 +68,10 @@ class EventPlatformController {
     }
 
     record ActivateSchemaRequest(@NotBlank String eventName, @Min(1) int version) {
+    }
+
+    record ClassifyFieldRequest(@NotBlank String eventName, @Min(1) int version, @NotBlank String fieldName,
+            @NotNull SensitiveDataType sensitivity, boolean required, boolean exportedToWarehouse) {
     }
 
     record IngestEventRequest(@NotBlank String eventName, @Min(1) int version, @NotBlank String eventKey,

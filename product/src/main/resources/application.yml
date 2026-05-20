@@ -33,7 +33,7 @@ spring:
       host: ${EMALL_REDIS_HOST:localhost}
       port: ${EMALL_REDIS_PORT:6379}
   flyway:
-    enabled: true
+    enabled: ${EMALL_FLYWAY_ENABLED:false}
   kafka:
     bootstrap-servers: ${EMALL_KAFKA_BOOTSTRAP_SERVERS:localhost:9092}
     producer:
@@ -42,10 +42,29 @@ spring:
 
 emall:
   storage: jdbc
+  sharding:
+    enabled: ${EMALL_SHARDING_ENABLED:false}
+    database-prefix: ${EMALL_PRODUCT_DB_SHARD_PREFIX:emall_product}
+    database-shard-count: ${EMALL_DB_SHARD_COUNT:16}
+    logical-shard-count: ${EMALL_LOGICAL_SHARD_COUNT:64}
+    default-cell-id: ${EMALL_CELL_ID:cell-a}
+    tables:
+      product:
+        table-prefix: product
+        table-shard-count: ${EMALL_TABLE_SHARD_COUNT:64}
+      outbox_event:
+        table-prefix: outbox_event
+        table-shard-count: ${EMALL_OUTBOX_TABLE_SHARD_COUNT:64}
+  ownership:
+    enabled: ${EMALL_OWNERSHIP_ENABLED:false}
+    current-region: ${EMALL_CURRENT_REGION:default-region}
+    current-cell: ${EMALL_CURRENT_CELL:default-cell}
   cache:
     ttl: 300s
+    ttl-jitter-ratio: ${EMALL_CACHE_TTL_JITTER_RATIO:0.1}
   internal:
     operations-token: ${EMALL_INTERNAL_OPERATIONS_TOKEN:local-dev-token}
+    require-approval: ${EMALL_INTERNAL_REQUIRE_APPROVAL:false}
   events:
     product-topic: ${EMALL_PRODUCT_EVENTS_TOPIC:emall.product.events}
 

@@ -15,7 +15,10 @@ public class InMemoryUserRepository implements UserRepository {
 
     @Override
     public UserAccount save(UserAccount user) {
-        byId.put(user.userId(), user);
+        UserAccount previous = byId.put(user.userId(), user);
+        if (previous != null && !previous.mobile().equals(user.mobile())) {
+            idByMobile.remove(previous.mobile(), user.userId());
+        }
         idByMobile.put(user.mobile(), user.userId());
         return user;
     }

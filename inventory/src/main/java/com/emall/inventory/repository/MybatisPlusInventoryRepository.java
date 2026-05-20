@@ -35,12 +35,10 @@ public class MybatisPlusInventoryRepository implements InventoryRepository {
         try {
             itemMapper.insert(entity);
         } catch (DuplicateKeyException ex) {
-            itemMapper.update(null, new UpdateWrapper<InventoryItemEntity>()
-                    .set("total", entity.getTotal())
-                    .set("reserved", entity.getReserved())
-                    .set("sold", entity.getSold())
-                    .set("updated_at", entity.getUpdatedAt())
-                    .eq("sku_id", entity.getSkuId()));
+            itemMapper.update(null,
+                    new UpdateWrapper<InventoryItemEntity>().set("total", entity.getTotal())
+                            .set("reserved", entity.getReserved()).set("sold", entity.getSold())
+                            .set("updated_at", entity.getUpdatedAt()).eq("sku_id", entity.getSkuId()));
         }
         return item;
     }
@@ -56,38 +54,83 @@ public class MybatisPlusInventoryRepository implements InventoryRepository {
         try {
             bucketMapper.insert(entity);
         } catch (DuplicateKeyException ex) {
-            bucketMapper.update(null, new UpdateWrapper<InventoryBucketEntity>()
-                    .set("total", entity.getTotal())
-                    .set("reserved", entity.getReserved())
-                    .set("sold", entity.getSold())
-                    .set("updated_at", entity.getUpdatedAt())
-                    .eq("sku_id", entity.getSkuId())
-                    .eq("bucket_no", entity.getBucketNo()));
+            bucketMapper.update(null,
+                    new UpdateWrapper<InventoryBucketEntity>().set("total", entity.getTotal())
+                            .set("reserved", entity.getReserved()).set("sold", entity.getSold())
+                            .set("updated_at", entity.getUpdatedAt()).eq("sku_id", entity.getSkuId())
+                            .eq("bucket_no", entity.getBucketNo()));
         }
         return bucket;
     }
 
     @Override
     public List<InventoryBucket> findBuckets(long skuId) {
-        return bucketMapper.selectList(new QueryWrapper<InventoryBucketEntity>()
-                .eq("sku_id", skuId)
-                .orderByAsc("bucket_no")).stream().map(this::toBucket).toList();
+        return bucketMapper
+                .selectList(new QueryWrapper<InventoryBucketEntity>().eq("sku_id", skuId).orderByAsc("bucket_no"))
+                .stream().map(this::toBucket).toList();
     }
 
     @Override
     public Optional<InventoryBucket> findBucket(long skuId, int bucketNo) {
-        return Optional.ofNullable(bucketMapper.selectOne(new QueryWrapper<InventoryBucketEntity>()
-                .eq("sku_id", skuId)
-                .eq("bucket_no", bucketNo))).map(this::toBucket);
+        return Optional
+                .ofNullable(bucketMapper.selectOne(
+                        new QueryWrapper<InventoryBucketEntity>().eq("sku_id", skuId).eq("bucket_no", bucketNo)))
+                .map(this::toBucket);
     }
 
     @Override
     public Optional<InventoryBucket> findReservableBucket(long skuId, int quantity) {
-        return bucketMapper.selectList(new QueryWrapper<InventoryBucketEntity>()
-                .eq("sku_id", skuId)
-                .apply("total - reserved - sold >= {0}", quantity)
-                .orderByAsc("reserved", "bucket_no")
-                .last("LIMIT 1")).stream().findFirst().map(this::toBucket);
+        return bucketMapper.selectList(new QueryWrapper<InventoryBucketEntity>().eq("sku_id", skuId)
+                .apply("total - reserved - sold >= {0}", quantity).orderByAsc("reserved", "bucket_no").last("LIMIT 1"))
+                .stream().findFirst().map(this::toBucket);
+    }
+
+    @Override
+    public boolean reserveItem(long skuId, int quantity) {
+        return itemMapper.update(null,
+                new UpdateWrapper<InventoryItemEntity>().setSql("reserved = reserved + {0}", quantity)
+                        .set("updated_at", LocalDateTime.now(ZoneOffset.UTC)).eq("sku_id", skuId)
+                        .apply("total - reserved - sold >= {0}", quantity)) == 1;
+    }
+
+    @Override
+    public boolean confirmItem(long skuId, int quantity) {
+        return itemMapper.update(null,
+                new UpdateWrapper<InventoryItemEntity>().setSql("reserved = reserved - {0}", quantity)
+                        .setSql("sold = sold + {0}", quantity).set("updated_at", LocalDateTime.now(ZoneOffset.UTC))
+                        .eq("sku_id", skuId).ge("reserved", quantity)) == 1;
+    }
+
+    @Override
+    public boolean releaseItem(long skuId, int quantity) {
+        return itemMapper.update(null,
+                new UpdateWrapper<InventoryItemEntity>().setSql("reserved = reserved - {0}", quantity)
+                        .set("updated_at", LocalDateTime.now(ZoneOffset.UTC)).eq("sku_id", skuId)
+                        .ge("reserved", quantity)) == 1;
+    }
+
+    @Override
+    public boolean reserveBucket(long skuId, int bucketNo, int quantity) {
+        return bucketMapper.update(null,
+                new UpdateWrapper<InventoryBucketEntity>().setSql("reserved = reserved + {0}", quantity)
+                        .set("updated_at", LocalDateTime.now(ZoneOffset.UTC)).eq("sku_id", skuId)
+                        .eq("bucket_no", bucketNo).apply("total - reserved - sold >= {0}", quantity)) == 1;
+    }
+
+    @Override
+    public boolean confirmBucket(long skuId, int bucketNo, int quantity) {
+        return bucketMapper.update(null,
+                new UpdateWrapper<InventoryBucketEntity>().setSql("reserved = reserved - {0}", quantity)
+                        .setSql("sold = sold + {0}", quantity).set("updated_at", LocalDateTime.now(ZoneOffset.UTC))
+                        .eq("sku_id", skuId).eq("bucket_no", bucketNo).ge("reserved", quantity)) == 1;
+    }
+
+    @Override
+    public boolean releaseBucket(long skuId, int bucketNo, int quantity) {
+        return bucketMapper.update(null,
+                new UpdateWrapper<InventoryBucketEntity>().setSql("reserved = reserved - {0}", quantity)
+                        .set("updated_at", LocalDateTime.now(ZoneOffset.UTC)).eq("sku_id", skuId)
+                        .eq("bucket_no", bucketNo).ge("reserved", quantity)) == 1;
     }
 
     @Override
@@ -96,13 +139,22 @@ public class MybatisPlusInventoryRepository implements InventoryRepository {
         try {
             reservationMapper.insert(entity);
         } catch (DuplicateKeyException ex) {
-            reservationMapper.update(null, new UpdateWrapper<InventoryReservationEntity>()
-                    .set("status", entity.getStatus())
-                    .set("reason", entity.getReason())
-                    .set("updated_at", entity.getUpdatedAt())
-                    .eq("request_id", entity.getRequestId()));
+            reservationMapper.update(null,
+                    new UpdateWrapper<InventoryReservationEntity>().set("status", entity.getStatus())
+                            .set("reason", entity.getReason()).set("updated_at", entity.getUpdatedAt())
+                            .eq("request_id", entity.getRequestId()));
         }
         return reservation;
+    }
+
+    @Override
+    public boolean updateReservationStatus(String requestId, ReservationStatus expectedStatus,
+            InventoryReservation reservation) {
+        InventoryReservationEntity entity = toReservationEntity(reservation);
+        return reservationMapper.update(null,
+                new UpdateWrapper<InventoryReservationEntity>().set("status", entity.getStatus())
+                        .set("reason", entity.getReason()).set("updated_at", entity.getUpdatedAt())
+                        .eq("request_id", requestId).eq("status", expectedStatus.name())) == 1;
     }
 
     @Override
@@ -112,11 +164,11 @@ public class MybatisPlusInventoryRepository implements InventoryRepository {
 
     @Override
     public List<InventoryReservation> findExpiredReservations(Instant now, int limit) {
-        return reservationMapper.selectList(new QueryWrapper<InventoryReservationEntity>()
-                .eq("status", ReservationStatus.RESERVED.name())
-                .le("expires_at", databaseTime(now))
-                .orderByAsc("expires_at")
-                .last("LIMIT " + limit)).stream().map(this::toReservation).toList();
+        return reservationMapper
+                .selectList(
+                        new QueryWrapper<InventoryReservationEntity>().eq("status", ReservationStatus.RESERVED.name())
+                                .le("expires_at", databaseTime(now)).orderByAsc("expires_at").last("LIMIT " + limit))
+                .stream().map(this::toReservation).toList();
     }
 
     private InventoryItemEntity toItemEntity(InventoryItem item) {

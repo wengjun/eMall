@@ -56,4 +56,36 @@ class MultiRegionRoutingPolicyTest {
         assertThatThrownBy(() -> policy.decide(DomainType.ORDER, TrafficIntent.WRITE, "us-west-2", 10001L))
                 .isInstanceOf(IllegalStateException.class).hasMessageContaining("owner region is unavailable");
     }
+
+    @Test
+    void treatsReadOnlyRegionAsReadableButNotWritable() {
+        MultiRegionRoutingPolicy policy = new MultiRegionRoutingPolicy(
+                List.of(new DomainOwnershipRule(DomainType.PRODUCT, WriteStrategy.GLOBAL_SINGLE_WRITER, "us-east-1", 1,
+                        List.of(new RegionEndpoint("us-east-1", "http://east/product", RegionStatus.READ_ONLY, 10),
+                                new RegionEndpoint("us-west-2", "http://west/product", RegionStatus.ACTIVE, 20)))));
+
+        RoutingDecision read = policy.decide(DomainType.PRODUCT, TrafficIntent.READ, "us-east-1", 10001L);
+        RoutingDecision write = policy.decide(DomainType.PRODUCT, TrafficIntent.WRITE, "us-east-1", 10001L);
+
+        assertThat(read.targetRegion()).isEqualTo("us-east-1");
+        assertThat(read.reason()).isEqualTo("local read");
+        assertThat(write.targetRegion()).isEqualTo("us-west-2");
+        assertThat(write.reason()).isEqualTo("failover region");
+    }
+
+    @Test
+    void rejectsFailedRegionForReadsAndWrites() {
+        MultiRegionRoutingPolicy policy = new MultiRegionRoutingPolicy(
+                List.of(new DomainOwnershipRule(DomainType.PAYMENT, WriteStrategy.GLOBAL_SINGLE_WRITER, "us-east-1", 1,
+                        List.of(new RegionEndpoint("us-east-1", "http://east/payment", RegionStatus.FAILED, 10),
+                                new RegionEndpoint("us-west-2", "http://west/payment", RegionStatus.ACTIVE, 20)))));
+
+        RoutingDecision read = policy.decide(DomainType.PAYMENT, TrafficIntent.READ, "us-east-1", 10001L);
+        RoutingDecision write = policy.decide(DomainType.PAYMENT, TrafficIntent.WRITE, "us-east-1", 10001L);
+
+        assertThat(read.targetRegion()).isEqualTo("us-west-2");
+        assertThat(read.reason()).isEqualTo("failover region");
+        assertThat(write.targetRegion()).isEqualTo("us-west-2");
+        assertThat(write.reason()).isEqualTo("failover region");
+    }
 }

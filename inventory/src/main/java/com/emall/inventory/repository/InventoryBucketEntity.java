@@ -20,13 +20,13 @@ public class InventoryBucketEntity {
     private Integer bucketNo;
 
     @TableField("total")
-    private Integer total;
+    private Long total;
 
     @TableField("reserved")
-    private Integer reserved;
+    private Long reserved;
 
     @TableField("sold")
-    private Integer sold;
+    private Long sold;
 
     @TableField(value = "updated_at", fill = FieldFill.INSERT_UPDATE)
     private LocalDateTime updatedAt;

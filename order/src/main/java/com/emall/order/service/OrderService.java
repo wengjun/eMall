@@ -1,11 +1,24 @@
 package com.emall.order.service;
 
+import com.emall.common.api.ErrorCode;
 import com.emall.common.event.EventTypes;
 import com.emall.common.event.OutboxEvent;
-import com.emall.common.api.ErrorCode;
 import com.emall.common.exception.BusinessException;
 import com.emall.common.id.SnowflakeIdGenerator;
+import com.emall.common.idempotency.IdempotencyExecutor;
+import com.emall.common.idempotency.IdempotencyKey;
+import com.emall.common.idempotency.IdempotencyService;
+import com.emall.common.idempotency.InMemoryIdempotencyRepository;
+import com.emall.common.metrics.BusinessMetricNames;
+import com.emall.common.metrics.BusinessMetrics;
 import com.emall.common.outbox.OutboxRepository;
+import com.emall.common.region.OwnershipGuard;
+import com.emall.common.sharding.ShardRoutingOperations;
+import com.emall.common.trust.ClientTrustContext;
+import com.emall.common.trust.IdentityAccessGuard;
+import com.emall.common.trust.RiskEvaluationRequest;
+import com.emall.common.trust.RiskGuard;
+import com.emall.common.trust.RiskScene;
 import com.emall.order.domain.Order;
 import com.emall.order.domain.OrderClientContext;
 import com.emall.order.domain.OrderClientType;
@@ -19,9 +32,13 @@ import com.emall.order.integration.PricingClient;
 import com.emall.order.integration.PricingClient.PriceQuote;
 import com.emall.order.repository.OrderRepository;
 import java.math.BigDecimal;
+import java.time.Clock;
+import java.time.Duration;
 import java.time.Instant;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -33,42 +50,100 @@ public class OrderService {
     private final InventoryClient inventoryClient;
     private final PricingClient pricingClient;
     private final MarketingClient marketingClient;
+    private final ShardRoutingOperations shardRoutingOperations;
+    private final OwnershipGuard ownershipGuard;
+    private final BusinessMetrics businessMetrics;
+    private final IdentityAccessGuard identityAccessGuard;
+    private final RiskGuard riskGuard;
+    private final IdempotencyService idempotencyService;
 
     public OrderService(OrderRepository orderRepository, OutboxRepository outboxRepository,
             SnowflakeIdGenerator idGenerator, InventoryClient inventoryClient, PricingClient pricingClient,
             MarketingClient marketingClient) {
+        this(orderRepository, outboxRepository, idGenerator, inventoryClient, pricingClient, marketingClient,
+                ShardRoutingOperations.noop(), OwnershipGuard.noop(), BusinessMetrics.noop(),
+                IdentityAccessGuard.noop(), RiskGuard.noop(), localIdempotencyService());
+    }
+
+    @Autowired
+    public OrderService(OrderRepository orderRepository, OutboxRepository outboxRepository,
+            SnowflakeIdGenerator idGenerator, InventoryClient inventoryClient, PricingClient pricingClient,
+            MarketingClient marketingClient, ShardRoutingOperations shardRoutingOperations,
+            OwnershipGuard ownershipGuard, BusinessMetrics businessMetrics, IdentityAccessGuard identityAccessGuard,
+            RiskGuard riskGuard, IdempotencyService idempotencyService) {
         this.orderRepository = orderRepository;
         this.outboxRepository = outboxRepository;
         this.idGenerator = idGenerator;
         this.inventoryClient = inventoryClient;
         this.pricingClient = pricingClient;
         this.marketingClient = marketingClient;
+        this.shardRoutingOperations = shardRoutingOperations;
+        this.ownershipGuard = ownershipGuard;
+        this.businessMetrics = businessMetrics;
+        this.identityAccessGuard = identityAccessGuard;
+        this.riskGuard = riskGuard;
+        this.idempotencyService = idempotencyService;
     }
 
     @Transactional
-    public synchronized Order create(String requestId, long userId, long skuId, int quantity) {
+    public Order create(String requestId, long userId, long skuId, int quantity) {
         return create(requestId, userId, skuId, quantity, OrderClientContext.webDefault());
     }
 
     @Transactional
-    public synchronized Order create(String requestId, long userId, long skuId, int quantity,
-            OrderClientType clientType) {
-        return create(requestId, userId, skuId, quantity,
-                OrderClientContext.of(clientType, OrderClientContext.UNKNOWN_DEVICE,
-                        OrderClientContext.DIRECT_CHANNEL));
+    public Order create(String requestId, long userId, long skuId, int quantity, OrderClientType clientType) {
+        return create(requestId, userId, skuId, quantity, OrderClientContext.of(clientType,
+                OrderClientContext.UNKNOWN_DEVICE, OrderClientContext.DIRECT_CHANNEL));
     }
 
     @Transactional
-    public synchronized Order create(String requestId, long userId, long skuId, int quantity,
-            OrderClientContext clientContext) {
+    public Order create(String requestId, long userId, long skuId, int quantity, OrderClientContext clientContext) {
+        return create(requestId, userId, skuId, quantity, clientContext, null);
+    }
+
+    @Transactional
+    public Order create(String requestId, long userId, long skuId, int quantity, OrderClientContext clientContext,
+            ClientTrustContext trustContext) {
+        OrderClientContext safeContext = clientContext == null ? OrderClientContext.webDefault() : clientContext;
+        ClientTrustContext safeTrustContext = normalizeTrustContext(trustContext, userId, safeContext);
+        identityAccessGuard.requireAccess(safeTrustContext, userId, "order:create", "user:" + userId);
+        IdempotencyKey key = IdempotencyKey.of("order", String.valueOf(userId), requestId, "create");
+        String requestDigest = idempotencyService.digest("userId=" + userId + ",skuId=" + skuId + ",quantity="
+                + quantity + ",clientType=" + safeContext.clientType() + ",deviceId=" + safeContext.deviceId()
+                + ",channel=" + safeContext.channel());
+        return IdempotencyExecutor.execute(idempotencyService, key, "Order", String.valueOf(userId), requestDigest,
+                () -> createIdempotent(requestId, userId, skuId, quantity, safeContext, safeTrustContext),
+                ignored -> replayCreate(requestId),
+                order -> idempotencyService.digest("orderId=" + order.orderId() + ",status=" + order.status()));
+    }
+
+    private Order createIdempotent(String requestId, long userId, long skuId, int quantity,
+            OrderClientContext safeContext, ClientTrustContext safeTrustContext) {
+        long routeUserId = orderRepository.findRouteUserIdByRequestId(requestId).orElse(userId);
+        return shardRoutingOperations.execute("order_record", routeUserId, () -> {
+            ownershipGuard.checkWrite("order", userId);
+            return orderRepository.findByRequestId(requestId)
+                    .map(existing -> validateIdempotentCreate(existing, userId, skuId, quantity, safeContext))
+                    .orElseGet(() -> createOnce(requestId, userId, skuId, quantity, safeContext, safeTrustContext));
+        });
+    }
+
+    private Order replayCreate(String requestId) {
+        Optional<Long> routeUserId = orderRepository.findRouteUserIdByRequestId(requestId);
+        if (routeUserId.isPresent()) {
+            return shardRoutingOperations.execute("order_record", routeUserId.get(), () -> findByRequestId(requestId));
+        }
+        return findByRequestId(requestId);
+    }
+
+    private Order findByRequestId(String requestId) {
         return orderRepository.findByRequestId(requestId)
-                .orElseGet(() -> createOnce(requestId, userId, skuId, quantity,
-                        clientContext == null ? OrderClientContext.webDefault() : clientContext));
+                .orElseThrow(() -> new BusinessException(ErrorCode.CONFLICT, "idempotent order result is unavailable"));
     }
 
     public Order get(long orderId) {
-        return orderRepository.findById(orderId)
-                .orElseThrow(() -> new BusinessException(ErrorCode.NOT_FOUND, "order not found"));
+        return shardRoutingOperations.execute("order_record", orderRouteKey(orderId), () -> orderRepository
+                .findById(orderId).orElseThrow(() -> new BusinessException(ErrorCode.NOT_FOUND, "order not found")));
     }
 
     public List<Order> findByStatus(OrderStatus status, int limit) {
@@ -76,7 +151,12 @@ public class OrderService {
     }
 
     @Transactional
-    public synchronized Order pay(long orderId) {
+    public Order pay(long orderId) {
+        return shardRoutingOperations.execute("order_record", orderRouteKey(orderId), () -> payInShard(orderId));
+    }
+
+    private Order payInShard(long orderId) {
+        ownershipGuard.checkWrite("order", orderId);
         Order order = get(orderId);
         if (order.status() == OrderStatus.PAID) {
             return order;
@@ -86,15 +166,27 @@ public class OrderService {
         }
         InventoryReservation reservation = inventoryClient.confirm(order.inventoryReservationId());
         if (reservation == null || !reservation.confirmed()) {
-            return orderRepository.save(order.markPendingRetry("inventory confirm pending"));
+            Order pending = order.markPendingRetry("inventory confirm pending");
+            return orderRepository.updateStatus(order.orderId(), OrderStatus.CREATED, pending)
+                    ? pending
+                    : get(order.orderId());
         }
-        Order paid = orderRepository.save(order.markPaid());
+        Order paid = order.markPaid();
+        if (!orderRepository.updateStatus(order.orderId(), OrderStatus.CREATED, paid)) {
+            return get(order.orderId());
+        }
         appendEvent(paid, EventTypes.ORDER_PAID);
+        businessMetrics.increment(BusinessMetricNames.ORDER_PAID, "channel", order.channel());
         return paid;
     }
 
     @Transactional
-    public synchronized Order cancel(long orderId) {
+    public Order cancel(long orderId) {
+        return shardRoutingOperations.execute("order_record", orderRouteKey(orderId), () -> cancelInShard(orderId));
+    }
+
+    private Order cancelInShard(long orderId) {
+        ownershipGuard.checkWrite("order", orderId);
         Order order = get(orderId);
         if (order.status() == OrderStatus.CANCELLED || order.status() == OrderStatus.CLOSED) {
             return order;
@@ -104,15 +196,28 @@ public class OrderService {
         }
         InventoryReservation reservation = inventoryClient.release(order.inventoryReservationId());
         if (reservation == null || !reservation.released()) {
-            return orderRepository.save(order.markPendingRetry("inventory release pending"));
+            Order pending = order.markPendingRetry("inventory release pending");
+            return orderRepository.updateStatus(order.orderId(), order.status(), pending)
+                    ? pending
+                    : get(order.orderId());
         }
-        Order cancelled = orderRepository.save(order.markCancelled());
+        Order cancelled = order.markCancelled();
+        if (!orderRepository.updateStatus(order.orderId(), order.status(), cancelled)) {
+            return get(order.orderId());
+        }
         appendEvent(cancelled, EventTypes.ORDER_CANCELLED);
+        businessMetrics.increment(BusinessMetricNames.ORDER_CANCELLED, "channel", order.channel());
         return cancelled;
     }
 
     @Transactional
-    public synchronized Order retryPending(long orderId) {
+    public Order retryPending(long orderId) {
+        return shardRoutingOperations.execute("order_record", orderRouteKey(orderId),
+                () -> retryPendingInShard(orderId));
+    }
+
+    private Order retryPendingInShard(long orderId) {
+        ownershipGuard.checkWrite("order", orderId);
         Order order = get(orderId);
         if (order.status() != OrderStatus.PENDING_RETRY) {
             return order;
@@ -127,42 +232,73 @@ public class OrderService {
         InventoryReservation reservation = inventoryClient
                 .reserve(new ReserveInventoryRequest(order.inventoryReservationId(), order.skuId(), order.quantity()));
         if (reservation.reserved()) {
-            Order created = orderRepository.save(order.markCreated());
+            Order created = order.markCreated();
+            if (!orderRepository.updateStatus(order.orderId(), OrderStatus.PENDING_RETRY, created)) {
+                return get(order.orderId());
+            }
             appendEvent(created, EventTypes.ORDER_CREATED);
             return created;
         }
-        return orderRepository.save(order.markPendingRetry(reservation.reason()));
+        Order pending = order.markPendingRetry(reservation.reason());
+        return orderRepository.updateStatus(order.orderId(), OrderStatus.PENDING_RETRY, pending)
+                ? pending
+                : get(order.orderId());
     }
 
-    private Order createOnce(String requestId, long userId, long skuId, int quantity,
-            OrderClientContext clientContext) {
+    private Order createOnce(String requestId, long userId, long skuId, int quantity, OrderClientContext clientContext,
+            ClientTrustContext trustContext) {
         long orderId = idGenerator.nextId();
-        String reservationId = "order-" + orderId;
+        String reservationId = requestId;
         PriceQuote priceQuote = pricingClient.quote(skuId, quantity);
         PromotionQuote promotionQuote = marketingClient.quote(userId, priceQuote.subtotal());
         validatePayableAmount(priceQuote, promotionQuote);
+        riskGuard.check(new RiskEvaluationRequest(RiskScene.ORDER_CREATE, trustContext.subjectId(userId),
+                trustContext.deviceId(), trustContext.sourceIp(), promotionQuote.payableAmount(), quantity));
         InventoryReservation reservation =
                 inventoryClient.reserve(new ReserveInventoryRequest(reservationId, skuId, quantity));
         Instant now = Instant.now();
         OrderStatus status = reservation.reserved() ? OrderStatus.CREATED : OrderStatus.PENDING_RETRY;
         String reason = reservation.reserved() ? null : reservation.reason();
-        Order order = orderRepository.save(
-                new Order(orderId, requestId, userId, skuId, quantity, clientContext.clientType(),
-                        clientContext.deviceId(), clientContext.channel(), priceQuote.unitPrice(),
-                        priceQuote.subtotal(), promotionQuote.discountAmount(), promotionQuote.payableAmount(),
-                        priceQuote.currency(), priceQuote.priceVersion(), promotionQuote.couponId(), reservationId,
-                        status, reason, now, now));
+        Order order = orderRepository.save(new Order(orderId, requestId, userId, skuId, quantity,
+                clientContext.clientType(), clientContext.deviceId(), clientContext.channel(), priceQuote.unitPrice(),
+                priceQuote.subtotal(), promotionQuote.discountAmount(), promotionQuote.payableAmount(),
+                priceQuote.currency(), priceQuote.priceVersion(), promotionQuote.couponId(), reservationId, status,
+                reason, now, now));
+        orderRepository.saveRoute(order.orderId(), order.requestId(), order.userId());
         if (order.status() == OrderStatus.CREATED) {
             appendEvent(order, EventTypes.ORDER_CREATED);
+            businessMetrics.increment(BusinessMetricNames.ORDER_CREATED, "client_type", order.clientType().name(),
+                    "channel", order.channel());
         }
         return order;
+    }
+
+    private Order validateIdempotentCreate(Order existing, long userId, long skuId, int quantity,
+            OrderClientContext clientContext) {
+        if (existing.userId() != userId || existing.skuId() != skuId || existing.quantity() != quantity
+                || existing.clientType() != clientContext.clientType()
+                || !existing.deviceId().equals(clientContext.deviceId())
+                || !existing.channel().equals(clientContext.channel())) {
+            throw new BusinessException(ErrorCode.CONFLICT, "requestId already used by different order request");
+        }
+        return existing;
+    }
+
+    private ClientTrustContext normalizeTrustContext(ClientTrustContext trustContext, long userId,
+            OrderClientContext clientContext) {
+        ClientTrustContext base = trustContext == null ? ClientTrustContext.anonymous() : trustContext;
+        return base.withDefaults(userId, clientContext.deviceId(), clientContext.channel());
     }
 
     private Order payAfterRetry(Order order) {
         InventoryReservation reservation = inventoryClient.confirm(order.inventoryReservationId());
         if (reservation != null && reservation.confirmed()) {
-            Order paid = orderRepository.save(order.markPaid());
+            Order paid = order.markPaid();
+            if (!orderRepository.updateStatus(order.orderId(), OrderStatus.PENDING_RETRY, paid)) {
+                return get(order.orderId());
+            }
             appendEvent(paid, EventTypes.ORDER_PAID);
+            businessMetrics.increment(BusinessMetricNames.ORDER_PAID, "channel", order.channel());
             return paid;
         }
         return order;
@@ -171,8 +307,12 @@ public class OrderService {
     private Order cancelAfterRetry(Order order) {
         InventoryReservation reservation = inventoryClient.release(order.inventoryReservationId());
         if (reservation != null && reservation.released()) {
-            Order cancelled = orderRepository.save(order.markCancelled());
+            Order cancelled = order.markCancelled();
+            if (!orderRepository.updateStatus(order.orderId(), OrderStatus.PENDING_RETRY, cancelled)) {
+                return get(order.orderId());
+            }
             appendEvent(cancelled, EventTypes.ORDER_CANCELLED);
+            businessMetrics.increment(BusinessMetricNames.ORDER_CANCELLED, "channel", order.channel());
             return cancelled;
         }
         return order;
@@ -183,9 +323,9 @@ public class OrderService {
                 String.valueOf(order.orderId()), eventType,
                 Map.ofEntries(Map.entry("orderId", order.orderId()), Map.entry("userId", order.userId()),
                         Map.entry("skuId", order.skuId()), Map.entry("quantity", order.quantity()),
-                        Map.entry("clientType", order.clientType().name()),
-                        Map.entry("deviceId", order.deviceId()), Map.entry("channel", order.channel()),
-                        Map.entry("unitPrice", order.unitPrice()), Map.entry("subtotalAmount", order.subtotalAmount()),
+                        Map.entry("clientType", order.clientType().name()), Map.entry("deviceId", order.deviceId()),
+                        Map.entry("channel", order.channel()), Map.entry("unitPrice", order.unitPrice()),
+                        Map.entry("subtotalAmount", order.subtotalAmount()),
                         Map.entry("discountAmount", order.discountAmount()),
                         Map.entry("payableAmount", order.payableAmount()), Map.entry("currency", order.currency()),
                         Map.entry("priceVersion", order.priceVersion()), Map.entry("status", order.status().name()))));
@@ -198,5 +338,14 @@ public class OrderService {
         if (promotionQuote.payableAmount().compareTo(priceQuote.subtotal()) > 0) {
             throw new BusinessException(ErrorCode.CONFLICT, "payable amount cannot exceed subtotal");
         }
+    }
+
+    private long orderRouteKey(long orderId) {
+        return orderRepository.findRouteUserIdByOrderId(orderId).orElse(orderId);
+    }
+
+    private static IdempotencyService localIdempotencyService() {
+        return new IdempotencyService(new InMemoryIdempotencyRepository(), Clock.systemUTC(), Duration.ofSeconds(30),
+                Duration.ofDays(1));
     }
 }

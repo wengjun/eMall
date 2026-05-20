@@ -27,11 +27,10 @@ public class MybatisPlusReviewRepository implements ReviewRepository {
         try {
             productReviewMapper.insert(entity);
         } catch (DuplicateKeyException ex) {
-            productReviewMapper.update(null, new UpdateWrapper<ProductReviewEntity>()
-                    .set("content", entity.getContent())
-                    .set("status", entity.getStatus())
-                    .set("updated_at", entity.getUpdatedAt())
-                    .eq("review_id", entity.getReviewId()));
+            productReviewMapper.update(null,
+                    new UpdateWrapper<ProductReviewEntity>().set("content", entity.getContent())
+                            .set("status", entity.getStatus()).set("updated_at", entity.getUpdatedAt())
+                            .eq("review_id", entity.getReviewId()));
         }
         return review;
     }
@@ -43,11 +42,10 @@ public class MybatisPlusReviewRepository implements ReviewRepository {
 
     @Override
     public List<ProductReview> findBySkuId(long skuId, int limit) {
-        return productReviewMapper.selectList(new QueryWrapper<ProductReviewEntity>()
-                .eq("sku_id", skuId)
-                .eq("status", ReviewStatus.PUBLISHED.name())
-                .orderByDesc("created_at")
-                .last("LIMIT " + limit)).stream().map(this::toDomain).toList();
+        return productReviewMapper
+                .selectList(new QueryWrapper<ProductReviewEntity>().eq("sku_id", skuId)
+                        .eq("status", ReviewStatus.PUBLISHED.name()).orderByDesc("created_at").last("LIMIT " + limit))
+                .stream().map(this::toDomain).toList();
     }
 
     private ProductReviewEntity toEntity(ProductReview review) {

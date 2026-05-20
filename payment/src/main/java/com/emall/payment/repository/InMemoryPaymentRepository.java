@@ -16,15 +16,23 @@ public class InMemoryPaymentRepository implements PaymentRepository {
     private final ConcurrentMap<Long, PaymentOrder> byId = new ConcurrentHashMap<>();
     private final ConcurrentMap<String, Long> idByRequest = new ConcurrentHashMap<>();
     private final ConcurrentMap<String, Long> idByTradeNo = new ConcurrentHashMap<>();
+    private final ConcurrentMap<Long, Long> orderIdByPaymentId = new ConcurrentHashMap<>();
 
     @Override
     public PaymentOrder save(PaymentOrder payment) {
         byId.put(payment.paymentId(), payment);
         idByRequest.put(payment.requestId(), payment.paymentId());
+        orderIdByPaymentId.put(payment.paymentId(), payment.orderId());
         if (payment.channelTradeNo() != null && !payment.channelTradeNo().isBlank()) {
-            idByTradeNo.put(payment.channelTradeNo(), payment.paymentId());
+            idByTradeNo.put(tradeKey(payment.channel(), payment.channelTradeNo()), payment.paymentId());
         }
         return payment;
+    }
+
+    @Override
+    public void saveRoute(long paymentId, String requestId, long orderId, long userId) {
+        idByRequest.putIfAbsent(requestId, paymentId);
+        orderIdByPaymentId.putIfAbsent(paymentId, orderId);
     }
 
     @Override
@@ -39,9 +47,49 @@ public class InMemoryPaymentRepository implements PaymentRepository {
     }
 
     @Override
-    public Optional<PaymentOrder> findByChannelTradeNo(String channelTradeNo) {
-        Long paymentId = idByTradeNo.get(channelTradeNo);
+    public Optional<PaymentOrder> findByChannelAndTradeNo(String channel, String channelTradeNo) {
+        Long paymentId = idByTradeNo.get(tradeKey(channel, channelTradeNo));
         return paymentId == null ? Optional.empty() : findById(paymentId);
+    }
+
+    @Override
+    public Optional<Long> findRouteOrderIdByPaymentId(long paymentId) {
+        return Optional.ofNullable(orderIdByPaymentId.get(paymentId));
+    }
+
+    @Override
+    public Optional<Long> findRouteOrderIdByRequestId(String requestId) {
+        Long paymentId = idByRequest.get(requestId);
+        return paymentId == null ? Optional.empty() : findRouteOrderIdByPaymentId(paymentId);
+    }
+
+    @Override
+    public boolean updateStatus(long paymentId, PaymentStatus expectedStatus, PaymentOrder payment) {
+        AtomicFlag updated = new AtomicFlag();
+        byId.computeIfPresent(paymentId, (id, existing) -> {
+            if (existing.status() != expectedStatus) {
+                return existing;
+            }
+            updated.mark();
+            if (payment.channelTradeNo() != null && !payment.channelTradeNo().isBlank()) {
+                idByTradeNo.put(tradeKey(payment.channel(), payment.channelTradeNo()), payment.paymentId());
+            }
+            return payment;
+        });
+        return updated.value();
+    }
+
+    @Override
+    public boolean markOrderConfirmed(long paymentId, PaymentStatus expectedStatus, PaymentOrder payment) {
+        AtomicFlag updated = new AtomicFlag();
+        byId.computeIfPresent(paymentId, (id, existing) -> {
+            if (existing.status() != expectedStatus || existing.orderConfirmed()) {
+                return existing;
+            }
+            updated.mark();
+            return payment;
+        });
+        return updated.value();
     }
 
     @Override
@@ -49,5 +97,21 @@ public class InMemoryPaymentRepository implements PaymentRepository {
         return byId.values().stream().filter(payment -> payment.status() == status)
                 .filter(payment -> !payment.orderConfirmed()).sorted(Comparator.comparing(PaymentOrder::updatedAt))
                 .limit(limit).toList();
+    }
+
+    private static final class AtomicFlag {
+        private boolean value;
+
+        void mark() {
+            value = true;
+        }
+
+        boolean value() {
+            return value;
+        }
+    }
+
+    private String tradeKey(String channel, String channelTradeNo) {
+        return channel + ":" + channelTradeNo;
     }
 }

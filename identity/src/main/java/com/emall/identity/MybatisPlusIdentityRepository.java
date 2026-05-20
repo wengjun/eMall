@@ -42,6 +42,11 @@ class MybatisPlusIdentityRepository implements IdentityRepository {
     }
 
     @Override
+    public Optional<DeviceSession> findSessionByAccessToken(String accessToken) {
+        return Optional.ofNullable(identityMapper.findSessionByAccessToken(accessToken));
+    }
+
+    @Override
     public PermissionGrant saveGrant(PermissionGrant grant) {
         identityMapper.saveGrant(grant);
         return grant;

@@ -19,4 +19,10 @@ interface TrafficRepository {
     Optional<TrafficShift> findShift(long shiftId);
 
     List<TrafficShift> findShifts();
+
+    TrafficControlRule saveControlRule(TrafficControlRule rule);
+
+    Optional<TrafficControlRule> findControlRule(long ruleId);
+
+    List<TrafficControlRule> findControlRules();
 }

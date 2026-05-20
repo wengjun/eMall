@@ -8,13 +8,14 @@ import org.springframework.boot.test.context.runner.ApplicationContextRunner;
 import org.springframework.jdbc.core.JdbcTemplate;
 
 class ClickHouseAutoConfigurationTest {
-    private final ApplicationContextRunner contextRunner = new ApplicationContextRunner()
-            .withConfiguration(AutoConfigurations.of(ClickHouseAutoConfiguration.class));
+    private final ApplicationContextRunner contextRunner =
+            new ApplicationContextRunner().withConfiguration(AutoConfigurations.of(ClickHouseAutoConfiguration.class));
 
     @Test
     void shouldCreateClickHouseJdbcTemplateWhenEnabled() {
-        contextRunner.withPropertyValues("emall.olap.engine=clickhouse",
-                "emall.olap.clickhouse-url=jdbc:clickhouse://clickhouse:8123/emall")
+        contextRunner
+                .withPropertyValues("emall.olap.engine=clickhouse",
+                        "emall.olap.clickhouse-url=jdbc:clickhouse://clickhouse:8123/emall")
                 .run(context -> assertThat(context).hasBean(ClickHouseAutoConfiguration.CLICKHOUSE_JDBC_TEMPLATE_BEAN)
                         .getBean(ClickHouseAutoConfiguration.CLICKHOUSE_JDBC_TEMPLATE_BEAN, JdbcTemplate.class)
                         .isInstanceOf(JdbcTemplate.class));

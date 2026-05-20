@@ -13,6 +13,7 @@ class InMemoryTrafficRepository implements TrafficRepository {
     private final ConcurrentMap<String, UnitCell> units = new ConcurrentHashMap<>();
     private final ConcurrentMap<Long, ShardRoute> routes = new ConcurrentHashMap<>();
     private final ConcurrentMap<Long, TrafficShift> shifts = new ConcurrentHashMap<>();
+    private final ConcurrentMap<Long, TrafficControlRule> controlRules = new ConcurrentHashMap<>();
 
     @Override
     public UnitCell saveUnit(UnitCell unit) {
@@ -55,5 +56,21 @@ class InMemoryTrafficRepository implements TrafficRepository {
     @Override
     public List<TrafficShift> findShifts() {
         return List.copyOf(shifts.values());
+    }
+
+    @Override
+    public TrafficControlRule saveControlRule(TrafficControlRule rule) {
+        controlRules.put(rule.ruleId(), rule);
+        return rule;
+    }
+
+    @Override
+    public Optional<TrafficControlRule> findControlRule(long ruleId) {
+        return Optional.ofNullable(controlRules.get(ruleId));
+    }
+
+    @Override
+    public List<TrafficControlRule> findControlRules() {
+        return List.copyOf(controlRules.values());
     }
 }

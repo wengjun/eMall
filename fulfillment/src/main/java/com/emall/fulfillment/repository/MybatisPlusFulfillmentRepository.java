@@ -40,14 +40,10 @@ public class MybatisPlusFulfillmentRepository implements FulfillmentRepository {
         } catch (DuplicateKeyException ex) {
             orderMapper.update(null, new UpdateWrapper<FulfillmentOrderEntity>()
                     .set("destination_region_code", entity.getDestinationRegionCode())
-                    .set("warehouse_code", entity.getWarehouseCode())
-                    .set("planned_carrier", entity.getPlannedCarrier())
-                    .set("estimated_sla_hours", entity.getEstimatedSlaHours())
-                    .set("carrier", entity.getCarrier())
-                    .set("tracking_no", entity.getTrackingNo())
-                    .set("status", entity.getStatus())
-                    .set("updated_at", entity.getUpdatedAt())
-                    .eq("fulfillment_id", entity.getFulfillmentId()));
+                    .set("warehouse_code", entity.getWarehouseCode()).set("planned_carrier", entity.getPlannedCarrier())
+                    .set("estimated_sla_hours", entity.getEstimatedSlaHours()).set("carrier", entity.getCarrier())
+                    .set("tracking_no", entity.getTrackingNo()).set("status", entity.getStatus())
+                    .set("updated_at", entity.getUpdatedAt()).eq("fulfillment_id", entity.getFulfillmentId()));
         }
         return order;
     }
@@ -59,8 +55,9 @@ public class MybatisPlusFulfillmentRepository implements FulfillmentRepository {
 
     @Override
     public Optional<FulfillmentOrder> findByOrderId(long orderId) {
-        return Optional.ofNullable(orderMapper.selectOne(
-                new QueryWrapper<FulfillmentOrderEntity>().eq("order_id", orderId))).map(this::toDomain);
+        return Optional
+                .ofNullable(orderMapper.selectOne(new QueryWrapper<FulfillmentOrderEntity>().eq("order_id", orderId)))
+                .map(this::toDomain);
     }
 
     @Override
@@ -69,13 +66,11 @@ public class MybatisPlusFulfillmentRepository implements FulfillmentRepository {
         try {
             warehouseMapper.insert(entity);
         } catch (DuplicateKeyException ex) {
-            warehouseMapper.update(null, new UpdateWrapper<FulfillmentWarehouseEntity>()
-                    .set("region_code", entity.getRegionCode())
-                    .set("priority", entity.getPriority())
-                    .set("daily_capacity", entity.getDailyCapacity())
-                    .set("enabled", entity.getEnabled())
-                    .set("updated_at", entity.getUpdatedAt())
-                    .eq("warehouse_code", entity.getWarehouseCode()));
+            warehouseMapper.update(null,
+                    new UpdateWrapper<FulfillmentWarehouseEntity>().set("region_code", entity.getRegionCode())
+                            .set("priority", entity.getPriority()).set("daily_capacity", entity.getDailyCapacity())
+                            .set("enabled", entity.getEnabled()).set("updated_at", entity.getUpdatedAt())
+                            .eq("warehouse_code", entity.getWarehouseCode()));
         }
         return warehouse;
     }
@@ -87,8 +82,7 @@ public class MybatisPlusFulfillmentRepository implements FulfillmentRepository {
 
     @Override
     public List<WarehouseNode> findEnabledWarehouses() {
-        return warehouseMapper.selectList(new QueryWrapper<FulfillmentWarehouseEntity>()
-                .eq("enabled", true)
+        return warehouseMapper.selectList(new QueryWrapper<FulfillmentWarehouseEntity>().eq("enabled", true)
                 .orderByAsc("region_code", "priority", "warehouse_code")).stream().map(this::toDomain).toList();
     }
 
@@ -98,16 +92,13 @@ public class MybatisPlusFulfillmentRepository implements FulfillmentRepository {
         try {
             carrierRouteMapper.insert(entity);
         } catch (DuplicateKeyException ex) {
-            carrierRouteMapper.update(null, new UpdateWrapper<FulfillmentCarrierRouteEntity>()
-                    .set("carrier_code", entity.getCarrierCode())
-                    .set("origin_warehouse_code", entity.getOriginWarehouseCode())
-                    .set("destination_region_code", entity.getDestinationRegionCode())
-                    .set("priority", entity.getPriority())
-                    .set("base_cost", entity.getBaseCost())
-                    .set("sla_hours", entity.getSlaHours())
-                    .set("active", entity.getActive())
-                    .set("updated_at", entity.getUpdatedAt())
-                    .eq("route_id", entity.getRouteId()));
+            carrierRouteMapper.update(null,
+                    new UpdateWrapper<FulfillmentCarrierRouteEntity>().set("carrier_code", entity.getCarrierCode())
+                            .set("origin_warehouse_code", entity.getOriginWarehouseCode())
+                            .set("destination_region_code", entity.getDestinationRegionCode())
+                            .set("priority", entity.getPriority()).set("base_cost", entity.getBaseCost())
+                            .set("sla_hours", entity.getSlaHours()).set("active", entity.getActive())
+                            .set("updated_at", entity.getUpdatedAt()).eq("route_id", entity.getRouteId()));
         }
         return route;
     }
@@ -120,10 +111,9 @@ public class MybatisPlusFulfillmentRepository implements FulfillmentRepository {
     @Override
     public List<CarrierRoute> findActiveCarrierRoutes(String originWarehouseCode, String destinationRegionCode) {
         return carrierRouteMapper.selectList(new QueryWrapper<FulfillmentCarrierRouteEntity>()
-                .eq("origin_warehouse_code", originWarehouseCode)
-                .eq("destination_region_code", destinationRegionCode)
-                .eq("active", true)
-                .orderByAsc("priority", "base_cost", "route_id")).stream().map(this::toDomain).toList();
+                .eq("origin_warehouse_code", originWarehouseCode).eq("destination_region_code", destinationRegionCode)
+                .eq("active", true).orderByAsc("priority", "base_cost", "route_id")).stream().map(this::toDomain)
+                .toList();
     }
 
     @Override
@@ -132,11 +122,10 @@ public class MybatisPlusFulfillmentRepository implements FulfillmentRepository {
         try {
             trackingEventMapper.insert(entity);
         } catch (DuplicateKeyException ex) {
-            trackingEventMapper.update(null, new UpdateWrapper<FulfillmentTrackingEventEntity>()
-                    .set("location", entity.getLocation())
-                    .set("description", entity.getDescription())
-                    .set("received_at", entity.getReceivedAt())
-                    .eq("event_id", entity.getEventId()));
+            trackingEventMapper.update(null,
+                    new UpdateWrapper<FulfillmentTrackingEventEntity>().set("location", entity.getLocation())
+                            .set("description", entity.getDescription()).set("received_at", entity.getReceivedAt())
+                            .eq("event_id", entity.getEventId()));
         }
         return event;
     }
@@ -144,8 +133,8 @@ public class MybatisPlusFulfillmentRepository implements FulfillmentRepository {
     @Override
     public List<TrackingEvent> findTrackingEvents(long fulfillmentId) {
         return trackingEventMapper.selectList(new QueryWrapper<FulfillmentTrackingEventEntity>()
-                .eq("fulfillment_id", fulfillmentId)
-                .orderByAsc("event_time", "event_id")).stream().map(this::toDomain).toList();
+                .eq("fulfillment_id", fulfillmentId).orderByAsc("event_time", "event_id")).stream().map(this::toDomain)
+                .toList();
     }
 
     private FulfillmentOrderEntity toEntity(FulfillmentOrder order) {
@@ -170,9 +159,9 @@ public class MybatisPlusFulfillmentRepository implements FulfillmentRepository {
     private FulfillmentOrder toDomain(FulfillmentOrderEntity entity) {
         return new FulfillmentOrder(entity.getFulfillmentId(), entity.getOrderId(), entity.getUserId(),
                 entity.getSkuId(), entity.getQuantity(), entity.getDestinationRegionCode(), entity.getWarehouseCode(),
-                entity.getPlannedCarrier(), entity.getEstimatedSlaHours(), entity.getCarrier(),
-                entity.getTrackingNo(), ShipmentStatus.valueOf(entity.getStatus()),
-                entity.getCreatedAt().toInstant(ZoneOffset.UTC), entity.getUpdatedAt().toInstant(ZoneOffset.UTC));
+                entity.getPlannedCarrier(), entity.getEstimatedSlaHours(), entity.getCarrier(), entity.getTrackingNo(),
+                ShipmentStatus.valueOf(entity.getStatus()), entity.getCreatedAt().toInstant(ZoneOffset.UTC),
+                entity.getUpdatedAt().toInstant(ZoneOffset.UTC));
     }
 
     private FulfillmentWarehouseEntity toEntity(WarehouseNode warehouse) {

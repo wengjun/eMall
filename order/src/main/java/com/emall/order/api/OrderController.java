@@ -1,6 +1,7 @@
 package com.emall.order.api;
 
 import com.emall.common.api.ApiResponse;
+import com.emall.common.trust.ClientTrustContext;
 import com.emall.order.domain.Order;
 import com.emall.order.domain.OrderClientContext;
 import com.emall.order.domain.OrderClientType;
@@ -27,15 +28,29 @@ public class OrderController {
         this.orderService = orderService;
     }
 
-    @PostMapping
-    @ResponseStatus(HttpStatus.ACCEPTED)
-    public ApiResponse<Order> createOrder(@Valid @RequestBody CreateOrderRequest request,
-            @RequestHeader(value = "X-Device-Id", required = false) String deviceIdHeader,
-            @RequestHeader(value = "X-Client-Channel", required = false) String channelHeader) {
+    public ApiResponse<Order> createOrder(CreateOrderRequest request, String deviceIdHeader, String channelHeader) {
         OrderClientContext context = OrderClientContext.of(request.clientType(),
                 firstPresent(request.deviceId(), deviceIdHeader), firstPresent(request.channel(), channelHeader));
         return ApiResponse.ok(orderService.create(request.requestId(), request.userId(), request.skuId(),
                 request.quantity(), context));
+    }
+
+    @PostMapping
+    @ResponseStatus(HttpStatus.ACCEPTED)
+    public ApiResponse<Order> createOrder(@Valid @RequestBody CreateOrderRequest request,
+            @RequestHeader(value = "Authorization", required = false) String authorization,
+            @RequestHeader(value = "X-Account-Id", required = false) Long accountId,
+            @RequestHeader(value = "X-Device-Id", required = false) String deviceIdHeader,
+            @RequestHeader(value = "X-Client-Channel", required = false) String channelHeader,
+            @RequestHeader(value = "X-Forwarded-For", required = false) String forwardedFor,
+            @RequestHeader(value = "X-Real-IP", required = false) String realIp) {
+        String deviceId = firstPresent(request.deviceId(), deviceIdHeader);
+        String channel = firstPresent(request.channel(), channelHeader);
+        OrderClientContext context = OrderClientContext.of(request.clientType(), deviceId, channel);
+        ClientTrustContext trustContext = ClientTrustContext.fromBearerHeader(accountId, authorization, deviceId,
+                firstPresent(forwardedFor, realIp), channel);
+        return ApiResponse.ok(orderService.create(request.requestId(), request.userId(), request.skuId(),
+                request.quantity(), context, trustContext));
     }
 
     @GetMapping("/{orderId}")

@@ -51,6 +51,14 @@ interface IdentityMapper {
             """)
     DeviceSession findSession(@Param("sessionId") long sessionId);
 
+    @Select("""
+            SELECT session_id, account_id, device_id, access_token, refresh_token, status, expires_at, created_at,
+                updated_at
+            FROM identity_device_session
+            WHERE access_token = #{accessToken}
+            """)
+    DeviceSession findSessionByAccessToken(@Param("accessToken") String accessToken);
+
     @Insert("""
             INSERT INTO identity_permission_grant (grant_id, account_id, scope, resource, created_at)
             VALUES (#{grant.grantId}, #{grant.accountId}, #{grant.scope}, #{grant.resource},

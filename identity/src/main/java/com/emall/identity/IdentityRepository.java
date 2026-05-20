@@ -14,6 +14,8 @@ interface IdentityRepository {
 
     Optional<DeviceSession> findSession(long sessionId);
 
+    Optional<DeviceSession> findSessionByAccessToken(String accessToken);
+
     PermissionGrant saveGrant(PermissionGrant grant);
 
     List<PermissionGrant> findGrants(long accountId);

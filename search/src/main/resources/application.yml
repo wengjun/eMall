@@ -31,7 +31,7 @@ spring:
   elasticsearch:
     uris: ${EMALL_ELASTICSEARCH_URL:http://localhost:9200}
   flyway:
-    enabled: true
+    enabled: ${EMALL_FLYWAY_ENABLED:false}
   kafka:
     bootstrap-servers: ${EMALL_KAFKA_BOOTSTRAP_SERVERS:localhost:9092}
     consumer:
@@ -44,12 +44,30 @@ spring:
 
 emall:
   storage: jdbc
+  sharding:
+    enabled: ${EMALL_SHARDING_ENABLED:false}
+    database-prefix: ${EMALL_SEARCH_DB_SHARD_PREFIX:emall_search}
+    database-shard-count: ${EMALL_DB_SHARD_COUNT:16}
+    logical-shard-count: ${EMALL_LOGICAL_SHARD_COUNT:64}
+    default-cell-id: ${EMALL_CELL_ID:cell-a}
+    tables:
+      search_document:
+        table-prefix: search_document
+        table-shard-count: ${EMALL_TABLE_SHARD_COUNT:64}
+      processed_message:
+        table-prefix: processed_message
+        table-shard-count: ${EMALL_TABLE_SHARD_COUNT:64}
+  ownership:
+    enabled: ${EMALL_OWNERSHIP_ENABLED:false}
+    current-region: ${EMALL_CURRENT_REGION:default-region}
+    current-cell: ${EMALL_CURRENT_CELL:default-cell}
   search:
     engine: elasticsearch
     url: ${EMALL_ELASTICSEARCH_URL:http://localhost:9200}
   events:
     product-topic: ${EMALL_PRODUCT_EVENTS_TOPIC:emall.product.events}
     product-dlt-topic: ${EMALL_PRODUCT_EVENTS_DLT_TOPIC:emall.product.events.dlt}
+    product-consumer-max-attempts: ${EMALL_PRODUCT_EVENTS_CONSUMER_MAX_ATTEMPTS:4}
 
 management:
   metrics:

@@ -11,8 +11,7 @@ import com.emall.user.repository.InMemoryUserRepository;
 import org.junit.jupiter.api.Test;
 
 class UserServiceTest {
-    private final UserService userService =
-            new UserService(new InMemoryUserRepository(), new SnowflakeIdGenerator(1));
+    private final UserService userService = new UserService(new InMemoryUserRepository(), new SnowflakeIdGenerator(1));
 
     @Test
     void shouldRegisterAndRenameUser() {
@@ -30,15 +29,13 @@ class UserServiceTest {
     void shouldRejectDuplicateMobile() {
         userService.register("13800000001", "alice");
 
-        assertThatThrownBy(() -> userService.register("13800000001", "bob"))
-                .isInstanceOf(BusinessException.class)
+        assertThatThrownBy(() -> userService.register("13800000001", "bob")).isInstanceOf(BusinessException.class)
                 .hasMessageContaining("mobile already registered");
     }
 
     @Test
     void shouldRejectMissingUser() {
-        assertThatThrownBy(() -> userService.get(404L))
-                .isInstanceOf(BusinessException.class)
+        assertThatThrownBy(() -> userService.get(404L)).isInstanceOf(BusinessException.class)
                 .hasMessageContaining("user not found");
     }
 
@@ -50,7 +47,30 @@ class UserServiceTest {
 
         assertThat(closed.status()).isEqualTo(UserStatus.CLOSED);
         assertThatThrownBy(() -> userService.changeStatus(created.userId(), UserStatus.NORMAL))
-                .isInstanceOf(BusinessException.class)
-                .hasMessageContaining("closed user cannot be changed");
+                .isInstanceOf(BusinessException.class).hasMessageContaining("closed user cannot be changed");
+    }
+
+    @Test
+    void shouldApplyPrivacyDeleteAndAllowMobileReuse() {
+        UserAccount created = userService.register("13800000003", "alice");
+
+        UserAccount erased = userService.applyPrivacyRequest(created.userId(), "delete");
+        UserAccount reused = userService.register("13800000003", "bob");
+
+        assertThat(erased.status()).isEqualTo(UserStatus.CLOSED);
+        assertThat(erased.mobile()).startsWith("deleted-");
+        assertThat(erased.nickname()).startsWith("deleted-user-");
+        assertThat(reused.nickname()).isEqualTo("bob");
+    }
+
+    @Test
+    void shouldApplyPrivacyFreezeAndReturnMaskedSnapshot() {
+        UserAccount created = userService.register("13800000004", "alice");
+
+        UserAccount frozen = userService.applyPrivacyRequest(created.userId(), "freeze");
+        UserAccount snapshot = userService.privacySnapshot(created.userId());
+
+        assertThat(frozen.status()).isEqualTo(UserStatus.FROZEN);
+        assertThat(snapshot.mobile()).isEqualTo("138****0004");
     }
 }

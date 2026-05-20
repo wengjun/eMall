@@ -6,6 +6,7 @@ import com.emall.cost.domain.CostBudget;
 import com.emall.cost.domain.CostOptimizationAction;
 import com.emall.cost.domain.CostSignal;
 import com.emall.cost.domain.CostSignalType;
+import com.emall.cost.domain.ServiceCapacityBaseline;
 import java.util.Comparator;
 import java.util.List;
 import java.util.Optional;
@@ -20,6 +21,7 @@ public class InMemoryCostRepository implements CostRepository {
     private final ConcurrentMap<Long, CostSignal> signals = new ConcurrentHashMap<>();
     private final ConcurrentMap<String, CostBudget> budgets = new ConcurrentHashMap<>();
     private final ConcurrentMap<Long, CostOptimizationAction> actions = new ConcurrentHashMap<>();
+    private final ConcurrentMap<Long, ServiceCapacityBaseline> capacityBaselines = new ConcurrentHashMap<>();
 
     @Override
     public CostSignal saveSignal(CostSignal signal) {
@@ -69,6 +71,18 @@ public class InMemoryCostRepository implements CostRepository {
                 .filter(this::isActive).sorted(Comparator.comparingInt(CostOptimizationAction::priority)
                         .thenComparing(Comparator.comparing(CostOptimizationAction::updatedAt).reversed()))
                 .toList();
+    }
+
+    @Override
+    public ServiceCapacityBaseline saveCapacityBaseline(ServiceCapacityBaseline baseline) {
+        capacityBaselines.put(baseline.baselineId(), baseline);
+        return baseline;
+    }
+
+    @Override
+    public Optional<ServiceCapacityBaseline> findLatestCapacityBaseline(String serviceName) {
+        return capacityBaselines.values().stream().filter(baseline -> baseline.serviceName().equals(serviceName))
+                .max(Comparator.comparing(ServiceCapacityBaseline::observedAt));
     }
 
     private boolean isActive(CostOptimizationAction action) {

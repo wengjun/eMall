@@ -21,6 +21,21 @@ public class InMemoryCartRepository implements CartRepository {
     }
 
     @Override
+    public Optional<CartItem> addQuantity(CartItem item, int maxQuantity) {
+        AtomicBox result = new AtomicBox();
+        items.compute(key(item.userId(), item.skuId()), (key, existing) -> {
+            CartItem next = existing == null ? item : existing.add(item.quantity());
+            if (next.quantity() > maxQuantity) {
+                result.item = null;
+                return existing;
+            }
+            result.item = next;
+            return next;
+        });
+        return Optional.ofNullable(result.item);
+    }
+
+    @Override
     public Optional<CartItem> find(long userId, long skuId) {
         return Optional.ofNullable(items.get(key(userId, skuId)));
     }
@@ -44,5 +59,9 @@ public class InMemoryCartRepository implements CartRepository {
 
     private String key(long userId, long skuId) {
         return userId + ":" + skuId;
+    }
+
+    private static final class AtomicBox {
+        private CartItem item;
     }
 }

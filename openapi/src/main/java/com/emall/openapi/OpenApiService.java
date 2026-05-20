@@ -1,6 +1,8 @@
 package com.emall.openapi;
 
 import com.emall.common.api.ErrorCode;
+import com.emall.common.crypto.AesGcmFieldEncryptor;
+import com.emall.common.crypto.FieldEncryptor;
 import com.emall.common.exception.BusinessException;
 import com.emall.common.id.SnowflakeIdGenerator;
 import java.nio.charset.StandardCharsets;
@@ -14,6 +16,7 @@ import java.util.Locale;
 import java.util.UUID;
 import javax.crypto.Mac;
 import javax.crypto.spec.SecretKeySpec;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -23,10 +26,17 @@ class OpenApiService {
 
     private final OpenApiRepository repository;
     private final SnowflakeIdGenerator idGenerator;
+    private final FieldEncryptor fieldEncryptor;
 
     OpenApiService(OpenApiRepository repository, SnowflakeIdGenerator idGenerator) {
+        this(repository, idGenerator, new AesGcmFieldEncryptor("local-development-field-encryption-key"));
+    }
+
+    @Autowired
+    OpenApiService(OpenApiRepository repository, SnowflakeIdGenerator idGenerator, FieldEncryptor fieldEncryptor) {
         this.repository = repository;
         this.idGenerator = idGenerator;
+        this.fieldEncryptor = fieldEncryptor;
     }
 
     @Transactional
@@ -37,15 +47,16 @@ class OpenApiService {
         String appKey = "ak_" + UUID.randomUUID().toString().replace("-", "");
         String appSecret = "sk_" + UUID.randomUUID().toString().replace("-", "");
         Instant now = Instant.now();
-        OpenApiApp app = repository.saveApp(new OpenApiApp(idGenerator.nextId(), merchantId, appKey, sha256(appSecret),
-                name, scopes, dailyQuota, true, now, now));
+        OpenApiApp app = repository
+                .saveApp(new OpenApiApp(idGenerator.nextId(), merchantId, appKey, fieldEncryptor.lookupHash(appSecret),
+                        fieldEncryptor.encrypt(appSecret), name, scopes, dailyQuota, true, now, now));
         return new AppRegistration(app, appSecret);
     }
 
     ApiSignatureVerification verifySignature(String appKey, String appSecret, String requestPath, String nonce,
             long timestamp, String signature) {
         OpenApiApp app = requireActiveApp(appKey);
-        if (!sha256(appSecret).equals(app.secretHash())) {
+        if (!secretMatches(appSecret, app.secretHash())) {
             return new ApiSignatureVerification(appKey, requestPath, nonce, timestamp, false, "invalid-secret");
         }
         long skew = Math.abs(Instant.now().getEpochSecond() - timestamp);
@@ -56,6 +67,35 @@ class OpenApiService {
         boolean valid = hmacSha256(appSecret, payload).equals(signature);
         return new ApiSignatureVerification(appKey, requestPath, nonce, timestamp, valid,
                 valid ? "valid" : "signature-mismatch");
+    }
+
+    @Transactional
+    ApiRequestAuthentication authenticateRequest(String appKey, String requestPath, String nonce, long timestamp,
+            String signature, String scope) {
+        OpenApiApp app = requireActiveApp(appKey);
+        String normalizedScope = normalize(scope);
+        if (!scopeAllowed(app.scopes(), normalizedScope)) {
+            return authentication(app, requestPath, normalizedScope, false, "scope-denied", null);
+        }
+        long skew = Math.abs(Instant.now().getEpochSecond() - timestamp);
+        if (skew > SIGNATURE_WINDOW_SECONDS) {
+            return authentication(app, requestPath, normalizedScope, false, "timestamp-expired", null);
+        }
+        String appSecret = decryptSigningSecret(app);
+        String payload = appKey + "\n" + requestPath + "\n" + nonce + "\n" + timestamp;
+        if (!hmacSha256(appSecret, payload).equals(signature)) {
+            return authentication(app, requestPath, normalizedScope, false, "signature-mismatch", null);
+        }
+        boolean nonceAccepted = repository.saveNonceIfAbsent(appKey, normalize(nonce), requestPath,
+                Instant.ofEpochSecond(timestamp + SIGNATURE_WINDOW_SECONDS));
+        if (!nonceAccepted) {
+            return authentication(app, requestPath, normalizedScope, false, "nonce-replayed", null);
+        }
+        ApiQuotaUsage quotaUsage = consumeQuota(appKey);
+        if (!quotaUsage.allowed()) {
+            return authentication(app, requestPath, normalizedScope, false, "quota-exceeded", quotaUsage);
+        }
+        return authentication(app, requestPath, normalizedScope, true, "allowed", quotaUsage);
     }
 
     @Transactional
@@ -102,6 +142,34 @@ class OpenApiService {
             throw new BusinessException(ErrorCode.FORBIDDEN, "openapi app is not active");
         }
         return app;
+    }
+
+    private ApiRequestAuthentication authentication(OpenApiApp app, String requestPath, String scope, boolean allowed,
+            String reason, ApiQuotaUsage quotaUsage) {
+        return new ApiRequestAuthentication(app.appKey(), app.appId(), app.merchantId(), requestPath, scope, allowed,
+                reason, quotaUsage);
+    }
+
+    private boolean scopeAllowed(String configuredScopes, String requiredScope) {
+        String normalizedRequired = normalize(requiredScope);
+        for (String scope : configuredScopes.split(",")) {
+            String normalizedScope = scope.trim().toLowerCase(Locale.ROOT);
+            if ("*".equals(normalizedScope) || normalizedScope.equals(normalizedRequired)) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    private String decryptSigningSecret(OpenApiApp app) {
+        if (app.secretCiphertext() == null || app.secretCiphertext().isBlank()) {
+            throw new BusinessException(ErrorCode.CONFLICT, "openapi signing secret is unavailable");
+        }
+        return fieldEncryptor.decrypt(app.secretCiphertext());
+    }
+
+    private boolean secretMatches(String appSecret, String storedHash) {
+        return fieldEncryptor.lookupHash(appSecret).equals(storedHash) || sha256(appSecret).equals(storedHash);
     }
 
     private String normalize(String value) {

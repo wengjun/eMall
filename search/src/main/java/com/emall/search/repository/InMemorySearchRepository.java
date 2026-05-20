@@ -19,15 +19,23 @@ public class InMemorySearchRepository implements SearchRepository {
 
     public InMemorySearchRepository() {
         save(new SearchDocument(10001L, "flagship phone", "digital", BigDecimal.valueOf(379900, 2),
-                Set.of("phone", "mobile"), true, Instant.now()));
+                Set.of("phone", "mobile"), true, 0L, Instant.now()));
         save(new SearchDocument(10002L, "thin laptop", "computer", BigDecimal.valueOf(679900, 2),
-                Set.of("laptop", "computer"), true, Instant.now()));
+                Set.of("laptop", "computer"), true, 0L, Instant.now()));
     }
 
     @Override
     public SearchDocument save(SearchDocument document) {
-        documents.put(document.skuId(), document);
-        return document;
+        AtomicBox<SearchDocument> saved = new AtomicBox<>();
+        documents.compute(document.skuId(), (skuId, existing) -> {
+            if (existing != null && existing.version() > document.version()) {
+                saved.set(existing);
+                return existing;
+            }
+            saved.set(document);
+            return document;
+        });
+        return saved.value();
     }
 
     @Override
@@ -45,5 +53,17 @@ public class InMemorySearchRepository implements SearchRepository {
     @Override
     public void delete(long skuId) {
         documents.remove(skuId);
+    }
+
+    private static final class AtomicBox<T> {
+        private T value;
+
+        void set(T value) {
+            this.value = value;
+        }
+
+        T value() {
+            return value;
+        }
     }
 }

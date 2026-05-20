@@ -29,6 +29,9 @@ public class PaymentLedgerEntryEntity {
     @TableField("direction")
     private String direction;
 
+    @TableField("account_code")
+    private String accountCode;
+
     @TableField("amount")
     private BigDecimal amount;
 

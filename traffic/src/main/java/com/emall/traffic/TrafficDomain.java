@@ -15,6 +15,12 @@ enum ShiftStatus {
     ABORTED
 }
 
+enum ControlRuleType {
+    RATE_LIMIT,
+    CIRCUIT_BREAKER,
+    DEGRADE
+}
+
 record UnitCell(long unitId, String unitCode, String regionCode, int capacityWeight, UnitStatus status,
         Instant createdAt, Instant updatedAt) {
     UnitCell changeStatus(UnitStatus nextStatus) {
@@ -33,5 +39,13 @@ record TrafficShift(long shiftId, String sourceUnit, String targetUnit, int perc
     }
 }
 
-record TrafficSummary(int activeUnits, int shardRoutes, int runningShifts, int isolatedUnits) {
+record TrafficControlRule(long ruleId, String resource, ControlRuleType type, String dimension, String matchValue,
+        int threshold, String unitCode, boolean enabled, Instant createdAt, Instant updatedAt) {
+    TrafficControlRule changeEnabled(boolean nextEnabled) {
+        return new TrafficControlRule(ruleId, resource, type, dimension, matchValue, threshold, unitCode, nextEnabled,
+                createdAt, Instant.now());
+    }
+}
+
+record TrafficSummary(int activeUnits, int shardRoutes, int runningShifts, int isolatedUnits, int controlRules) {
 }

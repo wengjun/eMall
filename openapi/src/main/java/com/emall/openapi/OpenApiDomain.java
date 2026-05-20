@@ -9,8 +9,8 @@ enum WebhookDeliveryStatus {
     FAILED
 }
 
-record OpenApiApp(long appId, long merchantId, String appKey, String secretHash, String name, String scopes,
-        int dailyQuota, boolean active, Instant createdAt, Instant updatedAt) {
+record OpenApiApp(long appId, long merchantId, String appKey, String secretHash, String secretCiphertext, String name,
+        String scopes, int dailyQuota, boolean active, Instant createdAt, Instant updatedAt) {
 }
 
 record AppRegistration(OpenApiApp app, String appSecret) {
@@ -21,6 +21,10 @@ record ApiSignatureVerification(String appKey, String requestPath, String nonce,
 }
 
 record ApiQuotaUsage(String appKey, LocalDate usageDate, int usedCount, int dailyQuota, boolean allowed) {
+}
+
+record ApiRequestAuthentication(String appKey, long appId, long merchantId, String requestPath, String scope,
+        boolean allowed, String reason, ApiQuotaUsage quotaUsage) {
 }
 
 record WebhookSubscription(long subscriptionId, long appId, String eventType, String targetUrl, boolean active,

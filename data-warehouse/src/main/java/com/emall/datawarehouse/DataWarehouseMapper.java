@@ -61,6 +61,21 @@ interface DataWarehouseMapper {
     List<QualityCheck> findQualityChecks();
 
     @Insert("""
+            INSERT INTO quality_alert
+                (alert_id, dataset_id, check_id, severity, detail, status, created_at, updated_at)
+            VALUES (#{alert.alertId}, #{alert.datasetId}, #{alert.checkId}, #{alert.severity},
+                #{alert.detail}, #{alert.status}, #{alert.createdAt}, #{alert.updatedAt})
+            ON DUPLICATE KEY UPDATE status = VALUES(status), updated_at = VALUES(updated_at)
+            """)
+    int saveQualityAlert(@Param("alert") QualityAlert alert);
+
+    @Select("""
+            SELECT alert_id, dataset_id, check_id, severity, detail, status, created_at, updated_at
+            FROM quality_alert
+            """)
+    List<QualityAlert> findQualityAlerts();
+
+    @Insert("""
             INSERT INTO lineage_edge
                 (lineage_id, upstream_dataset_id, downstream_dataset_id, transform_name, created_at)
             VALUES (#{edge.lineageId}, #{edge.upstreamDatasetId}, #{edge.downstreamDatasetId},
@@ -73,4 +88,21 @@ interface DataWarehouseMapper {
             FROM lineage_edge
             """)
     List<LineageEdge> findLineage();
+
+    @Insert("""
+            INSERT INTO field_lineage
+                (lineage_id, upstream_dataset_id, upstream_field, downstream_dataset_id, downstream_field,
+                 sensitivity, transform_name, created_at)
+            VALUES (#{edge.lineageId}, #{edge.upstreamDatasetId}, #{edge.upstreamField},
+                #{edge.downstreamDatasetId}, #{edge.downstreamField}, #{edge.sensitivity}, #{edge.transformName},
+                #{edge.createdAt})
+            """)
+    int saveFieldLineage(@Param("edge") FieldLineage edge);
+
+    @Select("""
+            SELECT lineage_id, upstream_dataset_id, upstream_field, downstream_dataset_id, downstream_field,
+                sensitivity, transform_name, created_at
+            FROM field_lineage
+            """)
+    List<FieldLineage> findFieldLineage();
 }

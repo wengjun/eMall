@@ -23,7 +23,8 @@ import org.springframework.dao.DuplicateKeyException;
 
 class MybatisPlusOrderRepositoryTest {
     private final OrderMapper orderMapper = mock(OrderMapper.class);
-    private final MybatisPlusOrderRepository repository = new MybatisPlusOrderRepository(orderMapper);
+    private final OrderRouteMapper routeMapper = mock(OrderRouteMapper.class);
+    private final MybatisPlusOrderRepository repository = new MybatisPlusOrderRepository(orderMapper, routeMapper);
 
     @Test
     void shouldPersistOrderClientType() {
@@ -99,9 +100,9 @@ class MybatisPlusOrderRepositoryTest {
     private static Order newOrder(long orderId, String requestId, OrderClientType clientType, String deviceId,
             String channel) {
         Instant now = Instant.parse("2026-01-01T00:00:00Z");
-        return new Order(orderId, requestId, 70001L, 30001L, 1, clientType, deviceId, channel,
-                new BigDecimal("100.00"), new BigDecimal("100.00"), BigDecimal.ZERO, new BigDecimal("100.00"), "CNY",
-                1L, null, "order-" + orderId, OrderStatus.CREATED, null, now, now);
+        return new Order(orderId, requestId, 70001L, 30001L, 1, clientType, deviceId, channel, new BigDecimal("100.00"),
+                new BigDecimal("100.00"), BigDecimal.ZERO, new BigDecimal("100.00"), "CNY", 1L, null,
+                "order-" + orderId, OrderStatus.CREATED, null, now, now);
     }
 
     private static OrderEntity toEntity(Order order) {

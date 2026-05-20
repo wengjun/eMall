@@ -1,0 +1,21 @@
+CREATE TABLE release_guard_record (
+    guard_id BIGINT PRIMARY KEY,
+    rollout_id BIGINT NOT NULL,
+    service_name VARCHAR(128) NOT NULL,
+    stage VARCHAR(32) NOT NULL,
+    decision VARCHAR(32) NOT NULL,
+    slo_passed TINYINT(1),
+    alerts_clear TINYINT(1),
+    capacity_ready TINYINT(1),
+    dependencies_healthy TINYINT(1),
+    error_rate DECIMAL(8, 6),
+    latency_p95_ms INT,
+    business_success_rate DECIMAL(8, 6),
+    compensation_triggered TINYINT(1),
+    message_replay_checked TINYINT(1),
+    downstream_recovered TINYINT(1),
+    reason VARCHAR(512) NOT NULL,
+    created_at TIMESTAMP(6) NOT NULL,
+    KEY idx_release_guard_rollout_stage (rollout_id, stage, created_at),
+    KEY idx_release_guard_decision (decision, created_at)
+);

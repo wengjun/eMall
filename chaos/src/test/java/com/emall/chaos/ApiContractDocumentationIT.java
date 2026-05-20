@@ -16,15 +16,8 @@ class ApiContractDocumentationIT {
     void shouldDocumentWebAndAppCheckoutContract() throws IOException {
         String contract = Files.readString(WEB_APP_CHECKOUT_API);
 
-        assertThat(contract)
-                .contains("https://api.emall.example.com")
-                .contains("X-Device-Id")
-                .contains("X-Client-Type")
-                .contains("X-Client-Channel")
-                .contains("clientType")
-                .contains("deviceId")
-                .contains("channel")
-                .contains("WEB")
-                .contains("APP");
+        assertThat(contract).contains("https://api.emall.example.com").contains("X-Device-Id").contains("X-Client-Type")
+                .contains("X-Client-Channel").contains("clientType").contains("deviceId").contains("channel")
+                .contains("WEB").contains("APP");
     }
 }

@@ -3,8 +3,10 @@ package com.emall.analytics;
 import com.emall.common.api.ErrorCode;
 import com.emall.common.exception.BusinessException;
 import com.emall.common.id.SnowflakeIdGenerator;
+import com.emall.common.privacy.SensitiveDataMasker;
 import java.math.BigDecimal;
 import java.time.Instant;
+import java.util.Arrays;
 import java.util.Locale;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -35,12 +37,14 @@ class AnalyticsService {
 
     @Transactional
     MetricPoint recordMetricPoint(String metricName, String dimensionKey, BigDecimal metricValue, Instant eventTime) {
+        requireApprovedMetric(metricName);
         return repository.saveMetricPoint(new MetricPoint(idGenerator.nextId(), normalize(metricName),
-                normalize(dimensionKey), metricValue, eventTime, Instant.now()));
+                SensitiveDataMasker.maskFreeText(normalize(dimensionKey)), metricValue, eventTime, Instant.now()));
     }
 
     @Transactional
     DashboardDefinition createDashboard(String dashboardName, String businessDomain, String metricNames) {
+        Arrays.stream(metricNames.split(",")).map(this::normalize).forEach(this::requireApprovedMetric);
         return repository.saveDashboard(new DashboardDefinition(idGenerator.nextId(), normalize(dashboardName),
                 normalize(businessDomain), metricNames, Instant.now()));
     }
@@ -86,5 +90,14 @@ class AnalyticsService {
             throw new BusinessException(ErrorCode.BAD_REQUEST, "analytics value must not be blank");
         }
         return normalized;
+    }
+
+    private void requireApprovedMetric(String metricName) {
+        String normalized = normalize(metricName);
+        boolean approved = repository.findMetrics().stream()
+                .anyMatch(metric -> metric.metricName().equals(normalized) && metric.status() == MetricStatus.APPROVED);
+        if (!approved) {
+            throw new BusinessException(ErrorCode.CONFLICT, "metric must be approved before reporting");
+        }
     }
 }

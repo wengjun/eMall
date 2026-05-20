@@ -13,15 +13,14 @@ import org.springframework.boot.autoconfigure.AutoConfigurations;
 import org.springframework.boot.test.context.runner.ApplicationContextRunner;
 
 class MybatisPlusAutoConfigurationTest {
-    private final ApplicationContextRunner contextRunner = new ApplicationContextRunner()
-            .withConfiguration(AutoConfigurations.of(MybatisPlusAutoConfiguration.class));
+    private final ApplicationContextRunner contextRunner =
+            new ApplicationContextRunner().withConfiguration(AutoConfigurations.of(MybatisPlusAutoConfiguration.class));
 
     @Test
     void shouldCreateMybatisPlusInterceptor() {
         contextRunner.run(context -> {
             assertThat(context).hasSingleBean(MybatisPlusInterceptor.class);
-            assertThat(context.getBean(MybatisPlusInterceptor.class).getInterceptors())
-                    .extracting(Object::getClass)
+            assertThat(context.getBean(MybatisPlusInterceptor.class).getInterceptors()).extracting(Object::getClass)
                     .containsExactly(OptimisticLockerInnerInterceptor.class, BlockAttackInnerInterceptor.class,
                             PaginationInnerInterceptor.class);
         });
@@ -30,8 +29,7 @@ class MybatisPlusAutoConfigurationTest {
     @Test
     void shouldEnableIllegalSqlInterceptorOnlyWhenRequested() {
         contextRunner.withPropertyValues("emall.mybatis-plus.illegal-sql-check=true").run(context -> {
-            assertThat(context.getBean(MybatisPlusInterceptor.class).getInterceptors())
-                    .extracting(Object::getClass)
+            assertThat(context.getBean(MybatisPlusInterceptor.class).getInterceptors()).extracting(Object::getClass)
                     .contains(IllegalSQLInnerInterceptor.class);
         });
     }

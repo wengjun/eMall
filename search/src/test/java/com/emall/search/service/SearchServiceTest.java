@@ -27,4 +27,13 @@ class SearchServiceTest {
         assertThatThrownBy(() -> searchService.get(30001L)).isInstanceOf(BusinessException.class)
                 .hasMessageContaining("search document not found");
     }
+
+    @Test
+    void shouldIgnoreOlderProductEvents() {
+        searchService.index(30002L, "new title", "digital", new BigDecimal("3999.00"), Set.of("phone"), true, 20L);
+        searchService.index(30002L, "old title", "digital", new BigDecimal("2999.00"), Set.of("phone"), true, 10L);
+
+        assertThat(searchService.get(30002L).title()).isEqualTo("new title");
+        assertThat(searchService.get(30002L).version()).isEqualTo(20L);
+    }
 }

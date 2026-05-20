@@ -4,5 +4,7 @@ public enum RegionStatus {
     ACTIVE,
     DRAINING,
     DEGRADED,
+    READ_ONLY,
+    FAILED,
     OFFLINE
 }

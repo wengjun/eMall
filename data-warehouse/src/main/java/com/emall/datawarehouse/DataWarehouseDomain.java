@@ -1,5 +1,6 @@
 package com.emall.datawarehouse;
 
+import com.emall.common.privacy.SensitiveDataType;
 import java.time.Instant;
 import java.time.LocalDate;
 
@@ -16,6 +17,11 @@ enum QualityStatus {
     FAIL
 }
 
+enum QualityAlertStatus {
+    OPEN,
+    ACKED
+}
+
 record DatasetDefinition(long datasetId, WarehouseLayer layer, String datasetName, String owner, String description,
         int retentionDays, Instant createdAt, Instant updatedAt) {
 }
@@ -28,9 +34,18 @@ record QualityCheck(long checkId, long datasetId, String checkName, QualityStatu
         Instant checkedAt) {
 }
 
+record QualityAlert(long alertId, long datasetId, long checkId, String severity, String detail,
+        QualityAlertStatus status, Instant createdAt, Instant updatedAt) {
+}
+
 record LineageEdge(long lineageId, long upstreamDatasetId, long downstreamDatasetId, String transformName,
         Instant createdAt) {
 }
 
-record WarehouseSummary(int datasets, int partitions, int failedChecks, int lineageEdges) {
+record FieldLineage(long lineageId, long upstreamDatasetId, String upstreamField, long downstreamDatasetId,
+        String downstreamField, SensitiveDataType sensitivity, String transformName, Instant createdAt) {
+}
+
+record WarehouseSummary(int datasets, int partitions, int failedChecks, int lineageEdges, int fieldLineageEdges,
+        int openQualityAlerts) {
 }

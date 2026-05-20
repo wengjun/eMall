@@ -23,7 +23,8 @@ class DockerComposeTopologyIT {
         assertThat(compose).contains("  redis:").contains("  mysql:").contains("  kafka:").contains("  nacos:")
                 .contains("  elasticsearch:").contains("  clickhouse:").contains("  logstash:").contains("  kibana:")
                 .contains("  prometheus:").contains("  otel-collector:").contains("  grafana:")
-                .contains("  gateway-app:").contains("EMALL_NACOS_DISCOVERY_ENABLED: \"true\"");
+                .contains("  gateway-app:")
+                .contains("EMALL_NACOS_DISCOVERY_ENABLED: ${EMALL_NACOS_DISCOVERY_ENABLED:-true}");
 
         for (Map.Entry<String, Integer> app : CORE_APPS.entrySet()) {
             String service = app.getKey();
@@ -31,12 +32,12 @@ class DockerComposeTopologyIT {
             assertThat(compose).as("compose app service for %s", service).contains("  " + service + "-app:")
                     .contains("MODULE: " + service).contains("\"" + port + ":" + port + "\"");
             assertThat(compose).as("gateway upstream for %s", service)
-                    .contains(envName(service) + "_URL: lb://" + service)
+                    .contains(envName(service) + "_URL: http://" + service + "-app:" + port)
                     .contains("      - " + service + "-app");
         }
 
-        assertThat(compose).contains("EMALL_RPC_PROTOCOL: dubbo")
-                .contains("EMALL_DUBBO_REGISTRY_ADDRESS: nacos://nacos:8848");
+        assertThat(compose).contains("EMALL_RPC_PROTOCOL: ${EMALL_RPC_PROTOCOL:-dubbo}")
+                .contains("EMALL_DUBBO_REGISTRY_ADDRESS: ${EMALL_DUBBO_REGISTRY_ADDRESS:-nacos://nacos:8848}");
     }
 
     private static String envName(String service) {

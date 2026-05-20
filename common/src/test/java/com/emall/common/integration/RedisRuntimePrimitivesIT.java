@@ -15,9 +15,8 @@ import org.testcontainers.utility.DockerImageName;
 
 @EnabledIf("dockerIsAvailable")
 class RedisRuntimePrimitivesIT {
-    static final GenericContainer<?> redis =
-            new GenericContainer<>(DockerImageName.parse("redis:7.2-alpine")).withExposedPorts(6379)
-                    .withStartupTimeout(Duration.ofMinutes(2));
+    static final GenericContainer<?> redis = new GenericContainer<>(DockerImageName.parse("redis:7.2-alpine"))
+            .withExposedPorts(6379).withStartupTimeout(Duration.ofMinutes(2));
 
     @BeforeAll
     static void startRedis() {

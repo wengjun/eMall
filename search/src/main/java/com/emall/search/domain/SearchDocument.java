@@ -5,7 +5,7 @@ import java.time.Instant;
 import java.util.Set;
 
 public record SearchDocument(long skuId, String title, String category, BigDecimal price, Set<String> tags,
-        boolean saleable, Instant indexedAt) {
+        boolean saleable, long version, Instant indexedAt) {
     public boolean matches(String keyword) {
         String normalized = keyword == null ? "" : keyword.toLowerCase();
         return normalized.isBlank() || title.toLowerCase().contains(normalized)

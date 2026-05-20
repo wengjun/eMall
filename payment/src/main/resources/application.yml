@@ -29,7 +29,7 @@ spring:
     username: ${EMALL_DB_USERNAME:root}
     password: ${EMALL_DB_PASSWORD:root}
   flyway:
-    enabled: true
+    enabled: ${EMALL_FLYWAY_ENABLED:false}
   kafka:
     bootstrap-servers: ${EMALL_KAFKA_BOOTSTRAP_SERVERS:localhost:9092}
     producer:
@@ -38,14 +38,64 @@ spring:
 
 emall:
   storage: jdbc
+  sharding:
+    enabled: ${EMALL_SHARDING_ENABLED:false}
+    database-prefix: ${EMALL_PAYMENT_DB_SHARD_PREFIX:emall_payment}
+    database-shard-count: ${EMALL_DB_SHARD_COUNT:16}
+    logical-shard-count: ${EMALL_LOGICAL_SHARD_COUNT:64}
+    default-cell-id: ${EMALL_CELL_ID:cell-a}
+    tables:
+      payment_order:
+        table-prefix: payment_order
+        table-shard-count: ${EMALL_TABLE_SHARD_COUNT:64}
+      payment_ledger_entry:
+        table-prefix: payment_ledger_entry
+        table-shard-count: ${EMALL_TABLE_SHARD_COUNT:64}
+      payment_channel_statement:
+        table-prefix: payment_channel_statement
+        table-shard-count: ${EMALL_TABLE_SHARD_COUNT:64}
+      payment_reconciliation_record:
+        table-prefix: payment_reconciliation_record
+        table-shard-count: ${EMALL_TABLE_SHARD_COUNT:64}
+  ownership:
+    enabled: ${EMALL_OWNERSHIP_ENABLED:false}
+    current-region: ${EMALL_CURRENT_REGION:default-region}
+    current-cell: ${EMALL_CURRENT_CELL:default-cell}
   internal:
     operations-token: ${EMALL_INTERNAL_OPERATIONS_TOKEN:local-dev-token}
+    require-approval: ${EMALL_INTERNAL_REQUIRE_APPROVAL:false}
   events:
     topic: emall.payment.events
   downstream:
     order-url: ${EMALL_ORDER_URL:http://localhost:8084}
   rpc:
     protocol: ${EMALL_RPC_PROTOCOL:http}
+  http-client:
+    connect-timeout: ${EMALL_HTTP_CONNECT_TIMEOUT:300ms}
+    read-timeout: ${EMALL_HTTP_READ_TIMEOUT:800ms}
+    max-connections: ${EMALL_HTTP_MAX_CONNECTIONS:512}
+    bulkhead-max-concurrent: ${EMALL_HTTP_BULKHEAD_MAX_CONCURRENT:256}
+    max-attempts: ${EMALL_HTTP_MAX_ATTEMPTS:2}
+    retry-backoff: ${EMALL_HTTP_RETRY_BACKOFF:50ms}
+  trust:
+    identity:
+      enabled: ${EMALL_TRUST_IDENTITY_ENABLED:false}
+      base-url: ${EMALL_IDENTITY_URL:http://localhost:8097}
+      fail-closed: ${EMALL_TRUST_IDENTITY_FAIL_CLOSED:true}
+    risk:
+      enabled: ${EMALL_TRUST_RISK_ENABLED:false}
+      base-url: ${EMALL_RISK_URL:http://localhost:8098}
+      fail-closed: ${EMALL_TRUST_RISK_FAIL_CLOSED:true}
+  payment:
+    security:
+      callback-signature-enabled: ${EMALL_PAYMENT_CALLBACK_SIGNATURE_ENABLED:true}
+      callback-secret: ${EMALL_PAYMENT_CALLBACK_SECRET:local-dev-payment-callback-secret}
+      callback-allowed-skew-seconds: ${EMALL_PAYMENT_CALLBACK_ALLOWED_SKEW_SECONDS:300}
+  resilience:
+    sentinel:
+      flows:
+        payment.order.pay:
+          qps: ${EMALL_SENTINEL_PAYMENT_ORDER_PAY_QPS:5000}
 
 dubbo:
   application:
