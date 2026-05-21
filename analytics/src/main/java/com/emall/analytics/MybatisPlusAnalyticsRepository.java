@@ -9,9 +9,21 @@ import org.springframework.stereotype.Repository;
 @ConditionalOnProperty(name = "emall.storage", havingValue = "jdbc", matchIfMissing = true)
 class MybatisPlusAnalyticsRepository implements AnalyticsRepository {
     private final AnalyticsMapper analyticsMapper;
+    private final MetricDefinitionMapper metricMapper;
+    private final MetricPointMapper metricPointMapper;
+    private final DashboardDefinitionMapper dashboardMapper;
+    private final AnomalySignalMapper anomalyMapper;
+    private final PrivacyRequestMapper privacyRequestMapper;
 
-    MybatisPlusAnalyticsRepository(AnalyticsMapper analyticsMapper) {
+    MybatisPlusAnalyticsRepository(AnalyticsMapper analyticsMapper, MetricDefinitionMapper metricMapper,
+            MetricPointMapper metricPointMapper, DashboardDefinitionMapper dashboardMapper,
+            AnomalySignalMapper anomalyMapper, PrivacyRequestMapper privacyRequestMapper) {
         this.analyticsMapper = analyticsMapper;
+        this.metricMapper = metricMapper;
+        this.metricPointMapper = metricPointMapper;
+        this.dashboardMapper = dashboardMapper;
+        this.anomalyMapper = anomalyMapper;
+        this.privacyRequestMapper = privacyRequestMapper;
     }
 
     @Override
@@ -22,40 +34,40 @@ class MybatisPlusAnalyticsRepository implements AnalyticsRepository {
 
     @Override
     public Optional<MetricDefinition> findMetric(long metricId) {
-        return Optional.ofNullable(analyticsMapper.findMetric(metricId));
+        return Optional.ofNullable(metricMapper.selectById(metricId));
     }
 
     @Override
     public List<MetricDefinition> findMetrics() {
-        return analyticsMapper.findMetrics();
+        return metricMapper.selectList(null);
     }
 
     @Override
     public MetricPoint saveMetricPoint(MetricPoint point) {
-        analyticsMapper.saveMetricPoint(point);
+        metricPointMapper.insert(point);
         return point;
     }
 
     @Override
     public DashboardDefinition saveDashboard(DashboardDefinition dashboard) {
-        analyticsMapper.saveDashboard(dashboard);
+        dashboardMapper.insert(dashboard);
         return dashboard;
     }
 
     @Override
     public List<DashboardDefinition> findDashboards() {
-        return analyticsMapper.findDashboards();
+        return dashboardMapper.selectList(null);
     }
 
     @Override
     public AnomalySignal saveAnomaly(AnomalySignal anomaly) {
-        analyticsMapper.saveAnomaly(anomaly);
+        anomalyMapper.insert(anomaly);
         return anomaly;
     }
 
     @Override
     public List<AnomalySignal> findAnomalies() {
-        return analyticsMapper.findAnomalies();
+        return anomalyMapper.selectList(null);
     }
 
     @Override
@@ -72,11 +84,11 @@ class MybatisPlusAnalyticsRepository implements AnalyticsRepository {
 
     @Override
     public Optional<PrivacyRequest> findPrivacyRequest(long requestId) {
-        return Optional.ofNullable(analyticsMapper.findPrivacyRequest(requestId));
+        return Optional.ofNullable(privacyRequestMapper.selectById(requestId));
     }
 
     @Override
     public List<PrivacyRequest> findPrivacyRequests() {
-        return analyticsMapper.findPrivacyRequests();
+        return privacyRequestMapper.selectList(null);
     }
 }

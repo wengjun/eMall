@@ -2,6 +2,7 @@ package com.emall.catalog;
 
 import java.util.List;
 import java.util.Optional;
+import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.stereotype.Repository;
 
@@ -9,9 +10,23 @@ import org.springframework.stereotype.Repository;
 @ConditionalOnProperty(name = "emall.storage", havingValue = "jdbc", matchIfMissing = true)
 class MybatisPlusCatalogRepository implements CatalogRepository {
     private final CatalogMapper catalogMapper;
+    private final CategoryNodeMapper categoryMapper;
+    private final AttributeTemplateMapper templateMapper;
+    private final BrandAuthorizationMapper brandAuthorizationMapper;
+    private final SpuMapper spuMapper;
+    private final SkuMapper skuMapper;
+    private final ListingViolationMapper violationMapper;
 
-    MybatisPlusCatalogRepository(CatalogMapper catalogMapper) {
+    MybatisPlusCatalogRepository(CatalogMapper catalogMapper, CategoryNodeMapper categoryMapper,
+            AttributeTemplateMapper templateMapper, BrandAuthorizationMapper brandAuthorizationMapper,
+            SpuMapper spuMapper, SkuMapper skuMapper, ListingViolationMapper violationMapper) {
         this.catalogMapper = catalogMapper;
+        this.categoryMapper = categoryMapper;
+        this.templateMapper = templateMapper;
+        this.brandAuthorizationMapper = brandAuthorizationMapper;
+        this.spuMapper = spuMapper;
+        this.skuMapper = skuMapper;
+        this.violationMapper = violationMapper;
     }
 
     @Override
@@ -22,7 +37,7 @@ class MybatisPlusCatalogRepository implements CatalogRepository {
 
     @Override
     public Optional<CategoryNode> findCategory(long categoryId) {
-        return Optional.ofNullable(catalogMapper.findCategory(categoryId));
+        return Optional.ofNullable(categoryMapper.selectById(categoryId));
     }
 
     @Override
@@ -33,7 +48,8 @@ class MybatisPlusCatalogRepository implements CatalogRepository {
 
     @Override
     public Optional<AttributeTemplate> findTemplate(long categoryId) {
-        return Optional.ofNullable(catalogMapper.findTemplate(categoryId));
+        return Optional.ofNullable(
+                templateMapper.selectOne(new QueryWrapper<AttributeTemplate>().eq("category_id", categoryId)));
     }
 
     @Override
@@ -44,7 +60,10 @@ class MybatisPlusCatalogRepository implements CatalogRepository {
 
     @Override
     public boolean hasBrandAuthorization(long merchantId, String brandCode) {
-        return catalogMapper.countBrandAuthorization(merchantId, brandCode) > 0;
+        return brandAuthorizationMapper.selectCount(new QueryWrapper<BrandAuthorization>()
+                .eq("merchant_id", merchantId)
+                .eq("brand_code", brandCode)
+                .eq("active", true)) > 0;
     }
 
     @Override
@@ -55,7 +74,7 @@ class MybatisPlusCatalogRepository implements CatalogRepository {
 
     @Override
     public Optional<Spu> findSpu(long spuId) {
-        return Optional.ofNullable(catalogMapper.findSpu(spuId));
+        return Optional.ofNullable(spuMapper.selectById(spuId));
     }
 
     @Override
@@ -66,17 +85,17 @@ class MybatisPlusCatalogRepository implements CatalogRepository {
 
     @Override
     public List<Sku> findSkus(long spuId) {
-        return catalogMapper.findSkus(spuId);
+        return skuMapper.selectList(new QueryWrapper<Sku>().eq("spu_id", spuId));
     }
 
     @Override
     public ListingViolation saveViolation(ListingViolation violation) {
-        catalogMapper.saveViolation(violation);
+        violationMapper.insert(violation);
         return violation;
     }
 
     @Override
     public List<ListingViolation> findViolations(long spuId) {
-        return catalogMapper.findViolations(spuId);
+        return violationMapper.selectList(new QueryWrapper<ListingViolation>().eq("spu_id", spuId));
     }
 }

@@ -9,9 +9,19 @@ import org.springframework.stereotype.Repository;
 @ConditionalOnProperty(name = "emall.storage", havingValue = "jdbc", matchIfMissing = true)
 class MybatisPlusPlatformOpsRepository implements PlatformOpsRepository {
     private final PlatformOpsMapper platformOpsMapper;
+    private final BackupPlanMapper backupPlanMapper;
+    private final DatabaseOperationMapper databaseOperationMapper;
+    private final FinOpsActionMapper finOpsActionMapper;
+    private final SecurityOperationMapper securityOperationMapper;
 
-    MybatisPlusPlatformOpsRepository(PlatformOpsMapper platformOpsMapper) {
+    MybatisPlusPlatformOpsRepository(PlatformOpsMapper platformOpsMapper, BackupPlanMapper backupPlanMapper,
+            DatabaseOperationMapper databaseOperationMapper, FinOpsActionMapper finOpsActionMapper,
+            SecurityOperationMapper securityOperationMapper) {
         this.platformOpsMapper = platformOpsMapper;
+        this.backupPlanMapper = backupPlanMapper;
+        this.databaseOperationMapper = databaseOperationMapper;
+        this.finOpsActionMapper = finOpsActionMapper;
+        this.securityOperationMapper = securityOperationMapper;
     }
 
     @Override
@@ -22,12 +32,12 @@ class MybatisPlusPlatformOpsRepository implements PlatformOpsRepository {
 
     @Override
     public Optional<BackupPlan> findBackupPlan(long planId) {
-        return Optional.ofNullable(platformOpsMapper.findBackupPlan(planId));
+        return Optional.ofNullable(backupPlanMapper.selectById(planId));
     }
 
     @Override
     public List<BackupPlan> findBackupPlans() {
-        return platformOpsMapper.findBackupPlans();
+        return backupPlanMapper.selectList(null);
     }
 
     @Override
@@ -38,12 +48,12 @@ class MybatisPlusPlatformOpsRepository implements PlatformOpsRepository {
 
     @Override
     public Optional<DatabaseOperation> findDatabaseOperation(long operationId) {
-        return Optional.ofNullable(platformOpsMapper.findDatabaseOperation(operationId));
+        return Optional.ofNullable(databaseOperationMapper.selectById(operationId));
     }
 
     @Override
     public List<DatabaseOperation> findDatabaseOperations() {
-        return platformOpsMapper.findDatabaseOperations();
+        return databaseOperationMapper.selectList(null);
     }
 
     @Override
@@ -54,12 +64,12 @@ class MybatisPlusPlatformOpsRepository implements PlatformOpsRepository {
 
     @Override
     public Optional<FinOpsAction> findFinOpsAction(long actionId) {
-        return Optional.ofNullable(platformOpsMapper.findFinOpsAction(actionId));
+        return Optional.ofNullable(finOpsActionMapper.selectById(actionId));
     }
 
     @Override
     public List<FinOpsAction> findFinOpsActions() {
-        return platformOpsMapper.findFinOpsActions();
+        return finOpsActionMapper.selectList(null);
     }
 
     @Override
@@ -70,11 +80,11 @@ class MybatisPlusPlatformOpsRepository implements PlatformOpsRepository {
 
     @Override
     public Optional<SecurityOperation> findSecurityOperation(long operationId) {
-        return Optional.ofNullable(platformOpsMapper.findSecurityOperation(operationId));
+        return Optional.ofNullable(securityOperationMapper.selectById(operationId));
     }
 
     @Override
     public List<SecurityOperation> findSecurityOperations() {
-        return platformOpsMapper.findSecurityOperations();
+        return securityOperationMapper.selectList(null);
     }
 }

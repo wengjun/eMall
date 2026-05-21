@@ -4,6 +4,7 @@ import java.time.Instant;
 import java.time.LocalDate;
 import java.util.List;
 import java.util.Optional;
+import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.stereotype.Repository;
 
@@ -11,9 +12,16 @@ import org.springframework.stereotype.Repository;
 @ConditionalOnProperty(name = "emall.storage", havingValue = "jdbc", matchIfMissing = true)
 class MybatisPlusOpenApiRepository implements OpenApiRepository {
     private final OpenApiMapper openApiMapper;
+    private final OpenApiAppMapper appMapper;
+    private final ApiQuotaUsageMapper quotaUsageMapper;
+    private final WebhookSubscriptionMapper subscriptionMapper;
 
-    MybatisPlusOpenApiRepository(OpenApiMapper openApiMapper) {
+    MybatisPlusOpenApiRepository(OpenApiMapper openApiMapper, OpenApiAppMapper appMapper,
+            ApiQuotaUsageMapper quotaUsageMapper, WebhookSubscriptionMapper subscriptionMapper) {
         this.openApiMapper = openApiMapper;
+        this.appMapper = appMapper;
+        this.quotaUsageMapper = quotaUsageMapper;
+        this.subscriptionMapper = subscriptionMapper;
     }
 
     @Override
@@ -24,12 +32,12 @@ class MybatisPlusOpenApiRepository implements OpenApiRepository {
 
     @Override
     public Optional<OpenApiApp> findApp(String appKey) {
-        return Optional.ofNullable(openApiMapper.findAppByKey(appKey));
+        return Optional.ofNullable(appMapper.selectOne(new QueryWrapper<OpenApiApp>().eq("app_key", appKey)));
     }
 
     @Override
     public Optional<OpenApiApp> findApp(long appId) {
-        return Optional.ofNullable(openApiMapper.findAppById(appId));
+        return Optional.ofNullable(appMapper.selectById(appId));
     }
 
     @Override
@@ -40,7 +48,9 @@ class MybatisPlusOpenApiRepository implements OpenApiRepository {
 
     @Override
     public Optional<ApiQuotaUsage> findQuota(String appKey, LocalDate usageDate) {
-        return Optional.ofNullable(openApiMapper.findQuota(appKey, usageDate));
+        return Optional.ofNullable(quotaUsageMapper.selectOne(new QueryWrapper<ApiQuotaUsage>()
+                .eq("app_key", appKey)
+                .eq("usage_date", usageDate)));
     }
 
     @Override
@@ -56,12 +66,14 @@ class MybatisPlusOpenApiRepository implements OpenApiRepository {
 
     @Override
     public Optional<WebhookSubscription> findSubscription(long subscriptionId) {
-        return Optional.ofNullable(openApiMapper.findSubscription(subscriptionId));
+        return Optional.ofNullable(subscriptionMapper.selectById(subscriptionId));
     }
 
     @Override
     public List<WebhookSubscription> findActiveSubscriptions(long appId) {
-        return openApiMapper.findActiveSubscriptions(appId);
+        return subscriptionMapper.selectList(new QueryWrapper<WebhookSubscription>()
+                .eq("app_id", appId)
+                .eq("active", true));
     }
 
     @Override

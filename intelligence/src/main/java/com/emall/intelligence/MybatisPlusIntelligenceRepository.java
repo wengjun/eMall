@@ -9,9 +9,24 @@ import org.springframework.stereotype.Repository;
 @ConditionalOnProperty(name = "emall.storage", havingValue = "jdbc", matchIfMissing = true)
 class MybatisPlusIntelligenceRepository implements IntelligenceRepository {
     private final IntelligenceMapper intelligenceMapper;
+    private final UserProfileMapper userProfileMapper;
+    private final ItemProfileMapper itemProfileMapper;
+    private final FeatureDefinitionMapper featureMapper;
+    private final OnlineFeatureValueMapper featureValueMapper;
+    private final ModelDeploymentMapper modelMapper;
+    private final AiDecisionMapper decisionMapper;
 
-    MybatisPlusIntelligenceRepository(IntelligenceMapper intelligenceMapper) {
+    MybatisPlusIntelligenceRepository(IntelligenceMapper intelligenceMapper, UserProfileMapper userProfileMapper,
+            ItemProfileMapper itemProfileMapper, FeatureDefinitionMapper featureMapper,
+            OnlineFeatureValueMapper featureValueMapper, ModelDeploymentMapper modelMapper,
+            AiDecisionMapper decisionMapper) {
         this.intelligenceMapper = intelligenceMapper;
+        this.userProfileMapper = userProfileMapper;
+        this.itemProfileMapper = itemProfileMapper;
+        this.featureMapper = featureMapper;
+        this.featureValueMapper = featureValueMapper;
+        this.modelMapper = modelMapper;
+        this.decisionMapper = decisionMapper;
     }
 
     @Override
@@ -22,7 +37,7 @@ class MybatisPlusIntelligenceRepository implements IntelligenceRepository {
 
     @Override
     public List<UserProfile> findUserProfiles() {
-        return intelligenceMapper.findUserProfiles();
+        return userProfileMapper.selectList(null);
     }
 
     @Override
@@ -33,23 +48,23 @@ class MybatisPlusIntelligenceRepository implements IntelligenceRepository {
 
     @Override
     public List<ItemProfile> findItemProfiles() {
-        return intelligenceMapper.findItemProfiles();
+        return itemProfileMapper.selectList(null);
     }
 
     @Override
     public FeatureDefinition saveFeature(FeatureDefinition feature) {
-        intelligenceMapper.saveFeature(feature);
+        featureMapper.insert(feature);
         return feature;
     }
 
     @Override
     public List<FeatureDefinition> findFeatures() {
-        return intelligenceMapper.findFeatures();
+        return featureMapper.selectList(null);
     }
 
     @Override
     public OnlineFeatureValue saveFeatureValue(OnlineFeatureValue value) {
-        intelligenceMapper.saveFeatureValue(value);
+        featureValueMapper.insert(value);
         return value;
     }
 
@@ -61,22 +76,22 @@ class MybatisPlusIntelligenceRepository implements IntelligenceRepository {
 
     @Override
     public Optional<ModelDeployment> findModel(long modelId) {
-        return Optional.ofNullable(intelligenceMapper.findModel(modelId));
+        return Optional.ofNullable(modelMapper.selectById(modelId));
     }
 
     @Override
     public List<ModelDeployment> findModels() {
-        return intelligenceMapper.findModels();
+        return modelMapper.selectList(null);
     }
 
     @Override
     public AiDecision saveDecision(AiDecision decision) {
-        intelligenceMapper.saveDecision(decision);
+        decisionMapper.insert(decision);
         return decision;
     }
 
     @Override
     public List<AiDecision> findDecisions() {
-        return intelligenceMapper.findDecisions();
+        return decisionMapper.selectList(null);
     }
 }

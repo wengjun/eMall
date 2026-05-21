@@ -2,6 +2,7 @@ package com.emall.release;
 
 import java.util.List;
 import java.util.Optional;
+import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.stereotype.Repository;
 
@@ -9,9 +10,21 @@ import org.springframework.stereotype.Repository;
 @ConditionalOnProperty(name = "emall.storage", havingValue = "jdbc", matchIfMissing = true)
 class MybatisPlusReleaseRepository implements ReleaseRepository {
     private final ReleaseMapper releaseMapper;
+    private final FeatureToggleMapper toggleMapper;
+    private final RolloutPlanMapper rolloutMapper;
+    private final MessageTopicGovernanceMapper topicMapper;
+    private final ReplayPlanMapper replayMapper;
+    private final ReleaseGuardRecordMapper guardMapper;
 
-    MybatisPlusReleaseRepository(ReleaseMapper releaseMapper) {
+    MybatisPlusReleaseRepository(ReleaseMapper releaseMapper, FeatureToggleMapper toggleMapper,
+            RolloutPlanMapper rolloutMapper, MessageTopicGovernanceMapper topicMapper, ReplayPlanMapper replayMapper,
+            ReleaseGuardRecordMapper guardMapper) {
         this.releaseMapper = releaseMapper;
+        this.toggleMapper = toggleMapper;
+        this.rolloutMapper = rolloutMapper;
+        this.topicMapper = topicMapper;
+        this.replayMapper = replayMapper;
+        this.guardMapper = guardMapper;
     }
 
     @Override
@@ -22,12 +35,12 @@ class MybatisPlusReleaseRepository implements ReleaseRepository {
 
     @Override
     public Optional<FeatureToggle> findToggle(long toggleId) {
-        return Optional.ofNullable(releaseMapper.findToggle(toggleId));
+        return Optional.ofNullable(toggleMapper.selectById(toggleId));
     }
 
     @Override
     public List<FeatureToggle> findToggles() {
-        return releaseMapper.findToggles();
+        return toggleMapper.selectList(null);
     }
 
     @Override
@@ -38,12 +51,12 @@ class MybatisPlusReleaseRepository implements ReleaseRepository {
 
     @Override
     public Optional<RolloutPlan> findRollout(long rolloutId) {
-        return Optional.ofNullable(releaseMapper.findRollout(rolloutId));
+        return Optional.ofNullable(rolloutMapper.selectById(rolloutId));
     }
 
     @Override
     public List<RolloutPlan> findRollouts() {
-        return releaseMapper.findRollouts();
+        return rolloutMapper.selectList(null);
     }
 
     @Override
@@ -54,12 +67,12 @@ class MybatisPlusReleaseRepository implements ReleaseRepository {
 
     @Override
     public Optional<MessageTopicGovernance> findTopic(long topicId) {
-        return Optional.ofNullable(releaseMapper.findTopic(topicId));
+        return Optional.ofNullable(topicMapper.selectById(topicId));
     }
 
     @Override
     public List<MessageTopicGovernance> findTopics() {
-        return releaseMapper.findTopics();
+        return topicMapper.selectList(null);
     }
 
     @Override
@@ -70,27 +83,29 @@ class MybatisPlusReleaseRepository implements ReleaseRepository {
 
     @Override
     public Optional<ReplayPlan> findReplay(long replayId) {
-        return Optional.ofNullable(releaseMapper.findReplay(replayId));
+        return Optional.ofNullable(replayMapper.selectById(replayId));
     }
 
     @Override
     public List<ReplayPlan> findReplays() {
-        return releaseMapper.findReplays();
+        return replayMapper.selectList(null);
     }
 
     @Override
     public ReleaseGuardRecord saveGuard(ReleaseGuardRecord guard) {
-        releaseMapper.saveGuard(guard);
+        guardMapper.insert(guard);
         return guard;
     }
 
     @Override
     public List<ReleaseGuardRecord> findGuards(long rolloutId) {
-        return releaseMapper.findGuards(rolloutId);
+        return guardMapper.selectList(new QueryWrapper<ReleaseGuardRecord>()
+                .eq("rollout_id", rolloutId)
+                .orderByDesc("created_at"));
     }
 
     @Override
     public List<ReleaseGuardRecord> findGuards() {
-        return releaseMapper.findAllGuards();
+        return guardMapper.selectList(null);
     }
 }

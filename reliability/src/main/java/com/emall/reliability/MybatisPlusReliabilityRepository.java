@@ -9,9 +9,18 @@ import org.springframework.stereotype.Repository;
 @ConditionalOnProperty(name = "emall.storage", havingValue = "jdbc", matchIfMissing = true)
 class MybatisPlusReliabilityRepository implements ReliabilityRepository {
     private final ReliabilityMapper reliabilityMapper;
+    private final CapacityRehearsalMapper rehearsalMapper;
+    private final SloObjectiveMapper sloMapper;
+    private final ChaosScheduleMapper chaosMapper;
+    private final ReadinessGateMapper readinessGateMapper;
 
-    MybatisPlusReliabilityRepository(ReliabilityMapper reliabilityMapper) {
+    MybatisPlusReliabilityRepository(ReliabilityMapper reliabilityMapper, CapacityRehearsalMapper rehearsalMapper,
+            SloObjectiveMapper sloMapper, ChaosScheduleMapper chaosMapper, ReadinessGateMapper readinessGateMapper) {
         this.reliabilityMapper = reliabilityMapper;
+        this.rehearsalMapper = rehearsalMapper;
+        this.sloMapper = sloMapper;
+        this.chaosMapper = chaosMapper;
+        this.readinessGateMapper = readinessGateMapper;
     }
 
     @Override
@@ -22,23 +31,23 @@ class MybatisPlusReliabilityRepository implements ReliabilityRepository {
 
     @Override
     public Optional<CapacityRehearsal> findRehearsal(long rehearsalId) {
-        return Optional.ofNullable(reliabilityMapper.findRehearsal(rehearsalId));
+        return Optional.ofNullable(rehearsalMapper.selectById(rehearsalId));
     }
 
     @Override
     public List<CapacityRehearsal> findRehearsals() {
-        return reliabilityMapper.findRehearsals();
+        return rehearsalMapper.selectList(null);
     }
 
     @Override
     public SloObjective saveSlo(SloObjective slo) {
-        reliabilityMapper.saveSlo(slo);
+        sloMapper.insert(slo);
         return slo;
     }
 
     @Override
     public List<SloObjective> findSlos() {
-        return reliabilityMapper.findSlos();
+        return sloMapper.selectList(null);
     }
 
     @Override
@@ -49,22 +58,22 @@ class MybatisPlusReliabilityRepository implements ReliabilityRepository {
 
     @Override
     public Optional<ChaosSchedule> findChaos(long chaosId) {
-        return Optional.ofNullable(reliabilityMapper.findChaos(chaosId));
+        return Optional.ofNullable(chaosMapper.selectById(chaosId));
     }
 
     @Override
     public List<ChaosSchedule> findChaosSchedules() {
-        return reliabilityMapper.findChaosSchedules();
+        return chaosMapper.selectList(null);
     }
 
     @Override
     public ReadinessGate saveReadinessGate(ReadinessGate gate) {
-        reliabilityMapper.saveReadinessGate(gate);
+        readinessGateMapper.insert(gate);
         return gate;
     }
 
     @Override
     public List<ReadinessGate> findReadinessGates() {
-        return reliabilityMapper.findReadinessGates();
+        return readinessGateMapper.selectList(null);
     }
 }

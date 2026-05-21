@@ -1,5 +1,9 @@
 package com.emall.risk;
 
+import com.baomidou.mybatisplus.annotation.IdType;
+import com.baomidou.mybatisplus.annotation.TableField;
+import com.baomidou.mybatisplus.annotation.TableId;
+import com.baomidou.mybatisplus.annotation.TableName;
 import java.math.BigDecimal;
 import java.time.Instant;
 
@@ -32,19 +36,25 @@ enum RuleOperator {
     EQUALS
 }
 
-record RiskRule(long ruleId, RiskScene scene, String ruleCode, String fieldName, RuleOperator operator,
-        BigDecimal threshold, RiskLevel level, RuleStatus status, Instant createdAt, Instant updatedAt) {
+@TableName("risk_rule")
+record RiskRule(@TableId(value = "rule_id", type = IdType.INPUT) long ruleId, RiskScene scene, String ruleCode,
+        String fieldName, RuleOperator operator, @TableField("threshold_value") BigDecimal threshold,
+        @TableField("risk_level") RiskLevel level, RuleStatus status, Instant createdAt, Instant updatedAt) {
     RiskRule changeStatus(RuleStatus nextStatus) {
         return new RiskRule(ruleId, scene, ruleCode, fieldName, operator, threshold, level, nextStatus, createdAt,
                 Instant.now());
     }
 }
 
-record DeviceReputation(String deviceId, int reputationScore, boolean risky, Instant updatedAt) {
+@TableName("risk_device_reputation")
+record DeviceReputation(@TableId(value = "device_id", type = IdType.INPUT) String deviceId, int reputationScore,
+        boolean risky, Instant updatedAt) {
 }
 
-record RiskEvent(long eventId, RiskScene scene, String subjectId, String deviceId, String ip, BigDecimal amount,
-        int velocity, int score, RiskLevel level, String reason, Instant occurredAt) {
+@TableName("risk_event")
+record RiskEvent(@TableId(value = "event_id", type = IdType.INPUT) long eventId, RiskScene scene, String subjectId,
+        String deviceId, String ip, BigDecimal amount, int velocity, int score,
+        @TableField("risk_level") RiskLevel level, String reason, Instant occurredAt) {
 }
 
 record RiskDecision(RiskLevel level, int score, String reason) {

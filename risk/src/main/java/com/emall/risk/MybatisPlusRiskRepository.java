@@ -1,5 +1,6 @@
 package com.emall.risk;
 
+import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import java.util.List;
 import java.util.Optional;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
@@ -9,9 +10,16 @@ import org.springframework.stereotype.Repository;
 @ConditionalOnProperty(name = "emall.storage", havingValue = "jdbc", matchIfMissing = true)
 class MybatisPlusRiskRepository implements RiskRepository {
     private final RiskMapper riskMapper;
+    private final RiskRuleMapper ruleMapper;
+    private final DeviceReputationMapper deviceMapper;
+    private final RiskEventMapper eventMapper;
 
-    MybatisPlusRiskRepository(RiskMapper riskMapper) {
+    MybatisPlusRiskRepository(RiskMapper riskMapper, RiskRuleMapper ruleMapper, DeviceReputationMapper deviceMapper,
+            RiskEventMapper eventMapper) {
         this.riskMapper = riskMapper;
+        this.ruleMapper = ruleMapper;
+        this.deviceMapper = deviceMapper;
+        this.eventMapper = eventMapper;
     }
 
     @Override
@@ -22,12 +30,14 @@ class MybatisPlusRiskRepository implements RiskRepository {
 
     @Override
     public Optional<RiskRule> findRule(long ruleId) {
-        return Optional.ofNullable(riskMapper.findRule(ruleId));
+        return Optional.ofNullable(ruleMapper.selectById(ruleId));
     }
 
     @Override
     public List<RiskRule> findActiveRules(RiskScene scene) {
-        return riskMapper.findActiveRules(scene);
+        QueryWrapper<RiskRule> query = new QueryWrapper<RiskRule>().eq("scene", scene.name())
+                .eq("status", RuleStatus.ACTIVE.name()).orderByDesc("updated_at");
+        return ruleMapper.selectList(query);
     }
 
     @Override
@@ -38,17 +48,18 @@ class MybatisPlusRiskRepository implements RiskRepository {
 
     @Override
     public Optional<DeviceReputation> findDevice(String deviceId) {
-        return Optional.ofNullable(riskMapper.findDevice(deviceId));
+        return Optional.ofNullable(deviceMapper.selectById(deviceId));
     }
 
     @Override
     public RiskEvent saveEvent(RiskEvent event) {
-        riskMapper.saveEvent(event);
+        eventMapper.insert(event);
         return event;
     }
 
     @Override
     public List<RiskEvent> findEvents(String subjectId) {
-        return riskMapper.findEvents(subjectId);
+        return eventMapper
+                .selectList(new QueryWrapper<RiskEvent>().eq("subject_id", subjectId).orderByDesc("occurred_at"));
     }
 }

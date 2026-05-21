@@ -9,9 +9,19 @@ import org.springframework.stereotype.Repository;
 @ConditionalOnProperty(name = "emall.storage", havingValue = "jdbc", matchIfMissing = true)
 class MybatisPlusCustomerServiceRepository implements CustomerServiceRepository {
     private final CustomerServiceMapper customerServiceMapper;
+    private final ServiceTicketMapper ticketMapper;
+    private final ArbitrationCaseMapper arbitrationMapper;
+    private final CompensationRecordMapper compensationMapper;
+    private final ServiceQualityReviewMapper reviewMapper;
 
-    MybatisPlusCustomerServiceRepository(CustomerServiceMapper customerServiceMapper) {
+    MybatisPlusCustomerServiceRepository(CustomerServiceMapper customerServiceMapper, ServiceTicketMapper ticketMapper,
+            ArbitrationCaseMapper arbitrationMapper, CompensationRecordMapper compensationMapper,
+            ServiceQualityReviewMapper reviewMapper) {
         this.customerServiceMapper = customerServiceMapper;
+        this.ticketMapper = ticketMapper;
+        this.arbitrationMapper = arbitrationMapper;
+        this.compensationMapper = compensationMapper;
+        this.reviewMapper = reviewMapper;
     }
 
     @Override
@@ -22,12 +32,12 @@ class MybatisPlusCustomerServiceRepository implements CustomerServiceRepository 
 
     @Override
     public Optional<ServiceTicket> findTicket(long ticketId) {
-        return Optional.ofNullable(customerServiceMapper.findTicket(ticketId));
+        return Optional.ofNullable(ticketMapper.selectById(ticketId));
     }
 
     @Override
     public List<ServiceTicket> findTickets() {
-        return customerServiceMapper.findTickets();
+        return ticketMapper.selectList(null);
     }
 
     @Override
@@ -38,23 +48,23 @@ class MybatisPlusCustomerServiceRepository implements CustomerServiceRepository 
 
     @Override
     public Optional<ArbitrationCase> findArbitration(long arbitrationId) {
-        return Optional.ofNullable(customerServiceMapper.findArbitration(arbitrationId));
+        return Optional.ofNullable(arbitrationMapper.selectById(arbitrationId));
     }
 
     @Override
     public List<ArbitrationCase> findArbitrations() {
-        return customerServiceMapper.findArbitrations();
+        return arbitrationMapper.selectList(null);
     }
 
     @Override
     public CompensationRecord saveCompensation(CompensationRecord compensation) {
-        customerServiceMapper.saveCompensation(compensation);
+        compensationMapper.insert(compensation);
         return compensation;
     }
 
     @Override
     public List<CompensationRecord> findCompensations() {
-        return customerServiceMapper.findCompensations();
+        return compensationMapper.selectList(null);
     }
 
     @Override
@@ -65,7 +75,7 @@ class MybatisPlusCustomerServiceRepository implements CustomerServiceRepository 
 
     @Override
     public ServiceQualityReview saveReview(ServiceQualityReview review) {
-        customerServiceMapper.saveReview(review);
+        reviewMapper.insert(review);
         return review;
     }
 

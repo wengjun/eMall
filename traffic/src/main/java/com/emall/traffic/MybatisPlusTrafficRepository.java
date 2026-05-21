@@ -1,5 +1,6 @@
 package com.emall.traffic;
 
+import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import java.util.List;
 import java.util.Optional;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
@@ -9,9 +10,18 @@ import org.springframework.stereotype.Repository;
 @ConditionalOnProperty(name = "emall.storage", havingValue = "jdbc", matchIfMissing = true)
 class MybatisPlusTrafficRepository implements TrafficRepository {
     private final TrafficMapper trafficMapper;
+    private final UnitCellMapper unitMapper;
+    private final ShardRouteMapper routeMapper;
+    private final TrafficShiftMapper shiftMapper;
+    private final TrafficControlRuleMapper controlRuleMapper;
 
-    MybatisPlusTrafficRepository(TrafficMapper trafficMapper) {
+    MybatisPlusTrafficRepository(TrafficMapper trafficMapper, UnitCellMapper unitMapper, ShardRouteMapper routeMapper,
+            TrafficShiftMapper shiftMapper, TrafficControlRuleMapper controlRuleMapper) {
         this.trafficMapper = trafficMapper;
+        this.unitMapper = unitMapper;
+        this.routeMapper = routeMapper;
+        this.shiftMapper = shiftMapper;
+        this.controlRuleMapper = controlRuleMapper;
     }
 
     @Override
@@ -22,12 +32,12 @@ class MybatisPlusTrafficRepository implements TrafficRepository {
 
     @Override
     public Optional<UnitCell> findUnit(String unitCode) {
-        return Optional.ofNullable(trafficMapper.findUnit(unitCode));
+        return Optional.ofNullable(unitMapper.selectOne(new QueryWrapper<UnitCell>().eq("unit_code", unitCode)));
     }
 
     @Override
     public List<UnitCell> findUnits() {
-        return trafficMapper.findUnits();
+        return unitMapper.selectList(null);
     }
 
     @Override
@@ -38,7 +48,7 @@ class MybatisPlusTrafficRepository implements TrafficRepository {
 
     @Override
     public List<ShardRoute> findRoutes() {
-        return trafficMapper.findRoutes();
+        return routeMapper.selectList(null);
     }
 
     @Override
@@ -49,12 +59,12 @@ class MybatisPlusTrafficRepository implements TrafficRepository {
 
     @Override
     public Optional<TrafficShift> findShift(long shiftId) {
-        return Optional.ofNullable(trafficMapper.findShift(shiftId));
+        return Optional.ofNullable(shiftMapper.selectById(shiftId));
     }
 
     @Override
     public List<TrafficShift> findShifts() {
-        return trafficMapper.findShifts();
+        return shiftMapper.selectList(null);
     }
 
     @Override
@@ -65,11 +75,11 @@ class MybatisPlusTrafficRepository implements TrafficRepository {
 
     @Override
     public Optional<TrafficControlRule> findControlRule(long ruleId) {
-        return Optional.ofNullable(trafficMapper.findControlRule(ruleId));
+        return Optional.ofNullable(controlRuleMapper.selectById(ruleId));
     }
 
     @Override
     public List<TrafficControlRule> findControlRules() {
-        return trafficMapper.findControlRules();
+        return controlRuleMapper.selectList(null);
     }
 }

@@ -1,5 +1,6 @@
 package com.emall.advertising;
 
+import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import java.util.List;
 import java.util.Optional;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
@@ -9,9 +10,18 @@ import org.springframework.stereotype.Repository;
 @ConditionalOnProperty(name = "emall.storage", havingValue = "jdbc", matchIfMissing = true)
 class MybatisPlusAdvertisingRepository implements AdvertisingRepository {
     private final AdvertisingMapper advertisingMapper;
+    private final AdCampaignMapper campaignMapper;
+    private final AdCreativeMapper creativeMapper;
+    private final KeywordTargetMapper targetMapper;
+    private final AdEventMapper eventMapper;
 
-    MybatisPlusAdvertisingRepository(AdvertisingMapper advertisingMapper) {
+    MybatisPlusAdvertisingRepository(AdvertisingMapper advertisingMapper, AdCampaignMapper campaignMapper,
+            AdCreativeMapper creativeMapper, KeywordTargetMapper targetMapper, AdEventMapper eventMapper) {
         this.advertisingMapper = advertisingMapper;
+        this.campaignMapper = campaignMapper;
+        this.creativeMapper = creativeMapper;
+        this.targetMapper = targetMapper;
+        this.eventMapper = eventMapper;
     }
 
     @Override
@@ -22,7 +32,7 @@ class MybatisPlusAdvertisingRepository implements AdvertisingRepository {
 
     @Override
     public Optional<AdCampaign> findCampaign(long campaignId) {
-        return Optional.ofNullable(advertisingMapper.findCampaign(campaignId));
+        return Optional.ofNullable(campaignMapper.selectById(campaignId));
     }
 
     @Override
@@ -33,7 +43,8 @@ class MybatisPlusAdvertisingRepository implements AdvertisingRepository {
 
     @Override
     public List<AdCreative> findCreatives(long campaignId) {
-        return advertisingMapper.findCreatives(campaignId);
+        return creativeMapper
+                .selectList(new QueryWrapper<AdCreative>().eq("campaign_id", campaignId).eq("active", true));
     }
 
     @Override
@@ -44,13 +55,12 @@ class MybatisPlusAdvertisingRepository implements AdvertisingRepository {
 
     @Override
     public List<KeywordTarget> findTargets(String keyword) {
-        return advertisingMapper.findTargets(keyword);
+        return targetMapper.selectList(new QueryWrapper<KeywordTarget>().eq("keyword", keyword).eq("active", true));
     }
 
     @Override
     public AdEvent saveEvent(AdEvent event) {
-        advertisingMapper.saveEvent(event);
+        eventMapper.insert(event);
         return event;
     }
-
 }

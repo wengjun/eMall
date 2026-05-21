@@ -1,12 +1,9 @@
 package com.emall.openapi;
 
 import java.time.Instant;
-import java.time.LocalDate;
-import java.util.List;
 import org.apache.ibatis.annotations.Insert;
 import org.apache.ibatis.annotations.Mapper;
 import org.apache.ibatis.annotations.Param;
-import org.apache.ibatis.annotations.Select;
 
 @Mapper
 interface OpenApiMapper {
@@ -23,22 +20,6 @@ interface OpenApiMapper {
             """)
     int saveApp(@Param("app") OpenApiApp app);
 
-    @Select("""
-            SELECT app_id, merchant_id, app_key, secret_hash, secret_ciphertext, name, scopes, daily_quota, active,
-                created_at, updated_at
-            FROM openapi_app
-            WHERE app_key = #{appKey}
-            """)
-    OpenApiApp findAppByKey(@Param("appKey") String appKey);
-
-    @Select("""
-            SELECT app_id, merchant_id, app_key, secret_hash, secret_ciphertext, name, scopes, daily_quota, active,
-                created_at, updated_at
-            FROM openapi_app
-            WHERE app_id = #{appId}
-            """)
-    OpenApiApp findAppById(@Param("appId") long appId);
-
     @Insert("""
             INSERT INTO openapi_quota_usage (app_key, usage_date, used_count, daily_quota, allowed)
             VALUES (#{usage.appKey}, #{usage.usageDate}, #{usage.usedCount}, #{usage.dailyQuota},
@@ -47,13 +28,6 @@ interface OpenApiMapper {
                 allowed = VALUES(allowed)
             """)
     int saveQuota(@Param("usage") ApiQuotaUsage usage);
-
-    @Select("""
-            SELECT app_key, usage_date, used_count, daily_quota, allowed
-            FROM openapi_quota_usage
-            WHERE app_key = #{appKey} AND usage_date = #{usageDate}
-            """)
-    ApiQuotaUsage findQuota(@Param("appKey") String appKey, @Param("usageDate") LocalDate usageDate);
 
     @Insert("""
             INSERT IGNORE INTO openapi_nonce (app_key, nonce, request_path, expires_at, used_at)
@@ -72,20 +46,6 @@ interface OpenApiMapper {
                 updated_at = VALUES(updated_at)
             """)
     int saveSubscription(@Param("subscription") WebhookSubscription subscription);
-
-    @Select("""
-            SELECT subscription_id, app_id, event_type, target_url, active, created_at, updated_at
-            FROM openapi_webhook_subscription
-            WHERE subscription_id = #{subscriptionId}
-            """)
-    WebhookSubscription findSubscription(@Param("subscriptionId") long subscriptionId);
-
-    @Select("""
-            SELECT subscription_id, app_id, event_type, target_url, active, created_at, updated_at
-            FROM openapi_webhook_subscription
-            WHERE app_id = #{appId} AND active = TRUE
-            """)
-    List<WebhookSubscription> findActiveSubscriptions(@Param("appId") long appId);
 
     @Insert("""
             INSERT INTO openapi_webhook_delivery

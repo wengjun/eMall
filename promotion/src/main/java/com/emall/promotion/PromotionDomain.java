@@ -1,5 +1,9 @@
 package com.emall.promotion;
 
+import com.baomidou.mybatisplus.annotation.IdType;
+import com.baomidou.mybatisplus.annotation.TableField;
+import com.baomidou.mybatisplus.annotation.TableId;
+import com.baomidou.mybatisplus.annotation.TableName;
 import java.math.BigDecimal;
 import java.time.Instant;
 import java.util.List;
@@ -19,9 +23,11 @@ enum PromotionType {
     COUPON_PACKAGE
 }
 
-record PromotionCampaign(long campaignId, String name, PromotionType type, BigDecimal thresholdAmount,
-        BigDecimal benefitValue, BigDecimal budgetAmount, BigDecimal usedBudget, int priority, boolean stackable,
-        CampaignStatus status, Instant startsAt, Instant endsAt, Instant createdAt, Instant updatedAt) {
+@TableName("promotion_campaign")
+record PromotionCampaign(@TableId(value = "campaign_id", type = IdType.INPUT) long campaignId, String name,
+        @TableField("promotion_type") PromotionType type, BigDecimal thresholdAmount, BigDecimal benefitValue,
+        BigDecimal budgetAmount, BigDecimal usedBudget, int priority, boolean stackable, CampaignStatus status,
+        Instant startsAt, Instant endsAt, Instant createdAt, Instant updatedAt) {
     PromotionCampaign changeStatus(CampaignStatus nextStatus) {
         return new PromotionCampaign(campaignId, name, type, thresholdAmount, benefitValue, budgetAmount, usedBudget,
                 priority, stackable, nextStatus, startsAt, endsAt, createdAt, Instant.now());

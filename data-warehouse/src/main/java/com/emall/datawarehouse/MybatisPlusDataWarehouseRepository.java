@@ -2,6 +2,7 @@ package com.emall.datawarehouse;
 
 import java.util.List;
 import java.util.Optional;
+import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.stereotype.Repository;
 
@@ -9,9 +10,24 @@ import org.springframework.stereotype.Repository;
 @ConditionalOnProperty(name = "emall.storage", havingValue = "jdbc", matchIfMissing = true)
 class MybatisPlusDataWarehouseRepository implements DataWarehouseRepository {
     private final DataWarehouseMapper dataWarehouseMapper;
+    private final DatasetDefinitionMapper datasetMapper;
+    private final TablePartitionMapper partitionMapper;
+    private final QualityCheckMapper qualityCheckMapper;
+    private final QualityAlertMapper qualityAlertMapper;
+    private final LineageEdgeMapper lineageMapper;
+    private final FieldLineageMapper fieldLineageMapper;
 
-    MybatisPlusDataWarehouseRepository(DataWarehouseMapper dataWarehouseMapper) {
+    MybatisPlusDataWarehouseRepository(DataWarehouseMapper dataWarehouseMapper, DatasetDefinitionMapper datasetMapper,
+            TablePartitionMapper partitionMapper, QualityCheckMapper qualityCheckMapper,
+            QualityAlertMapper qualityAlertMapper, LineageEdgeMapper lineageMapper,
+            FieldLineageMapper fieldLineageMapper) {
         this.dataWarehouseMapper = dataWarehouseMapper;
+        this.datasetMapper = datasetMapper;
+        this.partitionMapper = partitionMapper;
+        this.qualityCheckMapper = qualityCheckMapper;
+        this.qualityAlertMapper = qualityAlertMapper;
+        this.lineageMapper = lineageMapper;
+        this.fieldLineageMapper = fieldLineageMapper;
     }
 
     @Override
@@ -22,34 +38,34 @@ class MybatisPlusDataWarehouseRepository implements DataWarehouseRepository {
 
     @Override
     public Optional<DatasetDefinition> findDataset(long datasetId) {
-        return Optional.ofNullable(dataWarehouseMapper.findDataset(datasetId));
+        return Optional.ofNullable(datasetMapper.selectById(datasetId));
     }
 
     @Override
     public List<DatasetDefinition> findDatasets() {
-        return dataWarehouseMapper.findDatasets();
+        return datasetMapper.selectList(null);
     }
 
     @Override
     public TablePartition savePartition(TablePartition partition) {
-        dataWarehouseMapper.savePartition(partition);
+        partitionMapper.insert(partition);
         return partition;
     }
 
     @Override
     public List<TablePartition> findPartitions(long datasetId) {
-        return dataWarehouseMapper.findPartitions(datasetId);
+        return partitionMapper.selectList(new QueryWrapper<TablePartition>().eq("dataset_id", datasetId));
     }
 
     @Override
     public QualityCheck saveQualityCheck(QualityCheck check) {
-        dataWarehouseMapper.saveQualityCheck(check);
+        qualityCheckMapper.insert(check);
         return check;
     }
 
     @Override
     public List<QualityCheck> findQualityChecks() {
-        return dataWarehouseMapper.findQualityChecks();
+        return qualityCheckMapper.selectList(null);
     }
 
     @Override
@@ -60,28 +76,28 @@ class MybatisPlusDataWarehouseRepository implements DataWarehouseRepository {
 
     @Override
     public List<QualityAlert> findQualityAlerts() {
-        return dataWarehouseMapper.findQualityAlerts();
+        return qualityAlertMapper.selectList(null);
     }
 
     @Override
     public LineageEdge saveLineage(LineageEdge edge) {
-        dataWarehouseMapper.saveLineage(edge);
+        lineageMapper.insert(edge);
         return edge;
     }
 
     @Override
     public List<LineageEdge> findLineage() {
-        return dataWarehouseMapper.findLineage();
+        return lineageMapper.selectList(null);
     }
 
     @Override
     public FieldLineage saveFieldLineage(FieldLineage lineage) {
-        dataWarehouseMapper.saveFieldLineage(lineage);
+        fieldLineageMapper.insert(lineage);
         return lineage;
     }
 
     @Override
     public List<FieldLineage> findFieldLineage() {
-        return dataWarehouseMapper.findFieldLineage();
+        return fieldLineageMapper.selectList(null);
     }
 }
