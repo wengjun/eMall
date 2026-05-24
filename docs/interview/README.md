@@ -8,13 +8,8 @@
 
 ### 01 Java 语言和工程基础
 
-题号：001-040；进度：40/40。
+题号：006-040；进度：35/35。
 
-001. [Java 17 相比 Java 8 有哪些重要变化？](answers/001-java-17-vs-java-8.md)
-002. [`record` 适合哪些场景，不适合哪些场景？](answers/002-record-use-cases.md)
-003. [`var` 会不会影响可读性，团队中如何约束？](answers/003-var-readability.md)
-004. [`switch` 表达式相比传统 `switch` 有什么优势？](answers/004-switch-expression.md)
-005. [`sealed class` 适合建模哪些业务场景？](answers/005-sealed-class.md)
 006. [`Optional` 应该用在返回值、参数还是字段上？](answers/006-optional-usage.md)
 007. [为什么金额不能用 `double`？](answers/007-money-double.md)
 008. [`BigDecimal` 的 `equals` 和 `compareTo` 有什么区别？](answers/008-bigdecimal-equals-compareto.md)
