@@ -8,13 +8,8 @@
 
 ### 01 Java 语言和工程基础
 
-题号：006-040；进度：35/35。
+题号：011-040；进度：30/30。
 
-006. [`Optional` 应该用在返回值、参数还是字段上？](answers/006-optional-usage.md)
-007. [为什么金额不能用 `double`？](answers/007-money-double.md)
-008. [`BigDecimal` 的 `equals` 和 `compareTo` 有什么区别？](answers/008-bigdecimal-equals-compareto.md)
-009. [Java 时间 API 中 `Instant`、`LocalDateTime`、`ZonedDateTime` 怎么选？](answers/009-java-time-api.md)
-010. [服务端为什么建议统一存储 UTC 时间？](answers/010-utc-storage.md)
 011. [枚举适合表达哪些业务状态？](answers/011-enum-business-status.md)
 012. [枚举状态扩展时如何保证兼容？](answers/012-enum-compatibility.md)
 013. [面向对象中的封装在业务系统里具体体现在哪里？](answers/013-encapsulation.md)
