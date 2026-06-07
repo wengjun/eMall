@@ -8,13 +8,8 @@
 
 ### 01 Java 语言和工程基础
 
-题号：011-040；进度：30/30。
+题号：016-040；进度：25/25。
 
-011. [枚举适合表达哪些业务状态？](answers/011-enum-business-status.md)
-012. [枚举状态扩展时如何保证兼容？](answers/012-enum-compatibility.md)
-013. [面向对象中的封装在业务系统里具体体现在哪里？](answers/013-encapsulation.md)
-014. [组合和继承如何取舍？](answers/014-composition-vs-inheritance.md)
-015. [领域对象和 DTO 为什么要分开？](answers/015-domain-object-vs-dto.md)
 016. [贫血模型和充血模型各有什么优缺点？](answers/016-anemic-rich-domain.md)
 017. [如何避免所有业务逻辑堆在 Controller？](answers/017-avoid-fat-controller.md)
 018. [如何设计清晰的包结构？](answers/018-package-structure.md)
