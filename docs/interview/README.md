@@ -8,13 +8,8 @@
 
 ### 01 Java 语言和工程基础
 
-题号：016-040；进度：25/25。
+题号：021-040；进度：20/20。
 
-016. [贫血模型和充血模型各有什么优缺点？](answers/016-anemic-rich-domain.md)
-017. [如何避免所有业务逻辑堆在 Controller？](answers/017-avoid-fat-controller.md)
-018. [如何设计清晰的包结构？](answers/018-package-structure.md)
-019. [Java 异常分为哪些类型？](answers/019-java-exception-types.md)
-020. [业务异常和系统异常应该如何区分？](answers/020-business-vs-system-exception.md)
 021. [checked exception 和 unchecked exception 如何取舍？](answers/021-checked-vs-unchecked-exception.md)
 022. [为什么不能直接把异常堆栈返回给前端？](answers/022-hide-stacktrace-from-client.md)
 023. [如何设计统一错误码？](answers/023-error-code-design.md)
