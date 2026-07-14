@@ -23,11 +23,17 @@ public class MigrationTargetExecutor {
         }
         FluentConfiguration configuration =
                 Flyway.configure().dataSource(target.jdbcUrl(), target.username(), target.password())
-                        .locations(target.locations().toArray(String[]::new)).table(target.historyTable())
-                        .baselineOnMigrate(target.baselineOnMigrate())
+                        .locations(target.locations().toArray(String[]::new)).failOnMissingLocations(true)
+                        .validateMigrationNaming(true).validateOnMigrate(true).cleanDisabled(true)
+                        .table(target.historyTable()).baselineOnMigrate(target.baselineOnMigrate())
                         .placeholders(Map.of("service", target.service(), "region", target.region(), "shard",
                                 Integer.toString(target.shard()), "operator", target.operator()));
-        var result = configuration.load().migrate();
+        Flyway flyway = configuration.load();
+        if (flyway.info().all().length == 0) {
+            throw new IllegalStateException("no migrations found for service " + target.service());
+        }
+        flyway.validate();
+        var result = flyway.migrate();
         log.info("Schema migration completed service={} region={} shard={} migrationsExecuted={} targetSchema={}",
                 target.service(), target.region(), target.shard(), result.migrationsExecuted, result.schemaName);
         createPhysicalTables(target);

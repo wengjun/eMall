@@ -4,13 +4,19 @@ import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.stream.IntStream;
 import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.util.StringUtils;
 
 @ConfigurationProperties("emall.migration")
 public class MigrationRunnerProperties {
+    public static final List<String> SUPPORTED_SERVICES = List.of("advertising", "after-sales", "analytics", "cart",
+            "catalog", "cost", "customer-service", "data-warehouse", "event-platform", "experiment", "finance",
+            "flash-sale", "forecasting", "fulfillment", "identity", "intelligence", "inventory", "marketing",
+            "merchant", "openapi", "operations", "order", "payment", "platform-ops", "pricing", "product", "promotion",
+            "recommendation", "release", "reliability", "review", "risk", "search", "supply-chain", "traffic", "user");
     private boolean dryRun;
-    private boolean baselineOnMigrate = true;
+    private boolean baselineOnMigrate;
     private String operator = "unknown";
     private String jdbcUrlTemplate = "";
     private String username = "";
@@ -21,8 +27,10 @@ public class MigrationRunnerProperties {
     private String cellId = "cell-a";
     private List<String> services = new ArrayList<>();
     private List<String> regions = List.of("default");
-    private List<Integer> shards = List.of(0);
-    private List<String> locations = List.of("filesystem:/migrations/{service}");
+    private List<Integer> shards = List.of();
+    private int defaultServiceShardCount = 1;
+    private Map<String, Integer> serviceShardCounts = new LinkedHashMap<>();
+    private List<String> locations = List.of("classpath:migrations/{service}/src/main/resources/db/migration");
     private Map<String, String> serviceLocations = new LinkedHashMap<>();
 
     public List<MigrationTarget> expandTargets() {
@@ -33,26 +41,52 @@ public class MigrationRunnerProperties {
         if (!StringUtils.hasText(jdbcUrlTemplate)) {
             throw new IllegalStateException("emall.migration.jdbc-url-template must be configured");
         }
+        List<String> unsupported =
+                normalizedServices.stream().filter(service -> !SUPPORTED_SERVICES.contains(service)).toList();
+        if (!unsupported.isEmpty()) {
+            throw new IllegalStateException("unsupported migration services: " + unsupported);
+        }
         List<String> normalizedRegions = nonBlank(regions);
-        List<Integer> normalizedShards = shards == null || shards.isEmpty() ? List.of(0) : shards;
+        List<Integer> normalizedShards = shards == null ? List.of() : shards;
+        if (normalizedShards.stream().anyMatch(shard -> shard == null || shard < 0)) {
+            throw new IllegalStateException("emall.migration.shards must contain non-negative shard indexes");
+        }
         List<MigrationTarget> targets = new ArrayList<>();
         for (String service : normalizedServices) {
             for (String region : normalizedRegions) {
-                for (Integer shard : normalizedShards) {
-                    targets.add(target(service, region, shard == null ? 0 : shard));
+                List<Integer> serviceShards = serviceShards(service, normalizedShards);
+                boolean suffixedDatabase =
+                        serviceShards.size() > 1 || serviceShards.stream().anyMatch(index -> index > 0);
+                for (Integer shard : serviceShards) {
+                    targets.add(target(service, region, shard == null ? 0 : shard, suffixedDatabase));
                 }
             }
         }
         return targets;
     }
 
-    private MigrationTarget target(String service, String region, int shard) {
-        String shardText = Integer.toString(shard);
-        String jdbcUrl = replaceTokens(jdbcUrlTemplate, service, region, shardText);
+    private List<Integer> serviceShards(String service, List<Integer> configuredShards) {
+        Integer count = serviceShardCounts.get(service);
+        if (count == null && !configuredShards.isEmpty()) {
+            return configuredShards;
+        }
+        int resolvedCount = count == null ? defaultServiceShardCount : count;
+        if (resolvedCount <= 0) {
+            throw new IllegalStateException("service shard count must be positive for " + service);
+        }
+        return IntStream.range(0, resolvedCount).boxed().toList();
+    }
+
+    private MigrationTarget target(String service, String region, int shard, boolean suffixedDatabase) {
+        String shardText = "%02d".formatted(shard);
+        String databasePrefix = "emall_%s".formatted(service.replace('-', '_'));
+        String database = suffixedDatabase ? databasePrefix + '_' + shardText : databasePrefix;
+        String jdbcUrl = replaceTokens(jdbcUrlTemplate, service, region, shardText, database);
         List<String> targetLocations =
                 serviceLocations.containsKey(service) ? List.of(serviceLocations.get(service).split(",")) : locations;
         return new MigrationTarget(service, region, shard, jdbcUrl, username, password,
-                targetLocations.stream().map(location -> replaceTokens(location.trim(), service, region, shardText))
+                targetLocations.stream()
+                        .map(location -> replaceTokens(location.trim(), service, region, shardText, database))
                         .filter(StringUtils::hasText).toList(),
                 historyTable, operator, baselineOnMigrate, dryRun, createPhysicalTables,
                 defaultPhysicalTables(service));
@@ -61,10 +95,10 @@ public class MigrationRunnerProperties {
     private List<PhysicalTableRule> defaultPhysicalTables(String service) {
         String normalized = service.trim();
         return switch (normalized) {
-            case "order" -> List.of(rule("order_record"), rule("outbox_event"));
-            case "payment" ->
-                List.of(rule("payment_order"), rule("payment_ledger_entry"), rule("payment_channel_statement"),
-                        rule("payment_reconciliation_record"), rule("payment_refund_order"));
+            case "order" -> List.of(rule("order_record"), rule("outbox_event"), rule("order_create_saga"),
+                    rule("order_payment_confirmation"));
+            case "payment" -> List.of(rule("payment_order"), rule("payment_ledger_entry"),
+                    rule("payment_channel_statement"), rule("payment_reconciliation_record"));
             case "inventory" ->
                 List.of(rule("inventory_item"), rule("inventory_bucket"), rule("inventory_reservation"));
             case "product" -> List.of(rule("product"), rule("outbox_event"));
@@ -72,6 +106,7 @@ public class MigrationRunnerProperties {
             case "search" -> List.of(rule("search_document"), rule("processed_message"));
             case "user" -> List.of(rule("user_account"));
             case "cart" -> List.of(rule("cart_item"));
+            case "marketing" -> List.of(rule("coupon"));
             case "flash-sale" -> List.of(rule("flash_sale_campaign"), rule("flash_sale_stock"),
                     rule("flash_sale_token"), rule("flash_sale_order_request"));
             default -> List.of();
@@ -82,8 +117,9 @@ public class MigrationRunnerProperties {
         return new PhysicalTableRule(table, table, defaultTableShardCount, cellId);
     }
 
-    private String replaceTokens(String value, String service, String region, String shard) {
-        return value.replace("{service}", service).replace("{region}", region).replace("{shard}", shard);
+    private String replaceTokens(String value, String service, String region, String shard, String database) {
+        return value.replace("{service}", service).replace("{region}", region).replace("{shard}", shard)
+                .replace("{database}", database);
     }
 
     private List<String> nonBlank(List<String> values) {
@@ -195,6 +231,22 @@ public class MigrationRunnerProperties {
 
     public void setShards(List<Integer> shards) {
         this.shards = shards;
+    }
+
+    public int getDefaultServiceShardCount() {
+        return defaultServiceShardCount;
+    }
+
+    public void setDefaultServiceShardCount(int defaultServiceShardCount) {
+        this.defaultServiceShardCount = defaultServiceShardCount;
+    }
+
+    public Map<String, Integer> getServiceShardCounts() {
+        return serviceShardCounts;
+    }
+
+    public void setServiceShardCounts(Map<String, Integer> serviceShardCounts) {
+        this.serviceShardCounts = new LinkedHashMap<>(serviceShardCounts);
     }
 
     public List<String> getLocations() {

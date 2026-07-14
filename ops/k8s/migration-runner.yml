@@ -25,15 +25,19 @@ spec:
                 fieldRef:
                   fieldPath: metadata.annotations['emall.io/operator']
             - name: EMALL_MIGRATION_SERVICES
-              value: "order,inventory,payment,product,pricing,search,user,cart,flash-sale"
+              value: "advertising,after-sales,analytics,cart,catalog,cost,customer-service,data-warehouse,event-platform,experiment,finance,flash-sale,forecasting,fulfillment,identity,intelligence,inventory,marketing,merchant,openapi,operations,order,payment,platform-ops,pricing,product,promotion,recommendation,release,reliability,review,risk,search,supply-chain,traffic,user"
             - name: EMALL_MIGRATION_REGIONS
-              value: "cn-east-1,cn-south-1"
-            - name: EMALL_MIGRATION_SHARDS
-              value: "0,1,2,3,4,5,6,7"
+              value: "default"
             - name: EMALL_MIGRATION_JDBC_URL_TEMPLATE
-              value: "jdbc:mysql://mysql-{region}-{shard}.emall-db:3306/emall_{service}_{shard}?useUnicode=true&characterEncoding=utf8&serverTimezone=UTC"
+              value: "jdbc:mysql://mysql:3306/{database}?useUnicode=true&characterEncoding=utf8&serverTimezone=UTC&createDatabaseIfNotExist=true"
             - name: EMALL_MIGRATION_LOCATIONS
-              value: "filesystem:/migrations/{service}"
+              value: "classpath:migrations/{service}/src/main/resources/db/migration"
+            - name: EMALL_MIGRATION_BASELINE_ON_MIGRATE
+              value: "false"
+            - name: EMALL_MIGRATION_CREATE_PHYSICAL_TABLES
+              value: "true"
+            - name: EMALL_TABLE_SHARD_COUNT
+              value: "64"
           envFrom:
             - secretRef:
-                name: emall-db-credential
+                name: emall-runtime-secret
