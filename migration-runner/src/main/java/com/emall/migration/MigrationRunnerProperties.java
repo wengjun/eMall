@@ -5,9 +5,13 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.IntStream;
+import lombok.Getter;
+import lombok.Setter;
 import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.util.StringUtils;
 
+@Getter
+@Setter
 @ConfigurationProperties("emall.migration")
 public class MigrationRunnerProperties {
     public static final List<String> SUPPORTED_SERVICES = List.of("advertising", "after-sales", "analytics", "cart",
@@ -129,139 +133,7 @@ public class MigrationRunnerProperties {
         return values.stream().map(String::trim).filter(StringUtils::hasText).toList();
     }
 
-    public boolean isDryRun() {
-        return dryRun;
-    }
-
-    public void setDryRun(boolean dryRun) {
-        this.dryRun = dryRun;
-    }
-
-    public boolean isBaselineOnMigrate() {
-        return baselineOnMigrate;
-    }
-
-    public void setBaselineOnMigrate(boolean baselineOnMigrate) {
-        this.baselineOnMigrate = baselineOnMigrate;
-    }
-
-    public String getOperator() {
-        return operator;
-    }
-
-    public void setOperator(String operator) {
-        this.operator = operator;
-    }
-
-    public String getJdbcUrlTemplate() {
-        return jdbcUrlTemplate;
-    }
-
-    public void setJdbcUrlTemplate(String jdbcUrlTemplate) {
-        this.jdbcUrlTemplate = jdbcUrlTemplate;
-    }
-
-    public String getUsername() {
-        return username;
-    }
-
-    public void setUsername(String username) {
-        this.username = username;
-    }
-
-    public String getPassword() {
-        return password;
-    }
-
-    public void setPassword(String password) {
-        this.password = password;
-    }
-
-    public String getHistoryTable() {
-        return historyTable;
-    }
-
-    public void setHistoryTable(String historyTable) {
-        this.historyTable = historyTable;
-    }
-
-    public boolean isCreatePhysicalTables() {
-        return createPhysicalTables;
-    }
-
-    public void setCreatePhysicalTables(boolean createPhysicalTables) {
-        this.createPhysicalTables = createPhysicalTables;
-    }
-
-    public int getDefaultTableShardCount() {
-        return defaultTableShardCount;
-    }
-
-    public void setDefaultTableShardCount(int defaultTableShardCount) {
-        this.defaultTableShardCount = defaultTableShardCount;
-    }
-
-    public String getCellId() {
-        return cellId;
-    }
-
-    public void setCellId(String cellId) {
-        this.cellId = cellId;
-    }
-
-    public List<String> getServices() {
-        return services;
-    }
-
-    public void setServices(List<String> services) {
-        this.services = services;
-    }
-
-    public List<String> getRegions() {
-        return regions;
-    }
-
-    public void setRegions(List<String> regions) {
-        this.regions = regions;
-    }
-
-    public List<Integer> getShards() {
-        return shards;
-    }
-
-    public void setShards(List<Integer> shards) {
-        this.shards = shards;
-    }
-
-    public int getDefaultServiceShardCount() {
-        return defaultServiceShardCount;
-    }
-
-    public void setDefaultServiceShardCount(int defaultServiceShardCount) {
-        this.defaultServiceShardCount = defaultServiceShardCount;
-    }
-
-    public Map<String, Integer> getServiceShardCounts() {
-        return serviceShardCounts;
-    }
-
     public void setServiceShardCounts(Map<String, Integer> serviceShardCounts) {
         this.serviceShardCounts = new LinkedHashMap<>(serviceShardCounts);
-    }
-
-    public List<String> getLocations() {
-        return locations;
-    }
-
-    public void setLocations(List<String> locations) {
-        this.locations = locations;
-    }
-
-    public Map<String, String> getServiceLocations() {
-        return serviceLocations;
-    }
-
-    public void setServiceLocations(Map<String, String> serviceLocations) {
-        this.serviceLocations = serviceLocations;
     }
 }

@@ -1,12 +1,10 @@
 package com.emall.common.trust;
 
-import lombok.Getter;
-import lombok.Setter;
+import lombok.Data;
 import org.springframework.boot.context.properties.ConfigurationProperties;
 
+@Data
 @ConfigurationProperties(prefix = "emall.trust.identity")
-@Getter
-@Setter
 public class IdentityTrustProperties {
     private boolean enabled;
     private boolean failClosed = true;
