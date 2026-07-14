@@ -6,6 +6,18 @@ spec:
   mtls:
     mode: STRICT
 ---
+apiVersion: security.istio.io/v1beta1
+kind: PeerAuthentication
+metadata:
+  name: gateway-public-ingress
+spec:
+  selector:
+    matchLabels:
+      app: gateway
+  portLevelMtls:
+    "8080":
+      mode: PERMISSIVE
+---
 apiVersion: networking.istio.io/v1beta1
 kind: DestinationRule
 metadata:
@@ -19,23 +31,137 @@ spec:
 apiVersion: security.istio.io/v1beta1
 kind: AuthorizationPolicy
 metadata:
-  name: allow-gateway-to-public-apis
+  name: default-deny
+spec: {}
+---
+apiVersion: security.istio.io/v1beta1
+kind: AuthorizationPolicy
+metadata:
+  name: allow-public-ingress-to-gateway
 spec:
   selector:
     matchLabels:
       app: gateway
   action: ALLOW
   rules:
-    - from:
-        - source:
-            principals:
-              - cluster.local/ns/emall/sa/gateway
+    - to:
+        - operation:
+            ports: ["8080"]
 ---
 apiVersion: security.istio.io/v1beta1
 kind: AuthorizationPolicy
 metadata:
-  name: allow-checkout-service-calls
+  name: allow-gateway-to-http-services
 spec:
+  selector:
+    matchLabels:
+      emall.io/gateway-reachable: "true"
+  action: ALLOW
+  rules:
+    - from:
+        - source:
+            principals:
+              - cluster.local/ns/emall/sa/gateway
+      to:
+        - operation:
+            ports:
+              - "8081"
+              - "8082"
+              - "8083"
+              - "8084"
+              - "8085"
+              - "8086"
+              - "8087"
+              - "8088"
+              - "8089"
+              - "8090"
+              - "8091"
+              - "8092"
+              - "8093"
+              - "8094"
+              - "8095"
+              - "8096"
+              - "8097"
+              - "8098"
+              - "8099"
+              - "8100"
+              - "8101"
+              - "8102"
+              - "8103"
+              - "8104"
+              - "8105"
+              - "8106"
+              - "8107"
+              - "8108"
+              - "8109"
+              - "8110"
+              - "8111"
+              - "8112"
+              - "8113"
+              - "8114"
+              - "8115"
+              - "8116"
+---
+apiVersion: security.istio.io/v1beta1
+kind: AuthorizationPolicy
+metadata:
+  name: allow-order-to-rpc-providers
+spec:
+  selector:
+    matchLabels:
+      emall.io/rpc-provider: "true"
+  action: ALLOW
+  rules:
+    - from:
+        - source:
+            principals:
+              - cluster.local/ns/emall/sa/order
+      to:
+        - operation:
+            ports: ["20880"]
+---
+apiVersion: security.istio.io/v1beta1
+kind: AuthorizationPolicy
+metadata:
+  name: allow-payment-to-order-rpc
+spec:
+  selector:
+    matchLabels:
+      app: order
+  action: ALLOW
+  rules:
+    - from:
+        - source:
+            principals:
+              - cluster.local/ns/emall/sa/payment
+      to:
+        - operation:
+            ports: ["20880"]
+---
+apiVersion: security.istio.io/v1beta1
+kind: AuthorizationPolicy
+metadata:
+  name: allow-service-health-probes
+spec:
+  selector:
+    matchLabels:
+      emall.io/gateway-reachable: "true"
+  action: ALLOW
+  rules:
+    - to:
+        - operation:
+            paths:
+              - /actuator/health
+              - /actuator/health/*
+---
+apiVersion: security.istio.io/v1beta1
+kind: AuthorizationPolicy
+metadata:
+  name: allow-workloads-to-identity-validation
+spec:
+  selector:
+    matchLabels:
+      app: identity
   action: ALLOW
   rules:
     - from:
@@ -43,10 +169,49 @@ spec:
             principals:
               - cluster.local/ns/emall/sa/order
               - cluster.local/ns/emall/sa/payment
+              - cluster.local/ns/emall/sa/flash-sale
       to:
         - operation:
-            ports:
-              - "8083"
-              - "8084"
-              - "8087"
-              - "8088"
+            methods: ["POST"]
+            paths: ["/api/identity/sessions/validate"]
+---
+apiVersion: security.istio.io/v1beta1
+kind: AuthorizationPolicy
+metadata:
+  name: allow-workloads-to-risk-evaluation
+spec:
+  selector:
+    matchLabels:
+      app: risk
+  action: ALLOW
+  rules:
+    - from:
+        - source:
+            principals:
+              - cluster.local/ns/emall/sa/order
+              - cluster.local/ns/emall/sa/payment
+              - cluster.local/ns/emall/sa/flash-sale
+      to:
+        - operation:
+            methods: ["POST"]
+            paths: ["/api/risk/evaluate"]
+---
+apiVersion: security.istio.io/v1beta1
+kind: AuthorizationPolicy
+metadata:
+  name: allow-observability-scraping
+spec:
+  selector:
+    matchLabels:
+      emall.io/gateway-reachable: "true"
+  action: ALLOW
+  rules:
+    - from:
+        - source:
+            principals:
+              - cluster.local/ns/monitoring/sa/prometheus
+      to:
+        - operation:
+            paths:
+              - /actuator/health/*
+              - /actuator/prometheus

@@ -155,7 +155,7 @@ spec:
 apiVersion: networking.k8s.io/v1
 kind: NetworkPolicy
 metadata:
-  name: allow-checkout-internal-calls
+  name: allow-order-to-checkout-providers
 spec:
   podSelector:
     matchExpressions:
@@ -165,7 +165,6 @@ spec:
           - inventory
           - pricing
           - marketing
-          - order
   policyTypes:
     - Ingress
   ingress:
@@ -173,18 +172,76 @@ spec:
         - podSelector:
             matchLabels:
               app: order
+      ports:
+        - protocol: TCP
+          port: 20880
+---
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: allow-payment-to-order
+spec:
+  podSelector:
+    matchLabels:
+      app: order
+  policyTypes:
+    - Ingress
+  ingress:
+    - from:
         - podSelector:
             matchLabels:
               app: payment
       ports:
         - protocol: TCP
-          port: 8083
+          port: 20880
+---
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: allow-checkout-services-to-identity
+spec:
+  podSelector:
+    matchLabels:
+      app: identity
+  policyTypes:
+    - Ingress
+  ingress:
+    - from:
+        - podSelector:
+            matchExpressions:
+              - key: app
+                operator: In
+                values:
+                  - order
+                  - payment
+                  - flash-sale
+      ports:
         - protocol: TCP
-          port: 8084
+          port: 8097
+---
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: allow-checkout-services-to-risk
+spec:
+  podSelector:
+    matchLabels:
+      app: risk
+  policyTypes:
+    - Ingress
+  ingress:
+    - from:
+        - podSelector:
+            matchExpressions:
+              - key: app
+                operator: In
+                values:
+                  - order
+                  - payment
+                  - flash-sale
+      ports:
         - protocol: TCP
-          port: 8087
-        - protocol: TCP
-          port: 8088
+          port: 8098
 ---
 apiVersion: networking.k8s.io/v1
 kind: NetworkPolicy
@@ -204,3 +261,22 @@ spec:
       ports:
         - protocol: TCP
           port: 8090
+---
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: allow-prometheus-scraping
+spec:
+  podSelector:
+    matchLabels:
+      emall.io/gateway-reachable: "true"
+  policyTypes:
+    - Ingress
+  ingress:
+    - from:
+        - namespaceSelector:
+            matchLabels:
+              kubernetes.io/metadata.name: monitoring
+          podSelector:
+            matchLabels:
+              app.kubernetes.io/name: prometheus

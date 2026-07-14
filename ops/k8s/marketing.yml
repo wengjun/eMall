@@ -13,6 +13,8 @@ spec:
     metadata:
       labels:
         app: marketing
+        emall.io/gateway-reachable: "true"
+        emall.io/rpc-provider: "true"
     spec:
       terminationGracePeriodSeconds: 45
       serviceAccountName: marketing
@@ -31,6 +33,14 @@ spec:
                 - ALL
           ports:
             - containerPort: 8088
+              name: http
+            - containerPort: 20880
+              name: dubbo
+          env:
+            - name: EMALL_SHARDING_ENABLED
+              value: "true"
+            - name: EMALL_SHARDING_DATASOURCE_ENABLED
+              value: "true"
           envFrom:
             - configMapRef:
                 name: emall-runtime-config
@@ -71,6 +81,9 @@ spec:
     - name: http
       port: 8088
       targetPort: 8088
+    - name: dubbo
+      port: 20880
+      targetPort: 20880
 ---
 apiVersion: policy/v1
 kind: PodDisruptionBudget

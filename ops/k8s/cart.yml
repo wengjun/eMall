@@ -13,6 +13,7 @@ spec:
     metadata:
       labels:
         app: cart
+        emall.io/gateway-reachable: "true"
     spec:
       terminationGracePeriodSeconds: 45
       serviceAccountName: cart
@@ -31,6 +32,11 @@ spec:
                 - ALL
           ports:
             - containerPort: 8085
+          env:
+            - name: EMALL_SHARDING_ENABLED
+              value: "true"
+            - name: EMALL_SHARDING_DATASOURCE_ENABLED
+              value: "true"
           envFrom:
             - configMapRef:
                 name: emall-runtime-config

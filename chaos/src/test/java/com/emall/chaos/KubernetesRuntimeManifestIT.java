@@ -5,16 +5,24 @@ import static org.assertj.core.api.Assertions.assertThat;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 import org.junit.jupiter.api.Test;
+import org.yaml.snakeyaml.LoaderOptions;
+import org.yaml.snakeyaml.Yaml;
+import org.yaml.snakeyaml.constructor.SafeConstructor;
 
 class KubernetesRuntimeManifestIT {
     private static final Path MANIFEST_DIR = Path.of("..", "ops", "k8s").normalize();
     private static final Path REPOSITORY_ROOT = Path.of("..").normalize();
     private static final List<String> STABLE_SERVICES = List.of("gateway", "user", "product", "inventory", "order",
             "cart", "payment", "pricing", "marketing", "search", "fulfillment", "review", "after-sales");
-    private static final List<String> MIGRATION_RUNNER_SERVICES =
-            List.of("order", "inventory", "payment", "product", "pricing", "search", "user", "cart", "flash-sale");
+    private static final List<String> MIGRATION_RUNNER_SERVICES = List.of("advertising", "after-sales", "analytics",
+            "cart", "catalog", "cost", "customer-service", "data-warehouse", "event-platform", "experiment", "finance",
+            "flash-sale", "forecasting", "fulfillment", "identity", "intelligence", "inventory", "marketing",
+            "merchant", "openapi", "operations", "order", "payment", "platform-ops", "pricing", "product", "promotion",
+            "recommendation", "release", "reliability", "review", "risk", "search", "supply-chain", "traffic", "user");
 
     @Test
     void shouldKeepStableRuntimeManifestsDeployableAndOperable() throws IOException {
@@ -34,6 +42,28 @@ class KubernetesRuntimeManifestIT {
             assertThat(serviceAccounts).contains("name: " + service);
             assertThat(networkPolicy).as("network policy for %s", service).containsAnyOf("app: " + service,
                     "- " + service);
+        }
+    }
+
+    @Test
+    void shouldParseEveryKubernetesManifestAsVersionedResources() throws IOException {
+        Yaml yaml = new Yaml(new SafeConstructor(new LoaderOptions()));
+        List<Path> manifests;
+        try (var paths = Files.walk(MANIFEST_DIR)) {
+            manifests = paths.filter(Files::isRegularFile).filter(path -> path.toString().endsWith(".yml")).sorted()
+                    .toList();
+        }
+
+        for (Path manifest : manifests) {
+            List<Object> documents = new ArrayList<>();
+            yaml.loadAll(Files.readString(manifest)).forEach(documents::add);
+            assertThat(documents).as("YAML documents in %s", manifest).isNotEmpty();
+            for (Object document : documents) {
+                assertThat(document).as("resource in %s", manifest).isInstanceOf(Map.class);
+                Map<?, ?> resource = (Map<?, ?>) document;
+                assertThat(resource.containsKey("apiVersion")).as("apiVersion in %s", manifest).isTrue();
+                assertThat(resource.containsKey("kind")).as("kind in %s", manifest).isTrue();
+            }
         }
     }
 
@@ -83,10 +113,11 @@ class KubernetesRuntimeManifestIT {
                 .contains("name: emall-migration-runner").contains("backoffLimit: 0").contains("restartPolicy: Never")
                 .contains("serviceAccountName: emall-migration-runner").contains("image: emall/migration-runner:latest")
                 .contains("name: EMALL_MIGRATION_OPERATOR").contains("fieldPath: metadata.annotations")
-                .contains("name: EMALL_MIGRATION_JDBC_URL_TEMPLATE")
-                .contains("mysql-{region}-{shard}.emall-db:3306/emall_{service}_{shard}")
-                .contains("name: EMALL_MIGRATION_LOCATIONS").contains("filesystem:/migrations/{service}")
-                .contains("secretRef:").contains("name: emall-db-credential");
+                .contains("name: EMALL_MIGRATION_JDBC_URL_TEMPLATE").contains("jdbc:mysql://mysql:3306/{database}")
+                .contains("name: EMALL_MIGRATION_LOCATIONS")
+                .contains("classpath:migrations/{service}/src/main/resources/db/migration")
+                .contains("name: EMALL_MIGRATION_CREATE_PHYSICAL_TABLES").contains("secretRef:")
+                .contains("name: emall-runtime-secret");
         assertThat(serviceAccounts).contains("name: emall-migration-runner")
                 .contains("automountServiceAccountToken: true");
         for (String service : MIGRATION_RUNNER_SERVICES) {

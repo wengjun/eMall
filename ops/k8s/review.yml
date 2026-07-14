@@ -13,6 +13,7 @@ spec:
     metadata:
       labels:
         app: review
+        emall.io/gateway-reachable: "true"
     spec:
       terminationGracePeriodSeconds: 45
       serviceAccountName: review

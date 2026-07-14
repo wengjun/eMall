@@ -4,8 +4,8 @@ image:
   pullPolicy: IfNotPresent
 
 global:
+  existingSecret: emall-runtime-secret
   env:
-    EMALL_DB_USERNAME: root
     EMALL_SENTINEL_ENABLED: "true"
     EMALL_SENTINEL_DASHBOARD: sentinel-dashboard:8858
     EMALL_NACOS_SERVER_ADDR: nacos:8848
@@ -15,9 +15,8 @@ global:
     EMALL_NACOS_GROUP: DEFAULT_GROUP
     EMALL_RPC_PROTOCOL: dubbo
     EMALL_FLYWAY_ENABLED: "false"
-    EMALL_SHARDING_ENABLED: "true"
     EMALL_LOGICAL_SHARD_COUNT: "64"
-    EMALL_DB_SHARD_COUNT: "16"
+    EMALL_DB_SHARD_COUNT: "8"
     EMALL_TABLE_SHARD_COUNT: "64"
     EMALL_OUTBOX_TABLE_SHARD_COUNT: "64"
     EMALL_OWNERSHIP_ENABLED: "true"
@@ -36,11 +35,28 @@ global:
     EMALL_TRUST_RISK_FAIL_CLOSED: "true"
     EMALL_IDENTITY_URL: http://identity:8097
     EMALL_RISK_URL: http://risk:8098
-    EMALL_FIELD_ENCRYPTION_KEY: change-me-with-kms-managed-secret
     EMALL_DUBBO_REGISTRY_ADDRESS: nacos://nacos:8848
-    EMALL_DUBBO_PORT: "-1"
+    EMALL_DUBBO_PORT: "20880"
+    EMALL_RUNTIME_MODE: production
+    EMALL_RUNTIME_GUARD_ENABLED: "true"
+    EMALL_SECURITY_AUTH_ENABLED: "true"
+    EMALL_SECURITY_AUTH_FAIL_CLOSED_ON_REVOCATION_STORE_ERROR: "true"
+    EMALL_ID_LEASE_ENABLED: "true"
+    EMALL_ORDER_SUBMISSION_FAIL_CLOSED: "true"
+    EMALL_GLOBAL_REPLENISH_RATE: "1000000"
+    EMALL_GLOBAL_BURST_CAPACITY: "1200000"
+    EMALL_SUBJECT_REPLENISH_RATE: "1000"
+    EMALL_SUBJECT_BURST_CAPACITY: "2000"
+    EMALL_HOT_RESOURCE_REPLENISH_RATE: "10000"
+    EMALL_HOT_RESOURCE_BURST_CAPACITY: "20000"
+    EMALL_PAYMENT_CALLBACK_SIGNATURE_ENABLED: "true"
+    EMALL_PAYMENT_REPLAY_STORE_FAIL_CLOSED: "true"
+    EMALL_PAYMENT_CHANNEL_MODE: http
+    EMALL_SHARDING_DATASOURCE_JDBC_URL_TEMPLATE: jdbc:mysql://mysql:3306/{database}?useUnicode=true&characterEncoding=utf8&serverTimezone=UTC
     EMALL_KAFKA_BOOTSTRAP_SERVERS: kafka:9092
     EMALL_REDIS_CLUSTER_NODES: redis-cluster:6379
+    SPRING_DATA_REDIS_CLUSTER_NODES: redis-cluster:6379
+    EMALL_TRUSTED_PROXY_CIDRS: "10.0.0.0/16"
     EMALL_ELASTICSEARCH_URL: http://elasticsearch:9200
     EMALL_PRODUCT_EVENTS_CONSUMER_MAX_ATTEMPTS: "4"
     EMALL_CLICKHOUSE_URL: jdbc:clickhouse://clickhouse:8123/emall
@@ -67,24 +83,37 @@ services:
     replicas: 3
   - name: user
     port: 8081
+    sharding: true
   - name: product
     port: 8082
+    sharding: true
   - name: inventory
     port: 8083
+    sharding: true
+    rpcProvider: true
   - name: order
     port: 8084
     replicas: 4
+    sharding: true
+    rpcProvider: true
   - name: cart
     port: 8085
+    sharding: true
   - name: payment
     port: 8086
     replicas: 4
+    sharding: true
   - name: pricing
     port: 8087
+    sharding: true
+    rpcProvider: true
   - name: marketing
     port: 8088
+    sharding: true
+    rpcProvider: true
   - name: search
     port: 8089
+    sharding: true
   - name: fulfillment
     port: 8090
   - name: review
@@ -94,6 +123,7 @@ services:
   - name: flash-sale
     port: 8094
     replicas: 4
+    sharding: true
   - name: identity
     port: 8097
   - name: risk

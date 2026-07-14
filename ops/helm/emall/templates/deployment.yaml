@@ -18,7 +18,13 @@ spec:
       labels:
         app.kubernetes.io/instance: {{ $.Release.Name }}
         app.kubernetes.io/component: {{ .name }}
+        app: {{ .name }}
+        emall.io/gateway-reachable: "true"
+        {{- if .rpcProvider }}
+        emall.io/rpc-provider: "true"
+        {{- end }}
     spec:
+      serviceAccountName: {{ .name }}
       containers:
         - name: {{ .name }}
           image: "{{ $.Values.image.repositoryPrefix }}/{{ .name }}:{{ $.Values.image.tag }}"
@@ -26,14 +32,26 @@ spec:
           ports:
             - name: http
               containerPort: {{ .port }}
+            {{- if .rpcProvider }}
+            - name: dubbo
+              containerPort: 20880
+            {{- end }}
           env:
             - name: SPRING_PROFILES_ACTIVE
               value: "redis-cluster"
             - name: MODULE
               value: {{ .name | quote }}
+            {{- if .sharding }}
+            - name: EMALL_SHARDING_ENABLED
+              value: "true"
+            - name: EMALL_SHARDING_DATASOURCE_ENABLED
+              value: "true"
+            {{- end }}
           envFrom:
             - configMapRef:
                 name: {{ include "emall.fullname" $ }}-runtime
+            - secretRef:
+                name: {{ $.Values.global.existingSecret }}
           readinessProbe:
             httpGet:
               path: /actuator/health/readiness
