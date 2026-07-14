@@ -49,8 +49,7 @@ record CompensationRecord(@TableId(value = "compensation_id", type = IdType.INPU
 
 @TableName("knowledge_article")
 record KnowledgeArticle(@TableId(value = "article_id", type = IdType.INPUT) long articleId, String category,
-        String title, String content, boolean published,
-        Instant createdAt, Instant updatedAt) {
+        String title, String content, boolean published, Instant createdAt, Instant updatedAt) {
 }
 
 @TableName("service_quality_review")

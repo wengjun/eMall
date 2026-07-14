@@ -1,5 +1,6 @@
 package com.emall.reliability;
 
+import com.emall.common.persistence.BoundedQuery;
 import java.util.List;
 import java.util.Optional;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
@@ -36,7 +37,7 @@ class MybatisPlusReliabilityRepository implements ReliabilityRepository {
 
     @Override
     public List<CapacityRehearsal> findRehearsals() {
-        return rehearsalMapper.selectList(null);
+        return BoundedQuery.firstPage(rehearsalMapper);
     }
 
     @Override
@@ -47,7 +48,7 @@ class MybatisPlusReliabilityRepository implements ReliabilityRepository {
 
     @Override
     public List<SloObjective> findSlos() {
-        return sloMapper.selectList(null);
+        return BoundedQuery.firstPage(sloMapper);
     }
 
     @Override
@@ -63,7 +64,7 @@ class MybatisPlusReliabilityRepository implements ReliabilityRepository {
 
     @Override
     public List<ChaosSchedule> findChaosSchedules() {
-        return chaosMapper.selectList(null);
+        return BoundedQuery.firstPage(chaosMapper);
     }
 
     @Override
@@ -74,6 +75,6 @@ class MybatisPlusReliabilityRepository implements ReliabilityRepository {
 
     @Override
     public List<ReadinessGate> findReadinessGates() {
-        return readinessGateMapper.selectList(null);
+        return BoundedQuery.firstPage(readinessGateMapper);
     }
 }

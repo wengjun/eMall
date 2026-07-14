@@ -26,8 +26,8 @@ enum IncidentStatus {
 
 @TableName("operations_approval")
 record ApprovalRequest(@TableId(value = "approval_id", type = IdType.INPUT) long approvalId, String workflowType,
-        String resourceType, String resourceId, String requester, String approver, String reason,
-        ApprovalStatus status, Instant createdAt, Instant updatedAt) {
+        String resourceType, String resourceId, String requester, String approver, String reason, ApprovalStatus status,
+        Instant createdAt, Instant updatedAt) {
     ApprovalRequest decide(String operator, ApprovalStatus nextStatus) {
         return new ApprovalRequest(approvalId, workflowType, resourceType, resourceId, requester, operator, reason,
                 nextStatus, createdAt, Instant.now());
@@ -35,9 +35,9 @@ record ApprovalRequest(@TableId(value = "approval_id", type = IdType.INPUT) long
 }
 
 @TableName("operations_task")
-record OperationTask(@TableId(value = "task_id", type = IdType.INPUT) long taskId, String taskType,
-        String resourceType, String resourceId, String owner,
-        TaskStatus status, int priority, String summary, Instant createdAt, Instant updatedAt) {
+record OperationTask(@TableId(value = "task_id", type = IdType.INPUT) long taskId, String taskType, String resourceType,
+        String resourceId, String owner, TaskStatus status, int priority, String summary, Instant createdAt,
+        Instant updatedAt) {
     OperationTask changeStatus(TaskStatus nextStatus) {
         return new OperationTask(taskId, taskType, resourceType, resourceId, owner, nextStatus, priority, summary,
                 createdAt, Instant.now());

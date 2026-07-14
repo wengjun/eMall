@@ -1,6 +1,7 @@
 package com.emall.risk;
 
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
+import com.emall.common.persistence.BoundedQuery;
 import java.util.List;
 import java.util.Optional;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
@@ -37,7 +38,7 @@ class MybatisPlusRiskRepository implements RiskRepository {
     public List<RiskRule> findActiveRules(RiskScene scene) {
         QueryWrapper<RiskRule> query = new QueryWrapper<RiskRule>().eq("scene", scene.name())
                 .eq("status", RuleStatus.ACTIVE.name()).orderByDesc("updated_at");
-        return ruleMapper.selectList(query);
+        return BoundedQuery.firstPage(ruleMapper, query);
     }
 
     @Override
@@ -59,7 +60,7 @@ class MybatisPlusRiskRepository implements RiskRepository {
 
     @Override
     public List<RiskEvent> findEvents(String subjectId) {
-        return eventMapper
-                .selectList(new QueryWrapper<RiskEvent>().eq("subject_id", subjectId).orderByDesc("occurred_at"));
+        return BoundedQuery.firstPage(eventMapper,
+                new QueryWrapper<RiskEvent>().eq("subject_id", subjectId).orderByDesc("occurred_at"));
     }
 }

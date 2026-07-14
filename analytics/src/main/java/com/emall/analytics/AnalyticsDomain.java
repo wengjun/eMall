@@ -32,8 +32,8 @@ record MetricPoint(@TableId(value = "point_id", type = IdType.INPUT) long pointI
 }
 
 @TableName("dashboard_definition")
-record DashboardDefinition(@TableId(value = "dashboard_id", type = IdType.INPUT) long dashboardId,
-        String dashboardName, String businessDomain, String metricNames, Instant createdAt) {
+record DashboardDefinition(@TableId(value = "dashboard_id", type = IdType.INPUT) long dashboardId, String dashboardName,
+        String businessDomain, String metricNames, Instant createdAt) {
 }
 
 @TableName("anomaly_signal")

@@ -32,6 +32,6 @@ record MetricMaterialization(long materializationId, String metricName, String w
         long lateEventCount, Instant materializedAt) {
 }
 
-record EventPlatformSummary(int activeSchemas, int ingestedEvents, int lateEvents, int materializedMetrics,
-        int classifiedFields) {
+record EventPlatformSummary(long activeSchemas, long ingestedEvents, long lateEvents, long materializedMetrics,
+        long classifiedFields) {
 }

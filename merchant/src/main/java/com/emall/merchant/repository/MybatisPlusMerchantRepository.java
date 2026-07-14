@@ -1,6 +1,7 @@
 package com.emall.merchant.repository;
 
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
+import com.emall.common.persistence.BoundedQuery;
 import com.baomidou.mybatisplus.core.conditions.update.UpdateWrapper;
 import com.emall.merchant.domain.CommissionRule;
 import com.emall.merchant.domain.Invoice;
@@ -77,8 +78,9 @@ public class MybatisPlusMerchantRepository implements MerchantRepository {
 
     @Override
     public List<Store> findStoresByMerchant(long merchantId) {
-        return storeMapper
-                .selectList(new QueryWrapper<StoreEntity>().eq("merchant_id", merchantId).orderByDesc("created_at"))
+        return BoundedQuery
+                .firstPage(storeMapper,
+                        new QueryWrapper<StoreEntity>().eq("merchant_id", merchantId).orderByDesc("created_at"))
                 .stream().map(this::toDomain).toList();
     }
 
@@ -124,8 +126,8 @@ public class MybatisPlusMerchantRepository implements MerchantRepository {
 
     @Override
     public List<Settlement> findSettlementsByMerchant(long merchantId) {
-        return settlementMapper
-                .selectList(
+        return BoundedQuery
+                .firstPage(settlementMapper,
                         new QueryWrapper<SettlementEntity>().eq("merchant_id", merchantId).orderByDesc("created_at"))
                 .stream().map(this::toDomain).toList();
     }
@@ -144,8 +146,9 @@ public class MybatisPlusMerchantRepository implements MerchantRepository {
 
     @Override
     public List<Invoice> findInvoicesByMerchant(long merchantId) {
-        return invoiceMapper
-                .selectList(new QueryWrapper<InvoiceEntity>().eq("merchant_id", merchantId).orderByDesc("created_at"))
+        return BoundedQuery
+                .firstPage(invoiceMapper,
+                        new QueryWrapper<InvoiceEntity>().eq("merchant_id", merchantId).orderByDesc("created_at"))
                 .stream().map(this::toDomain).toList();
     }
 

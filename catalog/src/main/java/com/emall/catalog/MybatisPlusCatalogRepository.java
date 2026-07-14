@@ -3,6 +3,7 @@ package com.emall.catalog;
 import java.util.List;
 import java.util.Optional;
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
+import com.emall.common.persistence.BoundedQuery;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.stereotype.Repository;
 
@@ -60,10 +61,8 @@ class MybatisPlusCatalogRepository implements CatalogRepository {
 
     @Override
     public boolean hasBrandAuthorization(long merchantId, String brandCode) {
-        return brandAuthorizationMapper.selectCount(new QueryWrapper<BrandAuthorization>()
-                .eq("merchant_id", merchantId)
-                .eq("brand_code", brandCode)
-                .eq("active", true)) > 0;
+        return brandAuthorizationMapper.selectCount(new QueryWrapper<BrandAuthorization>().eq("merchant_id", merchantId)
+                .eq("brand_code", brandCode).eq("active", true)) > 0;
     }
 
     @Override
@@ -85,7 +84,7 @@ class MybatisPlusCatalogRepository implements CatalogRepository {
 
     @Override
     public List<Sku> findSkus(long spuId) {
-        return skuMapper.selectList(new QueryWrapper<Sku>().eq("spu_id", spuId));
+        return BoundedQuery.firstPage(skuMapper, new QueryWrapper<Sku>().eq("spu_id", spuId));
     }
 
     @Override
@@ -96,6 +95,6 @@ class MybatisPlusCatalogRepository implements CatalogRepository {
 
     @Override
     public List<ListingViolation> findViolations(long spuId) {
-        return violationMapper.selectList(new QueryWrapper<ListingViolation>().eq("spu_id", spuId));
+        return BoundedQuery.firstPage(violationMapper, new QueryWrapper<ListingViolation>().eq("spu_id", spuId));
     }
 }

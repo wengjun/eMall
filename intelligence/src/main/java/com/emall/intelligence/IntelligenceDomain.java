@@ -41,9 +41,8 @@ record OnlineFeatureValue(@TableId(value = "value_id", type = IdType.INPUT) long
 }
 
 @TableName("model_deployment")
-record ModelDeployment(@TableId(value = "model_id", type = IdType.INPUT) long modelId, String modelName,
-        String version, String useCase, ModelStatus status, String approvalTicket, Instant createdAt,
-        Instant updatedAt) {
+record ModelDeployment(@TableId(value = "model_id", type = IdType.INPUT) long modelId, String modelName, String version,
+        String useCase, ModelStatus status, String approvalTicket, Instant createdAt, Instant updatedAt) {
     ModelDeployment changeStatus(ModelStatus nextStatus, String ticket) {
         return new ModelDeployment(modelId, modelName, version, useCase, nextStatus, ticket, createdAt, Instant.now());
     }

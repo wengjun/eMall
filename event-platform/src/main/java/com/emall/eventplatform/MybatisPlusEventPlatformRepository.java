@@ -2,6 +2,7 @@ package com.emall.eventplatform;
 
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.emall.common.privacy.SensitiveDataType;
+import com.emall.common.persistence.BoundedQuery;
 import java.time.Instant;
 import java.time.LocalDateTime;
 import java.time.ZoneOffset;
@@ -37,14 +38,22 @@ class MybatisPlusEventPlatformRepository implements EventPlatformRepository {
 
     @Override
     public Optional<EventSchema> findSchema(String eventName, int version) {
-        return Optional.ofNullable(schemaMapper.selectOne(new LambdaQueryWrapper<EventSchemaEntity>()
-                .eq(EventSchemaEntity::getEventName, eventName).eq(EventSchemaEntity::getVersion, version)))
+        return Optional
+                .ofNullable(schemaMapper.selectOne(new LambdaQueryWrapper<EventSchemaEntity>()
+                        .eq(EventSchemaEntity::getEventName, eventName).eq(EventSchemaEntity::getVersion, version)))
                 .map(this::toDomain);
     }
 
     @Override
     public List<EventSchema> findSchemas() {
-        return schemaMapper.selectList(null).stream().map(this::toDomain).toList();
+        return BoundedQuery.firstPage(schemaMapper).stream().map(this::toDomain).toList();
+    }
+
+    @Override
+    public long countSchemas(SchemaStatus status) {
+        LambdaQueryWrapper<EventSchemaEntity> query = new LambdaQueryWrapper<>();
+        query.eq(status != null, EventSchemaEntity::getStatus, status == null ? null : status.name());
+        return schemaMapper.selectCount(query);
     }
 
     @Override
@@ -55,14 +64,22 @@ class MybatisPlusEventPlatformRepository implements EventPlatformRepository {
 
     @Override
     public List<EventFieldClassification> findFieldClassifications() {
-        return classificationMapper.selectList(null).stream().map(this::toDomain).toList();
+        return BoundedQuery.firstPage(classificationMapper).stream().map(this::toDomain).toList();
+    }
+
+    @Override
+    public long countFieldClassifications() {
+        return classificationMapper.selectCount(null);
     }
 
     @Override
     public List<EventFieldClassification> findFieldClassifications(String eventName, int version) {
-        return classificationMapper.selectList(new LambdaQueryWrapper<EventFieldClassificationEntity>()
-                .eq(EventFieldClassificationEntity::getEventName, eventName)
-                .eq(EventFieldClassificationEntity::getVersion, version)).stream().map(this::toDomain).toList();
+        return BoundedQuery
+                .firstPage(classificationMapper,
+                        new LambdaQueryWrapper<EventFieldClassificationEntity>()
+                                .eq(EventFieldClassificationEntity::getEventName, eventName)
+                                .eq(EventFieldClassificationEntity::getVersion, version))
+                .stream().map(this::toDomain).toList();
     }
 
     @Override
@@ -73,19 +90,29 @@ class MybatisPlusEventPlatformRepository implements EventPlatformRepository {
 
     @Override
     public boolean eventExists(String eventKey) {
-        return trackingEventMapper.selectCount(new LambdaQueryWrapper<TrackingEventEntity>()
-                .eq(TrackingEventEntity::getEventKey, eventKey)) > 0;
+        return trackingEventMapper.selectCount(
+                new LambdaQueryWrapper<TrackingEventEntity>().eq(TrackingEventEntity::getEventKey, eventKey)) > 0;
     }
 
     @Override
     public List<TrackingEvent> findEvents(String eventName) {
-        return trackingEventMapper.selectList(new LambdaQueryWrapper<TrackingEventEntity>()
-                .eq(TrackingEventEntity::getEventName, eventName)).stream().map(this::toDomain).toList();
+        return BoundedQuery
+                .firstPage(trackingEventMapper,
+                        new LambdaQueryWrapper<TrackingEventEntity>().eq(TrackingEventEntity::getEventName, eventName))
+                .stream().map(this::toDomain).toList();
     }
 
     @Override
     public List<TrackingEvent> findEvents() {
-        return trackingEventMapper.selectList(null).stream().map(this::toDomain).toList();
+        return BoundedQuery.firstPage(trackingEventMapper).stream().map(this::toDomain).toList();
+    }
+
+    @Override
+    public long countEvents(String eventName, Boolean lateEvent) {
+        LambdaQueryWrapper<TrackingEventEntity> query = new LambdaQueryWrapper<>();
+        query.eq(eventName != null, TrackingEventEntity::getEventName, eventName).eq(lateEvent != null,
+                TrackingEventEntity::getLateEvent, lateEvent);
+        return trackingEventMapper.selectCount(query);
     }
 
     @Override
@@ -102,7 +129,12 @@ class MybatisPlusEventPlatformRepository implements EventPlatformRepository {
 
     @Override
     public List<MetricMaterialization> findMaterializations() {
-        return materializationMapper.selectList(null).stream().map(this::toDomain).toList();
+        return BoundedQuery.firstPage(materializationMapper).stream().map(this::toDomain).toList();
+    }
+
+    @Override
+    public long countMaterializations() {
+        return materializationMapper.selectCount(null);
     }
 
     private EventSchemaEntity toEntity(EventSchema schema) {

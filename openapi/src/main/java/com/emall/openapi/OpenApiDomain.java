@@ -26,8 +26,8 @@ record ApiSignatureVerification(String appKey, String requestPath, String nonce,
 }
 
 @TableName("openapi_quota_usage")
-record ApiQuotaUsage(@TableId(value = "app_key", type = IdType.INPUT) String appKey, LocalDate usageDate,
-        int usedCount, int dailyQuota, boolean allowed) {
+record ApiQuotaUsage(@TableId(value = "app_key", type = IdType.INPUT) String appKey, LocalDate usageDate, int usedCount,
+        int dailyQuota, boolean allowed) {
 }
 
 record ApiRequestAuthentication(String appKey, long appId, long merchantId, String requestPath, String scope,

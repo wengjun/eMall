@@ -3,6 +3,7 @@ package com.emall.datawarehouse;
 import java.util.List;
 import java.util.Optional;
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
+import com.emall.common.persistence.BoundedQuery;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.stereotype.Repository;
 
@@ -43,7 +44,7 @@ class MybatisPlusDataWarehouseRepository implements DataWarehouseRepository {
 
     @Override
     public List<DatasetDefinition> findDatasets() {
-        return datasetMapper.selectList(null);
+        return BoundedQuery.firstPage(datasetMapper);
     }
 
     @Override
@@ -54,7 +55,7 @@ class MybatisPlusDataWarehouseRepository implements DataWarehouseRepository {
 
     @Override
     public List<TablePartition> findPartitions(long datasetId) {
-        return partitionMapper.selectList(new QueryWrapper<TablePartition>().eq("dataset_id", datasetId));
+        return BoundedQuery.firstPage(partitionMapper, new QueryWrapper<TablePartition>().eq("dataset_id", datasetId));
     }
 
     @Override
@@ -65,7 +66,7 @@ class MybatisPlusDataWarehouseRepository implements DataWarehouseRepository {
 
     @Override
     public List<QualityCheck> findQualityChecks() {
-        return qualityCheckMapper.selectList(null);
+        return BoundedQuery.firstPage(qualityCheckMapper);
     }
 
     @Override
@@ -76,7 +77,7 @@ class MybatisPlusDataWarehouseRepository implements DataWarehouseRepository {
 
     @Override
     public List<QualityAlert> findQualityAlerts() {
-        return qualityAlertMapper.selectList(null);
+        return BoundedQuery.firstPage(qualityAlertMapper);
     }
 
     @Override
@@ -87,7 +88,7 @@ class MybatisPlusDataWarehouseRepository implements DataWarehouseRepository {
 
     @Override
     public List<LineageEdge> findLineage() {
-        return lineageMapper.selectList(null);
+        return BoundedQuery.firstPage(lineageMapper);
     }
 
     @Override
@@ -98,6 +99,6 @@ class MybatisPlusDataWarehouseRepository implements DataWarehouseRepository {
 
     @Override
     public List<FieldLineage> findFieldLineage() {
-        return fieldLineageMapper.selectList(null);
+        return BoundedQuery.firstPage(fieldLineageMapper);
     }
 }

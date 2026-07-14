@@ -22,8 +22,8 @@ enum RiskLevel {
 }
 
 @TableName("backup_plan")
-record BackupPlan(@TableId(value = "plan_id", type = IdType.INPUT) long planId, String databaseName,
-        String backupType, int retentionDays, OpsStatus status, Instant createdAt, Instant updatedAt) {
+record BackupPlan(@TableId(value = "plan_id", type = IdType.INPUT) long planId, String databaseName, String backupType,
+        int retentionDays, OpsStatus status, Instant createdAt, Instant updatedAt) {
     BackupPlan changeStatus(OpsStatus nextStatus) {
         return new BackupPlan(planId, databaseName, backupType, retentionDays, nextStatus, createdAt, Instant.now());
     }

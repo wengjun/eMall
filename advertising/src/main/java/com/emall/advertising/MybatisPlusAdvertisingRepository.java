@@ -1,6 +1,7 @@
 package com.emall.advertising;
 
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
+import com.emall.common.persistence.BoundedQuery;
 import java.util.List;
 import java.util.Optional;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
@@ -43,8 +44,8 @@ class MybatisPlusAdvertisingRepository implements AdvertisingRepository {
 
     @Override
     public List<AdCreative> findCreatives(long campaignId) {
-        return creativeMapper
-                .selectList(new QueryWrapper<AdCreative>().eq("campaign_id", campaignId).eq("active", true));
+        return BoundedQuery.firstPage(creativeMapper,
+                new QueryWrapper<AdCreative>().eq("campaign_id", campaignId).eq("active", true));
     }
 
     @Override
@@ -55,7 +56,8 @@ class MybatisPlusAdvertisingRepository implements AdvertisingRepository {
 
     @Override
     public List<KeywordTarget> findTargets(String keyword) {
-        return targetMapper.selectList(new QueryWrapper<KeywordTarget>().eq("keyword", keyword).eq("active", true));
+        return BoundedQuery.firstPage(targetMapper,
+                new QueryWrapper<KeywordTarget>().eq("keyword", keyword).eq("active", true));
     }
 
     @Override

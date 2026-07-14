@@ -1,5 +1,6 @@
 package com.emall.customerservice;
 
+import com.emall.common.persistence.BoundedQuery;
 import java.util.List;
 import java.util.Optional;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
@@ -37,7 +38,7 @@ class MybatisPlusCustomerServiceRepository implements CustomerServiceRepository 
 
     @Override
     public List<ServiceTicket> findTickets() {
-        return ticketMapper.selectList(null);
+        return BoundedQuery.firstPage(ticketMapper);
     }
 
     @Override
@@ -53,7 +54,7 @@ class MybatisPlusCustomerServiceRepository implements CustomerServiceRepository 
 
     @Override
     public List<ArbitrationCase> findArbitrations() {
-        return arbitrationMapper.selectList(null);
+        return BoundedQuery.firstPage(arbitrationMapper);
     }
 
     @Override
@@ -64,7 +65,7 @@ class MybatisPlusCustomerServiceRepository implements CustomerServiceRepository 
 
     @Override
     public List<CompensationRecord> findCompensations() {
-        return compensationMapper.selectList(null);
+        return BoundedQuery.firstPage(compensationMapper);
     }
 
     @Override

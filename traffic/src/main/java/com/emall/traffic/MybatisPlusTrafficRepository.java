@@ -1,6 +1,7 @@
 package com.emall.traffic;
 
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
+import com.emall.common.persistence.BoundedQuery;
 import java.util.List;
 import java.util.Optional;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
@@ -37,7 +38,7 @@ class MybatisPlusTrafficRepository implements TrafficRepository {
 
     @Override
     public List<UnitCell> findUnits() {
-        return unitMapper.selectList(null);
+        return BoundedQuery.firstPage(unitMapper);
     }
 
     @Override
@@ -48,7 +49,7 @@ class MybatisPlusTrafficRepository implements TrafficRepository {
 
     @Override
     public List<ShardRoute> findRoutes() {
-        return routeMapper.selectList(null);
+        return BoundedQuery.firstPage(routeMapper);
     }
 
     @Override
@@ -64,7 +65,7 @@ class MybatisPlusTrafficRepository implements TrafficRepository {
 
     @Override
     public List<TrafficShift> findShifts() {
-        return shiftMapper.selectList(null);
+        return BoundedQuery.firstPage(shiftMapper);
     }
 
     @Override
@@ -80,6 +81,6 @@ class MybatisPlusTrafficRepository implements TrafficRepository {
 
     @Override
     public List<TrafficControlRule> findControlRules() {
-        return controlRuleMapper.selectList(null);
+        return BoundedQuery.firstPage(controlRuleMapper);
     }
 }

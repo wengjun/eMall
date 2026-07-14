@@ -3,6 +3,7 @@ package com.emall.finance;
 import java.util.List;
 import java.util.Optional;
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
+import com.emall.common.persistence.BoundedQuery;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.stereotype.Repository;
 
@@ -43,7 +44,7 @@ class MybatisPlusFinanceRepository implements FinanceRepository {
 
     @Override
     public List<FinanceAccount> findAccounts() {
-        return accountMapper.selectList(null);
+        return BoundedQuery.firstPage(accountMapper);
     }
 
     @Override
@@ -54,7 +55,7 @@ class MybatisPlusFinanceRepository implements FinanceRepository {
 
     @Override
     public List<LedgerEntry> findEntries(long accountId) {
-        return entryMapper.selectList(new QueryWrapper<LedgerEntry>().eq("account_id", accountId));
+        return BoundedQuery.firstPage(entryMapper, new QueryWrapper<LedgerEntry>().eq("account_id", accountId));
     }
 
     @Override
@@ -70,7 +71,8 @@ class MybatisPlusFinanceRepository implements FinanceRepository {
 
     @Override
     public List<SettlementBatch> findSettlementBatches(long merchantId) {
-        return settlementBatchMapper.selectList(new QueryWrapper<SettlementBatch>().eq("merchant_id", merchantId));
+        return BoundedQuery.firstPage(settlementBatchMapper,
+                new QueryWrapper<SettlementBatch>().eq("merchant_id", merchantId));
     }
 
     @Override
@@ -103,6 +105,6 @@ class MybatisPlusFinanceRepository implements FinanceRepository {
 
     @Override
     public List<ChargebackCase> findChargebacks() {
-        return chargebackMapper.selectList(null);
+        return BoundedQuery.firstPage(chargebackMapper);
     }
 }

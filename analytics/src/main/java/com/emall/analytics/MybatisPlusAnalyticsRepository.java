@@ -1,5 +1,6 @@
 package com.emall.analytics;
 
+import com.emall.common.persistence.BoundedQuery;
 import java.util.List;
 import java.util.Optional;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
@@ -39,7 +40,7 @@ class MybatisPlusAnalyticsRepository implements AnalyticsRepository {
 
     @Override
     public List<MetricDefinition> findMetrics() {
-        return metricMapper.selectList(null);
+        return BoundedQuery.firstPage(metricMapper);
     }
 
     @Override
@@ -56,7 +57,7 @@ class MybatisPlusAnalyticsRepository implements AnalyticsRepository {
 
     @Override
     public List<DashboardDefinition> findDashboards() {
-        return dashboardMapper.selectList(null);
+        return BoundedQuery.firstPage(dashboardMapper);
     }
 
     @Override
@@ -67,7 +68,7 @@ class MybatisPlusAnalyticsRepository implements AnalyticsRepository {
 
     @Override
     public List<AnomalySignal> findAnomalies() {
-        return anomalyMapper.selectList(null);
+        return BoundedQuery.firstPage(anomalyMapper);
     }
 
     @Override
@@ -89,6 +90,6 @@ class MybatisPlusAnalyticsRepository implements AnalyticsRepository {
 
     @Override
     public List<PrivacyRequest> findPrivacyRequests() {
-        return privacyRequestMapper.selectList(null);
+        return BoundedQuery.firstPage(privacyRequestMapper);
     }
 }

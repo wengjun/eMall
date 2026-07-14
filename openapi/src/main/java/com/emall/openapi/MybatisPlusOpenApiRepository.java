@@ -5,6 +5,7 @@ import java.time.LocalDate;
 import java.util.List;
 import java.util.Optional;
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
+import com.emall.common.persistence.BoundedQuery;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.stereotype.Repository;
 
@@ -48,9 +49,8 @@ class MybatisPlusOpenApiRepository implements OpenApiRepository {
 
     @Override
     public Optional<ApiQuotaUsage> findQuota(String appKey, LocalDate usageDate) {
-        return Optional.ofNullable(quotaUsageMapper.selectOne(new QueryWrapper<ApiQuotaUsage>()
-                .eq("app_key", appKey)
-                .eq("usage_date", usageDate)));
+        return Optional.ofNullable(quotaUsageMapper
+                .selectOne(new QueryWrapper<ApiQuotaUsage>().eq("app_key", appKey).eq("usage_date", usageDate)));
     }
 
     @Override
@@ -71,9 +71,8 @@ class MybatisPlusOpenApiRepository implements OpenApiRepository {
 
     @Override
     public List<WebhookSubscription> findActiveSubscriptions(long appId) {
-        return subscriptionMapper.selectList(new QueryWrapper<WebhookSubscription>()
-                .eq("app_id", appId)
-                .eq("active", true));
+        return BoundedQuery.firstPage(subscriptionMapper,
+                new QueryWrapper<WebhookSubscription>().eq("app_id", appId).eq("active", true));
     }
 
     @Override

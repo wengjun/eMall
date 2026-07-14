@@ -31,9 +31,8 @@ record BrandAuthorization(@TableId(value = "authorization_id", type = IdType.INP
 }
 
 @TableName("catalog_spu")
-record Spu(@TableId(value = "spu_id", type = IdType.INPUT) long spuId, long merchantId, String title,
-        long categoryId, String brandCode, ListingStatus status, int qualityScore, Instant createdAt,
-        Instant updatedAt) {
+record Spu(@TableId(value = "spu_id", type = IdType.INPUT) long spuId, long merchantId, String title, long categoryId,
+        String brandCode, ListingStatus status, int qualityScore, Instant createdAt, Instant updatedAt) {
     Spu changeStatus(ListingStatus nextStatus, int nextQualityScore) {
         return new Spu(spuId, merchantId, title, categoryId, brandCode, nextStatus, nextQualityScore, createdAt,
                 Instant.now());

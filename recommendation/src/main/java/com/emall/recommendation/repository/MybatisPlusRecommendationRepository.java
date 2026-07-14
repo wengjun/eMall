@@ -1,6 +1,8 @@
 package com.emall.recommendation.repository;
 
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
+import com.emall.common.persistence.BoundedQuery;
+import com.emall.common.persistence.BoundedQuery;
 import com.baomidou.mybatisplus.core.conditions.update.UpdateWrapper;
 import com.emall.recommendation.domain.BehaviorType;
 import com.emall.recommendation.domain.Experiment;
@@ -56,7 +58,7 @@ public class MybatisPlusRecommendationRepository implements RecommendationReposi
 
     @Override
     public List<UserPreference> findUserPreferences(long userId) {
-        return preferenceMapper.selectList(new QueryWrapper<UserPreferenceEntity>().eq("user_id", userId)
+        return BoundedQuery.firstPage(preferenceMapper, new QueryWrapper<UserPreferenceEntity>().eq("user_id", userId)
                 .orderByDesc("affinity_score", "updated_at")).stream().map(this::toDomain).toList();
     }
 
@@ -82,9 +84,9 @@ public class MybatisPlusRecommendationRepository implements RecommendationReposi
 
     @Override
     public List<ItemFeature> findActiveItemFeatures(int limit) {
-        return itemFeatureMapper
-                .selectList(new QueryWrapper<ItemFeatureEntity>().eq("active", true)
-                        .orderByDesc("popularity_score", "base_score").orderByAsc("sku_id").last("LIMIT " + limit))
+        return itemFeatureMapper.selectList(
+                new QueryWrapper<ItemFeatureEntity>().eq("active", true).orderByDesc("popularity_score", "base_score")
+                        .orderByAsc("sku_id").last("LIMIT " + BoundedQuery.limit(limit)))
                 .stream().map(this::toDomain).toList();
     }
 

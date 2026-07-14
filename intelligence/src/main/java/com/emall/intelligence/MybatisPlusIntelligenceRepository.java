@@ -1,5 +1,6 @@
 package com.emall.intelligence;
 
+import com.emall.common.persistence.BoundedQuery;
 import java.util.List;
 import java.util.Optional;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
@@ -37,7 +38,7 @@ class MybatisPlusIntelligenceRepository implements IntelligenceRepository {
 
     @Override
     public List<UserProfile> findUserProfiles() {
-        return userProfileMapper.selectList(null);
+        return BoundedQuery.firstPage(userProfileMapper);
     }
 
     @Override
@@ -48,7 +49,7 @@ class MybatisPlusIntelligenceRepository implements IntelligenceRepository {
 
     @Override
     public List<ItemProfile> findItemProfiles() {
-        return itemProfileMapper.selectList(null);
+        return BoundedQuery.firstPage(itemProfileMapper);
     }
 
     @Override
@@ -59,7 +60,7 @@ class MybatisPlusIntelligenceRepository implements IntelligenceRepository {
 
     @Override
     public List<FeatureDefinition> findFeatures() {
-        return featureMapper.selectList(null);
+        return BoundedQuery.firstPage(featureMapper);
     }
 
     @Override
@@ -81,7 +82,7 @@ class MybatisPlusIntelligenceRepository implements IntelligenceRepository {
 
     @Override
     public List<ModelDeployment> findModels() {
-        return modelMapper.selectList(null);
+        return BoundedQuery.firstPage(modelMapper);
     }
 
     @Override
@@ -92,6 +93,6 @@ class MybatisPlusIntelligenceRepository implements IntelligenceRepository {
 
     @Override
     public List<AiDecision> findDecisions() {
-        return decisionMapper.selectList(null);
+        return BoundedQuery.firstPage(decisionMapper);
     }
 }

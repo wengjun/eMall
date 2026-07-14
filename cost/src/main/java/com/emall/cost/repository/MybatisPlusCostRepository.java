@@ -1,6 +1,8 @@
 package com.emall.cost.repository;
 
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
+import com.emall.common.persistence.BoundedQuery;
+import com.emall.common.persistence.BoundedQuery;
 import com.baomidou.mybatisplus.core.conditions.update.UpdateWrapper;
 import com.emall.cost.domain.CostActionStatus;
 import com.emall.cost.domain.CostActionType;
@@ -42,8 +44,10 @@ public class MybatisPlusCostRepository implements CostRepository {
 
     @Override
     public List<CostSignal> findSignalsByService(String serviceName, int limit) {
-        return signalMapper.selectList(new QueryWrapper<CostSignalEntity>().eq("service_name", serviceName)
-                .orderByDesc("observed_at").last("LIMIT " + limit)).stream().map(this::toDomain).toList();
+        return signalMapper
+                .selectList(new QueryWrapper<CostSignalEntity>().eq("service_name", serviceName)
+                        .orderByDesc("observed_at").last("LIMIT " + BoundedQuery.limit(limit)))
+                .stream().map(this::toDomain).toList();
     }
 
     @Override
@@ -100,9 +104,12 @@ public class MybatisPlusCostRepository implements CostRepository {
 
     @Override
     public List<CostOptimizationAction> findActiveActionsByService(String serviceName) {
-        return actionMapper.selectList(new QueryWrapper<CostOptimizationActionEntity>().eq("service_name", serviceName)
-                .in("status", CostActionStatus.OPEN.name(), CostActionStatus.ACKNOWLEDGED.name()).orderByAsc("priority")
-                .orderByDesc("updated_at")).stream().map(this::toDomain).toList();
+        return BoundedQuery
+                .firstPage(actionMapper,
+                        new QueryWrapper<CostOptimizationActionEntity>().eq("service_name", serviceName)
+                                .in("status", CostActionStatus.OPEN.name(), CostActionStatus.ACKNOWLEDGED.name())
+                                .orderByAsc("priority").orderByDesc("updated_at"))
+                .stream().map(this::toDomain).toList();
     }
 
     @Override

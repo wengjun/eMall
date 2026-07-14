@@ -1,6 +1,7 @@
 package com.emall.promotion;
 
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
+import com.emall.common.persistence.BoundedQuery;
 import java.util.List;
 import java.util.Optional;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
@@ -30,11 +31,11 @@ class MybatisPlusPromotionRepository implements PromotionRepository {
     public List<PromotionCampaign> findActiveCampaigns() {
         QueryWrapper<PromotionCampaign> query =
                 new QueryWrapper<PromotionCampaign>().eq("status", CampaignStatus.ACTIVE.name()).orderByAsc("priority");
-        return promotionMapper.selectList(query);
+        return BoundedQuery.firstPage(promotionMapper, query);
     }
 
     @Override
     public List<PromotionCampaign> findCampaigns() {
-        return promotionMapper.selectList(new QueryWrapper<PromotionCampaign>().orderByDesc("created_at"));
+        return BoundedQuery.firstPage(promotionMapper, new QueryWrapper<PromotionCampaign>().orderByDesc("created_at"));
     }
 }

@@ -3,6 +3,7 @@ package com.emall.release;
 import java.util.List;
 import java.util.Optional;
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
+import com.emall.common.persistence.BoundedQuery;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.stereotype.Repository;
 
@@ -40,7 +41,7 @@ class MybatisPlusReleaseRepository implements ReleaseRepository {
 
     @Override
     public List<FeatureToggle> findToggles() {
-        return toggleMapper.selectList(null);
+        return BoundedQuery.firstPage(toggleMapper);
     }
 
     @Override
@@ -56,7 +57,7 @@ class MybatisPlusReleaseRepository implements ReleaseRepository {
 
     @Override
     public List<RolloutPlan> findRollouts() {
-        return rolloutMapper.selectList(null);
+        return BoundedQuery.firstPage(rolloutMapper);
     }
 
     @Override
@@ -72,7 +73,7 @@ class MybatisPlusReleaseRepository implements ReleaseRepository {
 
     @Override
     public List<MessageTopicGovernance> findTopics() {
-        return topicMapper.selectList(null);
+        return BoundedQuery.firstPage(topicMapper);
     }
 
     @Override
@@ -88,7 +89,7 @@ class MybatisPlusReleaseRepository implements ReleaseRepository {
 
     @Override
     public List<ReplayPlan> findReplays() {
-        return replayMapper.selectList(null);
+        return BoundedQuery.firstPage(replayMapper);
     }
 
     @Override
@@ -99,13 +100,12 @@ class MybatisPlusReleaseRepository implements ReleaseRepository {
 
     @Override
     public List<ReleaseGuardRecord> findGuards(long rolloutId) {
-        return guardMapper.selectList(new QueryWrapper<ReleaseGuardRecord>()
-                .eq("rollout_id", rolloutId)
-                .orderByDesc("created_at"));
+        return BoundedQuery.firstPage(guardMapper,
+                new QueryWrapper<ReleaseGuardRecord>().eq("rollout_id", rolloutId).orderByDesc("created_at"));
     }
 
     @Override
     public List<ReleaseGuardRecord> findGuards() {
-        return guardMapper.selectList(null);
+        return BoundedQuery.firstPage(guardMapper);
     }
 }

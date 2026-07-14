@@ -1,6 +1,7 @@
 package com.emall.supplychain;
 
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
+import com.emall.common.persistence.BoundedQuery;
 import java.util.List;
 import java.util.Optional;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
@@ -35,7 +36,8 @@ class MybatisPlusSupplyChainRepository implements SupplyChainRepository {
 
     @Override
     public List<WarehouseReceipt> findReceipts(String warehouseCode) {
-        return receiptMapper.selectList(new QueryWrapper<WarehouseReceipt>().eq("warehouse_code", warehouseCode));
+        return BoundedQuery.firstPage(receiptMapper,
+                new QueryWrapper<WarehouseReceipt>().eq("warehouse_code", warehouseCode));
     }
 
     @Override
@@ -51,9 +53,8 @@ class MybatisPlusSupplyChainRepository implements SupplyChainRepository {
 
     @Override
     public List<InventoryTransfer> findTransfers(String warehouseCode) {
-        return transferMapper.selectList(
-                new QueryWrapper<InventoryTransfer>().eq("from_warehouse", warehouseCode).or()
-                        .eq("to_warehouse", warehouseCode));
+        return BoundedQuery.firstPage(transferMapper, new QueryWrapper<InventoryTransfer>()
+                .eq("from_warehouse", warehouseCode).or().eq("to_warehouse", warehouseCode));
     }
 
     @Override
@@ -69,6 +70,6 @@ class MybatisPlusSupplyChainRepository implements SupplyChainRepository {
 
     @Override
     public List<LogisticsWaybill> findWaybills() {
-        return waybillMapper.selectList(null);
+        return BoundedQuery.firstPage(waybillMapper);
     }
 }

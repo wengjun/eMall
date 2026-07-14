@@ -1,6 +1,7 @@
 package com.emall.review.repository;
 
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
+import com.emall.common.persistence.BoundedQuery;
 import com.baomidou.mybatisplus.core.conditions.update.UpdateWrapper;
 import com.emall.review.domain.ProductReview;
 import com.emall.review.domain.ReviewStatus;
@@ -42,9 +43,9 @@ public class MybatisPlusReviewRepository implements ReviewRepository {
 
     @Override
     public List<ProductReview> findBySkuId(long skuId, int limit) {
-        return productReviewMapper
-                .selectList(new QueryWrapper<ProductReviewEntity>().eq("sku_id", skuId)
-                        .eq("status", ReviewStatus.PUBLISHED.name()).orderByDesc("created_at").last("LIMIT " + limit))
+        return productReviewMapper.selectList(
+                new QueryWrapper<ProductReviewEntity>().eq("sku_id", skuId).eq("status", ReviewStatus.PUBLISHED.name())
+                        .orderByDesc("created_at").last("LIMIT " + BoundedQuery.limit(limit)))
                 .stream().map(this::toDomain).toList();
     }
 

@@ -34,6 +34,11 @@ class InMemoryEventPlatformRepository implements EventPlatformRepository {
     }
 
     @Override
+    public long countSchemas(SchemaStatus status) {
+        return schemas.values().stream().filter(schema -> status == null || schema.status() == status).count();
+    }
+
+    @Override
     public EventFieldClassification saveFieldClassification(EventFieldClassification classification) {
         classifications.put(classification.classificationId(), classification);
         return classification;
@@ -42,6 +47,11 @@ class InMemoryEventPlatformRepository implements EventPlatformRepository {
     @Override
     public List<EventFieldClassification> findFieldClassifications() {
         return List.copyOf(classifications.values());
+    }
+
+    @Override
+    public long countFieldClassifications() {
+        return classifications.size();
     }
 
     @Override
@@ -73,6 +83,12 @@ class InMemoryEventPlatformRepository implements EventPlatformRepository {
     }
 
     @Override
+    public long countEvents(String eventName, Boolean lateEvent) {
+        return events.values().stream().filter(event -> eventName == null || event.eventName().equals(eventName))
+                .filter(event -> lateEvent == null || event.lateEvent() == lateEvent).count();
+    }
+
+    @Override
     public PipelineOffset saveOffset(PipelineOffset offset) {
         offsets.put(offset.offsetId(), offset);
         return offset;
@@ -87,5 +103,10 @@ class InMemoryEventPlatformRepository implements EventPlatformRepository {
     @Override
     public List<MetricMaterialization> findMaterializations() {
         return List.copyOf(materializations.values());
+    }
+
+    @Override
+    public long countMaterializations() {
+        return materializations.size();
     }
 }

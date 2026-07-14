@@ -1,6 +1,7 @@
 package com.emall.forecasting;
 
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
+import com.emall.common.persistence.BoundedQuery;
 import java.util.List;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.stereotype.Repository;
@@ -29,13 +30,13 @@ class MybatisPlusForecastingRepository implements ForecastingRepository {
 
     @Override
     public List<DemandSignal> findDemandSignals(long skuId, String regionCode) {
-        return demandSignalMapper
-                .selectList(new QueryWrapper<DemandSignal>().eq("sku_id", skuId).eq("region_code", regionCode));
+        return BoundedQuery.firstPage(demandSignalMapper,
+                new QueryWrapper<DemandSignal>().eq("sku_id", skuId).eq("region_code", regionCode));
     }
 
     @Override
     public List<DemandSignal> findDemandSignals() {
-        return demandSignalMapper.selectList(null);
+        return BoundedQuery.firstPage(demandSignalMapper);
     }
 
     @Override
@@ -46,7 +47,7 @@ class MybatisPlusForecastingRepository implements ForecastingRepository {
 
     @Override
     public List<DemandForecast> findDemandForecasts() {
-        return demandForecastMapper.selectList(null);
+        return BoundedQuery.firstPage(demandForecastMapper);
     }
 
     @Override
@@ -57,7 +58,7 @@ class MybatisPlusForecastingRepository implements ForecastingRepository {
 
     @Override
     public List<ReplenishmentPlan> findReplenishmentPlans() {
-        return replenishmentPlanMapper.selectList(null);
+        return BoundedQuery.firstPage(replenishmentPlanMapper);
     }
 
     @Override
@@ -68,6 +69,6 @@ class MybatisPlusForecastingRepository implements ForecastingRepository {
 
     @Override
     public List<CapacityForecast> findCapacityForecasts() {
-        return capacityForecastMapper.selectList(null);
+        return BoundedQuery.firstPage(capacityForecastMapper);
     }
 }

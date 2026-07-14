@@ -8,6 +8,7 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import com.baomidou.mybatisplus.core.conditions.Wrapper;
+import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.emall.common.privacy.SensitiveDataType;
 import java.time.Instant;
 import java.time.LocalDateTime;
@@ -53,11 +54,12 @@ class MybatisPlusEventPlatformRepositoryTest {
 
     @Test
     void shouldPersistAndQueryTrackingEventsThroughMybatisPlusMapper() {
-        TrackingEvent event = new TrackingEvent(4001L, "product_view", 1, "event-1", "user-1",
-                "{\"skuId\":1001}", false, NOW, NOW);
+        TrackingEvent event =
+                new TrackingEvent(4001L, "product_view", 1, "event-1", "user-1", "{\"skuId\":1001}", false, NOW, NOW);
         TrackingEventEntity stored = trackingEventEntity(event);
         when(trackingEventMapper.selectCount(anyTrackingEventWrapper())).thenReturn(1L);
-        when(trackingEventMapper.selectList(anyTrackingEventWrapper())).thenReturn(List.of(stored));
+        when(trackingEventMapper.selectPage(anyTrackingEventPage(), anyTrackingEventWrapper()))
+                .thenReturn(pageOf(stored));
 
         repository.saveEvent(event);
         boolean exists = repository.eventExists("event-1");
@@ -76,17 +78,18 @@ class MybatisPlusEventPlatformRepositoryTest {
         EventFieldClassificationEntity classification = classificationEntity();
         MetricMaterializationEntity materialization = materializationEntity();
         when(schemaMapper.selectOne(anySchemaWrapper())).thenReturn(schema);
-        when(schemaMapper.selectList(isNull())).thenReturn(List.of(schema));
-        when(classificationMapper.selectList(anyClassificationWrapper())).thenReturn(List.of(classification));
-        when(materializationMapper.selectList(isNull())).thenReturn(List.of(materialization));
+        when(schemaMapper.selectPage(anySchemaPage(), isNull())).thenReturn(pageOf(schema));
+        when(classificationMapper.selectPage(anyClassificationPage(), anyClassificationWrapper()))
+                .thenReturn(pageOf(classification));
+        when(materializationMapper.selectPage(anyMaterializationPage(), isNull())).thenReturn(pageOf(materialization));
 
         assertThat(repository.findSchema("product_view", 1)).contains(new EventSchema(1001L, "product_view", 1,
                 "growth", "{\"type\":\"object\"}", SchemaStatus.ACTIVE, NOW, NOW));
         assertThat(repository.findSchemas()).hasSize(1);
         assertThat(repository.findFieldClassifications("product_view", 1)).containsExactly(new EventFieldClassification(
                 2001L, "product_view", 1, "mobile", SensitiveDataType.MOBILE, true, false, NOW));
-        assertThat(repository.findMaterializations()).containsExactly(
-                new MetricMaterialization(5001L, "product_view_count", "2026-01-01T00", 10L, 1L, NOW));
+        assertThat(repository.findMaterializations())
+                .containsExactly(new MetricMaterialization(5001L, "product_view_count", "2026-01-01T00", 10L, 1L, NOW));
     }
 
     private EventSchemaEntity eventSchemaEntity() {
@@ -142,6 +145,31 @@ class MybatisPlusEventPlatformRepositoryTest {
 
     private LocalDateTime toDatabaseTime(Instant instant) {
         return LocalDateTime.ofInstant(instant, ZoneOffset.UTC);
+    }
+
+    @SafeVarargs
+    private final <T> Page<T> pageOf(T... records) {
+        return new Page<T>().setRecords(List.of(records));
+    }
+
+    @SuppressWarnings("unchecked")
+    private Page<EventSchemaEntity> anySchemaPage() {
+        return any(Page.class);
+    }
+
+    @SuppressWarnings("unchecked")
+    private Page<EventFieldClassificationEntity> anyClassificationPage() {
+        return any(Page.class);
+    }
+
+    @SuppressWarnings("unchecked")
+    private Page<TrackingEventEntity> anyTrackingEventPage() {
+        return any(Page.class);
+    }
+
+    @SuppressWarnings("unchecked")
+    private Page<MetricMaterializationEntity> anyMaterializationPage() {
+        return any(Page.class);
     }
 
     @SuppressWarnings("unchecked")

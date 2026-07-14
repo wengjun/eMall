@@ -48,8 +48,8 @@ record FinanceAccount(@TableId(value = "account_id", type = IdType.INPUT) long a
 }
 
 @TableName("ledger_entry")
-record LedgerEntry(@TableId(value = "entry_id", type = IdType.INPUT) long entryId, long accountId,
-        String businessType, String businessNo, BigDecimal debitAmount, BigDecimal creditAmount, Instant createdAt) {
+record LedgerEntry(@TableId(value = "entry_id", type = IdType.INPUT) long entryId, long accountId, String businessType,
+        String businessNo, BigDecimal debitAmount, BigDecimal creditAmount, Instant createdAt) {
 }
 
 @TableName("settlement_batch")

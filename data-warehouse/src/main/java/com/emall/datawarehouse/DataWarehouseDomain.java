@@ -27,8 +27,7 @@ enum QualityAlertStatus {
 
 @TableName("dataset_definition")
 record DatasetDefinition(@TableId(value = "dataset_id", type = IdType.INPUT) long datasetId, WarehouseLayer layer,
-        String datasetName, String owner, String description, int retentionDays, Instant createdAt,
-        Instant updatedAt) {
+        String datasetName, String owner, String description, int retentionDays, Instant createdAt, Instant updatedAt) {
 }
 
 @TableName("table_partition")

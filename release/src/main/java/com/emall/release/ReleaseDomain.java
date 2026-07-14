@@ -78,10 +78,9 @@ record ReplayPlan(@TableId(value = "replay_id", type = IdType.INPUT) long replay
 
 @TableName("release_guard_record")
 record ReleaseGuardRecord(@TableId(value = "guard_id", type = IdType.INPUT) long guardId, long rolloutId,
-        String serviceName, ReleaseGuardStage stage,
-        ReleaseGuardDecision decision, Boolean sloPassed, Boolean alertsClear, Boolean capacityReady,
-        Boolean dependenciesHealthy, BigDecimal errorRate, @TableField("latency_p95_ms") Integer latencyP95Ms,
-        BigDecimal businessSuccessRate,
+        String serviceName, ReleaseGuardStage stage, ReleaseGuardDecision decision, Boolean sloPassed,
+        Boolean alertsClear, Boolean capacityReady, Boolean dependenciesHealthy, BigDecimal errorRate,
+        @TableField("latency_p95_ms") Integer latencyP95Ms, BigDecimal businessSuccessRate,
         Boolean compensationTriggered, Boolean messageReplayChecked, Boolean downstreamRecovered, String reason,
         Instant createdAt) {
 }

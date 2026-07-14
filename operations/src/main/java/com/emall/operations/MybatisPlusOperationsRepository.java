@@ -3,6 +3,7 @@ package com.emall.operations;
 import java.util.List;
 import java.util.Optional;
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
+import com.emall.common.persistence.BoundedQuery;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.stereotype.Repository;
 
@@ -38,7 +39,7 @@ class MybatisPlusOperationsRepository implements OperationsRepository {
 
     @Override
     public List<ApprovalRequest> findApprovals(ApprovalStatus status) {
-        return approvalMapper.selectList(
+        return BoundedQuery.firstPage(approvalMapper,
                 new QueryWrapper<ApprovalRequest>().eq("status", status).orderByDesc("updated_at"));
     }
 
@@ -55,10 +56,8 @@ class MybatisPlusOperationsRepository implements OperationsRepository {
 
     @Override
     public List<OperationTask> findTasks(TaskStatus status) {
-        return taskMapper.selectList(new QueryWrapper<OperationTask>()
-                .eq("status", status)
-                .orderByAsc("priority")
-                .orderByDesc("updated_at"));
+        return BoundedQuery.firstPage(taskMapper, new QueryWrapper<OperationTask>().eq("status", status)
+                .orderByAsc("priority").orderByDesc("updated_at"));
     }
 
     @Override
@@ -69,10 +68,8 @@ class MybatisPlusOperationsRepository implements OperationsRepository {
 
     @Override
     public List<ComplianceEvidence> findEvidence(String resourceType, String resourceId) {
-        return evidenceMapper.selectList(new QueryWrapper<ComplianceEvidence>()
-                .eq("resource_type", resourceType)
-                .eq("resource_id", resourceId)
-                .orderByDesc("created_at"));
+        return BoundedQuery.firstPage(evidenceMapper, new QueryWrapper<ComplianceEvidence>()
+                .eq("resource_type", resourceType).eq("resource_id", resourceId).orderByDesc("created_at"));
     }
 
     @Override

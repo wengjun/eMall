@@ -25,9 +25,8 @@ record DemandForecast(@TableId(value = "forecast_id", type = IdType.INPUT) long 
 }
 
 @TableName("replenishment_plan")
-record ReplenishmentPlan(@TableId(value = "plan_id", type = IdType.INPUT) long planId, long skuId,
-        String warehouseCode, int recommendedQuantity, ForecastRiskLevel priority, LocalDate planDate,
-        Instant createdAt) {
+record ReplenishmentPlan(@TableId(value = "plan_id", type = IdType.INPUT) long planId, long skuId, String warehouseCode,
+        int recommendedQuantity, ForecastRiskLevel priority, LocalDate planDate, Instant createdAt) {
 }
 
 @TableName("capacity_forecast")

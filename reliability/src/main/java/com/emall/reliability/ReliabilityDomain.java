@@ -24,9 +24,8 @@ record CapacityRehearsal(@TableId(value = "rehearsal_id", type = IdType.INPUT) l
 
 @TableName("slo_objective")
 record SloObjective(@TableId(value = "slo_id", type = IdType.INPUT) long sloId, String serviceName,
-        BigDecimal availabilityTarget,
-        @TableField("latency_p95_ms") int latencyP95Ms,
-        BigDecimal errorBudgetPercent, Instant createdAt) {
+        BigDecimal availabilityTarget, @TableField("latency_p95_ms") int latencyP95Ms, BigDecimal errorBudgetPercent,
+        Instant createdAt) {
 }
 
 @TableName("chaos_schedule")
@@ -40,8 +39,8 @@ record ChaosSchedule(@TableId(value = "chaos_id", type = IdType.INPUT) long chao
 
 @TableName("readiness_gate")
 record ReadinessGate(@TableId(value = "gate_id", type = IdType.INPUT) long gateId, String serviceName,
-        boolean runbookReady, boolean dashboardReady,
-        boolean rollbackReady, GateStatus status, Instant createdAt, Instant updatedAt) {
+        boolean runbookReady, boolean dashboardReady, boolean rollbackReady, GateStatus status, Instant createdAt,
+        Instant updatedAt) {
 }
 
 record ReliabilitySummary(int rehearsals, int approvedChaos, int blockedReadinessGates, int sloObjectives) {

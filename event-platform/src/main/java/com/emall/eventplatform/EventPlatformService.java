@@ -72,19 +72,17 @@ class EventPlatformService {
 
     @Transactional
     MetricMaterialization materializeMetric(String eventName, String metricName, String windowKey) {
-        long eventCount = repository.findEvents(normalize(eventName)).size();
-        long lateEventCount =
-                repository.findEvents(normalize(eventName)).stream().filter(TrackingEvent::lateEvent).count();
+        String normalizedEventName = normalize(eventName);
+        long eventCount = repository.countEvents(normalizedEventName, null);
+        long lateEventCount = repository.countEvents(normalizedEventName, true);
         return repository.saveMaterialization(new MetricMaterialization(idGenerator.nextId(), normalize(metricName),
                 normalize(windowKey), eventCount, lateEventCount, Instant.now()));
     }
 
     EventPlatformSummary summary() {
-        int activeSchemas = (int) repository.findSchemas().stream()
-                .filter(schema -> schema.status() == SchemaStatus.ACTIVE).count();
-        int lateEvents = (int) repository.findEvents().stream().filter(TrackingEvent::lateEvent).count();
-        return new EventPlatformSummary(activeSchemas, repository.findEvents().size(), lateEvents,
-                repository.findMaterializations().size(), repository.findFieldClassifications().size());
+        return new EventPlatformSummary(repository.countSchemas(SchemaStatus.ACTIVE),
+                repository.countEvents(null, null), repository.countEvents(null, true),
+                repository.countMaterializations(), repository.countFieldClassifications());
     }
 
     private EventSchema requireSchema(String eventName, int version) {

@@ -1,5 +1,6 @@
 package com.emall.platformops;
 
+import com.emall.common.persistence.BoundedQuery;
 import java.util.List;
 import java.util.Optional;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
@@ -37,7 +38,7 @@ class MybatisPlusPlatformOpsRepository implements PlatformOpsRepository {
 
     @Override
     public List<BackupPlan> findBackupPlans() {
-        return backupPlanMapper.selectList(null);
+        return BoundedQuery.firstPage(backupPlanMapper);
     }
 
     @Override
@@ -53,7 +54,7 @@ class MybatisPlusPlatformOpsRepository implements PlatformOpsRepository {
 
     @Override
     public List<DatabaseOperation> findDatabaseOperations() {
-        return databaseOperationMapper.selectList(null);
+        return BoundedQuery.firstPage(databaseOperationMapper);
     }
 
     @Override
@@ -69,7 +70,7 @@ class MybatisPlusPlatformOpsRepository implements PlatformOpsRepository {
 
     @Override
     public List<FinOpsAction> findFinOpsActions() {
-        return finOpsActionMapper.selectList(null);
+        return BoundedQuery.firstPage(finOpsActionMapper);
     }
 
     @Override
@@ -85,6 +86,6 @@ class MybatisPlusPlatformOpsRepository implements PlatformOpsRepository {
 
     @Override
     public List<SecurityOperation> findSecurityOperations() {
-        return securityOperationMapper.selectList(null);
+        return BoundedQuery.firstPage(securityOperationMapper);
     }
 }

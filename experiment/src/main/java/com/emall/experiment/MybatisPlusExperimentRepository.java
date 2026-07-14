@@ -1,6 +1,7 @@
 package com.emall.experiment;
 
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
+import com.emall.common.persistence.BoundedQuery;
 import java.util.List;
 import java.util.Optional;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
@@ -37,7 +38,7 @@ class MybatisPlusExperimentRepository implements ExperimentRepository {
     public List<ExperimentDefinition> findActiveByScene(String scene) {
         QueryWrapper<ExperimentDefinition> query = new QueryWrapper<ExperimentDefinition>().eq("scene", scene)
                 .eq("status", ExperimentStatus.ACTIVE.name()).orderByDesc("updated_at");
-        return definitionMapper.selectList(query);
+        return BoundedQuery.firstPage(definitionMapper, query);
     }
 
     @Override
@@ -48,7 +49,8 @@ class MybatisPlusExperimentRepository implements ExperimentRepository {
 
     @Override
     public List<GuardrailMetric> findGuardrails(long experimentId) {
-        return guardrailMapper.selectList(new QueryWrapper<GuardrailMetric>().eq("experiment_id", experimentId));
+        return BoundedQuery.firstPage(guardrailMapper,
+                new QueryWrapper<GuardrailMetric>().eq("experiment_id", experimentId));
     }
 
     @Override
@@ -59,6 +61,7 @@ class MybatisPlusExperimentRepository implements ExperimentRepository {
 
     @Override
     public List<ExperimentMetric> findMetrics(long experimentId) {
-        return metricMapper.selectList(new QueryWrapper<ExperimentMetric>().eq("experiment_id", experimentId));
+        return BoundedQuery.firstPage(metricMapper,
+                new QueryWrapper<ExperimentMetric>().eq("experiment_id", experimentId));
     }
 }

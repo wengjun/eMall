@@ -10,9 +10,13 @@ interface EventPlatformRepository {
 
     List<EventSchema> findSchemas();
 
+    long countSchemas(SchemaStatus status);
+
     EventFieldClassification saveFieldClassification(EventFieldClassification classification);
 
     List<EventFieldClassification> findFieldClassifications();
+
+    long countFieldClassifications();
 
     List<EventFieldClassification> findFieldClassifications(String eventName, int version);
 
@@ -24,9 +28,13 @@ interface EventPlatformRepository {
 
     List<TrackingEvent> findEvents();
 
+    long countEvents(String eventName, Boolean lateEvent);
+
     PipelineOffset saveOffset(PipelineOffset offset);
 
     MetricMaterialization saveMaterialization(MetricMaterialization materialization);
 
     List<MetricMaterialization> findMaterializations();
+
+    long countMaterializations();
 }
