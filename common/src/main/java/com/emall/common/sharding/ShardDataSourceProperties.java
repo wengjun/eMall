@@ -8,6 +8,9 @@ import org.springframework.boot.context.properties.ConfigurationProperties;
 public class ShardDataSourceProperties {
     private boolean enabled;
     private String defaultName;
+    private String jdbcUrlTemplate;
+    private String username;
+    private String password;
     private Map<String, DataSourceSpec> datasources = new LinkedHashMap<>();
 
     public boolean isEnabled() {
@@ -28,6 +31,30 @@ public class ShardDataSourceProperties {
 
     public Map<String, DataSourceSpec> getDatasources() {
         return datasources;
+    }
+
+    public String getJdbcUrlTemplate() {
+        return jdbcUrlTemplate;
+    }
+
+    public void setJdbcUrlTemplate(String jdbcUrlTemplate) {
+        this.jdbcUrlTemplate = jdbcUrlTemplate;
+    }
+
+    public String getUsername() {
+        return username;
+    }
+
+    public void setUsername(String username) {
+        this.username = username;
+    }
+
+    public String getPassword() {
+        return password;
+    }
+
+    public void setPassword(String password) {
+        this.password = password;
     }
 
     public void setDatasources(Map<String, DataSourceSpec> datasources) {

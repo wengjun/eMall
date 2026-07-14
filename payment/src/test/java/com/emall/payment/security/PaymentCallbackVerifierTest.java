@@ -9,14 +9,19 @@ import java.math.BigDecimal;
 import java.time.Clock;
 import java.time.Instant;
 import java.time.ZoneOffset;
+import java.util.Map;
 import org.junit.jupiter.api.Test;
 
 class PaymentCallbackVerifierTest {
     private static final Instant NOW = Instant.parse("2026-05-19T00:00:00Z");
 
     private final PaymentSecurityProperties properties = new PaymentSecurityProperties();
-    private final PaymentCallbackVerifier verifier =
-            new PaymentCallbackVerifier(properties, Clock.fixed(NOW, ZoneOffset.UTC));
+    private final PaymentCallbackVerifier verifier = newVerifier();
+
+    private PaymentCallbackVerifier newVerifier() {
+        properties.setCallbackSecrets(Map.of("default", "test-payment-callback-secret-32-bytes"));
+        return new PaymentCallbackVerifier(properties, Clock.fixed(NOW, ZoneOffset.UTC));
+    }
 
     @Test
     void shouldAcceptValidCallbackSignature() {

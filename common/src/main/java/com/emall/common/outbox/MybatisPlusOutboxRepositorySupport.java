@@ -5,6 +5,7 @@ import com.baomidou.mybatisplus.core.conditions.update.UpdateWrapper;
 import com.baomidou.mybatisplus.core.mapper.BaseMapper;
 import com.emall.common.event.OutboxEvent;
 import com.emall.common.event.OutboxStatus;
+import com.emall.common.persistence.BoundedQuery;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -80,7 +81,8 @@ public abstract class MybatisPlusOutboxRepositorySupport implements OutboxReposi
         LocalDateTime retryTime = databaseTime(now);
         return outboxEventMapper.update(null,
                 new UpdateWrapper<OutboxEventRecord>().set("next_retry_at", retryTime).set("updated_at", retryTime)
-                        .eq("status", OutboxStatus.FAILED.name()).orderByAsc("created_at").last("LIMIT " + limit));
+                        .eq("status", OutboxStatus.FAILED.name()).orderByAsc("created_at")
+                        .last("LIMIT " + BoundedQuery.limit(limit)));
     }
 
     private OutboxEventRecord toRecord(OutboxEvent event) {
@@ -130,10 +132,11 @@ public abstract class MybatisPlusOutboxRepositorySupport implements OutboxReposi
     }
 
     private QueryWrapper<OutboxEventRecord> publishableQuery(LocalDateTime currentTime, int limit) {
-        return new QueryWrapper<OutboxEventRecord>().and(wrapper -> wrapper
-                .in("status", OutboxStatus.NEW.name(), OutboxStatus.FAILED.name()).le("next_retry_at", currentTime).or()
-                .eq("status", OutboxStatus.PROCESSING.name()).le("claimed_until", currentTime))
-                .orderByAsc("shard_id", "created_at").last("LIMIT " + limit);
+        return new QueryWrapper<OutboxEventRecord>()
+                .and(wrapper -> wrapper.in("status", OutboxStatus.NEW.name(), OutboxStatus.FAILED.name())
+                        .le("next_retry_at", currentTime).or().eq("status", OutboxStatus.PROCESSING.name())
+                        .le("claimed_until", currentTime))
+                .orderByAsc("shard_id", "created_at").last("LIMIT " + BoundedQuery.limit(limit));
     }
 
     private LocalDateTime databaseTime(Instant instant) {

@@ -14,6 +14,7 @@ import com.emall.common.metrics.BusinessMetrics;
 import com.emall.common.outbox.OutboxRepository;
 import com.emall.common.region.OwnershipGuard;
 import com.emall.common.sharding.ShardRoutingOperations;
+import com.emall.common.sharding.ShardRouteIndex;
 import com.emall.inventory.domain.InventoryBucket;
 import com.emall.inventory.domain.InventoryItem;
 import com.emall.inventory.domain.InventoryReservation;
@@ -34,6 +35,7 @@ public class InventoryService {
     private final OutboxRepository outboxRepository;
     private final SnowflakeIdGenerator idGenerator;
     private final ShardRoutingOperations shardRoutingOperations;
+    private final ShardRouteIndex shardRouteIndex;
     private final OwnershipGuard ownershipGuard;
     private final BusinessMetrics businessMetrics;
     private final IdempotencyService idempotencyService;
@@ -41,17 +43,19 @@ public class InventoryService {
     public InventoryService(InventoryRepository inventoryRepository, OutboxRepository outboxRepository,
             SnowflakeIdGenerator idGenerator) {
         this(inventoryRepository, outboxRepository, idGenerator, ShardRoutingOperations.noop(), OwnershipGuard.noop(),
-                BusinessMetrics.noop(), localIdempotencyService());
+                BusinessMetrics.noop(), localIdempotencyService(), ShardRouteIndex.local());
     }
 
     @Autowired
     public InventoryService(InventoryRepository inventoryRepository, OutboxRepository outboxRepository,
             SnowflakeIdGenerator idGenerator, ShardRoutingOperations shardRoutingOperations,
-            OwnershipGuard ownershipGuard, BusinessMetrics businessMetrics, IdempotencyService idempotencyService) {
+            OwnershipGuard ownershipGuard, BusinessMetrics businessMetrics, IdempotencyService idempotencyService,
+            ShardRouteIndex shardRouteIndex) {
         this.inventoryRepository = inventoryRepository;
         this.outboxRepository = outboxRepository;
         this.idGenerator = idGenerator;
         this.shardRoutingOperations = shardRoutingOperations;
+        this.shardRouteIndex = shardRouteIndex;
         this.ownershipGuard = ownershipGuard;
         this.businessMetrics = businessMetrics;
         this.idempotencyService = idempotencyService;
@@ -113,18 +117,22 @@ public class InventoryService {
     public InventoryReservation reserve(String requestId, long skuId, int quantity) {
         IdempotencyKey key = IdempotencyKey.of("inventory", String.valueOf(skuId), requestId, "reserve");
         String requestDigest = idempotencyService.digest("skuId=" + skuId + ",quantity=" + quantity);
-        return IdempotencyExecutor.execute(idempotencyService, key, "InventoryReservation", String.valueOf(skuId),
-                requestDigest, () -> reserveIdempotent(requestId, skuId, quantity), ignored -> reservation(requestId),
-                reservation -> idempotencyService
-                        .digest("requestId=" + reservation.requestId() + ",status=" + reservation.status()));
+        return shardRoutingOperations.execute("inventory_item", skuId,
+                () -> IdempotencyExecutor.execute(idempotencyService, key, "InventoryReservation",
+                        String.valueOf(skuId), requestDigest, () -> reserveIdempotent(requestId, skuId, quantity),
+                        ignored -> reservation(requestId), reservation -> idempotencyService
+                                .digest("requestId=" + reservation.requestId() + ",status=" + reservation.status())));
     }
 
     private InventoryReservation reserveIdempotent(String requestId, long skuId, int quantity) {
         return shardRoutingOperations.execute("inventory_item", skuId, () -> {
             ownershipGuard.checkWrite("inventory", skuId);
-            return inventoryRepository.findReservation(requestId)
+            InventoryReservation reservation = inventoryRepository.findReservation(requestId)
                     .map(existing -> validateIdempotentReserve(existing, skuId, quantity))
                     .orElseGet(() -> reserveOnce(requestId, skuId, quantity));
+            shardRouteIndex.bindUniqueTransactional("inventory-reservation", reservation.requestId(),
+                    reservation.skuId());
+            return reservation;
         });
     }
 
@@ -239,6 +247,15 @@ public class InventoryService {
     }
 
     private InventoryReservation reservation(String requestId) {
+        var route = shardRouteIndex.resolve("inventory-reservation", requestId);
+        if (route.isPresent()) {
+            return shardRoutingOperations.execute("inventory_item", route.getAsLong(),
+                    () -> inventoryRepository.findReservation(requestId)
+                            .orElseThrow(() -> new BusinessException(ErrorCode.NOT_FOUND, "reservation not found")));
+        }
+        if (shardRoutingOperations.physicalShardCount("inventory_item") > 1) {
+            throw new BusinessException(ErrorCode.NOT_FOUND, "required inventory shard route does not exist");
+        }
         return inventoryRepository.findReservation(requestId)
                 .orElseThrow(() -> new BusinessException(ErrorCode.NOT_FOUND, "reservation not found"));
     }

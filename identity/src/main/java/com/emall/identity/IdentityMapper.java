@@ -3,6 +3,7 @@ package com.emall.identity;
 import org.apache.ibatis.annotations.Insert;
 import org.apache.ibatis.annotations.Mapper;
 import org.apache.ibatis.annotations.Param;
+import org.apache.ibatis.annotations.Update;
 
 @Mapper
 interface IdentityMapper {
@@ -26,6 +27,14 @@ interface IdentityMapper {
             ON DUPLICATE KEY UPDATE status = VALUES(status), updated_at = VALUES(updated_at)
             """)
     int saveSession(@Param("session") DeviceSession session);
+
+    @Update("""
+            UPDATE identity_device_session
+            SET status = 'REVOKED', updated_at = #{updatedAt}
+            WHERE session_id = #{sessionId} AND refresh_token = #{refreshToken} AND status = 'ACTIVE'
+            """)
+    int revokeSessionIfActive(@Param("sessionId") long sessionId, @Param("refreshToken") String refreshToken,
+            @Param("updatedAt") java.time.Instant updatedAt);
 
     @Insert("""
             INSERT INTO identity_service_client

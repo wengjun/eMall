@@ -3,8 +3,9 @@ package com.emall.identity;
 import com.emall.common.api.ApiResponse;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotBlank;
-import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Positive;
+import jakarta.validation.constraints.Size;
+import java.time.Instant;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PatchMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -25,17 +26,30 @@ class IdentityController {
 
     @PostMapping("/accounts")
     ApiResponse<IdentityAccount> createAccount(@Valid @RequestBody CreateAccountRequest request) {
-        return ApiResponse.ok(identityService.createAccount(request.type(), request.subject(), request.displayName()));
+        return ApiResponse.ok(identityService.createAccount(IdentityType.CUSTOMER, request.subject(),
+                request.displayName(), request.password()));
     }
 
     @PostMapping("/sessions")
     ApiResponse<AuthToken> login(@Valid @RequestBody LoginRequest request) {
-        return ApiResponse.ok(identityService.login(request.subject(), request.deviceId()));
+        return ApiResponse.ok(identityService.login(request.subject(), request.password(), request.deviceId()));
+    }
+
+    @PostMapping("/sessions/refresh")
+    ApiResponse<AuthToken> refresh(@Valid @RequestBody RefreshSessionRequest request) {
+        return ApiResponse.ok(identityService.refresh(request.refreshToken(), request.deviceId()));
+    }
+
+    @PostMapping("/service-sessions")
+    ApiResponse<AuthToken> authenticateServiceClient(@Valid @RequestBody ServiceSessionRequest request) {
+        return ApiResponse.ok(identityService.authenticateServiceClient(request.clientKey(), request.clientSecret()));
     }
 
     @PatchMapping("/sessions/{sessionId}/revoke")
-    ApiResponse<DeviceSession> revokeSession(@PathVariable long sessionId) {
-        return ApiResponse.ok(identityService.revokeSession(sessionId));
+    ApiResponse<SessionView> revokeSession(@PathVariable long sessionId) {
+        DeviceSession session = identityService.revokeSession(sessionId);
+        return ApiResponse.ok(new SessionView(session.sessionId(), session.accountId(), session.deviceId(),
+                session.status(), session.expiresAt(), session.updatedAt()));
     }
 
     @PostMapping("/sessions/validate")
@@ -57,9 +71,11 @@ class IdentityController {
     }
 
     @PostMapping("/service-clients")
-    ApiResponse<ServiceClient> registerServiceClient(@Valid @RequestBody RegisterServiceClientRequest request) {
-        return ApiResponse.ok(
-                identityService.registerServiceClient(request.clientKey(), request.clientSecret(), request.scopes()));
+    ApiResponse<ServiceClientView> registerServiceClient(@Valid @RequestBody RegisterServiceClientRequest request) {
+        ServiceClient client =
+                identityService.registerServiceClient(request.clientKey(), request.clientSecret(), request.scopes());
+        return ApiResponse.ok(new ServiceClientView(client.clientId(), client.clientKey(), client.scopes(),
+                client.active(), client.createdAt(), client.updatedAt()));
     }
 
     @PostMapping("/merchants/{merchantId}/sub-accounts")
@@ -69,10 +85,17 @@ class IdentityController {
                 .ok(identityService.createMerchantSubAccount(merchantId, request.accountId(), request.roleCode()));
     }
 
-    record CreateAccountRequest(@NotNull IdentityType type, @NotBlank String subject, @NotBlank String displayName) {
+    record CreateAccountRequest(@NotBlank String subject, @NotBlank String displayName,
+            @NotBlank @Size(min = 12, max = 128) String password) {
     }
 
-    record LoginRequest(@NotBlank String subject, @NotBlank String deviceId) {
+    record LoginRequest(@NotBlank String subject, @NotBlank String password, @NotBlank String deviceId) {
+    }
+
+    record RefreshSessionRequest(@NotBlank String refreshToken, @NotBlank String deviceId) {
+    }
+
+    record ServiceSessionRequest(@NotBlank String clientKey, @NotBlank String clientSecret) {
     }
 
     record ValidateSessionRequest(@NotBlank String accessToken, @NotBlank String scope, @NotBlank String resource) {
@@ -81,10 +104,18 @@ class IdentityController {
     record GrantPermissionRequest(@NotBlank String scope, @NotBlank String resource) {
     }
 
-    record RegisterServiceClientRequest(@NotBlank String clientKey, @NotBlank String clientSecret,
-            @NotBlank String scopes) {
+    record RegisterServiceClientRequest(@NotBlank String clientKey,
+            @NotBlank @Size(min = 12, max = 128) String clientSecret, @NotBlank String scopes) {
     }
 
     record CreateMerchantSubAccountRequest(@Positive long accountId, @NotBlank String roleCode) {
+    }
+
+    record SessionView(long sessionId, long accountId, String deviceId, SessionStatus status, Instant expiresAt,
+            Instant updatedAt) {
+    }
+
+    record ServiceClientView(long clientId, String clientKey, String scopes, boolean active, Instant createdAt,
+            Instant updatedAt) {
     }
 }

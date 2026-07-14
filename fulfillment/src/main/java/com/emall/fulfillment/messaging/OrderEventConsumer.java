@@ -12,7 +12,8 @@ import java.util.Map;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.kafka.annotation.KafkaListener;
 import org.springframework.stereotype.Component;
-import org.springframework.transaction.annotation.Transactional;
+import org.springframework.transaction.PlatformTransactionManager;
+import org.springframework.beans.factory.annotation.Autowired;
 
 @Component
 public class OrderEventConsumer {
@@ -24,13 +25,22 @@ public class OrderEventConsumer {
             ProcessedMessageRepository processedMessageRepository, BusinessMetrics businessMetrics,
             @Value("${emall.events.order-consumer-max-attempts:4}") int maxAttempts,
             @Value("${emall.fulfillment.default-warehouse-code}") String defaultWarehouseCode) {
+        this(objectMapper, fulfillmentService, processedMessageRepository, businessMetrics, maxAttempts,
+                defaultWarehouseCode, null);
+    }
+
+    @Autowired
+    public OrderEventConsumer(ObjectMapper objectMapper, FulfillmentService fulfillmentService,
+            ProcessedMessageRepository processedMessageRepository, BusinessMetrics businessMetrics,
+            @Value("${emall.events.order-consumer-max-attempts:4}") int maxAttempts,
+            @Value("${emall.fulfillment.default-warehouse-code}") String defaultWarehouseCode,
+            PlatformTransactionManager transactionManager) {
         this.fulfillmentService = fulfillmentService;
         this.consumerTemplate = new MessageConsumerTemplate(objectMapper, processedMessageRepository, businessMetrics,
-                maxAttempts, "fulfillment-order-consumer");
+                maxAttempts, "fulfillment-order-consumer", transactionManager);
         this.defaultWarehouseCode = defaultWarehouseCode;
     }
 
-    @Transactional
     @KafkaListener(topics = "${emall.events.order-topic}", groupId = "${spring.kafka.consumer.group-id}")
     public void onOrderEvent(String message) throws JsonProcessingException {
         consumerTemplate.consume(message, EventTypes.ORDER_PAID, this::allocate);

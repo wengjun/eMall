@@ -27,6 +27,11 @@ public class PaymentCallbackVerifier {
         if (!properties.isCallbackSignatureEnabled()) {
             return;
         }
+        if (command.channel() == null || command.channel().isBlank() || command.channelTradeNo() == null
+                || command.channelTradeNo().isBlank() || command.paymentId() <= 0 || command.paidAmount() == null
+                || command.paidAmount().signum() <= 0) {
+            throw new BusinessException(ErrorCode.FORBIDDEN, "payment callback identity and amount are invalid");
+        }
         if (command.timestamp() == null || command.nonce() == null || command.nonce().isBlank()
                 || command.signature() == null || command.signature().isBlank()) {
             throw new BusinessException(ErrorCode.FORBIDDEN, "payment callback signature is required");
@@ -45,15 +50,20 @@ public class PaymentCallbackVerifier {
 
     public String sign(String channel, String channelTradeNo, long paymentId, BigDecimal paidAmount, Instant timestamp,
             String nonce) {
-        return hmac(channel + "\n" + channelTradeNo + "\n" + paymentId + "\n"
-                + paidAmount.stripTrailingZeros().toPlainString() + "\n" + timestamp + "\n" + nonce);
+        String payload = channel + "\n" + channelTradeNo + "\n" + paymentId + "\n"
+                + paidAmount.stripTrailingZeros().toPlainString() + "\n" + timestamp + "\n" + nonce;
+        return hmac(channel, payload);
     }
 
-    private String hmac(String payload) {
+    private String hmac(String channel, String payload) {
+        String secret = properties.callbackSecret(channel);
+        if (secret == null || secret.getBytes(StandardCharsets.UTF_8).length < 32) {
+            throw new BusinessException(ErrorCode.FORBIDDEN,
+                    "payment callback secret is missing or shorter than 32 UTF-8 bytes");
+        }
         try {
             Mac mac = Mac.getInstance(HMAC_ALGORITHM);
-            mac.init(
-                    new SecretKeySpec(properties.getCallbackSecret().getBytes(StandardCharsets.UTF_8), HMAC_ALGORITHM));
+            mac.init(new SecretKeySpec(secret.getBytes(StandardCharsets.UTF_8), HMAC_ALGORITHM));
             return Base64.getUrlEncoder().withoutPadding()
                     .encodeToString(mac.doFinal(payload.getBytes(StandardCharsets.UTF_8)));
         } catch (Exception ex) {

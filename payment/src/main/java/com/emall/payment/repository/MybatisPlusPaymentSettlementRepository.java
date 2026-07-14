@@ -1,6 +1,7 @@
 package com.emall.payment.repository;
 
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
+import com.emall.common.persistence.BoundedQuery;
 import com.baomidou.mybatisplus.core.conditions.update.UpdateWrapper;
 import com.emall.payment.domain.PaymentChannelStatement;
 import com.emall.payment.domain.PaymentLedgerEntry;
@@ -65,6 +66,20 @@ public class MybatisPlusPaymentSettlementRepository implements PaymentSettlement
     }
 
     @Override
+    public Optional<PaymentRefundOrder> findRefundById(long refundId) {
+        return Optional.ofNullable(refundOrderMapper.selectById(refundId)).map(this::toRefundDomain);
+    }
+
+    @Override
+    public List<PaymentRefundOrder> findRefundsByStatus(PaymentRefundStatus status, int limit) {
+        int boundedLimit = Math.max(1, Math.min(limit, 1000));
+        return refundOrderMapper
+                .selectList(new QueryWrapper<PaymentRefundOrderEntity>().eq("status", status.name())
+                        .orderByAsc("updated_at").last("LIMIT " + boundedLimit))
+                .stream().map(this::toRefundDomain).toList();
+    }
+
+    @Override
     public PaymentLedgerEntry saveLedgerIfAbsent(PaymentLedgerEntry entry) {
         try {
             ledgerEntryMapper.insert(toEntity(entry));
@@ -84,8 +99,10 @@ public class MybatisPlusPaymentSettlementRepository implements PaymentSettlement
 
     @Override
     public List<PaymentChannelStatement> findUnreconciledStatements(int limit) {
-        return statementMapper.selectList(new QueryWrapper<PaymentChannelStatementEntity>().eq("reconciled", false)
-                .orderByAsc("occurred_at").last("LIMIT " + limit)).stream().map(this::toDomain).toList();
+        return statementMapper
+                .selectList(new QueryWrapper<PaymentChannelStatementEntity>().eq("reconciled", false)
+                        .orderByAsc("occurred_at").last("LIMIT " + BoundedQuery.limit(limit)))
+                .stream().map(this::toDomain).toList();
     }
 
     @Override

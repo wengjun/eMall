@@ -3,6 +3,7 @@ package com.emall.identity;
 import java.util.List;
 import java.util.Optional;
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
+import com.emall.common.persistence.BoundedQuery;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.stereotype.Repository;
 
@@ -12,16 +13,19 @@ class MybatisPlusIdentityRepository implements IdentityRepository {
     private final IdentityMapper identityMapper;
     private final IdentityAccountMapper accountMapper;
     private final DeviceSessionMapper sessionMapper;
+    private final IdentityCredentialMapper credentialMapper;
     private final PermissionGrantMapper grantMapper;
     private final ServiceClientMapper serviceClientMapper;
     private final MerchantSubAccountMapper subAccountMapper;
 
     MybatisPlusIdentityRepository(IdentityMapper identityMapper, IdentityAccountMapper accountMapper,
-            DeviceSessionMapper sessionMapper, PermissionGrantMapper grantMapper,
-            ServiceClientMapper serviceClientMapper, MerchantSubAccountMapper subAccountMapper) {
+            DeviceSessionMapper sessionMapper, IdentityCredentialMapper credentialMapper,
+            PermissionGrantMapper grantMapper, ServiceClientMapper serviceClientMapper,
+            MerchantSubAccountMapper subAccountMapper) {
         this.identityMapper = identityMapper;
         this.accountMapper = accountMapper;
         this.sessionMapper = sessionMapper;
+        this.credentialMapper = credentialMapper;
         this.grantMapper = grantMapper;
         this.serviceClientMapper = serviceClientMapper;
         this.subAccountMapper = subAccountMapper;
@@ -44,6 +48,32 @@ class MybatisPlusIdentityRepository implements IdentityRepository {
     }
 
     @Override
+    public IdentityCredential saveCredential(IdentityCredential credential) {
+        if (credentialMapper.selectById(credential.accountId()) == null) {
+            credentialMapper.insert(credential);
+        } else {
+            credentialMapper.updateById(credential);
+        }
+        return credential;
+    }
+
+    @Override
+    public Optional<IdentityCredential> findCredential(long accountId) {
+        return Optional.ofNullable(credentialMapper.selectById(accountId));
+    }
+
+    @Override
+    public void recordCredentialFailure(long accountId, java.time.Instant now, java.time.Instant lockedUntil,
+            int maximumAttempts) {
+        credentialMapper.recordFailure(accountId, now, lockedUntil, maximumAttempts);
+    }
+
+    @Override
+    public void clearCredentialFailures(long accountId, java.time.Instant now) {
+        credentialMapper.clearFailures(accountId, now);
+    }
+
+    @Override
     public DeviceSession saveSession(DeviceSession session) {
         identityMapper.saveSession(session);
         return session;
@@ -56,8 +86,19 @@ class MybatisPlusIdentityRepository implements IdentityRepository {
 
     @Override
     public Optional<DeviceSession> findSessionByAccessToken(String accessToken) {
+        return Optional
+                .ofNullable(sessionMapper.selectOne(new QueryWrapper<DeviceSession>().eq("access_token", accessToken)));
+    }
+
+    @Override
+    public Optional<DeviceSession> findSessionByRefreshToken(String refreshToken) {
         return Optional.ofNullable(
-                sessionMapper.selectOne(new QueryWrapper<DeviceSession>().eq("access_token", accessToken)));
+                sessionMapper.selectOne(new QueryWrapper<DeviceSession>().eq("refresh_token", refreshToken)));
+    }
+
+    @Override
+    public boolean revokeSessionIfActive(long sessionId, String refreshToken, java.time.Instant updatedAt) {
+        return identityMapper.revokeSessionIfActive(sessionId, refreshToken, updatedAt) == 1;
     }
 
     @Override
@@ -68,7 +109,7 @@ class MybatisPlusIdentityRepository implements IdentityRepository {
 
     @Override
     public List<PermissionGrant> findGrants(long accountId) {
-        return grantMapper.selectList(new QueryWrapper<PermissionGrant>().eq("account_id", accountId));
+        return BoundedQuery.firstPage(grantMapper, new QueryWrapper<PermissionGrant>().eq("account_id", accountId));
     }
 
     @Override
@@ -91,6 +132,7 @@ class MybatisPlusIdentityRepository implements IdentityRepository {
 
     @Override
     public List<MerchantSubAccount> findSubAccounts(long merchantId) {
-        return subAccountMapper.selectList(new QueryWrapper<MerchantSubAccount>().eq("merchant_id", merchantId));
+        return BoundedQuery.firstPage(subAccountMapper,
+                new QueryWrapper<MerchantSubAccount>().eq("merchant_id", merchantId));
     }
 }

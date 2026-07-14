@@ -4,6 +4,7 @@ import com.emall.common.event.OutboxEvent;
 import com.emall.common.metrics.BusinessMetricNames;
 import com.emall.common.metrics.BusinessMetrics;
 import com.emall.common.task.DistributedTaskLock;
+import com.emall.common.sharding.ShardRoutingOperations;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import java.time.Duration;
@@ -11,6 +12,8 @@ import java.time.Instant;
 import java.util.List;
 import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.atomic.AtomicInteger;
+import java.util.ArrayList;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.kafka.support.SendResult;
@@ -25,6 +28,9 @@ public abstract class OutboxPublisherSupport {
     private final String topic;
     private final String ownerId;
     private final BusinessMetrics businessMetrics;
+    private final ShardRoutingOperations shardRoutingOperations;
+    private final String scanLogicalTable;
+    private final AtomicInteger nextShard = new AtomicInteger();
     private final Duration claimLeaseTtl = Duration.ofSeconds(30);
     private final int maxRetryAttempts = 12;
 
@@ -36,6 +42,13 @@ public abstract class OutboxPublisherSupport {
     protected OutboxPublisherSupport(OutboxRepository outboxRepository, KafkaTemplate<String, String> kafkaTemplate,
             ObjectMapper objectMapper, String serviceName, String topic, DistributedTaskLock taskLock,
             BusinessMetrics businessMetrics) {
+        this(outboxRepository, kafkaTemplate, objectMapper, serviceName, topic, taskLock, businessMetrics,
+                ShardRoutingOperations.noop(), "outbox_event");
+    }
+
+    protected OutboxPublisherSupport(OutboxRepository outboxRepository, KafkaTemplate<String, String> kafkaTemplate,
+            ObjectMapper objectMapper, String serviceName, String topic, DistributedTaskLock taskLock,
+            BusinessMetrics businessMetrics, ShardRoutingOperations shardRoutingOperations, String scanLogicalTable) {
         this.log = LoggerFactory.getLogger(getClass());
         this.outboxRepository = outboxRepository;
         this.kafkaTemplate = kafkaTemplate;
@@ -44,6 +57,8 @@ public abstract class OutboxPublisherSupport {
         this.topic = topic;
         this.ownerId = serviceName + "-" + UUID.randomUUID();
         this.businessMetrics = businessMetrics;
+        this.shardRoutingOperations = shardRoutingOperations;
+        this.scanLogicalTable = scanLogicalTable;
     }
 
     protected void publishScheduledBatch() {
@@ -51,7 +66,8 @@ public abstract class OutboxPublisherSupport {
     }
 
     public int publishBatch(int limit) {
-        List<OutboxEvent> events = outboxRepository.claimPublishable(ownerId, Instant.now(), claimLeaseTtl, limit);
+        int boundedLimit = Math.max(1, Math.min(limit, 1000));
+        List<RoutedOutboxEvent> events = claimAcrossShards(boundedLimit);
         businessMetrics.increment(BusinessMetricNames.OUTBOX_CLAIMED, "service", serviceName, "topic", topic);
         businessMetrics.recordGauge("emall_outbox_claimed_batch_size", events.size(), "service", serviceName);
         List<CompletableFuture<Boolean>> futures = events.stream().map(this::publishOne).toList();
@@ -60,27 +76,46 @@ public abstract class OutboxPublisherSupport {
     }
 
     public int retryFailedNow(int limit) {
-        outboxRepository.rescheduleFailed(Instant.now(), limit);
+        shardRoutingOperations.executeAll(scanLogicalTable, () -> {
+            outboxRepository.rescheduleFailed(Instant.now(), Math.max(1, Math.min(limit, 1000)));
+            return 0;
+        });
         return publishBatch(limit);
     }
 
-    private CompletableFuture<Boolean> publishOne(OutboxEvent event) {
+    private List<RoutedOutboxEvent> claimAcrossShards(int limit) {
+        int shardCount = shardRoutingOperations.physicalShardCount(scanLogicalTable);
+        int shardsToScan = Math.min(shardCount, 8);
+        int perShardLimit = Math.max(1, (int) Math.ceil((double) limit / shardsToScan));
+        List<RoutedOutboxEvent> claimed = new ArrayList<>(limit);
+        for (int offset = 0; offset < shardsToScan && claimed.size() < limit; offset++) {
+            int shardIndex = Math.floorMod(nextShard.getAndIncrement(), shardCount);
+            List<OutboxEvent> events = shardRoutingOperations.executePhysicalShard(scanLogicalTable, shardIndex,
+                    () -> outboxRepository.claimPublishable(ownerId, Instant.now(), claimLeaseTtl, perShardLimit));
+            events.stream().limit(limit - claimed.size()).map(event -> new RoutedOutboxEvent(shardIndex, event))
+                    .forEach(claimed::add);
+        }
+        return List.copyOf(claimed);
+    }
+
+    private CompletableFuture<Boolean> publishOne(RoutedOutboxEvent routedEvent) {
+        OutboxEvent event = routedEvent.event();
         try {
             CompletableFuture<SendResult<String, String>> send =
                     kafkaTemplate.send(topic, event.aggregateId(), serialize(event));
             return send.thenApply(result -> {
                 log.info("publish {} outbox event type={} aggregateType={} aggregateId={}", serviceName,
                         event.eventType(), event.aggregateType(), event.aggregateId());
-                outboxRepository.save(event.published());
+                saveInOriginShard(routedEvent.shardIndex(), event.published());
                 businessMetrics.increment(BusinessMetricNames.OUTBOX_PUBLISHED, "service", serviceName, "topic", topic);
                 return true;
             }).exceptionally(error -> {
-                outboxRepository.save(failedEvent(event, error));
+                saveInOriginShard(routedEvent.shardIndex(), failedEvent(event, error));
                 businessMetrics.increment(BusinessMetricNames.OUTBOX_FAILED, "service", serviceName, "topic", topic);
                 return false;
             });
         } catch (JsonProcessingException ex) {
-            outboxRepository.save(failedEvent(event, ex));
+            saveInOriginShard(routedEvent.shardIndex(), failedEvent(event, ex));
             businessMetrics.increment(BusinessMetricNames.OUTBOX_FAILED, "service", serviceName, "topic", topic);
             return CompletableFuture.completedFuture(false);
         }
@@ -106,5 +141,15 @@ public abstract class OutboxPublisherSupport {
 
     private String serialize(OutboxEvent event) throws JsonProcessingException {
         return objectMapper.writeValueAsString(event);
+    }
+
+    private void saveInOriginShard(int shardIndex, OutboxEvent event) {
+        shardRoutingOperations.executePhysicalShard(scanLogicalTable, shardIndex, () -> {
+            outboxRepository.save(event);
+            return null;
+        });
+    }
+
+    private record RoutedOutboxEvent(int shardIndex, OutboxEvent event) {
     }
 }

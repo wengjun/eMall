@@ -30,8 +30,9 @@ public final class HashModShardRouter {
     public ShardRoute route(long shardKey) {
         int databaseIndex = Math.floorMod(shardKey, databaseShardCount);
         int tableIndex = Math.floorMod(Math.floorDiv(shardKey, databaseShardCount), tableShardCount);
-        return new ShardRoute(format(databasePrefix, databaseIndex), format(tablePrefix, tableIndex), databaseIndex,
-                tableIndex);
+        String databaseName = databaseShardCount == 1 ? databasePrefix : format(databasePrefix, databaseIndex);
+        String tableName = tableShardCount == 1 ? tablePrefix : format(tablePrefix, tableIndex);
+        return new ShardRoute(databaseName, tableName, databaseIndex, tableIndex);
     }
 
     public ShardRoute route(String shardKey) {

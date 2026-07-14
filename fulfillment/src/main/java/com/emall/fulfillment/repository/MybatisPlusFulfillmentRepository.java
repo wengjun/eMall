@@ -1,6 +1,7 @@
 package com.emall.fulfillment.repository;
 
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
+import com.emall.common.persistence.BoundedQuery;
 import com.baomidou.mybatisplus.core.conditions.update.UpdateWrapper;
 import com.emall.fulfillment.domain.CarrierRoute;
 import com.emall.fulfillment.domain.FulfillmentOrder;
@@ -82,8 +83,9 @@ public class MybatisPlusFulfillmentRepository implements FulfillmentRepository {
 
     @Override
     public List<WarehouseNode> findEnabledWarehouses() {
-        return warehouseMapper.selectList(new QueryWrapper<FulfillmentWarehouseEntity>().eq("enabled", true)
-                .orderByAsc("region_code", "priority", "warehouse_code")).stream().map(this::toDomain).toList();
+        return BoundedQuery.firstPage(warehouseMapper, new QueryWrapper<FulfillmentWarehouseEntity>()
+                .eq("enabled", true).orderByAsc("region_code", "priority", "warehouse_code")).stream()
+                .map(this::toDomain).toList();
     }
 
     @Override
@@ -110,10 +112,11 @@ public class MybatisPlusFulfillmentRepository implements FulfillmentRepository {
 
     @Override
     public List<CarrierRoute> findActiveCarrierRoutes(String originWarehouseCode, String destinationRegionCode) {
-        return carrierRouteMapper.selectList(new QueryWrapper<FulfillmentCarrierRouteEntity>()
-                .eq("origin_warehouse_code", originWarehouseCode).eq("destination_region_code", destinationRegionCode)
-                .eq("active", true).orderByAsc("priority", "base_cost", "route_id")).stream().map(this::toDomain)
-                .toList();
+        return BoundedQuery.firstPage(carrierRouteMapper,
+                new QueryWrapper<FulfillmentCarrierRouteEntity>().eq("origin_warehouse_code", originWarehouseCode)
+                        .eq("destination_region_code", destinationRegionCode).eq("active", true)
+                        .orderByAsc("priority", "base_cost", "route_id"))
+                .stream().map(this::toDomain).toList();
     }
 
     @Override
@@ -132,9 +135,10 @@ public class MybatisPlusFulfillmentRepository implements FulfillmentRepository {
 
     @Override
     public List<TrackingEvent> findTrackingEvents(long fulfillmentId) {
-        return trackingEventMapper.selectList(new QueryWrapper<FulfillmentTrackingEventEntity>()
-                .eq("fulfillment_id", fulfillmentId).orderByAsc("event_time", "event_id")).stream().map(this::toDomain)
-                .toList();
+        return BoundedQuery
+                .firstPage(trackingEventMapper, new QueryWrapper<FulfillmentTrackingEventEntity>()
+                        .eq("fulfillment_id", fulfillmentId).orderByAsc("event_time", "event_id"))
+                .stream().map(this::toDomain).toList();
     }
 
     private FulfillmentOrderEntity toEntity(FulfillmentOrder order) {

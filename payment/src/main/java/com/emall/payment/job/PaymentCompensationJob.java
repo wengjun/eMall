@@ -42,4 +42,21 @@ public class PaymentCompensationJob {
         return taskLock.executeIfAcquired("payment.reconciliation.channel-statements", LOCK_TTL,
                 () -> paymentService.reconcileChannelStatements(limit));
     }
+
+    @Scheduled(fixedDelay = 10000)
+    public void refreshProcessingRefunds() {
+        taskLock.executeIfAcquired("payment.compensation.refresh-processing-refunds", LOCK_TTL,
+                () -> processRefunds(100));
+    }
+
+    public int processRefunds(int limit) {
+        int submitted = paymentService.findCreatedRefunds(limit).stream()
+                .map(refund -> paymentService.submitRefund(refund.refundId())).toList().size();
+        int remaining = Math.max(0, limit - submitted);
+        int refreshed = remaining == 0
+                ? 0
+                : paymentService.findProcessingRefunds(remaining).stream()
+                        .map(refund -> paymentService.refreshRefund(refund.refundId())).toList().size();
+        return submitted + refreshed;
+    }
 }

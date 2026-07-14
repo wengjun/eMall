@@ -9,6 +9,8 @@ import com.emall.common.id.SnowflakeIdGenerator;
 import com.emall.common.idempotency.IdempotencyService;
 import com.emall.common.idempotency.InMemoryIdempotencyRepository;
 import com.emall.common.metrics.BusinessMetrics;
+import com.emall.common.sharding.ShardRouteIndex;
+import com.emall.common.sharding.ShardRoutingOperations;
 import com.emall.common.trust.IdentityAccessGuard;
 import com.emall.common.trust.RiskGuard;
 import com.emall.flashsale.domain.CampaignStatus;
@@ -86,12 +88,15 @@ class FlashSaleServiceTest {
     void compensatesRuntimeAndDatabaseStateWhenOrderOutboxAppendFails() {
         InMemoryFlashSaleRepository failingRepository = new InMemoryFlashSaleRepository();
         FailingOnceOutboxRepository outboxRepository = new FailingOnceOutboxRepository();
-        FlashSaleService failingService = new FlashSaleService(failingRepository, new SnowflakeIdGenerator(13L),
-                new InMemoryFlashSaleRuntimeStore(), new FlashSaleTokenSigner("local-dev-flash-sale-token-secret"),
-                new NoopFlashSaleOrderQueuePublisher(), outboxRepository, BusinessMetrics.noop(),
-                IdentityAccessGuard.noop(), RiskGuard.noop(),
-                new IdempotencyService(new InMemoryIdempotencyRepository(), Clock.systemUTC(), Duration.ofSeconds(30),
-                        Duration.ofDays(1)));
+        FlashSaleService failingService =
+                new FlashSaleService(failingRepository, new SnowflakeIdGenerator(13L),
+                        new InMemoryFlashSaleRuntimeStore(),
+                        new FlashSaleTokenSigner("local-dev-flash-sale-token-secret"),
+                        new NoopFlashSaleOrderQueuePublisher(), outboxRepository, BusinessMetrics.noop(),
+                        IdentityAccessGuard.noop(), RiskGuard.noop(),
+                        new IdempotencyService(new InMemoryIdempotencyRepository(), Clock.systemUTC(),
+                                Duration.ofSeconds(30), Duration.ofDays(1)),
+                        ShardRoutingOperations.noop(), ShardRouteIndex.local());
         Instant now = Instant.now();
         FlashSaleCampaign campaign = failingService.createCampaign(3001L, "launch sale",
                 now.minus(1, ChronoUnit.MINUTES), now.plus(1, ChronoUnit.HOURS), 2, 60, 10);

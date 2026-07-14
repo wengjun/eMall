@@ -9,7 +9,8 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.kafka.annotation.KafkaListener;
 import org.springframework.stereotype.Component;
-import org.springframework.transaction.annotation.Transactional;
+import org.springframework.transaction.PlatformTransactionManager;
+import org.springframework.beans.factory.annotation.Autowired;
 
 @Component
 class BusinessEventConsumer {
@@ -20,13 +21,20 @@ class BusinessEventConsumer {
     BusinessEventConsumer(ObjectMapper objectMapper, DataWarehouseService dataWarehouseService,
             BusinessMetrics businessMetrics, ProcessedMessageRepository processedMessageRepository,
             @Value("${emall.events.business-consumer-max-attempts:4}") int maxAttempts) {
+        this(objectMapper, dataWarehouseService, businessMetrics, processedMessageRepository, maxAttempts, null);
+    }
+
+    @Autowired
+    BusinessEventConsumer(ObjectMapper objectMapper, DataWarehouseService dataWarehouseService,
+            BusinessMetrics businessMetrics, ProcessedMessageRepository processedMessageRepository,
+            @Value("${emall.events.business-consumer-max-attempts:4}") int maxAttempts,
+            PlatformTransactionManager transactionManager) {
         this.objectMapper = objectMapper;
         this.dataWarehouseService = dataWarehouseService;
         this.consumerTemplate = new MessageConsumerTemplate(objectMapper, processedMessageRepository, businessMetrics,
-                maxAttempts, "data-warehouse-business-event-consumer");
+                maxAttempts, "data-warehouse-business-event-consumer", transactionManager);
     }
 
-    @Transactional
     @KafkaListener(
             topics = {"${emall.events.order-topic:emall.order.events}",
                     "${emall.events.payment-topic:emall.payment.events}",

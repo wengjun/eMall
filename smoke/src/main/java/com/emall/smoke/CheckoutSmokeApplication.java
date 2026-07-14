@@ -18,39 +18,53 @@ public final class CheckoutSmokeApplication {
 
     private final HttpClient httpClient;
     private final String baseUrl;
+    private final String setupAccessToken;
 
-    private CheckoutSmokeApplication(String baseUrl) {
+    CheckoutSmokeApplication(String baseUrl, String setupAccessToken) {
         this.baseUrl = trimTrailingSlash(baseUrl);
+        this.setupAccessToken = setupAccessToken;
         this.httpClient = HttpClient.newBuilder().connectTimeout(Duration.ofSeconds(5)).build();
     }
 
     public static void main(String[] args) throws Exception {
         String baseUrl =
                 args.length > 0 ? args[0] : System.getenv().getOrDefault("EMALL_BASE_URL", "http://localhost:8080");
-        new CheckoutSmokeApplication(baseUrl).run();
+        String setupAccessToken = System.getenv().getOrDefault("EMALL_SMOKE_SETUP_ACCESS_TOKEN", "");
+        new CheckoutSmokeApplication(baseUrl, setupAccessToken).run();
     }
 
-    private void run() throws IOException, InterruptedException {
+    void run() throws IOException, InterruptedException {
         String suffix = String.valueOf(System.currentTimeMillis());
         String mobile = "155" + suffix.substring(suffix.length() - 8);
+        String password = "SmokeCheckout!" + suffix;
 
-        JsonNode user = post("/api/users", Map.of("mobile", mobile, "nickname", "smoke"));
+        post("/api/identity/accounts", Map.of("subject", mobile, "displayName", "smoke", "password", password), null);
+        JsonNode session = post("/api/identity/sessions",
+                Map.of("subject", mobile, "password", password, "deviceId", "java-smoke"), null);
+        String shopperAccessToken = session.path("data").path("accessToken").asText();
+        if (shopperAccessToken.isBlank()) {
+            throw new IllegalStateException("Identity login did not return an access token");
+        }
+
+        JsonNode user = post("/api/users", Map.of("mobile", mobile, "nickname", "smoke"), shopperAccessToken);
 
         post("/api/prices", Map.of("skuId", 10001L, "listPrice", BigDecimal.valueOf(3999, 0), "salePrice",
-                BigDecimal.valueOf(3799, 0), "currency", "CNY", "active", true));
+                BigDecimal.valueOf(3799, 0), "currency", "CNY", "active", true), setupAccessToken);
 
-        post("/api/inventory/10001/stock", Map.of("quantity", 10));
+        post("/api/inventory/10001/stock", Map.of("quantity", 10), setupAccessToken);
 
         JsonNode order = post("/api/orders",
                 Map.of("requestId", "smoke-order-" + suffix, "userId", user.path("data").path("userId").asLong(),
                         "skuId", 10001L, "quantity", 1, "clientType", "WEB", "deviceId", "java-smoke", "channel",
-                        "web-smoke"));
+                        "web-smoke"),
+                shopperAccessToken);
         BigDecimal payableAmount = order.path("data").path("payableAmount").decimalValue();
 
         JsonNode payment = post("/api/payments",
                 Map.of("requestId", "smoke-payment-" + suffix, "orderId", order.path("data").path("orderId").asLong(),
                         "userId", user.path("data").path("userId").asLong(), "amount", payableAmount, "channel",
-                        "mock"));
+                        "mock"),
+                shopperAccessToken);
 
         long paymentId = payment.path("data").path("paymentId").asLong();
         String channelTradeNo = "trade-" + suffix;
@@ -60,7 +74,8 @@ public final class CheckoutSmokeApplication {
                 callbackTimestamp, callbackNonce);
         JsonNode callback = post("/api/payments/" + paymentId + "/callbacks",
                 Map.of("channel", "mock", "channelTradeNo", channelTradeNo, "paidAmount", payableAmount, "timestamp",
-                        callbackTimestamp, "nonce", callbackNonce, "signature", signature));
+                        callbackTimestamp, "nonce", callbackNonce, "signature", signature),
+                null);
 
         String status = callback.path("data").path("status").asText();
         if (!"SUCCEEDED".equals(status)) {
@@ -74,11 +89,13 @@ public final class CheckoutSmokeApplication {
                 fulfillment.path("data").path("fulfillmentId").asLong());
     }
 
-    private JsonNode post(String path, Object body) throws IOException, InterruptedException {
-        HttpRequest request = HttpRequest.newBuilder(URI.create(baseUrl + path)).timeout(Duration.ofSeconds(10))
+    private JsonNode post(String path, Object body, String accessToken) throws IOException, InterruptedException {
+        HttpRequest.Builder builder = HttpRequest.newBuilder(URI.create(baseUrl + path)).timeout(Duration.ofSeconds(10))
                 .header("Content-Type", "application/json").header("X-Device-Id", "java-smoke")
-                .header("X-Client-Channel", "web-smoke")
-                .POST(HttpRequest.BodyPublishers.ofString(OBJECT_MAPPER.writeValueAsString(body))).build();
+                .header("X-Client-Channel", "web-smoke");
+        authorize(builder, accessToken);
+        HttpRequest request =
+                builder.POST(HttpRequest.BodyPublishers.ofString(OBJECT_MAPPER.writeValueAsString(body))).build();
         HttpResponse<String> response = httpClient.send(request, HttpResponse.BodyHandlers.ofString());
         if (response.statusCode() < 200 || response.statusCode() >= 300) {
             throw new IllegalStateException(
@@ -94,8 +111,10 @@ public final class CheckoutSmokeApplication {
     private JsonNode awaitFulfillment(long orderId) throws IOException, InterruptedException {
         String path = "/api/fulfillment/orders/by-order/" + orderId;
         for (int attempt = 0; attempt < 20; attempt++) {
-            HttpRequest request =
-                    HttpRequest.newBuilder(URI.create(baseUrl + path)).timeout(Duration.ofSeconds(10)).GET().build();
+            HttpRequest.Builder builder =
+                    HttpRequest.newBuilder(URI.create(baseUrl + path)).timeout(Duration.ofSeconds(10));
+            authorize(builder, setupAccessToken);
+            HttpRequest request = builder.GET().build();
             HttpResponse<String> response = httpClient.send(request, HttpResponse.BodyHandlers.ofString());
             if (response.statusCode() == 200) {
                 JsonNode json = OBJECT_MAPPER.readTree(response.body());
@@ -106,6 +125,12 @@ public final class CheckoutSmokeApplication {
             Thread.sleep(500);
         }
         throw new IllegalStateException("fulfillment order was not created for order " + orderId);
+    }
+
+    private static void authorize(HttpRequest.Builder builder, String accessToken) {
+        if (accessToken != null && !accessToken.isBlank()) {
+            builder.header("Authorization", "Bearer " + accessToken);
+        }
     }
 
     private static String trimTrailingSlash(String value) {

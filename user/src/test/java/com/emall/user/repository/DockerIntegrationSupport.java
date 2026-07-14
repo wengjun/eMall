@@ -28,6 +28,9 @@ final class DockerIntegrationSupport {
                 current = checkDockerWithTimeout();
                 dockerAvailable = current;
             }
+            if (!current && Boolean.getBoolean("emall.integration.require-docker")) {
+                throw new IllegalStateException("Docker is required for production integration tests");
+            }
             return current;
         }
     }

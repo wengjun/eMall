@@ -4,6 +4,7 @@ import com.emall.aftersales.domain.AfterSalesRequest;
 import com.emall.aftersales.domain.AfterSalesType;
 import com.emall.aftersales.service.AfterSalesService;
 import com.emall.common.api.ApiResponse;
+import com.emall.common.security.AuthorizationGuard;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.DecimalMin;
 import jakarta.validation.constraints.NotBlank;
@@ -11,6 +12,7 @@ import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Positive;
 import java.math.BigDecimal;
 import org.springframework.http.HttpStatus;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -23,40 +25,54 @@ import org.springframework.web.bind.annotation.RestController;
 @RequestMapping("/api/after-sales")
 public class AfterSalesController {
     private final AfterSalesService afterSalesService;
+    private final AuthorizationGuard authorizationGuard;
 
     public AfterSalesController(AfterSalesService afterSalesService) {
+        this(afterSalesService, AuthorizationGuard.noop());
+    }
+
+    @Autowired
+    public AfterSalesController(AfterSalesService afterSalesService, AuthorizationGuard authorizationGuard) {
         this.afterSalesService = afterSalesService;
+        this.authorizationGuard = authorizationGuard;
     }
 
     @PostMapping
     @ResponseStatus(HttpStatus.CREATED)
     public ApiResponse<AfterSalesRequest> create(@Valid @RequestBody CreateAfterSalesRequest request) {
+        authorizationGuard.requireOwnerOrOperator(request.userId());
         return ApiResponse.ok(afterSalesService.create(request.orderId(), request.userId(), request.skuId(),
                 request.quantity(), request.refundAmount(), request.type(), request.reason()));
     }
 
     @GetMapping("/{requestId}")
     public ApiResponse<AfterSalesRequest> get(@PathVariable long requestId) {
-        return ApiResponse.ok(afterSalesService.get(requestId));
+        AfterSalesRequest request = afterSalesService.get(requestId);
+        authorizationGuard.requireOwnerOrOperator(request.userId());
+        return ApiResponse.ok(request);
     }
 
     @PostMapping("/{requestId}/approve")
     public ApiResponse<AfterSalesRequest> approve(@PathVariable long requestId) {
+        authorizationGuard.requireOperator();
         return ApiResponse.ok(afterSalesService.approve(requestId));
     }
 
     @PostMapping("/{requestId}/reject")
     public ApiResponse<AfterSalesRequest> reject(@PathVariable long requestId) {
+        authorizationGuard.requireOperator();
         return ApiResponse.ok(afterSalesService.reject(requestId));
     }
 
     @PostMapping("/{requestId}/receive")
     public ApiResponse<AfterSalesRequest> receive(@PathVariable long requestId) {
+        authorizationGuard.requireOperator();
         return ApiResponse.ok(afterSalesService.receive(requestId));
     }
 
     @PostMapping("/{requestId}/refund")
     public ApiResponse<AfterSalesRequest> refund(@PathVariable long requestId) {
+        authorizationGuard.requireServiceOrOperator();
         return ApiResponse.ok(afterSalesService.refund(requestId));
     }
 

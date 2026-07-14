@@ -1,13 +1,14 @@
 package com.emall.identity;
 
-import com.emall.common.id.SnowflakeIdGenerator;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
+import org.springframework.security.crypto.password.PasswordEncoder;
 
 @Configuration
 class IdentityConfig {
     @Bean
-    SnowflakeIdGenerator identityIdGenerator() {
-        return new SnowflakeIdGenerator(151L);
+    PasswordEncoder identityPasswordEncoder() {
+        return new BCryptPasswordEncoder(12);
     }
 }

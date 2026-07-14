@@ -53,7 +53,8 @@ class MybatisPlusProcessedMessageRepositorySupportTest {
     void shouldIncrementRetryCountWhenMarkingFailed() {
         ProcessedMessageRecord current = new ProcessedMessageRecord();
         current.setMessageId("message-1");
-        current.setRetryCount(2);
+        current.setRetryCount(3);
+        when(mapper.update(isNull(), anyWrapper())).thenReturn(1);
         when(mapper.selectById("message-1")).thenReturn(current);
 
         int retryCount = repository.markFailed("message-1", "IllegalStateException", "failed");

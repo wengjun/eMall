@@ -1,6 +1,7 @@
 package com.emall.flashsale.repository;
 
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
+import com.emall.common.persistence.BoundedQuery;
 import com.baomidou.mybatisplus.core.conditions.update.UpdateWrapper;
 import com.emall.flashsale.domain.CampaignStatus;
 import com.emall.flashsale.domain.FlashSaleCampaign;
@@ -190,7 +191,8 @@ public class MybatisPlusFlashSaleRepository implements FlashSaleRepository {
     public List<FlashSaleOrderRequest> findQueuedRequests(long campaignId, int limit) {
         return orderRequestMapper.selectList(new QueryWrapper<FlashSaleOrderRequestEntity>()
                 .eq("campaign_id", campaignId).eq("status", FlashSaleRequestStatus.QUEUED.name())
-                .orderByAsc("created_at", "request_id").last("LIMIT " + limit)).stream().map(this::toDomain).toList();
+                .orderByAsc("created_at", "request_id").last("LIMIT " + BoundedQuery.limit(limit))).stream()
+                .map(this::toDomain).toList();
     }
 
     @Override

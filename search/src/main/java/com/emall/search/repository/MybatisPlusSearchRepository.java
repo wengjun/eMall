@@ -1,6 +1,7 @@
 package com.emall.search.repository;
 
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
+import com.emall.common.persistence.BoundedQuery;
 import com.baomidou.mybatisplus.core.conditions.update.UpdateWrapper;
 import com.emall.search.domain.SearchDocument;
 import java.time.LocalDateTime;
@@ -51,7 +52,7 @@ public class MybatisPlusSearchRepository implements SearchRepository {
                 .selectList(new QueryWrapper<SearchDocumentEntity>().eq("saleable", true)
                         .and(query -> query.like("title", pattern).or().like("category", pattern).or().like("tags",
                                 pattern))
-                        .orderByDesc("indexed_at").last("LIMIT " + limit))
+                        .orderByDesc("indexed_at").last("LIMIT " + BoundedQuery.limit(limit)))
                 .stream().map(this::toDomain).toList();
     }
 

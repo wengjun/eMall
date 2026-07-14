@@ -1,6 +1,7 @@
 package com.emall.order.repository;
 
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
+import com.emall.common.persistence.BoundedQuery;
 import com.baomidou.mybatisplus.core.conditions.update.UpdateWrapper;
 import com.emall.order.domain.Order;
 import com.emall.order.domain.OrderClientContext;
@@ -97,7 +98,8 @@ public class MybatisPlusOrderRepository implements OrderRepository {
     @Override
     public List<Order> findByStatus(OrderStatus status, int limit) {
         return orderMapper.selectList(new QueryWrapper<OrderEntity>().eq("status", status.name())
-                .orderByAsc("updated_at").last("LIMIT " + limit)).stream().map(this::toDomain).toList();
+                .orderByAsc("updated_at").last("LIMIT " + BoundedQuery.limit(limit))).stream().map(this::toDomain)
+                .toList();
     }
 
     private OrderEntity toEntity(Order order) {

@@ -3,6 +3,7 @@ package com.emall.payment.api;
 import com.emall.common.api.ApiResponse;
 import com.emall.common.privacy.SensitiveDataMasker;
 import com.emall.common.privacy.SensitiveDataType;
+import com.emall.common.security.AuthorizationGuard;
 import com.emall.common.trust.ClientTrustContext;
 import com.emall.payment.domain.PaymentOrder;
 import com.emall.payment.domain.PaymentStatus;
@@ -16,6 +17,7 @@ import jakarta.validation.constraints.Positive;
 import java.math.BigDecimal;
 import java.time.Instant;
 import org.springframework.http.HttpStatus;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -29,28 +31,38 @@ import org.springframework.web.bind.annotation.RestController;
 @RequestMapping("/api/payments")
 public class PaymentController {
     private final PaymentService paymentService;
+    private final AuthorizationGuard authorizationGuard;
 
     public PaymentController(PaymentService paymentService) {
+        this(paymentService, AuthorizationGuard.noop());
+    }
+
+    @Autowired
+    public PaymentController(PaymentService paymentService, AuthorizationGuard authorizationGuard) {
         this.paymentService = paymentService;
+        this.authorizationGuard = authorizationGuard;
     }
 
     @PostMapping
     @ResponseStatus(HttpStatus.CREATED)
     public ApiResponse<PaymentOrderResponse> create(@Valid @RequestBody CreatePaymentRequest request,
             @RequestHeader(value = "Authorization", required = false) String authorization,
-            @RequestHeader(value = "X-Account-Id", required = false) Long accountId,
             @RequestHeader(value = "X-Device-Id", required = false) String deviceId,
             @RequestHeader(value = "X-Forwarded-For", required = false) String forwardedFor,
             @RequestHeader(value = "X-Real-IP", required = false) String realIp) {
-        ClientTrustContext trustContext = ClientTrustContext.fromBearerHeader(accountId, authorization, deviceId,
-                firstPresent(forwardedFor, realIp), request.channel());
+        authorizationGuard.requireOwnerOrOperator(request.userId());
+        long authenticatedAccountId = authorizationGuard.accountIdOr(request.userId());
+        ClientTrustContext trustContext = ClientTrustContext.fromBearerHeader(authenticatedAccountId, authorization,
+                deviceId, firstPresent(forwardedFor, realIp), request.channel());
         return ApiResponse.ok(toResponse(paymentService.create(request.requestId(), request.orderId(), request.userId(),
                 request.amount(), request.channel(), trustContext)));
     }
 
     @GetMapping("/{paymentId}")
     public ApiResponse<PaymentOrderResponse> get(@PathVariable long paymentId) {
-        return ApiResponse.ok(toResponse(paymentService.get(paymentId)));
+        PaymentOrder payment = paymentService.get(paymentId);
+        authorizationGuard.requireOwnerOrOperator(payment.userId());
+        return ApiResponse.ok(toResponse(payment));
     }
 
     @PostMapping("/{paymentId}/callbacks")
@@ -64,11 +76,12 @@ public class PaymentController {
     @PostMapping("/{paymentId}/refund")
     public ApiResponse<PaymentOrderResponse> refund(@PathVariable long paymentId,
             @RequestHeader(value = "Authorization", required = false) String authorization,
-            @RequestHeader(value = "X-Account-Id", required = false) Long accountId,
             @RequestHeader(value = "X-Device-Id", required = false) String deviceId,
             @RequestHeader(value = "X-Forwarded-For", required = false) String forwardedFor,
             @RequestHeader(value = "X-Real-IP", required = false) String realIp) {
-        ClientTrustContext trustContext = ClientTrustContext.fromBearerHeader(accountId, authorization, deviceId,
+        authorizationGuard.requireServiceOrOperator();
+        PaymentOrder payment = paymentService.get(paymentId);
+        ClientTrustContext trustContext = ClientTrustContext.fromBearerHeader(payment.userId(), authorization, deviceId,
                 firstPresent(forwardedFor, realIp), null);
         return ApiResponse.ok(toResponse(paymentService.refund(paymentId, trustContext)));
     }

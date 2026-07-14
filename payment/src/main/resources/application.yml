@@ -89,8 +89,15 @@ emall:
   payment:
     security:
       callback-signature-enabled: ${EMALL_PAYMENT_CALLBACK_SIGNATURE_ENABLED:true}
-      callback-secret: ${EMALL_PAYMENT_CALLBACK_SECRET:local-dev-payment-callback-secret}
+      callback-secrets:
+        default: ${EMALL_PAYMENT_CALLBACK_SECRET:}
       callback-allowed-skew-seconds: ${EMALL_PAYMENT_CALLBACK_ALLOWED_SKEW_SECONDS:300}
+      replay-store-fail-closed: ${EMALL_PAYMENT_REPLAY_STORE_FAIL_CLOSED:false}
+    channel:
+      mode: ${EMALL_PAYMENT_CHANNEL_MODE:memory}
+      base-url: ${EMALL_PAYMENT_CHANNEL_URL:http://localhost:9090}
+      api-key: ${EMALL_PAYMENT_CHANNEL_API_KEY:}
+      timeout: ${EMALL_PAYMENT_CHANNEL_TIMEOUT:3s}
   resilience:
     sentinel:
       flows:

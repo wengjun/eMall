@@ -38,6 +38,9 @@ public class CouponEntity {
     @TableField("reserved_order_id")
     private Long reservedOrderId;
 
+    @TableField("reserved_until")
+    private LocalDateTime reservedUntil;
+
     @TableField(value = "updated_at", fill = FieldFill.INSERT_UPDATE)
     private LocalDateTime updatedAt;
 }

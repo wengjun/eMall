@@ -6,6 +6,8 @@ import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.context.annotation.Bean;
 import org.springframework.web.client.RestClient;
+import com.emall.common.security.AuthTokenCodec;
+import org.springframework.beans.factory.annotation.Value;
 
 @AutoConfiguration
 @EnableConfigurationProperties({IdentityTrustProperties.class, RiskTrustProperties.class})
@@ -28,12 +30,19 @@ public class TrustAutoConfiguration {
 
     @Bean
     @ConditionalOnMissingBean
-    RiskEvaluator riskEvaluator(RiskTrustProperties properties, ObjectProvider<RestClient.Builder> builder) {
+    RiskEvaluator riskEvaluator(RiskTrustProperties properties, ObjectProvider<RestClient.Builder> builder,
+            ObjectProvider<AuthTokenCodec> tokenCodecProvider,
+            @Value("${spring.application.name:unknown-service}") String serviceName) {
         if (!properties.isEnabled()) {
             return RiskEvaluator.noop();
         }
+        AuthTokenCodec tokenCodec = tokenCodecProvider.getIfAvailable();
+        if (tokenCodec == null) {
+            throw new IllegalStateException("AuthTokenCodec is required when remote risk evaluation is enabled");
+        }
         return new RemoteRiskEvaluator(
-                builder.getIfAvailable(RestClient::builder).baseUrl(properties.getBaseUrl()).build(), properties);
+                builder.getIfAvailable(RestClient::builder).baseUrl(properties.getBaseUrl()).build(), properties,
+                tokenCodec, serviceName);
     }
 
     @Bean

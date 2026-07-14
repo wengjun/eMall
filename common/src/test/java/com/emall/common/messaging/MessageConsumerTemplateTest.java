@@ -52,7 +52,7 @@ class MessageConsumerTemplateTest {
         })).isInstanceOf(IllegalStateException.class);
         assertThatThrownBy(() -> template.consume(message, EventTypes.ORDER_PAID, event -> {
             throw new IllegalStateException("downstream unavailable");
-        })).isInstanceOf(IllegalStateException.class);
+        })).isInstanceOf(DeadMessageException.class);
 
         assertThat(template.consume(message, EventTypes.ORDER_PAID, event -> {
         })).isEqualTo(ConsumerExecutionResult.DUPLICATED);

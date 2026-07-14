@@ -22,6 +22,7 @@ class RemoteIdentityVerifier implements IdentityVerifier {
     public IdentityAccessDecision verify(IdentityAccessRequest request) {
         try {
             ApiResponse<IdentityValidationPayload> response = restClient.post().uri("/api/identity/sessions/validate")
+                    .header("Authorization", "Bearer " + request.accessToken())
                     .body(new ValidateSessionRequest(request.accessToken(), request.scope(), request.resource()))
                     .retrieve().body(RESPONSE_TYPE);
             if (response == null || !response.success() || response.data() == null) {

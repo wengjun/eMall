@@ -1,0 +1,14 @@
+package com.emall.order.saga;
+
+public enum OrderSagaStage {
+    STARTED,
+    VALIDATED,
+    COUPON_PLANNED,
+    COUPON_RESERVING,
+    COUPON_RESOLVED,
+    COUPON_RESERVED,
+    INVENTORY_RESERVING,
+    INVENTORY_RESERVED,
+    RESOURCES_RELEASED,
+    ORDER_PERSISTED
+}

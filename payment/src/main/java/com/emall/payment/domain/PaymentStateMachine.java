@@ -13,7 +13,7 @@ public final class PaymentStateMachine {
     static {
         ALLOWED.put(PaymentStatus.CREATED, EnumSet.of(PaymentStatus.SUCCEEDED, PaymentStatus.CLOSED));
         ALLOWED.put(PaymentStatus.SUCCEEDED, EnumSet.of(PaymentStatus.REFUNDING, PaymentStatus.REFUNDED));
-        ALLOWED.put(PaymentStatus.REFUNDING, EnumSet.of(PaymentStatus.REFUNDED));
+        ALLOWED.put(PaymentStatus.REFUNDING, EnumSet.of(PaymentStatus.SUCCEEDED, PaymentStatus.REFUNDED));
         ALLOWED.put(PaymentStatus.REFUNDED, EnumSet.noneOf(PaymentStatus.class));
         ALLOWED.put(PaymentStatus.CLOSED, EnumSet.noneOf(PaymentStatus.class));
     }

@@ -10,29 +10,86 @@ import org.springframework.mock.env.MockEnvironment;
 
 class ProductionRuntimeGuardTest {
     @Test
-    void shouldRejectUnsafeProductionDefaults() {
-        MockEnvironment environment = new MockEnvironment().withProperty("emall.runtime.guard.enabled", "true")
+    void rejectsDefaultAccountsPlaceholdersAndWeakSecretsInProductionMode() {
+        MockEnvironment environment = new MockEnvironment().withProperty("emall.runtime.mode", "production")
                 .withProperty("spring.datasource.url", "jdbc:mysql://db/emall_order")
-                .withProperty("spring.datasource.username", "emall")
-                .withProperty("spring.datasource.password", "secret")
-                .withProperty("emall.internal.operations-token", "local-dev-token");
+                .withProperty("spring.datasource.username", "root").withProperty("spring.datasource.password", "root")
+                .withProperty("emall.internal.operations-token", "replace-in-production")
+                .withProperty("emall.security.auth.token-secret", "local-dev-token");
 
         ProductionRuntimeGuard guard = new ProductionRuntimeGuard(environment, List.of());
 
         assertThatThrownBy(() -> guard.run(new DefaultApplicationArguments())).isInstanceOf(IllegalStateException.class)
-                .hasMessageContaining("emall.internal.operations-token");
+                .hasMessageContaining("spring.datasource.username").hasMessageContaining("spring.datasource.password")
+                .hasMessageContaining("emall.internal.operations-token")
+                .hasMessageContaining("emall.security.auth.token-secret");
     }
 
     @Test
-    void shouldAllowCompleteProductionConfiguration() {
-        MockEnvironment environment = new MockEnvironment().withProperty("emall.runtime.guard.enabled", "true")
-                .withProperty("spring.datasource.url", "jdbc:mysql://db/emall_order")
-                .withProperty("spring.datasource.username", "emall")
-                .withProperty("spring.datasource.password", "secret")
-                .withProperty("emall.internal.operations-token", "prod-token");
-
+    void allowsCompleteStrongProductionConfiguration() {
+        MockEnvironment environment = strongEnvironment();
         ProductionRuntimeGuard guard = new ProductionRuntimeGuard(environment, List.of());
 
         assertThatCode(() -> guard.run(new DefaultApplicationArguments())).doesNotThrowAnyException();
+    }
+
+    @Test
+    void rejectsPaymentTestAdapterAndInsecureChannelEndpointInProduction() {
+        MockEnvironment environment = strongEnvironment().withProperty("spring.application.name", "payment")
+                .withProperty("emall.payment.channel.mode", "memory")
+                .withProperty("emall.payment.channel.base-url", "http://payment-channel")
+                .withProperty("emall.payment.channel.api-key", "payment-channel-api-key-strong-value-123")
+                .withProperty("emall.payment.security.callback-secrets.default",
+                        "payment-callback-secret-strong-value-123")
+                .withProperty("emall.payment.security.callback-signature-enabled", "true")
+                .withProperty("emall.payment.security.replay-store-fail-closed", "true");
+
+        ProductionRuntimeGuard guard = new ProductionRuntimeGuard(environment, List.of());
+
+        assertThatThrownBy(() -> guard.run(new DefaultApplicationArguments()))
+                .hasMessageContaining("emall.payment.channel.mode")
+                .hasMessageContaining("emall.payment.channel.base-url");
+    }
+
+    @Test
+    void rejectsRandomDubboPortInProduction() {
+        MockEnvironment environment = strongEnvironment().withProperty("emall.rpc.protocol", "dubbo")
+                .withProperty("dubbo.protocol.port", "-1");
+        ProductionRuntimeGuard guard = new ProductionRuntimeGuard(environment, List.of());
+
+        assertThatThrownBy(() -> guard.run(new DefaultApplicationArguments()))
+                .hasMessageContaining("dubbo.protocol.port");
+    }
+
+    @Test
+    void rejectsFlashSaleWhenIdentityOrRiskVerificationIsDisabled() {
+        MockEnvironment environment = strongEnvironment().withProperty("spring.application.name", "flash-sale")
+                .withProperty("emall.sharding.enabled", "true")
+                .withProperty("emall.sharding.datasource.enabled", "true")
+                .withProperty("emall.sharding.datasource.jdbc-url-template", "jdbc:mysql://db/{database}")
+                .withProperty("emall.sharding.datasource.username", "emall_app")
+                .withProperty("emall.sharding.datasource.password", "database-password-strong-123")
+                .withProperty("emall.flash-sale.security.token-secret", "flash-sale-secret-strong-value-123456")
+                .withProperty("emall.trust.identity.enabled", "false")
+                .withProperty("emall.trust.identity.fail-closed", "true")
+                .withProperty("emall.trust.risk.enabled", "true").withProperty("emall.trust.risk.fail-closed", "true");
+
+        ProductionRuntimeGuard guard = new ProductionRuntimeGuard(environment, List.of());
+
+        assertThatThrownBy(() -> guard.run(new DefaultApplicationArguments()))
+                .hasMessageContaining("emall.trust.identity.enabled");
+    }
+
+    private MockEnvironment strongEnvironment() {
+        return new MockEnvironment().withProperty("emall.runtime.guard.enabled", "true")
+                .withProperty("emall.security.auth.enabled", "true")
+                .withProperty("spring.data.redis.cluster.nodes", "redis-0:6379,redis-1:6379")
+                .withProperty("spring.datasource.url", "jdbc:mysql://db/emall_order")
+                .withProperty("spring.datasource.username", "emall_app")
+                .withProperty("spring.datasource.password", "database-password-strong-123")
+                .withProperty("emall.internal.operations-token", "operations-token-strong-value-123456")
+                .withProperty("emall.security.auth.token-secret", "authentication-secret-strong-value-123")
+                .withProperty("emall.security.auth.fail-closed-on-revocation-store-error", "true")
+                .withProperty("emall.id.lease-enabled", "true");
     }
 }

@@ -5,11 +5,14 @@ import com.emall.common.exception.BusinessException;
 import com.emall.common.id.SnowflakeIdGenerator;
 import com.emall.common.metrics.BusinessMetricNames;
 import com.emall.common.metrics.BusinessMetrics;
+import com.emall.common.sharding.ShardRouteIndex;
+import com.emall.common.sharding.ShardRoutingOperations;
 import com.emall.marketing.domain.Coupon;
 import com.emall.marketing.domain.CouponStatus;
 import com.emall.marketing.domain.PromotionQuote;
 import com.emall.marketing.repository.CouponRepository;
 import java.math.BigDecimal;
+import java.time.Duration;
 import java.time.Instant;
 import java.util.Comparator;
 import java.util.List;
@@ -22,17 +25,23 @@ public class MarketingService {
     private final CouponRepository couponRepository;
     private final SnowflakeIdGenerator idGenerator;
     private final BusinessMetrics businessMetrics;
+    private final ShardRoutingOperations shardRoutingOperations;
+    private final ShardRouteIndex shardRouteIndex;
 
     public MarketingService(CouponRepository couponRepository, SnowflakeIdGenerator idGenerator) {
-        this(couponRepository, idGenerator, BusinessMetrics.noop());
+        this(couponRepository, idGenerator, BusinessMetrics.noop(), ShardRoutingOperations.noop(),
+                ShardRouteIndex.local());
     }
 
     @Autowired
     public MarketingService(CouponRepository couponRepository, SnowflakeIdGenerator idGenerator,
-            BusinessMetrics businessMetrics) {
+            BusinessMetrics businessMetrics, ShardRoutingOperations shardRoutingOperations,
+            ShardRouteIndex shardRouteIndex) {
         this.couponRepository = couponRepository;
         this.idGenerator = idGenerator;
         this.businessMetrics = businessMetrics;
+        this.shardRoutingOperations = shardRoutingOperations;
+        this.shardRouteIndex = shardRouteIndex;
     }
 
     @Transactional
@@ -40,24 +49,32 @@ public class MarketingService {
         if (discountAmount.signum() <= 0 || thresholdAmount.signum() < 0) {
             throw new BusinessException(ErrorCode.BAD_REQUEST, "invalid coupon amounts");
         }
-        Coupon coupon = new Coupon("coupon-" + idGenerator.nextId(), userId, thresholdAmount, discountAmount,
-                CouponStatus.AVAILABLE, expiresAt, Instant.now());
-        return couponRepository.save(coupon);
+        return shardRoutingOperations.execute("coupon", userId, () -> {
+            Coupon coupon = new Coupon("coupon-" + idGenerator.nextId(), userId, thresholdAmount, discountAmount,
+                    CouponStatus.AVAILABLE, expiresAt, Instant.now());
+            Coupon saved = couponRepository.save(coupon);
+            shardRouteIndex.bindUniqueTransactional("coupon", saved.couponId(), userId);
+            return saved;
+        });
     }
 
     public List<Coupon> list(long userId) {
-        return couponRepository.findByUserId(userId);
+        return shardRoutingOperations.execute("coupon", userId, () -> couponRepository.findByUserId(userId));
     }
 
     public PromotionQuote quote(long userId, BigDecimal orderAmount) {
-        return couponRepository.findByUserId(userId).stream()
+        return shardRoutingOperations.execute("coupon", userId, () -> couponRepository.findByUserId(userId).stream()
                 .filter(coupon -> coupon.usable(orderAmount, Instant.now()))
                 .max(Comparator.comparing(Coupon::discountAmount)).map(coupon -> quoteWithCoupon(coupon, orderAmount))
-                .orElseGet(() -> PromotionQuote.none(userId, orderAmount));
+                .orElseGet(() -> PromotionQuote.none(userId, orderAmount)));
     }
 
     @Transactional
     public Coupon redeem(String couponId, BigDecimal orderAmount) {
+        return executeByCouponId(couponId, () -> redeemInShard(couponId, orderAmount));
+    }
+
+    private Coupon redeemInShard(String couponId, BigDecimal orderAmount) {
         Coupon coupon = couponRepository.findById(couponId)
                 .orElseThrow(() -> new BusinessException(ErrorCode.NOT_FOUND, "coupon not found"));
         if (!coupon.usable(orderAmount, Instant.now())) {
@@ -69,6 +86,12 @@ public class MarketingService {
     @Transactional
     public Coupon reserveCoupon(String reservationId, long userId, String couponId, BigDecimal orderAmount,
             long orderId) {
+        return shardRoutingOperations.execute("coupon", userId,
+                () -> reserveCouponInShard(reservationId, userId, couponId, orderAmount, orderId));
+    }
+
+    private Coupon reserveCouponInShard(String reservationId, long userId, String couponId, BigDecimal orderAmount,
+            long orderId) {
         Coupon coupon = requireCoupon(couponId);
         if (coupon.userId() != userId) {
             throw new BusinessException(ErrorCode.CONFLICT, "coupon owner mismatch");
@@ -79,13 +102,28 @@ public class MarketingService {
         if (!coupon.usable(orderAmount, Instant.now())) {
             throw new BusinessException(ErrorCode.CONFLICT, "coupon is not reservable");
         }
-        Coupon reserved = couponRepository.save(coupon.reserved(reservationId, orderId));
+        Instant reservedUntil = Instant.now().plus(Duration.ofMinutes(15));
+        if (reservedUntil.isAfter(coupon.expiresAt())) {
+            reservedUntil = coupon.expiresAt();
+        }
+        Coupon reserved = coupon.reserved(reservationId, orderId, reservedUntil);
+        if (!couponRepository.reserve(couponId, reserved)) {
+            Coupon concurrent = requireCoupon(couponId);
+            if (concurrent.reservedBy(reservationId, orderId)) {
+                return concurrent;
+            }
+            throw new BusinessException(ErrorCode.CONFLICT, "coupon was reserved concurrently");
+        }
         businessMetrics.increment(BusinessMetricNames.COUPON_RESERVED);
         return reserved;
     }
 
     @Transactional
     public Coupon confirmCoupon(String reservationId, String couponId, long orderId) {
+        return executeByCouponId(couponId, () -> confirmCouponInShard(reservationId, couponId, orderId));
+    }
+
+    private Coupon confirmCouponInShard(String reservationId, String couponId, long orderId) {
         Coupon coupon = requireCoupon(couponId);
         if (coupon.status() == CouponStatus.USED && coupon.reservationMatches(reservationId, orderId)) {
             return coupon;
@@ -93,13 +131,24 @@ public class MarketingService {
         if (!coupon.reservedBy(reservationId, orderId)) {
             throw new BusinessException(ErrorCode.CONFLICT, "coupon reservation mismatch");
         }
-        Coupon used = couponRepository.save(coupon.used());
+        Coupon used = coupon.used();
+        if (!couponRepository.confirm(couponId, reservationId, orderId, used)) {
+            Coupon concurrent = requireCoupon(couponId);
+            if (concurrent.status() == CouponStatus.USED && concurrent.reservationMatches(reservationId, orderId)) {
+                return concurrent;
+            }
+            throw new BusinessException(ErrorCode.CONFLICT, "coupon reservation changed during confirmation");
+        }
         businessMetrics.increment(BusinessMetricNames.COUPON_CONFIRMED);
         return used;
     }
 
     @Transactional
     public Coupon releaseCoupon(String reservationId, String couponId, long orderId) {
+        return executeByCouponId(couponId, () -> releaseCouponInShard(reservationId, couponId, orderId));
+    }
+
+    private Coupon releaseCouponInShard(String reservationId, String couponId, long orderId) {
         Coupon coupon = requireCoupon(couponId);
         if (coupon.status() == CouponStatus.AVAILABLE) {
             return coupon;
@@ -107,9 +156,34 @@ public class MarketingService {
         if (!coupon.reservedBy(reservationId, orderId)) {
             throw new BusinessException(ErrorCode.CONFLICT, "coupon reservation mismatch");
         }
-        Coupon released = couponRepository.save(coupon.released());
+        Coupon released = coupon.released();
+        if (!couponRepository.release(couponId, reservationId, orderId, released)) {
+            Coupon concurrent = requireCoupon(couponId);
+            if (concurrent.status() == CouponStatus.AVAILABLE) {
+                return concurrent;
+            }
+            throw new BusinessException(ErrorCode.CONFLICT, "coupon reservation changed during release");
+        }
         businessMetrics.increment(BusinessMetricNames.COUPON_RELEASED);
         return released;
+    }
+
+    public int releaseExpiredReservations(int limit) {
+        int boundedLimit = Math.max(1, Math.min(limit, 1000));
+        int shardCount = shardRoutingOperations.physicalShardCount("coupon");
+        int perShardLimit = Math.max(1, (boundedLimit + shardCount - 1) / shardCount);
+        return shardRoutingOperations
+                .executeAll("coupon",
+                        () -> couponRepository.findExpiredReservations(Instant.now(), perShardLimit).stream()
+                                .map(coupon -> releaseCouponInShard(coupon.reservationId(), coupon.couponId(),
+                                        coupon.reservedOrderId()))
+                                .toList().size())
+                .stream().mapToInt(Integer::intValue).sum();
+    }
+
+    private <T> T executeByCouponId(String couponId, java.util.function.Supplier<T> action) {
+        long userId = shardRouteIndex.resolveRequired("coupon", couponId, couponId.hashCode());
+        return shardRoutingOperations.execute("coupon", userId, action);
     }
 
     private Coupon requireCoupon(String couponId) {

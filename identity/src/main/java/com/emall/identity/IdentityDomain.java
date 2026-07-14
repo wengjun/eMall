@@ -44,6 +44,20 @@ record DeviceSession(@TableId(value = "session_id", type = IdType.INPUT) long se
     }
 }
 
+@TableName("identity_credential")
+record IdentityCredential(@TableId(value = "account_id", type = IdType.INPUT) long accountId, String passwordHash,
+        int failedAttempts, Instant lockedUntil, Instant passwordChangedAt, Instant updatedAt) {
+    IdentityCredential failed(Instant now, int maximumAttempts, Instant nextLockedUntil) {
+        int nextAttempts = failedAttempts + 1;
+        return new IdentityCredential(accountId, passwordHash, nextAttempts,
+                nextAttempts >= maximumAttempts ? nextLockedUntil : lockedUntil, passwordChangedAt, now);
+    }
+
+    IdentityCredential succeeded(Instant now) {
+        return new IdentityCredential(accountId, passwordHash, 0, null, passwordChangedAt, now);
+    }
+}
+
 @TableName("identity_permission_grant")
 record PermissionGrant(@TableId(value = "grant_id", type = IdType.INPUT) long grantId, long accountId, String scope,
         String resource, Instant createdAt) {
@@ -59,7 +73,7 @@ record MerchantSubAccount(@TableId(value = "sub_account_id", type = IdType.INPUT
         long accountId, String roleCode, boolean active, Instant createdAt, Instant updatedAt) {
 }
 
-record AuthToken(long sessionId, String accessToken, String refreshToken, Instant expiresAt) {
+record AuthToken(long sessionId, String accessToken, String refreshToken, Instant expiresAt, Instant refreshExpiresAt) {
 }
 
 record AccessDecision(long accountId, String scope, String resource, boolean allowed) {

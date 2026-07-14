@@ -53,6 +53,17 @@ public class InMemoryPaymentSettlementRepository implements PaymentSettlementRep
     }
 
     @Override
+    public Optional<PaymentRefundOrder> findRefundById(long refundId) {
+        return Optional.ofNullable(refundsById.get(refundId));
+    }
+
+    @Override
+    public List<PaymentRefundOrder> findRefundsByStatus(PaymentRefundStatus status, int limit) {
+        return refundsById.values().stream().filter(refund -> refund.status() == status)
+                .sorted(Comparator.comparing(PaymentRefundOrder::updatedAt)).limit(limit).toList();
+    }
+
+    @Override
     public PaymentLedgerEntry saveLedgerIfAbsent(PaymentLedgerEntry entry) {
         String key = entry.referenceId() + "|" + entry.accountCode() + "|" + entry.direction();
         ledgerByReference.putIfAbsent(key, entry);

@@ -16,6 +16,7 @@ import com.emall.product.repository.ProductRepository;
 import java.math.BigDecimal;
 import java.time.Duration;
 import java.time.Instant;
+import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
 import org.springframework.beans.factory.ObjectProvider;
@@ -93,7 +94,9 @@ public class ProductService {
     @Cacheable(value = "productSearch", key = "(#keyword == null ? '' : #keyword) + ':' + #limit")
     public List<Product> search(String keyword, int limit) {
         int safeLimit = Math.min(Math.max(limit, 1), 100);
-        return productRepository.search(keyword, safeLimit);
+        return shardRoutingOperations.executeAll("product", () -> productRepository.search(keyword, safeLimit)).stream()
+                .flatMap(List::stream).sorted(Comparator.comparing(Product::updatedAt).reversed()).limit(safeLimit)
+                .toList();
     }
 
     @Caching(evict = @CacheEvict(value = "productSearch", allEntries = true))

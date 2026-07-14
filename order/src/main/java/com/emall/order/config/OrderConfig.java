@@ -1,6 +1,5 @@
 package com.emall.order.config;
 
-import com.emall.common.id.SnowflakeIdGenerator;
 import com.emall.common.web.OutboundHttpClientFactory;
 import com.emall.governance.recovery.AdaptiveRecoveryController;
 import com.emall.governance.recovery.AdaptiveRecoveryPolicy;
@@ -9,15 +8,11 @@ import java.time.Duration;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.web.client.RestClient;
 
 @Configuration
 public class OrderConfig {
-    @Bean
-    SnowflakeIdGenerator snowflakeIdGenerator() {
-        return new SnowflakeIdGenerator(1L);
-    }
-
     @Bean
     RestClient inventoryRestClient(OutboundHttpClientFactory httpClientFactory,
             @Value("${emall.downstream.inventory-url}") String inventoryUrl) {
@@ -42,8 +37,10 @@ public class OrderConfig {
     }
 
     @Bean
-    OrderSubmissionGuard orderSubmissionGuard(
-            @Value("${emall.capacity.order.max-submissions-per-user-per-minute:60}") int maxRequests) {
-        return new OrderSubmissionGuard(maxRequests, Duration.ofMinutes(1));
+    OrderSubmissionGuard orderSubmissionGuard(StringRedisTemplate redisTemplate,
+            @Value("${emall.capacity.order.max-submissions-per-user-per-minute:60}") int maxRequests,
+            @Value("${emall.capacity.order.submission-window:1m}") Duration window,
+            @Value("${emall.capacity.order.fail-closed:false}") boolean failClosed) {
+        return new OrderSubmissionGuard(maxRequests, window, redisTemplate, failClosed);
     }
 }

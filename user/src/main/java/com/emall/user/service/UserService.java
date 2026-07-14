@@ -5,6 +5,7 @@ import com.emall.common.exception.BusinessException;
 import com.emall.common.id.SnowflakeIdGenerator;
 import com.emall.common.region.OwnershipGuard;
 import com.emall.common.sharding.ShardRoutingOperations;
+import com.emall.common.sharding.ShardRouteIndex;
 import com.emall.user.domain.UserAccount;
 import com.emall.user.domain.UserStatus;
 import com.emall.user.repository.UserRepository;
@@ -20,28 +21,53 @@ public class UserService {
     private final SnowflakeIdGenerator idGenerator;
     private final ShardRoutingOperations shardRoutingOperations;
     private final OwnershipGuard ownershipGuard;
+    private final ShardRouteIndex shardRouteIndex;
 
     public UserService(UserRepository userRepository, SnowflakeIdGenerator idGenerator) {
-        this(userRepository, idGenerator, ShardRoutingOperations.noop(), OwnershipGuard.noop());
+        this(userRepository, idGenerator, ShardRoutingOperations.noop(), OwnershipGuard.noop(),
+                ShardRouteIndex.local());
     }
 
     @Autowired
     public UserService(UserRepository userRepository, SnowflakeIdGenerator idGenerator,
-            ShardRoutingOperations shardRoutingOperations, OwnershipGuard ownershipGuard) {
+            ShardRoutingOperations shardRoutingOperations, OwnershipGuard ownershipGuard,
+            ShardRouteIndex shardRouteIndex) {
         this.userRepository = userRepository;
         this.idGenerator = idGenerator;
         this.shardRoutingOperations = shardRoutingOperations;
         this.ownershipGuard = ownershipGuard;
+        this.shardRouteIndex = shardRouteIndex;
     }
 
     @Transactional
     public UserAccount register(String mobile, String nickname) {
-        return shardRoutingOperations.execute("user_account", mobile, () -> {
+        return register(idGenerator.nextId(), mobile, nickname);
+    }
+
+    @Transactional
+    public UserAccount register(long userId, String mobile, String nickname) {
+        try {
+            shardRouteIndex.bindUniqueTransactional("user-mobile", mobile, userId);
+        } catch (BusinessException ex) {
+            if (ex.errorCode() == ErrorCode.CONFLICT) {
+                throw new BusinessException(ErrorCode.CONFLICT, "mobile already registered");
+            }
+            throw ex;
+        }
+        try {
+            return registerInShard(userId, mobile, nickname);
+        } catch (RuntimeException ex) {
+            shardRouteIndex.removeIfOwned("user-mobile", mobile, userId);
+            throw ex;
+        }
+    }
+
+    private UserAccount registerInShard(long userId, String mobile, String nickname) {
+        return shardRoutingOperations.execute("user_account", userId, () -> {
             userRepository.findByMobile(mobile).ifPresent(existing -> {
                 throw new BusinessException(ErrorCode.CONFLICT, "mobile already registered");
             });
             Instant now = Instant.now();
-            long userId = idGenerator.nextId();
             ownershipGuard.checkWrite("user", userId);
             UserAccount user = new UserAccount(userId, mobile, nickname, UserStatus.NORMAL, now, now);
             return userRepository.save(user);
@@ -84,7 +110,12 @@ public class UserService {
                 return userRepository.save(user.changeStatus(UserStatus.FROZEN));
             }
             if ("delete".equals(normalizedType) || "erase".equals(normalizedType)) {
-                return user.status() == UserStatus.CLOSED ? user : userRepository.save(user.erasePersonalData());
+                if (user.status() == UserStatus.CLOSED) {
+                    return user;
+                }
+                UserAccount erased = userRepository.save(user.erasePersonalData());
+                shardRouteIndex.removeIfOwnedTransactional("user-mobile", user.mobile(), userId);
+                return erased;
             }
             throw new BusinessException(ErrorCode.BAD_REQUEST, "unsupported privacy request type");
         });

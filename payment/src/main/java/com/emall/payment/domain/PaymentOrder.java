@@ -31,6 +31,12 @@ public record PaymentOrder(long paymentId, String requestId, long orderId, long 
                 PaymentStatus.REFUNDED, orderConfirmed, createdAt, Instant.now());
     }
 
+    public PaymentOrder refundFailed() {
+        PaymentStateMachine.requireTransition(status, PaymentStatus.SUCCEEDED);
+        return new PaymentOrder(paymentId, requestId, orderId, userId, amount, channel, channelTradeNo,
+                PaymentStatus.SUCCEEDED, orderConfirmed, createdAt, Instant.now());
+    }
+
     @Override
     public String toString() {
         return "PaymentOrder[paymentId=" + paymentId + ", requestId=" + requestId + ", orderId=" + orderId + ", userId="

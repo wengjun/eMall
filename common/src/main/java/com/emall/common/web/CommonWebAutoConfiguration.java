@@ -51,7 +51,7 @@ public class CommonWebAutoConfiguration {
             IdempotencyHttpProperties properties) {
         FilterRegistrationBean<IdempotencyKeyServletFilter> registration = new FilterRegistrationBean<>();
         registration.setFilter(new IdempotencyKeyServletFilter(properties));
-        registration.setOrder(Ordered.HIGHEST_PRECEDENCE + 3);
+        registration.setOrder(Ordered.HIGHEST_PRECEDENCE + 4);
         registration.addUrlPatterns("/*");
         return registration;
     }

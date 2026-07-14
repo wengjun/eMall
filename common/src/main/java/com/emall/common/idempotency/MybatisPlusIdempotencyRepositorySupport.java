@@ -3,6 +3,7 @@ package com.emall.common.idempotency;
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import com.baomidou.mybatisplus.core.conditions.update.UpdateWrapper;
 import com.baomidou.mybatisplus.core.mapper.BaseMapper;
+import com.emall.common.persistence.BoundedQuery;
 import java.time.Instant;
 import java.time.LocalDateTime;
 import java.time.ZoneOffset;
@@ -45,7 +46,7 @@ public abstract class MybatisPlusIdempotencyRepositorySupport implements Idempot
     @Override
     public int deleteExpired(Instant now, int limit) {
         return mapper.delete(new QueryWrapper<IdempotencyRecordEntity>().le("expires_at", databaseTime(now))
-                .orderByAsc("expires_at").last("LIMIT " + limit));
+                .orderByAsc("expires_at").last("LIMIT " + BoundedQuery.limit(limit)));
     }
 
     private IdempotencyRecordEntity toEntity(IdempotencyRecord record) {

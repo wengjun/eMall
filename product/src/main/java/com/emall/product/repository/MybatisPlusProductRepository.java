@@ -1,6 +1,7 @@
 package com.emall.product.repository;
 
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
+import com.emall.common.persistence.BoundedQuery;
 import com.baomidou.mybatisplus.core.conditions.update.UpdateWrapper;
 import com.emall.product.domain.Product;
 import com.emall.product.domain.ProductStatus;
@@ -44,9 +45,11 @@ public class MybatisPlusProductRepository implements ProductRepository {
     @Override
     public List<Product> search(String keyword, int limit) {
         String pattern = keyword == null ? "" : keyword;
-        return productMapper.selectList(new QueryWrapper<ProductEntity>().eq("status", ProductStatus.ON_SALE.name())
-                .and(query -> query.like("title", pattern).or().like("category", pattern)).orderByDesc("updated_at")
-                .last("LIMIT " + limit)).stream().map(this::toDomain).toList();
+        return productMapper
+                .selectList(new QueryWrapper<ProductEntity>().eq("status", ProductStatus.ON_SALE.name())
+                        .and(query -> query.like("title", pattern).or().like("category", pattern))
+                        .orderByDesc("updated_at").last("LIMIT " + BoundedQuery.limit(limit)))
+                .stream().map(this::toDomain).toList();
     }
 
     private ProductEntity toEntity(Product product) {

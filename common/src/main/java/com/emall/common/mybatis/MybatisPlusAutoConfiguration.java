@@ -34,7 +34,10 @@ public class MybatisPlusAutoConfiguration {
         if (illegalSqlCheckEnabled) {
             interceptor.addInnerInterceptor(new IllegalSQLInnerInterceptor());
         }
-        interceptor.addInnerInterceptor(new PaginationInnerInterceptor(DbType.MYSQL));
+        PaginationInnerInterceptor pagination = new PaginationInnerInterceptor(DbType.MYSQL);
+        pagination.setMaxLimit(1_000L);
+        pagination.setOverflow(false);
+        interceptor.addInnerInterceptor(pagination);
         return interceptor;
     }
 

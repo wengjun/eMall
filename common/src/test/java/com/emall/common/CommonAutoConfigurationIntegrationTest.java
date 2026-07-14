@@ -43,10 +43,13 @@ import org.springframework.boot.autoconfigure.AutoConfigurations;
 import org.springframework.boot.test.context.runner.ApplicationContextRunner;
 import org.springframework.boot.test.context.runner.WebApplicationContextRunner;
 import org.springframework.boot.web.servlet.FilterRegistrationBean;
+import org.springframework.data.redis.core.StringRedisTemplate;
+import static org.mockito.Mockito.mock;
 
 class CommonAutoConfigurationIntegrationTest {
     private final ApplicationContextRunner contextRunner =
             new ApplicationContextRunner().withBean(MeterRegistry.class, SimpleMeterRegistry::new)
+                    .withBean(StringRedisTemplate.class, () -> mock(StringRedisTemplate.class))
                     .withConfiguration(AutoConfigurations.of(IdempotencyAutoConfiguration.class,
                             FieldEncryptionAutoConfiguration.class, OutboundClientAutoConfiguration.class,
                             TrustAutoConfiguration.class, BusinessMetricsAutoConfiguration.class,

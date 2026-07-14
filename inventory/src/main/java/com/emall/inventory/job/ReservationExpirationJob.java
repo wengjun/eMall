@@ -1,6 +1,7 @@
 package com.emall.inventory.job;
 
 import com.emall.common.task.DistributedTaskLock;
+import com.emall.common.sharding.ShardRoutingOperations;
 import com.emall.inventory.repository.InventoryRepository;
 import com.emall.inventory.service.InventoryService;
 import java.time.Duration;
@@ -16,12 +17,14 @@ public class ReservationExpirationJob {
     private final InventoryRepository inventoryRepository;
     private final InventoryService inventoryService;
     private final DistributedTaskLock taskLock;
+    private final ShardRoutingOperations shardRoutingOperations;
 
     public ReservationExpirationJob(InventoryRepository inventoryRepository, InventoryService inventoryService,
-            DistributedTaskLock taskLock) {
+            DistributedTaskLock taskLock, ShardRoutingOperations shardRoutingOperations) {
         this.inventoryRepository = inventoryRepository;
         this.inventoryService = inventoryService;
         this.taskLock = taskLock;
+        this.shardRoutingOperations = shardRoutingOperations;
     }
 
     @Scheduled(fixedDelay = 5000)
@@ -34,7 +37,13 @@ public class ReservationExpirationJob {
     }
 
     private int releaseExpiredReservationsUnlocked(int limit) {
-        return inventoryRepository.findExpiredReservations(Instant.now(), limit).stream()
+        int boundedLimit = Math.max(1, Math.min(limit, 1000));
+        int shardCount = shardRoutingOperations.physicalShardCount("inventory_reservation");
+        int perShardLimit = Math.max(1, (boundedLimit + shardCount - 1) / shardCount);
+        return shardRoutingOperations
+                .executeAll("inventory_reservation",
+                        () -> inventoryRepository.findExpiredReservations(Instant.now(), perShardLimit))
+                .stream().flatMap(java.util.List::stream).limit(boundedLimit)
                 .map(reservation -> inventoryService.release(reservation.requestId())).toList().size();
     }
 }

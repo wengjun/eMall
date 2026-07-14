@@ -24,9 +24,14 @@ import com.emall.order.integration.MarketingClient.PromotionQuote;
 import com.emall.order.integration.PricingClient;
 import com.emall.order.integration.PricingClient.PriceQuote;
 import com.emall.order.repository.OrderRepository;
+import com.emall.order.saga.OrderCreateSaga;
+import com.emall.order.saga.OrderSagaCoordinator;
+import com.emall.order.saga.OrderSagaStage;
 import java.math.BigDecimal;
 import java.time.Instant;
 import java.util.Map;
+import org.springframework.transaction.support.TransactionSynchronization;
+import org.springframework.transaction.support.TransactionSynchronizationManager;
 
 public class OrderCreateWorkflow {
     private final OrderRepository orderRepository;
@@ -37,10 +42,12 @@ public class OrderCreateWorkflow {
     private final MarketingClient marketingClient;
     private final BusinessMetrics businessMetrics;
     private final RiskGuard riskGuard;
+    private final OrderSagaCoordinator sagaCoordinator;
 
     public OrderCreateWorkflow(OrderRepository orderRepository, OutboxRepository outboxRepository,
             SnowflakeIdGenerator idGenerator, InventoryClient inventoryClient, PricingClient pricingClient,
-            MarketingClient marketingClient, BusinessMetrics businessMetrics, RiskGuard riskGuard) {
+            MarketingClient marketingClient, BusinessMetrics businessMetrics, RiskGuard riskGuard,
+            OrderSagaCoordinator sagaCoordinator) {
         this.orderRepository = orderRepository;
         this.outboxRepository = outboxRepository;
         this.idGenerator = idGenerator;
@@ -49,46 +56,111 @@ public class OrderCreateWorkflow {
         this.marketingClient = marketingClient;
         this.businessMetrics = businessMetrics;
         this.riskGuard = riskGuard;
+        this.sagaCoordinator = sagaCoordinator;
     }
 
     public Order create(String requestId, long userId, long skuId, int quantity, OrderClientContext clientContext,
             ClientTrustContext trustContext) {
-        long orderId = idGenerator.nextId();
-        PriceQuote priceQuote = pricingClient.quote(skuId, quantity);
-        PromotionQuote quotedPromotion = marketingClient.quote(userId, priceQuote.subtotal());
-        validatePayableAmount(priceQuote, quotedPromotion);
-        CouponReservation couponReservation = marketingClient.reserveCoupon(requestId, userId,
-                quotedPromotion.couponId(), quotedPromotion.orderAmount(), orderId);
-        PromotionQuote promotionQuote =
-                couponReservation.reserved() ? quotedPromotion : PromotionQuote.none(userId, priceQuote.subtotal());
-        riskGuard.check(new RiskEvaluationRequest(RiskScene.ORDER_CREATE, trustContext.subjectId(userId),
-                trustContext.deviceId(), trustContext.sourceIp(), promotionQuote.payableAmount(), quantity));
-        InventoryReservation reservation =
-                inventoryClient.reserve(new ReserveInventoryRequest(requestId, skuId, quantity));
-        if (!reservation.reserved() && couponReservation.reserved()) {
-            marketingClient.releaseCoupon(requestId, couponReservation.couponId(), orderId);
-            promotionQuote = PromotionQuote.none(userId, priceQuote.subtotal());
+        long proposedOrderId = idGenerator.nextId();
+        OrderCreateSaga saga = sagaCoordinator.start(proposedOrderId, requestId, proposedOrderId, userId, skuId);
+        long orderId = saga.orderId();
+        try {
+            PriceQuote priceQuote = pricingClient.quote(skuId, quantity);
+            PromotionQuote quotedPromotion = marketingClient.quote(userId, priceQuote.subtotal());
+            validatePayableAmount(priceQuote, quotedPromotion);
+            riskGuard.check(new RiskEvaluationRequest(RiskScene.ORDER_CREATE, trustContext.subjectId(userId),
+                    trustContext.deviceId(), trustContext.sourceIp(), quotedPromotion.payableAmount(), quantity));
+            saga = sagaCoordinator.advance(saga, OrderSagaStage.VALIDATED, null, requestId);
+            saga = sagaCoordinator.advance(saga, OrderSagaStage.COUPON_PLANNED, quotedPromotion.couponId(), requestId);
+            saga = sagaCoordinator.advance(saga, OrderSagaStage.COUPON_RESERVING, quotedPromotion.couponId(),
+                    requestId);
+            CouponReservation couponReservation = marketingClient.reserveCoupon(requestId, userId,
+                    quotedPromotion.couponId(), quotedPromotion.orderAmount(), orderId);
+            PromotionQuote promotionQuote =
+                    couponReservation.reserved() ? quotedPromotion : PromotionQuote.none(userId, priceQuote.subtotal());
+            if (couponReservation.reserved()) {
+                saga = sagaCoordinator.advance(saga, OrderSagaStage.COUPON_RESERVED, couponReservation.couponId(),
+                        requestId);
+            } else {
+                saga = sagaCoordinator.advance(saga, OrderSagaStage.COUPON_RESOLVED, "", requestId);
+            }
+            saga = sagaCoordinator.advance(saga, OrderSagaStage.INVENTORY_RESERVING, null, requestId);
+            InventoryReservation reservation =
+                    inventoryClient.reserve(new ReserveInventoryRequest(requestId, skuId, quantity));
+            if (reservation.reserved()) {
+                saga = sagaCoordinator.advance(saga, OrderSagaStage.INVENTORY_RESERVED, promotionQuote.couponId(),
+                        reservation.requestId());
+            } else if (couponReservation.reserved()) {
+                boolean released = marketingClient.releaseCoupon(requestId, couponReservation.couponId(), orderId);
+                if (!released) {
+                    throw new BusinessException(ErrorCode.DOWNSTREAM_UNAVAILABLE,
+                            "coupon compensation could not be confirmed");
+                }
+                promotionQuote = PromotionQuote.none(userId, priceQuote.subtotal());
+            }
+            if (!reservation.reserved()) {
+                saga = sagaCoordinator.advance(saga, OrderSagaStage.RESOURCES_RELEASED, "", requestId);
+            }
+            Instant now = Instant.now();
+            OrderStatus status = reservation.reserved() ? OrderStatus.CREATED : OrderStatus.PENDING_RETRY;
+            String reason = reservation.reserved() ? null : reservation.reason();
+            Order order = orderRepository.save(new Order(orderId, requestId, userId, skuId, quantity,
+                    clientContext.clientType(), clientContext.deviceId(), clientContext.channel(),
+                    priceQuote.unitPrice(), priceQuote.subtotal(), promotionQuote.discountAmount(),
+                    promotionQuote.payableAmount(), priceQuote.currency(), priceQuote.priceVersion(),
+                    promotionQuote.couponId(), requestId, status, reason, now, now));
+            orderRepository.saveRoute(order.orderId(), order.requestId(), order.userId());
+            saga = sagaCoordinator.advance(saga, OrderSagaStage.ORDER_PERSISTED, promotionQuote.couponId(),
+                    reservation.requestId());
+            if (order.status() == OrderStatus.CREATED) {
+                appendEvent(order, EventTypes.ORDER_CREATED);
+                businessMetrics.increment(BusinessMetricNames.ORDER_CREATED, "client_type", order.clientType().name(),
+                        "channel", order.channel());
+            } else {
+                businessMetrics.increment(BusinessMetricNames.ORDER_PENDING_RETRY, "reason",
+                        reason == null ? "unknown" : reason);
+            }
+            completeWithTransaction(saga);
+            return order;
+        } catch (RuntimeException ex) {
+            compensateWithTransaction(saga, ex.getClass().getSimpleName() + ": " + ex.getMessage());
+            throw ex;
         }
-        Instant now = Instant.now();
-        OrderStatus status = reservation.reserved() ? OrderStatus.CREATED : OrderStatus.PENDING_RETRY;
-        String reason = reservation.reserved() ? null : reservation.reason();
-        Order order = orderRepository.save(new Order(orderId, requestId, userId, skuId, quantity,
-                clientContext.clientType(), clientContext.deviceId(), clientContext.channel(), priceQuote.unitPrice(),
-                priceQuote.subtotal(), promotionQuote.discountAmount(), promotionQuote.payableAmount(),
-                priceQuote.currency(), priceQuote.priceVersion(), promotionQuote.couponId(), requestId, status, reason,
-                now, now));
-        orderRepository.saveRoute(order.orderId(), order.requestId(), order.userId());
-        OrderCreateContext context = new OrderCreateContext(requestId, userId, skuId, quantity, clientContext,
-                trustContext, priceQuote, promotionQuote, couponReservation, reservation, order);
-        if (context.order().status() == OrderStatus.CREATED) {
-            appendEvent(context.order(), EventTypes.ORDER_CREATED);
-            businessMetrics.increment(BusinessMetricNames.ORDER_CREATED, "client_type", order.clientType().name(),
-                    "channel", order.channel());
-        } else {
-            businessMetrics.increment(BusinessMetricNames.ORDER_PENDING_RETRY, "reason",
-                    reason == null ? "unknown" : reason);
+    }
+
+    private void compensateWithTransaction(OrderCreateSaga saga, String error) {
+        if (!TransactionSynchronizationManager.isSynchronizationActive()) {
+            sagaCoordinator.compensateAfterRollback(saga, error);
+            return;
         }
-        return context.order();
+        TransactionSynchronizationManager.registerSynchronization(new TransactionSynchronization() {
+            @Override
+            public void afterCompletion(int status) {
+                if (status == TransactionSynchronization.STATUS_ROLLED_BACK) {
+                    sagaCoordinator.compensateAfterRollback(saga, error);
+                }
+            }
+        });
+    }
+
+    private void completeWithTransaction(OrderCreateSaga saga) {
+        if (!TransactionSynchronizationManager.isSynchronizationActive()) {
+            sagaCoordinator.completeAfterCommit(saga);
+            return;
+        }
+        TransactionSynchronizationManager.registerSynchronization(new TransactionSynchronization() {
+            @Override
+            public void afterCommit() {
+                sagaCoordinator.completeAfterCommit(saga);
+            }
+
+            @Override
+            public void afterCompletion(int status) {
+                if (status == TransactionSynchronization.STATUS_ROLLED_BACK) {
+                    sagaCoordinator.compensateAfterRollback(saga, "order local transaction rolled back");
+                }
+            }
+        });
     }
 
     private void appendEvent(Order order, String eventType) {

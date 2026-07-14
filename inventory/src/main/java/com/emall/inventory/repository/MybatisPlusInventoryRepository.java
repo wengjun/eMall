@@ -1,6 +1,8 @@
 package com.emall.inventory.repository;
 
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
+import com.emall.common.persistence.BoundedQuery;
+import com.emall.common.persistence.BoundedQuery;
 import com.baomidou.mybatisplus.core.conditions.update.UpdateWrapper;
 import com.emall.inventory.domain.InventoryBucket;
 import com.emall.inventory.domain.InventoryItem;
@@ -65,8 +67,9 @@ public class MybatisPlusInventoryRepository implements InventoryRepository {
 
     @Override
     public List<InventoryBucket> findBuckets(long skuId) {
-        return bucketMapper
-                .selectList(new QueryWrapper<InventoryBucketEntity>().eq("sku_id", skuId).orderByAsc("bucket_no"))
+        return BoundedQuery
+                .firstPage(bucketMapper,
+                        new QueryWrapper<InventoryBucketEntity>().eq("sku_id", skuId).orderByAsc("bucket_no"))
                 .stream().map(this::toBucket).toList();
     }
 
@@ -165,9 +168,9 @@ public class MybatisPlusInventoryRepository implements InventoryRepository {
     @Override
     public List<InventoryReservation> findExpiredReservations(Instant now, int limit) {
         return reservationMapper
-                .selectList(
-                        new QueryWrapper<InventoryReservationEntity>().eq("status", ReservationStatus.RESERVED.name())
-                                .le("expires_at", databaseTime(now)).orderByAsc("expires_at").last("LIMIT " + limit))
+                .selectList(new QueryWrapper<InventoryReservationEntity>()
+                        .eq("status", ReservationStatus.RESERVED.name()).le("expires_at", databaseTime(now))
+                        .orderByAsc("expires_at").last("LIMIT " + BoundedQuery.limit(limit)))
                 .stream().map(this::toReservation).toList();
     }
 

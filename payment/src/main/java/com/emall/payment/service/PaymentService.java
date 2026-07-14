@@ -13,7 +13,9 @@ import com.emall.common.metrics.BusinessMetricNames;
 import com.emall.common.metrics.BusinessMetrics;
 import com.emall.common.outbox.OutboxRepository;
 import com.emall.common.region.OwnershipGuard;
+import com.emall.common.rpc.OrderPaymentSnapshot;
 import com.emall.common.sharding.ShardRoutingOperations;
+import com.emall.common.sharding.ShardRouteIndex;
 import com.emall.common.trust.ClientTrustContext;
 import com.emall.common.trust.IdentityAccessGuard;
 import com.emall.common.trust.RiskEvaluationRequest;
@@ -29,10 +31,16 @@ import com.emall.payment.domain.PaymentRefundStatus;
 import com.emall.payment.domain.PaymentStatus;
 import com.emall.payment.domain.ReconciliationStatus;
 import com.emall.payment.domain.StatementType;
+import com.emall.payment.channel.ChannelOperationStatus;
+import com.emall.payment.channel.ChannelPaymentResult;
+import com.emall.payment.channel.ChannelRefundResult;
+import com.emall.payment.channel.InMemoryPaymentChannelClient;
+import com.emall.payment.channel.PaymentChannelClient;
 import com.emall.payment.integration.OrderClient;
 import com.emall.payment.repository.PaymentRepository;
 import com.emall.payment.repository.PaymentSettlementRepository;
 import com.emall.payment.security.PaymentCallbackVerifier;
+import com.emall.payment.security.PaymentCallbackReplayGuard;
 import com.emall.payment.security.PaymentSecurityProperties;
 import java.math.BigDecimal;
 import java.time.Clock;
@@ -53,7 +61,10 @@ public class PaymentService {
     private final SnowflakeIdGenerator idGenerator;
     private final OrderClient orderClient;
     private final PaymentCallbackVerifier callbackVerifier;
+    private final PaymentCallbackReplayGuard callbackReplayGuard;
+    private final PaymentChannelClient paymentChannelClient;
     private final ShardRoutingOperations shardRoutingOperations;
+    private final ShardRouteIndex shardRouteIndex;
     private final OwnershipGuard ownershipGuard;
     private final BusinessMetrics businessMetrics;
     private final IdentityAccessGuard identityAccessGuard;
@@ -63,32 +74,48 @@ public class PaymentService {
     public PaymentService(PaymentRepository paymentRepository, PaymentSettlementRepository settlementRepository,
             OutboxRepository outboxRepository, SnowflakeIdGenerator idGenerator, OrderClient orderClient) {
         this(paymentRepository, settlementRepository, outboxRepository, idGenerator, orderClient,
-                new PaymentCallbackVerifier(new PaymentSecurityProperties(), Clock.systemUTC()),
-                ShardRoutingOperations.noop(), OwnershipGuard.noop(), BusinessMetrics.noop(),
-                IdentityAccessGuard.noop(), RiskGuard.noop(), localIdempotencyService());
+                localCallbackVerifier(), new PaymentCallbackReplayGuard(localPaymentSecurityProperties()),
+                new InMemoryPaymentChannelClient(), ShardRoutingOperations.noop(), OwnershipGuard.noop(),
+                BusinessMetrics.noop(), IdentityAccessGuard.noop(), RiskGuard.noop(), localIdempotencyService(),
+                ShardRouteIndex.local());
     }
 
     public PaymentService(PaymentRepository paymentRepository, PaymentSettlementRepository settlementRepository,
             OutboxRepository outboxRepository, SnowflakeIdGenerator idGenerator, OrderClient orderClient,
             PaymentCallbackVerifier callbackVerifier) {
         this(paymentRepository, settlementRepository, outboxRepository, idGenerator, orderClient, callbackVerifier,
+                new PaymentCallbackReplayGuard(localPaymentSecurityProperties()), new InMemoryPaymentChannelClient(),
                 ShardRoutingOperations.noop(), OwnershipGuard.noop(), BusinessMetrics.noop(),
-                IdentityAccessGuard.noop(), RiskGuard.noop(), localIdempotencyService());
+                IdentityAccessGuard.noop(), RiskGuard.noop(), localIdempotencyService(), ShardRouteIndex.local());
+    }
+
+    PaymentService(PaymentRepository paymentRepository, PaymentSettlementRepository settlementRepository,
+            OutboxRepository outboxRepository, SnowflakeIdGenerator idGenerator, OrderClient orderClient,
+            PaymentCallbackVerifier callbackVerifier, PaymentCallbackReplayGuard callbackReplayGuard,
+            PaymentChannelClient paymentChannelClient) {
+        this(paymentRepository, settlementRepository, outboxRepository, idGenerator, orderClient, callbackVerifier,
+                callbackReplayGuard, paymentChannelClient, ShardRoutingOperations.noop(), OwnershipGuard.noop(),
+                BusinessMetrics.noop(), IdentityAccessGuard.noop(), RiskGuard.noop(), localIdempotencyService(),
+                ShardRouteIndex.local());
     }
 
     @Autowired
     public PaymentService(PaymentRepository paymentRepository, PaymentSettlementRepository settlementRepository,
             OutboxRepository outboxRepository, SnowflakeIdGenerator idGenerator, OrderClient orderClient,
-            PaymentCallbackVerifier callbackVerifier, ShardRoutingOperations shardRoutingOperations,
+            PaymentCallbackVerifier callbackVerifier, PaymentCallbackReplayGuard callbackReplayGuard,
+            PaymentChannelClient paymentChannelClient, ShardRoutingOperations shardRoutingOperations,
             OwnershipGuard ownershipGuard, BusinessMetrics businessMetrics, IdentityAccessGuard identityAccessGuard,
-            RiskGuard riskGuard, IdempotencyService idempotencyService) {
+            RiskGuard riskGuard, IdempotencyService idempotencyService, ShardRouteIndex shardRouteIndex) {
         this.paymentRepository = paymentRepository;
         this.settlementRepository = settlementRepository;
         this.outboxRepository = outboxRepository;
         this.idGenerator = idGenerator;
         this.orderClient = orderClient;
         this.callbackVerifier = callbackVerifier;
+        this.callbackReplayGuard = callbackReplayGuard;
+        this.paymentChannelClient = paymentChannelClient;
         this.shardRoutingOperations = shardRoutingOperations;
+        this.shardRouteIndex = shardRouteIndex;
         this.ownershipGuard = ownershipGuard;
         this.businessMetrics = businessMetrics;
         this.identityAccessGuard = identityAccessGuard;
@@ -104,6 +131,7 @@ public class PaymentService {
     @Transactional
     public PaymentOrder create(String requestId, long orderId, long userId, BigDecimal amount, String channel,
             ClientTrustContext trustContext) {
+        OrderPaymentSnapshot snapshot = requirePayableOrder(orderId, userId, amount);
         ClientTrustContext safeTrustContext = normalizeTrustContext(trustContext, userId, channel);
         identityAccessGuard.requireAccess(safeTrustContext, userId, "payment:create", "user:" + userId);
         riskGuard.check(new RiskEvaluationRequest(RiskScene.PAYMENT, safeTrustContext.subjectId(userId),
@@ -111,27 +139,29 @@ public class PaymentService {
         IdempotencyKey key = IdempotencyKey.of("payment", String.valueOf(userId), requestId, "create");
         String requestDigest = idempotencyService
                 .digest("orderId=" + orderId + ",userId=" + userId + ",amount=" + amount + ",channel=" + channel);
-        return IdempotencyExecutor.execute(idempotencyService, key, "Payment", String.valueOf(orderId), requestDigest,
-                () -> createIdempotent(requestId, orderId, userId, amount, channel), ignored -> replayCreate(requestId),
-                payment -> idempotencyService
-                        .digest("paymentId=" + payment.paymentId() + ",status=" + payment.status()));
+        return shardRoutingOperations.execute("payment_order", orderId,
+                () -> IdempotencyExecutor.execute(idempotencyService, key, "Payment", String.valueOf(orderId),
+                        requestDigest,
+                        () -> createIdempotent(requestId, orderId, userId, amount, snapshot.currency(), channel),
+                        ignored -> replayCreate(requestId), payment -> idempotencyService
+                                .digest("paymentId=" + payment.paymentId() + ",status=" + payment.status())));
     }
 
     private PaymentOrder createIdempotent(String requestId, long orderId, long userId, BigDecimal amount,
-            String channel) {
-        long routeOrderId = paymentRepository.findRouteOrderIdByRequestId(requestId).orElse(orderId);
+            String currency, String channel) {
+        long routeOrderId = shardRouteIndex.resolve("payment-request", requestId).orElse(orderId);
         return shardRoutingOperations.execute("payment_order", routeOrderId, () -> {
             ownershipGuard.checkWrite("payment", orderId);
             return paymentRepository.findByRequestId(requestId)
                     .map(existing -> validateIdempotentCreate(existing, orderId, userId, amount, channel))
-                    .orElseGet(() -> createOnce(requestId, orderId, userId, amount, channel));
+                    .orElseGet(() -> createOnce(requestId, orderId, userId, amount, currency, channel));
         });
     }
 
     private PaymentOrder replayCreate(String requestId) {
-        Optional<Long> routeOrderId = paymentRepository.findRouteOrderIdByRequestId(requestId);
+        var routeOrderId = shardRouteIndex.resolve("payment-request", requestId);
         if (routeOrderId.isPresent()) {
-            return shardRoutingOperations.execute("payment_order", routeOrderId.get(),
+            return shardRoutingOperations.execute("payment_order", routeOrderId.getAsLong(),
                     () -> findByRequestId(requestId));
         }
         return findByRequestId(requestId);
@@ -156,6 +186,8 @@ public class PaymentService {
     @Transactional
     public PaymentOrder callback(PaymentCallbackCommand command) {
         callbackVerifier.verify(command);
+        callbackReplayGuard.claim(command);
+        verifyChannelPayment(command.channel(), command.channelTradeNo(), command.paidAmount(), "CNY");
         return callback(command.channel(), command.channelTradeNo(), command.paymentId(), command.paidAmount());
     }
 
@@ -164,12 +196,11 @@ public class PaymentService {
         IdempotencyKey key = IdempotencyKey.of("payment-callback", ownerId, channelTradeNo, "callback");
         String requestDigest = idempotencyService.digest("channel=" + channel + ",tradeNo=" + channelTradeNo
                 + ",paymentId=" + paymentId + ",paidAmount=" + paidAmount);
-        return IdempotencyExecutor.execute(idempotencyService, key, "PaymentCallback", String.valueOf(paymentId),
-                requestDigest,
-                () -> shardRoutingOperations.execute("payment_order", paymentRouteKey(paymentId),
-                        () -> callbackInShard(channel, channelTradeNo, paymentId, paidAmount)),
-                ignored -> get(paymentId), payment -> idempotencyService
-                        .digest("paymentId=" + payment.paymentId() + ",status=" + payment.status()));
+        return shardRoutingOperations.execute("payment_order", paymentRouteKey(paymentId),
+                () -> IdempotencyExecutor.execute(idempotencyService, key, "PaymentCallback", String.valueOf(paymentId),
+                        requestDigest, () -> callbackInShard(channel, channelTradeNo, paymentId, paidAmount),
+                        ignored -> get(paymentId), payment -> idempotencyService
+                                .digest("paymentId=" + payment.paymentId() + ",status=" + payment.status())));
     }
 
     private PaymentOrder callbackInShard(String channel, String channelTradeNo, long paymentId, BigDecimal paidAmount) {
@@ -180,14 +211,17 @@ public class PaymentService {
             }
         });
         PaymentOrder payment = get(paymentId);
-        if (payment.status() == PaymentStatus.SUCCEEDED) {
-            return payment;
-        }
         if (channel != null && !payment.channel().equals(channel)) {
             throw new BusinessException(ErrorCode.CONFLICT, "payment channel mismatch");
         }
         if (payment.amount().compareTo(paidAmount) != 0) {
             throw new BusinessException(ErrorCode.CONFLICT, "paid amount mismatch");
+        }
+        if (!payment.channelTradeNo().equals(channelTradeNo)) {
+            throw new BusinessException(ErrorCode.CONFLICT, "payment channel trade no mismatch");
+        }
+        if (payment.status() == PaymentStatus.SUCCEEDED) {
+            return payment;
         }
         PaymentOrder succeeded = payment.succeed(channelTradeNo);
         if (!paymentRepository.updateStatus(payment.paymentId(), PaymentStatus.CREATED, succeeded)) {
@@ -196,7 +230,8 @@ public class PaymentService {
         appendDoubleEntry(succeeded, "PAYMENT", "payment:" + succeeded.paymentId(), "CHANNEL_CASH", "USER_PAYABLE");
         appendEvent(succeeded, EventTypes.PAYMENT_SUCCEEDED);
         businessMetrics.increment(BusinessMetricNames.PAYMENT_SUCCEEDED, "channel", succeeded.channel());
-        boolean orderUpdated = orderClient.payOrder(payment.orderId());
+        boolean orderUpdated = orderClient.confirmPayment(payment.orderId(), payment.paymentId(), payment.amount(),
+                "CNY", succeeded.channelTradeNo());
         if (!orderUpdated) {
             businessMetrics.increment(BusinessMetricNames.PAYMENT_ORDER_CONFIRM_FAILED, "channel", succeeded.channel());
             return succeeded;
@@ -216,12 +251,11 @@ public class PaymentService {
     public PaymentOrder refund(long paymentId, ClientTrustContext trustContext) {
         IdempotencyKey key = IdempotencyKey.of("payment", String.valueOf(paymentId), "refund-" + paymentId, "refund");
         String requestDigest = idempotencyService.digest("paymentId=" + paymentId);
-        return IdempotencyExecutor.execute(idempotencyService, key, "PaymentRefund", String.valueOf(paymentId),
-                requestDigest,
-                () -> shardRoutingOperations.execute("payment_order", paymentRouteKey(paymentId),
-                        () -> refundInShard(paymentId, trustContext)),
-                ignored -> get(paymentId), payment -> idempotencyService
-                        .digest("paymentId=" + payment.paymentId() + ",status=" + payment.status()));
+        return shardRoutingOperations.execute("payment_order", paymentRouteKey(paymentId),
+                () -> IdempotencyExecutor.execute(idempotencyService, key, "PaymentRefund", String.valueOf(paymentId),
+                        requestDigest, () -> refundInShard(paymentId, trustContext), ignored -> get(paymentId),
+                        payment -> idempotencyService
+                                .digest("paymentId=" + payment.paymentId() + ",status=" + payment.status())));
     }
 
     private PaymentOrder refundInShard(long paymentId, ClientTrustContext trustContext) {
@@ -242,41 +276,104 @@ public class PaymentService {
                 settlementRepository.saveRefundIfAbsent(new PaymentRefundOrder(idGenerator.nextId(),
                         payment.paymentId(), "refund-" + payment.paymentId(), payment.channel(), null, payment.amount(),
                         PaymentRefundStatus.CREATED, "full refund", Instant.now(), Instant.now()));
-        PaymentRefundOrder processing = refundOrder.processing();
-        if (!settlementRepository.updateRefundStatus(refundOrder.refundId(), PaymentRefundStatus.CREATED, processing)
-                && refundOrder.status() != PaymentRefundStatus.PROCESSING
-                && refundOrder.status() != PaymentRefundStatus.SUCCEEDED) {
-            throw new BusinessException(ErrorCode.CONFLICT, "refund order status changed during refund");
+        shardRouteIndex.bindUniqueTransactional("payment-refund-id", Long.toString(refundOrder.refundId()),
+                payment.orderId());
+        PaymentOrder refunding = payment.status() == PaymentStatus.SUCCEEDED ? payment.refunding() : payment;
+        if (payment.status() == PaymentStatus.SUCCEEDED
+                && !paymentRepository.updateStatus(payment.paymentId(), PaymentStatus.SUCCEEDED, refunding)) {
+            refunding = get(payment.paymentId());
         }
-        PaymentRefundOrder succeededRefund = processing.succeeded("local-refund-" + payment.paymentId());
-        settlementRepository.updateRefundStatus(processing.refundId(), PaymentRefundStatus.PROCESSING, succeededRefund);
-        PaymentOrder refunded = payment.refunding().refunded();
-        if (!paymentRepository.updateStatus(payment.paymentId(), payment.status(), refunded)) {
+        if (refundOrder.status() == PaymentRefundStatus.SUCCEEDED) {
+            return completeRefund(refunding, refundOrder);
+        }
+        if (refundOrder.status() == PaymentRefundStatus.PROCESSING) {
+            return refreshRefund(refundOrder.refundId());
+        }
+        if (refundOrder.status() == PaymentRefundStatus.FAILED) {
+            return restorePaymentAfterRefundFailure(refunding);
+        }
+        return refunding;
+    }
+
+    @Transactional
+    public PaymentOrder submitRefund(long refundId) {
+        return shardRoutingOperations.execute("payment_order", refundRouteKey(refundId),
+                () -> submitRefundInShard(refundId));
+    }
+
+    private PaymentOrder submitRefundInShard(long refundId) {
+        PaymentRefundOrder refundOrder = settlementRepository.findRefundById(refundId)
+                .orElseThrow(() -> new BusinessException(ErrorCode.NOT_FOUND, "refund order not found"));
+        PaymentOrder payment = get(refundOrder.paymentId());
+        if (refundOrder.status() != PaymentRefundStatus.CREATED) {
+            return refundOrder.status() == PaymentRefundStatus.PROCESSING ? refreshRefund(refundId) : payment;
+        }
+        ChannelRefundResult channelResult = paymentChannelClient.requestRefund(refundOrder.requestId(),
+                refundOrder.refundId(), payment.channel(), payment.channelTradeNo(), payment.amount(), "CNY");
+        if (channelResult == null || channelResult.status() == null
+                || channelResult.status() != ChannelOperationStatus.FAILED
+                        && (channelResult.channelRefundNo() == null || channelResult.channelRefundNo().isBlank())) {
+            throw new BusinessException(ErrorCode.DOWNSTREAM_UNAVAILABLE,
+                    "payment channel returned an invalid refund response");
+        }
+        PaymentRefundOrder processing = refundOrder.processing(channelResult.channelRefundNo());
+        if (!settlementRepository.updateRefundStatus(refundOrder.refundId(), PaymentRefundStatus.CREATED, processing)) {
             return get(payment.paymentId());
         }
-        appendDoubleEntry(refunded, "REFUND", "refund:" + succeededRefund.refundId(), "USER_PAYABLE", "CHANNEL_CASH");
-        appendEvent(refunded, EventTypes.PAYMENT_REFUNDED);
-        businessMetrics.increment(BusinessMetricNames.PAYMENT_REFUNDED, "channel", refunded.channel());
-        return refunded;
+        if (channelResult.status() == ChannelOperationStatus.SUCCEEDED) {
+            PaymentRefundOrder succeeded = processing.succeeded(channelResult.channelRefundNo());
+            settlementRepository.updateRefundStatus(processing.refundId(), PaymentRefundStatus.PROCESSING, succeeded);
+            return completeRefund(payment, succeeded);
+        }
+        if (channelResult.status() == ChannelOperationStatus.FAILED) {
+            PaymentRefundOrder failed = processing.failed(channelResult.message());
+            settlementRepository.updateRefundStatus(processing.refundId(), PaymentRefundStatus.PROCESSING, failed);
+            return restorePaymentAfterRefundFailure(payment);
+        }
+        return payment;
     }
 
     @Transactional
     public PaymentChannelStatement ingestChannelStatement(String channel, String channelTradeNo, long paymentId,
             BigDecimal amount, StatementType statementType, Instant occurredAt) {
+        return shardRoutingOperations.execute("payment_order", paymentRouteKey(paymentId),
+                () -> ingestChannelStatementInShard(channel, channelTradeNo, paymentId, amount, statementType,
+                        occurredAt));
+    }
+
+    private PaymentChannelStatement ingestChannelStatementInShard(String channel, String channelTradeNo, long paymentId,
+            BigDecimal amount, StatementType statementType, Instant occurredAt) {
         if (amount.signum() <= 0) {
             throw new BusinessException(ErrorCode.BAD_REQUEST, "statement amount must be positive");
         }
         Instant now = Instant.now();
-        return settlementRepository.saveStatementIfAbsent(new PaymentChannelStatement(idGenerator.nextId(), channel,
-                channelTradeNo, paymentId, amount, statementType, occurredAt, false, now));
+        PaymentChannelStatement statement =
+                settlementRepository.saveStatementIfAbsent(new PaymentChannelStatement(idGenerator.nextId(), channel,
+                        channelTradeNo, paymentId, amount, statementType, occurredAt, false, now));
+        shardRouteIndex.bindUniqueTransactional("payment-statement-id", Long.toString(statement.statementId()),
+                paymentRouteKey(paymentId));
+        return statement;
     }
 
     public List<PaymentChannelStatement> findUnreconciledStatements(int limit) {
-        return settlementRepository.findUnreconciledStatements(limit);
+        int boundedLimit = Math.max(1, Math.min(limit, 1000));
+        int shardCount = shardRoutingOperations.physicalShardCount("payment_channel_statement");
+        int perShardLimit = Math.max(1, (boundedLimit + shardCount - 1) / shardCount);
+        return shardRoutingOperations
+                .executeAll("payment_channel_statement",
+                        () -> settlementRepository.findUnreconciledStatements(perShardLimit))
+                .stream().flatMap(List::stream).limit(boundedLimit).toList();
     }
 
     @Transactional
     public PaymentReconciliationRecord reconcileStatement(long statementId) {
+        long routeKey =
+                shardRouteIndex.resolveRequired("payment-statement-id", Long.toString(statementId), statementId);
+        return shardRoutingOperations.execute("payment_channel_statement", routeKey,
+                () -> reconcileStatementInShard(statementId));
+    }
+
+    private PaymentReconciliationRecord reconcileStatementInShard(long statementId) {
         PaymentChannelStatement statement = settlementRepository.findUnreconciledStatementById(statementId)
                 .orElseThrow(() -> new BusinessException(ErrorCode.NOT_FOUND, "statement not found"));
         ownershipGuard.checkWrite("payment", statement.paymentId());
@@ -286,14 +383,70 @@ public class PaymentService {
         return record;
     }
 
-    @Transactional
     public int reconcileChannelStatements(int limit) {
-        return settlementRepository.findUnreconciledStatements(limit).stream()
-                .map(statement -> reconcileStatement(statement.statementId())).toList().size();
+        return findUnreconciledStatements(limit).stream().map(statement -> reconcileStatement(statement.statementId()))
+                .toList().size();
     }
 
     public List<PaymentOrder> findSucceededButUnconfirmed(int limit) {
-        return paymentRepository.findUnconfirmedByStatus(PaymentStatus.SUCCEEDED, limit);
+        int boundedLimit = Math.max(1, Math.min(limit, 1000));
+        int shardCount = shardRoutingOperations.physicalShardCount("payment_order");
+        int perShardLimit = Math.max(1, (boundedLimit + shardCount - 1) / shardCount);
+        return shardRoutingOperations
+                .executeAll("payment_order",
+                        () -> paymentRepository.findUnconfirmedByStatus(PaymentStatus.SUCCEEDED, perShardLimit))
+                .stream().flatMap(List::stream).limit(boundedLimit).toList();
+    }
+
+    public List<PaymentRefundOrder> findProcessingRefunds(int limit) {
+        int boundedLimit = Math.max(1, Math.min(limit, 1000));
+        int shardCount = shardRoutingOperations.physicalShardCount("payment_refund_order");
+        int perShardLimit = Math.max(1, (boundedLimit + shardCount - 1) / shardCount);
+        return shardRoutingOperations
+                .executeAll("payment_refund_order",
+                        () -> settlementRepository.findRefundsByStatus(PaymentRefundStatus.PROCESSING, perShardLimit))
+                .stream().flatMap(List::stream).limit(boundedLimit).toList();
+    }
+
+    public List<PaymentRefundOrder> findCreatedRefunds(int limit) {
+        int boundedLimit = Math.max(1, Math.min(limit, 1000));
+        int shardCount = shardRoutingOperations.physicalShardCount("payment_refund_order");
+        int perShardLimit = Math.max(1, (boundedLimit + shardCount - 1) / shardCount);
+        return shardRoutingOperations
+                .executeAll("payment_refund_order",
+                        () -> settlementRepository.findRefundsByStatus(PaymentRefundStatus.CREATED, perShardLimit))
+                .stream().flatMap(List::stream).limit(boundedLimit).toList();
+    }
+
+    @Transactional
+    public PaymentOrder refreshRefund(long refundId) {
+        return shardRoutingOperations.execute("payment_order", refundRouteKey(refundId),
+                () -> refreshRefundInShard(refundId));
+    }
+
+    private PaymentOrder refreshRefundInShard(long refundId) {
+        PaymentRefundOrder refund = settlementRepository.findRefundById(refundId)
+                .orElseThrow(() -> new BusinessException(ErrorCode.NOT_FOUND, "refund order not found"));
+        PaymentOrder payment = get(refund.paymentId());
+        if (refund.status() == PaymentRefundStatus.SUCCEEDED) {
+            return completeRefund(payment, refund);
+        }
+        if (refund.status() != PaymentRefundStatus.PROCESSING || refund.channelRefundNo() == null) {
+            return payment;
+        }
+        ChannelRefundResult channelResult =
+                paymentChannelClient.queryRefund(refund.channel(), refund.channelRefundNo());
+        if (channelResult.status() == ChannelOperationStatus.PROCESSING) {
+            return payment;
+        }
+        if (channelResult.status() == ChannelOperationStatus.FAILED) {
+            PaymentRefundOrder failed = refund.failed(channelResult.message());
+            settlementRepository.updateRefundStatus(refund.refundId(), PaymentRefundStatus.PROCESSING, failed);
+            return restorePaymentAfterRefundFailure(payment);
+        }
+        PaymentRefundOrder succeeded = refund.succeeded(channelResult.channelRefundNo());
+        settlementRepository.updateRefundStatus(refund.refundId(), PaymentRefundStatus.PROCESSING, succeeded);
+        return completeRefund(payment, succeeded);
     }
 
     @Transactional
@@ -308,7 +461,8 @@ public class PaymentService {
         if (payment.status() != PaymentStatus.SUCCEEDED || payment.orderConfirmed()) {
             return payment;
         }
-        if (orderClient.payOrder(payment.orderId())) {
+        if (orderClient.confirmPayment(payment.orderId(), payment.paymentId(), payment.amount(), "CNY",
+                payment.channelTradeNo())) {
             PaymentOrder confirmed = payment.confirmOrder();
             return paymentRepository.markOrderConfirmed(payment.paymentId(), PaymentStatus.SUCCEEDED, confirmed)
                     ? confirmed
@@ -317,14 +471,25 @@ public class PaymentService {
         return payment;
     }
 
-    private PaymentOrder createOnce(String requestId, long orderId, long userId, BigDecimal amount, String channel) {
+    private PaymentOrder createOnce(String requestId, long orderId, long userId, BigDecimal amount, String currency,
+            String channel) {
         if (amount.signum() <= 0) {
             throw new BusinessException(ErrorCode.BAD_REQUEST, "amount must be positive");
         }
         Instant now = Instant.now();
-        PaymentOrder payment = paymentRepository.save(new PaymentOrder(idGenerator.nextId(), requestId, orderId, userId,
-                amount, channel, null, PaymentStatus.CREATED, false, now, now));
+        long paymentId = idGenerator.nextId();
+        ChannelPaymentResult channelResult =
+                paymentChannelClient.createPayment(requestId, paymentId, orderId, amount, currency, channel);
+        if (channelResult == null || channelResult.channelTradeNo() == null || channelResult.channelTradeNo().isBlank()
+                || channelResult.status() == ChannelOperationStatus.FAILED || channelResult.amount() == null
+                || channelResult.amount().compareTo(amount) != 0 || !currency.equals(channelResult.currency())) {
+            throw new BusinessException(ErrorCode.DOWNSTREAM_UNAVAILABLE, "payment channel did not create payment");
+        }
+        PaymentOrder payment = paymentRepository.save(new PaymentOrder(paymentId, requestId, orderId, userId, amount,
+                channel, channelResult.channelTradeNo(), PaymentStatus.CREATED, false, now, now));
         paymentRepository.saveRoute(payment.paymentId(), payment.requestId(), payment.orderId(), payment.userId());
+        shardRouteIndex.bindUniqueTransactional("payment-id", Long.toString(payment.paymentId()), payment.orderId());
+        shardRouteIndex.bindUniqueTransactional("payment-request", payment.requestId(), payment.orderId());
         return payment;
     }
 
@@ -335,6 +500,69 @@ public class PaymentService {
             throw new BusinessException(ErrorCode.CONFLICT, "requestId already used by different payment request");
         }
         return existing;
+    }
+
+    private OrderPaymentSnapshot requirePayableOrder(long orderId, long userId, BigDecimal amount) {
+        OrderPaymentSnapshot snapshot = orderClient.paymentSnapshot(orderId);
+        if (snapshot == null || snapshot.orderId() != orderId) {
+            throw new BusinessException(ErrorCode.DOWNSTREAM_UNAVAILABLE, "order payment snapshot is unavailable");
+        }
+        if (snapshot.userId() != userId) {
+            throw new BusinessException(ErrorCode.FORBIDDEN, "order does not belong to payment account");
+        }
+        if (snapshot.payableAmount().compareTo(amount) != 0) {
+            throw new BusinessException(ErrorCode.CONFLICT, "payment amount does not match order payable amount");
+        }
+        if (!"CNY".equals(snapshot.currency())) {
+            throw new BusinessException(ErrorCode.CONFLICT, "payment currency is not supported");
+        }
+        if (!"CREATED".equals(snapshot.status())) {
+            throw new BusinessException(ErrorCode.CONFLICT, "order is not payable from " + snapshot.status());
+        }
+        return snapshot;
+    }
+
+    private void verifyChannelPayment(String channel, String channelTradeNo, BigDecimal amount, String currency) {
+        ChannelPaymentResult result = paymentChannelClient.queryPayment(channel, channelTradeNo);
+        if (result == null || result.status() != ChannelOperationStatus.SUCCEEDED
+                || !channelTradeNo.equals(result.channelTradeNo()) || result.amount().compareTo(amount) != 0
+                || !currency.equals(result.currency())) {
+            throw new BusinessException(ErrorCode.CONFLICT, "payment channel confirmation does not match callback");
+        }
+    }
+
+    private PaymentOrder completeRefund(PaymentOrder payment, PaymentRefundOrder succeededRefund) {
+        if (payment.status() == PaymentStatus.REFUNDED) {
+            return payment;
+        }
+        PaymentOrder refunding = payment;
+        if (payment.status() == PaymentStatus.SUCCEEDED) {
+            refunding = payment.refunding();
+            if (!paymentRepository.updateStatus(payment.paymentId(), PaymentStatus.SUCCEEDED, refunding)) {
+                refunding = get(payment.paymentId());
+            }
+        }
+        if (refunding.status() != PaymentStatus.REFUNDING) {
+            throw new BusinessException(ErrorCode.CONFLICT, "payment is not in refunding state");
+        }
+        PaymentOrder refunded = refunding.refunded();
+        if (!paymentRepository.updateStatus(payment.paymentId(), refunding.status(), refunded)) {
+            return get(payment.paymentId());
+        }
+        appendDoubleEntry(refunded, "REFUND", "refund:" + succeededRefund.refundId(), "USER_PAYABLE", "CHANNEL_CASH");
+        appendEvent(refunded, EventTypes.PAYMENT_REFUNDED);
+        businessMetrics.increment(BusinessMetricNames.PAYMENT_REFUNDED, "channel", refunded.channel());
+        return refunded;
+    }
+
+    private PaymentOrder restorePaymentAfterRefundFailure(PaymentOrder payment) {
+        if (payment.status() != PaymentStatus.REFUNDING) {
+            return payment;
+        }
+        PaymentOrder restored = payment.refundFailed();
+        return paymentRepository.updateStatus(payment.paymentId(), PaymentStatus.REFUNDING, restored)
+                ? restored
+                : get(payment.paymentId());
     }
 
     private ClientTrustContext normalizeTrustContext(ClientTrustContext trustContext, long userId, String channel) {
@@ -393,11 +621,25 @@ public class PaymentService {
     }
 
     private long paymentRouteKey(long paymentId) {
-        return paymentRepository.findRouteOrderIdByPaymentId(paymentId).orElse(paymentId);
+        return shardRouteIndex.resolveRequired("payment-id", Long.toString(paymentId), paymentId);
+    }
+
+    private long refundRouteKey(long refundId) {
+        return shardRouteIndex.resolveRequired("payment-refund-id", Long.toString(refundId), refundId);
     }
 
     private static IdempotencyService localIdempotencyService() {
         return new IdempotencyService(new InMemoryIdempotencyRepository(), Clock.systemUTC(), Duration.ofSeconds(30),
                 Duration.ofDays(1));
+    }
+
+    private static PaymentSecurityProperties localPaymentSecurityProperties() {
+        PaymentSecurityProperties properties = new PaymentSecurityProperties();
+        properties.setCallbackSecrets(Map.of("default", "local-test-payment-callback-secret-32-bytes"));
+        return properties;
+    }
+
+    private static PaymentCallbackVerifier localCallbackVerifier() {
+        return new PaymentCallbackVerifier(localPaymentSecurityProperties(), Clock.systemUTC());
     }
 }

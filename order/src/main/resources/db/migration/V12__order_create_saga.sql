@@ -1,0 +1,20 @@
+CREATE TABLE order_create_saga (
+    saga_id BIGINT NOT NULL,
+    request_id VARCHAR(128) NOT NULL,
+    order_id BIGINT NOT NULL,
+    user_id BIGINT NOT NULL,
+    sku_id BIGINT NOT NULL,
+    coupon_id VARCHAR(128) NULL,
+    inventory_reservation_id VARCHAR(128) NOT NULL,
+    stage VARCHAR(32) NOT NULL,
+    status VARCHAR(32) NOT NULL,
+    attempts INT NOT NULL DEFAULT 0,
+    last_error VARCHAR(512) NULL,
+    next_retry_at TIMESTAMP(6) NULL,
+    created_at TIMESTAMP(6) NOT NULL,
+    updated_at TIMESTAMP(6) NOT NULL,
+    PRIMARY KEY (saga_id),
+    UNIQUE KEY uk_order_saga_request (request_id),
+    KEY idx_order_saga_recovery (status, next_retry_at, updated_at),
+    KEY idx_order_saga_order (order_id)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;

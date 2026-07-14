@@ -1,6 +1,8 @@
 package com.emall.user.api;
 
 import com.emall.common.api.ApiResponse;
+import com.emall.common.security.AuthorizationGuard;
+import com.emall.common.security.AuthenticationContext;
 import com.emall.user.domain.UserAccount;
 import com.emall.user.domain.UserStatus;
 import com.emall.user.service.UserService;
@@ -11,6 +13,7 @@ import jakarta.validation.constraints.Pattern;
 import jakarta.validation.constraints.Size;
 import java.time.Instant;
 import org.springframework.http.HttpStatus;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PatchMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -24,37 +27,51 @@ import org.springframework.web.bind.annotation.RestController;
 @RequestMapping("/api/users")
 public class UserController {
     private final UserService userService;
+    private final AuthorizationGuard authorizationGuard;
 
     public UserController(UserService userService) {
+        this(userService, AuthorizationGuard.noop());
+    }
+
+    @Autowired
+    public UserController(UserService userService, AuthorizationGuard authorizationGuard) {
         this.userService = userService;
+        this.authorizationGuard = authorizationGuard;
     }
 
     @PostMapping
     @ResponseStatus(HttpStatus.CREATED)
     public ApiResponse<UserProfileResponse> register(@Valid @RequestBody RegisterUserRequest request) {
-        return ApiResponse.ok(toProfile(userService.register(request.mobile(), request.nickname())));
+        UserAccount user = AuthenticationContext.current()
+                .map(principal -> userService.register(principal.accountId(), request.mobile(), request.nickname()))
+                .orElseGet(() -> userService.register(request.mobile(), request.nickname()));
+        return ApiResponse.ok(toProfile(user));
     }
 
     @GetMapping("/{userId}")
     public ApiResponse<UserProfileResponse> getUser(@PathVariable long userId) {
+        authorizationGuard.requireOwnerOrOperator(userId);
         return ApiResponse.ok(toProfile(userService.privacySnapshot(userId)));
     }
 
     @PatchMapping("/{userId}/nickname")
     public ApiResponse<UserProfileResponse> rename(@PathVariable long userId,
             @Valid @RequestBody RenameUserRequest request) {
+        authorizationGuard.requireOwnerOrOperator(userId);
         return ApiResponse.ok(toProfile(userService.rename(userId, request.nickname())));
     }
 
     @PatchMapping("/{userId}/status")
     public ApiResponse<UserProfileResponse> changeStatus(@PathVariable long userId,
             @Valid @RequestBody ChangeUserStatusRequest request) {
+        authorizationGuard.requireOperator();
         return ApiResponse.ok(toProfile(userService.changeStatus(userId, request.status())));
     }
 
     @PostMapping("/{userId}/privacy-requests/apply")
     public ApiResponse<UserProfileResponse> applyPrivacyRequest(@PathVariable long userId,
             @Valid @RequestBody ApplyPrivacyRequest request) {
+        authorizationGuard.requireOwnerOrOperator(userId);
         return ApiResponse.ok(toProfile(userService.applyPrivacyRequest(userId, request.requestType())));
     }
 

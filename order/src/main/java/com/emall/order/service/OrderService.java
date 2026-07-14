@@ -14,6 +14,7 @@ import com.emall.common.metrics.BusinessMetrics;
 import com.emall.common.outbox.OutboxRepository;
 import com.emall.common.region.OwnershipGuard;
 import com.emall.common.sharding.ShardRoutingOperations;
+import com.emall.common.sharding.ShardRouteIndex;
 import com.emall.common.trust.ClientTrustContext;
 import com.emall.common.trust.IdentityAccessGuard;
 import com.emall.common.trust.RiskEvaluationRequest;
@@ -30,6 +31,7 @@ import com.emall.order.integration.MarketingClient;
 import com.emall.order.integration.PricingClient;
 import com.emall.order.repository.OrderRepository;
 import com.emall.order.workflow.OrderCreateWorkflow;
+import com.emall.order.saga.OrderSagaCoordinator;
 import java.time.Clock;
 import java.time.Duration;
 import java.time.Instant;
@@ -49,6 +51,7 @@ public class OrderService {
     private final PricingClient pricingClient;
     private final MarketingClient marketingClient;
     private final ShardRoutingOperations shardRoutingOperations;
+    private final ShardRouteIndex shardRouteIndex;
     private final OwnershipGuard ownershipGuard;
     private final BusinessMetrics businessMetrics;
     private final IdentityAccessGuard identityAccessGuard;
@@ -62,7 +65,19 @@ public class OrderService {
             MarketingClient marketingClient) {
         this(orderRepository, outboxRepository, idGenerator, inventoryClient, pricingClient, marketingClient,
                 ShardRoutingOperations.noop(), OwnershipGuard.noop(), BusinessMetrics.noop(),
-                IdentityAccessGuard.noop(), RiskGuard.noop(), localIdempotencyService(), OrderSubmissionGuard.noop());
+                IdentityAccessGuard.noop(), RiskGuard.noop(), localIdempotencyService(), OrderSubmissionGuard.noop(),
+                ShardRouteIndex.local(), OrderSagaCoordinator.local(orderRepository, inventoryClient, marketingClient));
+    }
+
+    public OrderService(OrderRepository orderRepository, OutboxRepository outboxRepository,
+            SnowflakeIdGenerator idGenerator, InventoryClient inventoryClient, PricingClient pricingClient,
+            MarketingClient marketingClient, ShardRoutingOperations shardRoutingOperations,
+            OwnershipGuard ownershipGuard, BusinessMetrics businessMetrics, IdentityAccessGuard identityAccessGuard,
+            RiskGuard riskGuard, IdempotencyService idempotencyService, OrderSubmissionGuard orderSubmissionGuard) {
+        this(orderRepository, outboxRepository, idGenerator, inventoryClient, pricingClient, marketingClient,
+                shardRoutingOperations, ownershipGuard, businessMetrics, identityAccessGuard, riskGuard,
+                idempotencyService, orderSubmissionGuard, ShardRouteIndex.local(),
+                OrderSagaCoordinator.local(orderRepository, inventoryClient, marketingClient));
     }
 
     @Autowired
@@ -70,7 +85,8 @@ public class OrderService {
             SnowflakeIdGenerator idGenerator, InventoryClient inventoryClient, PricingClient pricingClient,
             MarketingClient marketingClient, ShardRoutingOperations shardRoutingOperations,
             OwnershipGuard ownershipGuard, BusinessMetrics businessMetrics, IdentityAccessGuard identityAccessGuard,
-            RiskGuard riskGuard, IdempotencyService idempotencyService, OrderSubmissionGuard orderSubmissionGuard) {
+            RiskGuard riskGuard, IdempotencyService idempotencyService, OrderSubmissionGuard orderSubmissionGuard,
+            ShardRouteIndex shardRouteIndex, OrderSagaCoordinator sagaCoordinator) {
         this.orderRepository = orderRepository;
         this.outboxRepository = outboxRepository;
         this.idGenerator = idGenerator;
@@ -78,6 +94,7 @@ public class OrderService {
         this.pricingClient = pricingClient;
         this.marketingClient = marketingClient;
         this.shardRoutingOperations = shardRoutingOperations;
+        this.shardRouteIndex = shardRouteIndex;
         this.ownershipGuard = ownershipGuard;
         this.businessMetrics = businessMetrics;
         this.identityAccessGuard = identityAccessGuard;
@@ -85,7 +102,7 @@ public class OrderService {
         this.idempotencyService = idempotencyService;
         this.orderSubmissionGuard = orderSubmissionGuard;
         this.orderCreateWorkflow = new OrderCreateWorkflow(orderRepository, outboxRepository, idGenerator,
-                inventoryClient, pricingClient, marketingClient, businessMetrics, riskGuard);
+                inventoryClient, pricingClient, marketingClient, businessMetrics, riskGuard, sagaCoordinator);
     }
 
     @Transactional
@@ -115,28 +132,33 @@ public class OrderService {
         String requestDigest = idempotencyService.digest("userId=" + userId + ",skuId=" + skuId + ",quantity="
                 + quantity + ",clientType=" + safeContext.clientType() + ",deviceId=" + safeContext.deviceId()
                 + ",channel=" + safeContext.channel());
-        return IdempotencyExecutor.execute(idempotencyService, key, "Order", String.valueOf(userId), requestDigest,
+        return shardRoutingOperations.execute("order_record", userId, () -> IdempotencyExecutor.execute(
+                idempotencyService, key, "Order", String.valueOf(userId), requestDigest,
                 () -> createIdempotent(requestId, userId, skuId, quantity, safeContext, safeTrustContext),
                 ignored -> replayCreate(requestId),
-                order -> idempotencyService.digest("orderId=" + order.orderId() + ",status=" + order.status()));
+                order -> idempotencyService.digest("orderId=" + order.orderId() + ",status=" + order.status())));
     }
 
     private Order createIdempotent(String requestId, long userId, long skuId, int quantity,
             OrderClientContext safeContext, ClientTrustContext safeTrustContext) {
-        long routeUserId = orderRepository.findRouteUserIdByRequestId(requestId).orElse(userId);
+        long routeUserId = shardRouteIndex.resolve("order-request", requestId).orElse(userId);
         return shardRoutingOperations.execute("order_record", routeUserId, () -> {
             ownershipGuard.checkWrite("order", userId);
-            return orderRepository.findByRequestId(requestId)
+            Order order = orderRepository.findByRequestId(requestId)
                     .map(existing -> validateIdempotentCreate(existing, userId, skuId, quantity, safeContext))
                     .orElseGet(() -> orderCreateWorkflow.create(requestId, userId, skuId, quantity, safeContext,
                             safeTrustContext));
+            shardRouteIndex.bindUniqueTransactional("order-id", Long.toString(order.orderId()), order.userId());
+            shardRouteIndex.bindUniqueTransactional("order-request", order.requestId(), order.userId());
+            return order;
         });
     }
 
     private Order replayCreate(String requestId) {
-        Optional<Long> routeUserId = orderRepository.findRouteUserIdByRequestId(requestId);
+        var routeUserId = shardRouteIndex.resolve("order-request", requestId);
         if (routeUserId.isPresent()) {
-            return shardRoutingOperations.execute("order_record", routeUserId.get(), () -> findByRequestId(requestId));
+            return shardRoutingOperations.execute("order_record", routeUserId.getAsLong(),
+                    () -> findByRequestId(requestId));
         }
         return findByRequestId(requestId);
     }
@@ -152,7 +174,12 @@ public class OrderService {
     }
 
     public List<Order> findByStatus(OrderStatus status, int limit) {
-        return orderRepository.findByStatus(status, limit);
+        int boundedLimit = Math.max(1, Math.min(limit, 1000));
+        int shardCount = shardRoutingOperations.physicalShardCount("order_record");
+        int perShardLimit = Math.max(1, (boundedLimit + shardCount - 1) / shardCount);
+        return shardRoutingOperations
+                .executeAll("order_record", () -> orderRepository.findByStatus(status, perShardLimit)).stream()
+                .flatMap(List::stream).limit(boundedLimit).toList();
     }
 
     @Transactional
@@ -330,7 +357,7 @@ public class OrderService {
     }
 
     private long orderRouteKey(long orderId) {
-        return orderRepository.findRouteUserIdByOrderId(orderId).orElse(orderId);
+        return shardRouteIndex.resolveRequired("order-id", Long.toString(orderId), orderId);
     }
 
     private static IdempotencyService localIdempotencyService() {

@@ -49,14 +49,16 @@ public abstract class MybatisPlusProcessedMessageRepositorySupport implements Pr
 
     @Override
     public int markFailed(String messageId, String errorCode, String lastError) {
-        ProcessedMessageRecord current = processedMessageMapper.selectById(messageId);
-        int retryCount = current == null || current.getRetryCount() == null ? 1 : current.getRetryCount() + 1;
         LocalDateTime now = now();
-        processedMessageMapper.update(null,
+        int updated = processedMessageMapper.update(null,
                 new UpdateWrapper<ProcessedMessageRecord>().set("status", ProcessedMessageStatus.FAILED.name())
-                        .set("retry_count", retryCount).set("last_error_code", errorCode).set("last_error", lastError)
-                        .set("updated_at", now).eq("message_id", messageId));
-        return retryCount;
+                        .setSql("retry_count = COALESCE(retry_count, 0) + 1").set("last_error_code", errorCode)
+                        .set("last_error", lastError).set("updated_at", now).eq("message_id", messageId));
+        if (updated == 0) {
+            insertFirstFailure(messageId, errorCode, lastError, now);
+        }
+        ProcessedMessageRecord current = processedMessageMapper.selectById(messageId);
+        return current == null || current.getRetryCount() == null ? 1 : current.getRetryCount();
     }
 
     @Override
@@ -80,6 +82,25 @@ public abstract class MybatisPlusProcessedMessageRepositorySupport implements Pr
                                 .and(wrapper -> wrapper.eq("status", ProcessedMessageStatus.FAILED.name())
                                         .or(nested -> nested.eq("status", ProcessedMessageStatus.PROCESSING.name())
                                                 .le("updated_at", expiredProcessing)))) == 1;
+    }
+
+    private void insertFirstFailure(String messageId, String errorCode, String lastError, LocalDateTime now) {
+        ProcessedMessageRecord failed = new ProcessedMessageRecord();
+        failed.setMessageId(messageId);
+        failed.setProcessedAt(now);
+        failed.setStatus(ProcessedMessageStatus.FAILED.name());
+        failed.setRetryCount(1);
+        failed.setLastErrorCode(errorCode);
+        failed.setLastError(lastError);
+        failed.setUpdatedAt(now);
+        try {
+            processedMessageMapper.insert(failed);
+        } catch (DuplicateKeyException ex) {
+            processedMessageMapper.update(null,
+                    new UpdateWrapper<ProcessedMessageRecord>().set("status", ProcessedMessageStatus.FAILED.name())
+                            .setSql("retry_count = COALESCE(retry_count, 0) + 1").set("last_error_code", errorCode)
+                            .set("last_error", lastError).set("updated_at", now).eq("message_id", messageId));
+        }
     }
 
     private LocalDateTime now() {

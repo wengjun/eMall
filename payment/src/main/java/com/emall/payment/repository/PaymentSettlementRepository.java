@@ -15,6 +15,10 @@ public interface PaymentSettlementRepository {
 
     Optional<PaymentRefundOrder> findRefundByRequestId(String requestId);
 
+    Optional<PaymentRefundOrder> findRefundById(long refundId);
+
+    List<PaymentRefundOrder> findRefundsByStatus(PaymentRefundStatus status, int limit);
+
     PaymentLedgerEntry saveLedgerIfAbsent(PaymentLedgerEntry entry);
 
     PaymentChannelStatement saveStatementIfAbsent(PaymentChannelStatement statement);

@@ -1,6 +1,7 @@
 package com.emall.payment.repository;
 
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
+import com.emall.common.persistence.BoundedQuery;
 import com.baomidou.mybatisplus.core.conditions.update.UpdateWrapper;
 import com.emall.payment.domain.PaymentOrder;
 import com.emall.payment.domain.PaymentStatus;
@@ -106,8 +107,9 @@ public class MybatisPlusPaymentRepository implements PaymentRepository {
     @Override
     public List<PaymentOrder> findUnconfirmedByStatus(PaymentStatus status, int limit) {
         return paymentOrderMapper
-                .selectList(new QueryWrapper<PaymentOrderEntity>().eq("status", status.name())
-                        .eq("order_confirmed", false).orderByAsc("updated_at").last("LIMIT " + limit))
+                .selectList(
+                        new QueryWrapper<PaymentOrderEntity>().eq("status", status.name()).eq("order_confirmed", false)
+                                .orderByAsc("updated_at").last("LIMIT " + BoundedQuery.limit(limit)))
                 .stream().map(this::toDomain).toList();
     }
 

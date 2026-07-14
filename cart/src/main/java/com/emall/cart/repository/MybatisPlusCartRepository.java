@@ -1,6 +1,7 @@
 package com.emall.cart.repository;
 
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
+import com.emall.common.persistence.BoundedQuery;
 import com.baomidou.mybatisplus.core.conditions.update.UpdateWrapper;
 import com.emall.cart.domain.CartItem;
 import java.time.LocalDateTime;
@@ -60,9 +61,10 @@ public class MybatisPlusCartRepository implements CartRepository {
 
     @Override
     public List<CartItem> findByUserId(long userId) {
-        return cartItemMapper
-                .selectList(new QueryWrapper<CartItemEntity>().eq("user_id", userId).orderByDesc("updated_at")).stream()
-                .map(this::toDomain).toList();
+        return BoundedQuery
+                .firstPage(cartItemMapper,
+                        new QueryWrapper<CartItemEntity>().eq("user_id", userId).orderByDesc("updated_at"))
+                .stream().map(this::toDomain).toList();
     }
 
     @Override

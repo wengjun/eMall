@@ -13,6 +13,8 @@ import com.emall.common.idempotency.InMemoryIdempotencyRepository;
 import com.emall.common.metrics.BusinessMetricNames;
 import com.emall.common.metrics.BusinessMetrics;
 import com.emall.common.outbox.OutboxRepository;
+import com.emall.common.sharding.ShardRouteIndex;
+import com.emall.common.sharding.ShardRoutingOperations;
 import com.emall.common.trust.ClientTrustContext;
 import com.emall.common.trust.IdentityAccessGuard;
 import com.emall.common.trust.RiskEvaluationRequest;
@@ -53,12 +55,14 @@ public class FlashSaleService {
     private final IdentityAccessGuard identityAccessGuard;
     private final RiskGuard riskGuard;
     private final IdempotencyService idempotencyService;
+    private final ShardRoutingOperations shardRoutingOperations;
+    private final ShardRouteIndex shardRouteIndex;
 
     public FlashSaleService(FlashSaleRepository repository, SnowflakeIdGenerator idGenerator) {
         this(repository, idGenerator, new InMemoryFlashSaleRuntimeStore(),
                 new FlashSaleTokenSigner("local-dev-flash-sale-token-secret"), new NoopFlashSaleOrderQueuePublisher(),
                 new InMemoryOutboxRepository(), BusinessMetrics.noop(), IdentityAccessGuard.noop(), RiskGuard.noop(),
-                localIdempotencyService());
+                localIdempotencyService(), ShardRoutingOperations.noop(), ShardRouteIndex.local());
     }
 
     @Autowired
@@ -66,7 +70,8 @@ public class FlashSaleService {
             FlashSaleRuntimeStore runtimeStore, FlashSaleTokenSigner tokenSigner,
             FlashSaleOrderQueuePublisher queuePublisher, OutboxRepository outboxRepository,
             BusinessMetrics businessMetrics, IdentityAccessGuard identityAccessGuard, RiskGuard riskGuard,
-            IdempotencyService idempotencyService) {
+            IdempotencyService idempotencyService, ShardRoutingOperations shardRoutingOperations,
+            ShardRouteIndex shardRouteIndex) {
         this.repository = repository;
         this.idGenerator = idGenerator;
         this.runtimeStore = runtimeStore;
@@ -77,6 +82,8 @@ public class FlashSaleService {
         this.identityAccessGuard = identityAccessGuard;
         this.riskGuard = riskGuard;
         this.idempotencyService = idempotencyService;
+        this.shardRoutingOperations = shardRoutingOperations;
+        this.shardRouteIndex = shardRouteIndex;
     }
 
     @Transactional
@@ -86,18 +93,19 @@ public class FlashSaleService {
             throw new BusinessException(ErrorCode.BAD_REQUEST, "campaign start time must be before end time");
         }
         Instant now = Instant.now();
-        return repository.saveCampaign(new FlashSaleCampaign(idGenerator.nextId(), skuId, name, startsAt, endsAt,
-                perUserLimit, tokenTtlSeconds, queueCapacity, CampaignStatus.DRAFT, now, now));
+        long campaignId = idGenerator.nextId();
+        return executeCampaign(campaignId, () -> repository.saveCampaign(new FlashSaleCampaign(campaignId, skuId, name,
+                startsAt, endsAt, perUserLimit, tokenTtlSeconds, queueCapacity, CampaignStatus.DRAFT, now, now)));
     }
 
     public FlashSaleCampaign getCampaign(long campaignId) {
-        return repository.findCampaign(campaignId)
-                .orElseThrow(() -> new BusinessException(ErrorCode.NOT_FOUND, "flash sale campaign not found"));
+        return executeCampaign(campaignId, () -> repository.findCampaign(campaignId)
+                .orElseThrow(() -> new BusinessException(ErrorCode.NOT_FOUND, "flash sale campaign not found")));
     }
 
     @Transactional
     public FlashSaleCampaign changeCampaignStatus(long campaignId, CampaignStatus status) {
-        return repository.saveCampaign(getCampaign(campaignId).changeStatus(status));
+        return executeCampaign(campaignId, () -> repository.saveCampaign(getCampaign(campaignId).changeStatus(status)));
     }
 
     @Transactional
@@ -105,16 +113,18 @@ public class FlashSaleService {
         if (totalStock <= 0) {
             throw new BusinessException(ErrorCode.BAD_REQUEST, "flash sale stock must be positive");
         }
-        FlashSaleCampaign campaign = getCampaign(campaignId);
-        FlashSaleStock stock =
-                new FlashSaleStock(campaignId, campaign.skuId(), totalStock, totalStock, 0, 0, 0, Instant.now());
-        runtimeStore.preloadStock(campaignId, totalStock);
-        return repository.saveStock(stock);
+        return executeCampaign(campaignId, () -> {
+            FlashSaleCampaign campaign = getCampaign(campaignId);
+            FlashSaleStock stock =
+                    new FlashSaleStock(campaignId, campaign.skuId(), totalStock, totalStock, 0, 0, 0, Instant.now());
+            runtimeStore.preloadStock(campaignId, totalStock);
+            return repository.saveStock(stock);
+        });
     }
 
     public FlashSaleStock getStock(long campaignId) {
-        return repository.findStock(campaignId)
-                .orElseThrow(() -> new BusinessException(ErrorCode.NOT_FOUND, "flash sale stock not found"));
+        return executeCampaign(campaignId, () -> repository.findStock(campaignId)
+                .orElseThrow(() -> new BusinessException(ErrorCode.NOT_FOUND, "flash sale stock not found")));
     }
 
     @Transactional
@@ -130,15 +140,17 @@ public class FlashSaleService {
     @Transactional
     public FlashSaleToken issueToken(String requestId, long campaignId, long userId, int quantity,
             ClientTrustContext trustContext) {
-        if (requestId == null || requestId.isBlank()) {
-            return issueTokenRaw(campaignId, userId, quantity, trustContext);
-        }
-        IdempotencyKey key = IdempotencyKey.of("flash-sale", String.valueOf(userId), requestId, "issue-token");
-        String requestDigest =
-                idempotencyService.digest("campaignId=" + campaignId + ",userId=" + userId + ",quantity=" + quantity);
-        return IdempotencyExecutor.execute(idempotencyService, key, "FlashSaleToken", String.valueOf(campaignId),
-                requestDigest, () -> issueTokenRaw(campaignId, userId, quantity, trustContext), this::replayIssuedToken,
-                token -> Long.toString(token.tokenId()));
+        return executeCampaign(campaignId, () -> {
+            if (requestId == null || requestId.isBlank()) {
+                return issueTokenRaw(campaignId, userId, quantity, trustContext);
+            }
+            IdempotencyKey key = IdempotencyKey.of("flash-sale", String.valueOf(userId), requestId, "issue-token");
+            String requestDigest = idempotencyService
+                    .digest("campaignId=" + campaignId + ",userId=" + userId + ",quantity=" + quantity);
+            return IdempotencyExecutor.execute(idempotencyService, key, "FlashSaleToken", String.valueOf(campaignId),
+                    requestDigest, () -> issueTokenRaw(campaignId, userId, quantity, trustContext),
+                    this::replayIssuedToken, token -> Long.toString(token.tokenId()));
+        });
     }
 
     private FlashSaleToken issueTokenRaw(long campaignId, long userId, int quantity, ClientTrustContext trustContext) {
@@ -172,6 +184,8 @@ public class FlashSaleService {
                     tokenSigner.sign(tokenId, campaignId, userId, campaign.skuId(), quantity, expiresAt), expiresAt,
                     false, now, now);
             FlashSaleToken saved = repository.saveToken(token);
+            shardRouteIndex.bindUniqueTransactional("flash-sale-token", saved.token(), campaignId);
+            shardRouteIndex.bindUniqueTransactional("flash-sale-token-id", Long.toString(saved.tokenId()), campaignId);
             businessMetrics.increment(BusinessMetricNames.FLASH_SALE_TOKEN_ISSUED, "campaign_id",
                     String.valueOf(campaignId));
             return saved;
@@ -196,6 +210,15 @@ public class FlashSaleService {
 
     @Transactional
     public FlashSaleOrderRequest enqueueOrder(String requestId, String tokenValue, ClientTrustContext trustContext) {
+        if (!tokenSigner.verify(tokenValue)) {
+            throw new BusinessException(ErrorCode.FORBIDDEN, "flash sale token signature is invalid");
+        }
+        long campaignId = shardRouteIndex.resolveRequired("flash-sale-token", tokenValue, tokenValue.hashCode());
+        return executeCampaign(campaignId, () -> enqueueOrderInShard(requestId, tokenValue, trustContext));
+    }
+
+    private FlashSaleOrderRequest enqueueOrderInShard(String requestId, String tokenValue,
+            ClientTrustContext trustContext) {
         String idempotencyRequestId =
                 requestId == null || requestId.isBlank() ? idempotencyService.digest(tokenValue) : requestId;
         FlashSaleToken token = repository.findToken(tokenValue).orElse(null);
@@ -254,6 +277,8 @@ public class FlashSaleService {
                     new FlashSaleOrderRequest(idGenerator.nextId(), campaign.campaignId(), token.userId(),
                             token.skuId(), token.quantity(), token.token(), FlashSaleRequestStatus.QUEUED, now, now);
             saved = repository.saveOrderRequest(request);
+            shardRouteIndex.bindUniqueTransactional("flash-sale-request", Long.toString(saved.requestId()),
+                    campaign.campaignId());
             appendOrderQueued(saved);
             businessMetrics.increment(BusinessMetricNames.FLASH_SALE_QUEUE_ENQUEUED, "campaign_id",
                     String.valueOf(campaign.campaignId()));
@@ -275,22 +300,27 @@ public class FlashSaleService {
 
     private FlashSaleToken replayIssuedToken(IdempotencyRecord record) {
         try {
-            return repository.findTokenById(Long.parseLong(record.responseDigest()))
-                    .orElseThrow(() -> new BusinessException(ErrorCode.CONFLICT,
-                            "idempotent flash sale token result is unavailable"));
+            long tokenId = Long.parseLong(record.responseDigest());
+            long campaignId = shardRouteIndex.resolveRequired("flash-sale-token-id", Long.toString(tokenId), tokenId);
+            return executeCampaign(campaignId,
+                    () -> repository.findTokenById(tokenId).orElseThrow(() -> new BusinessException(ErrorCode.CONFLICT,
+                            "idempotent flash sale token result is unavailable")));
         } catch (NumberFormatException ex) {
             throw new BusinessException(ErrorCode.CONFLICT, "idempotent flash sale token result is invalid");
         }
     }
 
     public FlashSaleOrderRequest getOrderRequest(long requestId) {
-        return repository.findOrderRequest(requestId)
-                .orElseThrow(() -> new BusinessException(ErrorCode.NOT_FOUND, "flash sale order request not found"));
+        long campaignId = shardRouteIndex.resolveRequired("flash-sale-request", Long.toString(requestId), requestId);
+        return executeCampaign(campaignId, () -> repository.findOrderRequest(requestId)
+                .orElseThrow(() -> new BusinessException(ErrorCode.NOT_FOUND, "flash sale order request not found")));
     }
 
     public List<FlashSaleOrderRequest> findQueuedRequests(long campaignId, int limit) {
-        getCampaign(campaignId);
-        return repository.findQueuedRequests(campaignId, Math.max(1, Math.min(limit, 1000)));
+        return executeCampaign(campaignId, () -> {
+            getCampaign(campaignId);
+            return repository.findQueuedRequests(campaignId, Math.max(1, Math.min(limit, 1000)));
+        });
     }
 
     private void appendOrderQueued(FlashSaleOrderRequest request) {
@@ -310,6 +340,10 @@ public class FlashSaleService {
     private ClientTrustContext normalizeTrustContext(ClientTrustContext trustContext, long userId) {
         ClientTrustContext base = trustContext == null ? ClientTrustContext.anonymous() : trustContext;
         return base.withDefaults(userId, null, null);
+    }
+
+    private <T> T executeCampaign(long campaignId, java.util.function.Supplier<T> action) {
+        return shardRoutingOperations.execute("flash_sale_campaign", campaignId, action);
     }
 
     private static IdempotencyService localIdempotencyService() {

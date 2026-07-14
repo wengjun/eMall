@@ -15,7 +15,10 @@ import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Primary;
+import org.springframework.jdbc.datasource.LazyConnectionDataSourceProxy;
 import org.springframework.util.StringUtils;
+import org.springframework.beans.factory.ObjectProvider;
+import org.springframework.data.redis.core.StringRedisTemplate;
 
 @AutoConfiguration
 @AutoConfigureBefore(DataSourceAutoConfiguration.class)
@@ -25,6 +28,13 @@ public class ShardRoutingAutoConfiguration {
     @ConditionalOnMissingBean
     public ShardRoutingOperations shardRoutingOperations(ShardRoutingProperties properties) {
         return new DefaultShardRoutingOperations(properties);
+    }
+
+    @Bean
+    @ConditionalOnMissingBean
+    public ShardRouteIndex shardRouteIndex(ShardRoutingProperties properties,
+            ObjectProvider<StringRedisTemplate> redisTemplateProvider) {
+        return new ShardRouteIndex(redisTemplateProvider.getIfAvailable(), properties.isEnabled());
     }
 
     @Bean
@@ -41,15 +51,27 @@ public class ShardRoutingAutoConfiguration {
     @ConditionalOnClass(HikariDataSource.class)
     @ConditionalOnMissingBean(DataSource.class)
     @ConditionalOnProperty(prefix = "emall.sharding.datasource", name = "enabled", havingValue = "true")
-    public DataSource routedDataSource(ShardDataSourceProperties properties) {
-        if (properties.getDatasources().isEmpty()) {
-            throw new IllegalStateException("emall.sharding.datasource.datasources must not be empty");
+    public DataSource routedDataSource(ShardDataSourceProperties properties, ShardRoutingProperties routingProperties) {
+        Map<String, ShardDataSourceProperties.DataSourceSpec> configured =
+                new LinkedHashMap<>(properties.getDatasources());
+        if (configured.isEmpty() && StringUtils.hasText(properties.getJdbcUrlTemplate())) {
+            for (int index = 0; index < routingProperties.getDatabaseShardCount(); index++) {
+                String databaseName = "%s_%02d".formatted(routingProperties.getDatabasePrefix(), index);
+                ShardDataSourceProperties.DataSourceSpec spec = new ShardDataSourceProperties.DataSourceSpec();
+                spec.setJdbcUrl(properties.getJdbcUrlTemplate().replace("{database}", databaseName));
+                spec.setUsername(properties.getUsername());
+                spec.setPassword(properties.getPassword());
+                configured.put(databaseName, spec);
+            }
+        }
+        if (configured.isEmpty()) {
+            throw new IllegalStateException("shard datasources or a shard JDBC URL template must be configured");
         }
         Map<Object, Object> targetDataSources = new LinkedHashMap<>();
-        properties.getDatasources().forEach((name, spec) -> targetDataSources.put(name, hikari(name, spec)));
+        configured.forEach((name, spec) -> targetDataSources.put(name, hikari(name, spec)));
         String defaultName = StringUtils.hasText(properties.getDefaultName())
                 ? properties.getDefaultName()
-                : properties.getDatasources().keySet().iterator().next();
+                : configured.keySet().iterator().next();
         Object defaultDataSource = targetDataSources.get(defaultName);
         if (defaultDataSource == null) {
             throw new IllegalStateException("default shard datasource is not configured: " + defaultName);
@@ -58,7 +80,7 @@ public class ShardRoutingAutoConfiguration {
         routedDataSource.setTargetDataSources(targetDataSources);
         routedDataSource.setDefaultTargetDataSource(defaultDataSource);
         routedDataSource.afterPropertiesSet();
-        return routedDataSource;
+        return new LazyConnectionDataSourceProxy(routedDataSource);
     }
 
     private HikariDataSource hikari(String name, ShardDataSourceProperties.DataSourceSpec spec) {
