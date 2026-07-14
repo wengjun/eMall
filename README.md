@@ -150,6 +150,8 @@ mvn -pl payment spring-boot:run
 ```powershell
 mvn clean package -DskipTests
 docker compose --profile app up -d --build
+$env:EMALL_SMOKE_SETUP_ACCESS_TOKEN="<服务访问令牌>"
+$env:EMALL_PAYMENT_CALLBACK_SECRET="<与 payment 服务一致的 mock 渠道回调密钥>"
 mvn -pl smoke exec:java
 ```
 
@@ -298,7 +300,8 @@ mvn -Pstable-runtime verify
 - Testcontainers 测试需要 Docker daemon 正常运行。
 - Windows 11 + Docker Desktop 场景下，如果 Maven/Testcontainers 没有自动识别 Docker Linux Engine，可先执行
   `$env:DOCKER_HOST='npipe:////./pipe/dockerDesktopLinuxEngine'`。
-- Smoke 真实环境测试需要设置 `EMALL_RUN_*_IT` 环境变量。
+- Smoke 真实环境测试需要设置 `EMALL_RUN_*_IT` 环境变量；结账链路还需要设置
+  `EMALL_SMOKE_SETUP_ACCESS_TOKEN` 和与支付服务一致的 `EMALL_PAYMENT_CALLBACK_SECRET`。
 
 最近一次本地验证结果：
 

@@ -15,10 +15,11 @@
 
 ## 当前覆盖
 
-- `common`：Flyway schema、Kafka Outbox、Redis 原语、JDBC 分布式任务锁。
-- `smoke`：下单端到端、补偿恢复、对账、可观测、网关路由、幂等、内部操作安全。
+- `common`：MySQL 事务、Kafka Outbox/DLT、Redis 原语、Snowflake worker 租约、分片路由与路由索引。
+- `smoke`：带真实身份令牌的下单支付闭环、补偿恢复、对账、可观测、网关路由、幂等和内部操作安全。
 - `chaos`：混沌清单、Kubernetes 清单、Docker Compose 拓扑、可观测配置、安全和灰度清单。
-- 所有业务模块：至少有基础模块集成测试，用于验证模块可编译、可加载和核心服务可用。
+- 订单、支付、身份、库存、营销等核心模块使用行为测试验证权限边界、资金安全、Saga、资源回收和并发限制；
+  已删除只读取源码并断言字符串的伪集成测试。
 
 ## 环境开关
 
@@ -32,22 +33,27 @@ $env:EMALL_RUN_OBSERVABILITY_IT="true"
 $env:EMALL_RUN_GATEWAY_CONTRACT_IT="true"
 $env:EMALL_RUN_IDEMPOTENCY_IT="true"
 $env:EMALL_RUN_INTERNAL_SECURITY_IT="true"
+$env:EMALL_RUN_FLASH_SALE_IT="true"
+$env:EMALL_RUN_DATA_PLATFORM_IT="true"
+$env:EMALL_RUN_COST_GOVERNANCE_IT="true"
+$env:EMALL_RUN_RELEASE_TRAFFIC_IT="true"
+$env:EMALL_SMOKE_SETUP_ACCESS_TOKEN="<具备 pricing、inventory、fulfillment 服务权限的访问令牌>"
+$env:EMALL_PAYMENT_CALLBACK_SECRET="<与 payment 服务 mock 渠道一致的回调密钥>"
 mvn -pl smoke -DskipITs=false verify
 ```
 
-如果这些变量未设置，测试会被跳过，而不是失败。
+`EMALL_RUN_*_IT` 未设置时，对应真实环境测试会被跳过。开启结账测试时，两个密钥变量必须与目标环境配置一致；
+测试客户端会自行注册顾客账号并登录，业务请求不再依赖可伪造的用户请求头。
 
 ## 执行要求
 
 - 常规单元测试应尽量不依赖 Docker。
-- 当前 `user` 模块的 `UserRepositoryIntegrationTest` 会被 Surefire 单元测试阶段捕获，因此执行 `mvn test`
-  时也可能启动 Testcontainers/MySQL。后续如果要严格区分阶段，可以把它重命名为 `UserRepositoryIT`。
 - Testcontainers 测试需要 Docker daemon 正常运行。
 - 真实 E2E 测试需要先启动 MySQL、Redis、Kafka、Elasticsearch 和相关服务。
 - 快速 CI 可以先跑 `mvn validate` 和 `mvn test`。
-- 具备 Docker 的 CI 环境再跑 `mvn verify -DskipITs=false` 或单独的 Failsafe 集成测试命令。
+- CI 使用 `-Demall.integration.require-docker=true` 执行完整验证；Docker 不可用时必须失败，不能静默跳过基础设施测试。
 
 ## 本地限制
 
 当前机器如果 Docker Desktop 未启动，Testcontainers 测试会自动跳过。此时 `mvn verify -DskipITs=false`
-仍然可以通过，但不能说明真实 MySQL、Redis、Kafka 集成路径已经执行。
+仍然可以通过，但不能说明真实 MySQL、Redis、Kafka 集成路径已经执行；发布门禁必须以具备 Docker 的 CI 结果为准。

@@ -17,6 +17,7 @@
 - [国内生产扩展说明](domestic-stack.md#生产扩展基线)：分库分表、多级缓存、Redis Cluster 和 Helm 部署基线。
 - [模块清单](modules.md)：所有 Maven 模块、职责分组和构建 profile。
 - [生产检查清单](production-checklist.md)：上线前需要检查的核心事项。
+- [生产就绪审查问题清单](project-review-issues.md)：当前工程已确认的 P0/P1 问题、证据、修复方向和验收标准。
 
 ## 构建和验证
 
