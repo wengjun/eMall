@@ -34,10 +34,75 @@ jobs:
           distribution: temurin
           java-version: "17"
           cache: maven
+      - uses: azure/setup-helm@v4
+        with:
+          version: v4.2.0
       - name: Run all unit and integration tests with coverage gates
+        env:
+          EMALL_INTEGRATION_REQUIRE_HELM: "true"
         run: mvn -B -DskipITs=false -Demall.integration.require-docker=true verify
       - name: Verify immutable migration assets
-        run: jar tf migration-runner/target/migration-runner-0.1.0-SNAPSHOT.jar | grep '^BOOT-INF/classes/migrations/'
+        run: |
+          if jar tf migration-runner/target/migration-runner-0.1.0-SNAPSHOT.jar | grep -q '^BOOT-INF/classes/migrations/'; then
+            echo "migration-runner must not aggregate service migration scripts"
+            exit 1
+          fi
+          grep -q 'COPY ${MODULE}/src/main/resources/db/migration/' Dockerfile.migration
+          for module in advertising after-sales analytics cart catalog cost customer-service data-warehouse \
+            event-platform experiment finance flash-sale forecasting fulfillment identity intelligence inventory \
+            marketing merchant openapi operations order payment platform-ops pricing product promotion recommendation \
+            release reliability review risk routing search supply-chain traffic user; do
+            test -n "$(find "$module/src/main/resources/db/migration" -maxdepth 1 -name '*.sql' -print -quit)"
+          done
+
+  deployment-manifests:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - uses: azure/setup-helm@v4
+        with:
+          version: v4.2.0
+      - name: Lint and render production charts
+        run: |
+          mkdir -p target
+          helm lint ops/helm/emall --strict
+          helm template emall ops/helm/emall --namespace emall > target/emall-rendered.yml
+          helm lint ops/loadtest --strict
+          helm template loadtest-worker ops/loadtest --namespace emall-loadtest \
+            --set mode=worker > target/loadtest-worker-rendered.yml
+          helm template loadtest-coordinator ops/loadtest --namespace emall-loadtest \
+            --set mode=coordinator > target/loadtest-coordinator-rendered.yml
+      - name: Validate rendered Kubernetes schemas
+        run: |
+          curl -fsSLO https://github.com/yannh/kubeconform/releases/download/v0.7.0/kubeconform-linux-amd64.tar.gz
+          curl -fsSLO https://github.com/yannh/kubeconform/releases/download/v0.7.0/CHECKSUMS
+          grep 'kubeconform-linux-amd64.tar.gz$' CHECKSUMS | sha256sum --check
+          tar -xzf kubeconform-linux-amd64.tar.gz kubeconform
+          ./kubeconform -strict -summary -ignore-missing-schemas target/emall-rendered.yml \
+            target/loadtest-worker-rendered.yml target/loadtest-coordinator-rendered.yml
+      - uses: helm/kind-action@v1
+        with:
+          cluster_name: emall-manifest-validation
+      - name: Install pinned rollout CRDs
+        run: |
+          kubectl create namespace argo-rollouts
+          kubectl apply -n argo-rollouts -f https://github.com/argoproj/argo-rollouts/releases/download/v1.8.3/install.yaml
+          kubectl wait --for=condition=Established --timeout=120s crd/rollouts.argoproj.io
+          kubectl wait --for=condition=Established --timeout=120s crd/analysistemplates.argoproj.io
+      - name: Run Kubernetes server-side dry run
+        run: |
+          kubectl create namespace emall
+          helm template emall ops/helm/emall --namespace emall \
+            --set gatewayApi.enabled=false \
+            --set serviceMesh.enabled=false \
+            --set migration.externalSecrets.enabled=false > target/emall-server-dry-run.yml
+          kubectl apply --server-side --dry-run=server --namespace emall -f target/emall-server-dry-run.yml
+          kubectl create namespace emall-loadtest
+          kubectl apply --server-side --dry-run=server --namespace emall-loadtest \
+            -f target/loadtest-worker-rendered.yml
+          kubectl apply --server-side --dry-run=server --namespace emall-loadtest \
+            -f target/loadtest-coordinator-rendered.yml
 
   security-scan:
     runs-on: ubuntu-latest

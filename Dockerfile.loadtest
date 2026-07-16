@@ -1,0 +1,16 @@
+FROM eclipse-temurin:17-jre
+
+ARG VERSION=0.1.0-SNAPSHOT
+
+ENV JAVA_TOOL_OPTIONS="-XX:MaxRAMPercentage=70 -XX:+ExitOnOutOfMemoryError -Djava.io.tmpdir=/tmp"
+WORKDIR /app
+
+RUN groupadd --system emall \
+    && useradd --system --gid emall --home-dir /app --shell /usr/sbin/nologin emall
+
+COPY loadtest/target/loadtest-${VERSION}-all.jar /app/app.jar
+RUN chown -R emall:emall /app
+
+USER emall
+
+ENTRYPOINT ["java", "-jar", "/app/app.jar"]

@@ -1,0 +1,72 @@
+{{- if eq .Values.mode "coordinator" }}
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: {{ include "emall-loadtest.name" . }}-coordinator
+  labels:
+    app.kubernetes.io/name: emall-loadtest-coordinator
+    app.kubernetes.io/instance: {{ .Release.Name }}
+spec:
+  backoffLimit: 0
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: emall-loadtest-coordinator
+        app.kubernetes.io/instance: {{ .Release.Name }}
+    spec:
+      automountServiceAccountToken: false
+      restartPolicy: Never
+      securityContext:
+        runAsNonRoot: true
+        seccompProfile:
+          type: RuntimeDefault
+      containers:
+        - name: coordinator
+          image: "{{ .Values.image.repository }}:{{ .Values.image.tag }}"
+          imagePullPolicy: {{ .Values.image.pullPolicy }}
+          securityContext:
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: true
+            capabilities:
+              drop: ["ALL"]
+          env:
+            - name: JAVA_TOOL_OPTIONS
+              value: -XX:MaxRAMPercentage=70 -XX:+ExitOnOutOfMemoryError -Djava.io.tmpdir=/tmp
+            - name: EMALL_LOAD_ROLE
+              value: coordinator
+            - name: EMALL_LOAD_EVIDENCE_RUN_IDS
+              value: {{ .Values.evidence.runIds | quote }}
+            - name: EMALL_LOAD_REQUIRED_RUNS
+              value: {{ .Values.evidence.requiredRepetitions | quote }}
+            - name: EMALL_LOAD_REQUIRE_VERIFIED_EVIDENCE
+              value: {{ .Values.evidence.requireVerified | quote }}
+            {{- if .Values.saturationMetrics.enabled }}
+            - name: EMALL_LOAD_SATURATION_FILE
+              value: {{ .Values.saturationMetrics.file | quote }}
+            {{- end }}
+            {{- include "emall-loadtest.commonEnv" . | nindent 12 }}
+          resources:
+            requests:
+              cpu: 500m
+              memory: 512Mi
+            limits:
+              cpu: "2"
+              memory: 2Gi
+          volumeMounts:
+            - name: reports
+              mountPath: /reports
+            - name: temporary
+              mountPath: /tmp
+      volumes:
+        - name: reports
+          persistentVolumeClaim:
+            claimName: {{ include "emall-loadtest.reportClaim" . }}
+        - name: temporary
+          emptyDir: {}
+      nodeSelector:
+        {{- toYaml .Values.nodeSelector | nindent 8 }}
+      tolerations:
+        {{- toYaml .Values.tolerations | nindent 8 }}
+      affinity:
+        {{- toYaml .Values.affinity | nindent 8 }}
+{{- end }}

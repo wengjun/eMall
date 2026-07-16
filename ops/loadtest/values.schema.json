@@ -1,0 +1,23 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "type": "object",
+  "required": ["mode", "runId", "image", "baseUrl", "workers", "ratePerSecond", "durationSeconds"],
+  "properties": {
+    "mode": {"type": "string", "enum": ["worker", "coordinator"]},
+    "runId": {"type": "string", "pattern": "^[a-z0-9._-]+$", "minLength": 1},
+    "baseUrl": {"type": "string", "pattern": "^https?://"},
+    "workers": {"type": "integer", "minimum": 1},
+    "ratePerSecond": {"type": "integer", "minimum": 1},
+    "durationSeconds": {"type": "integer", "minimum": 1},
+    "maxInflightPerWorker": {"type": "integer", "minimum": 1},
+    "image": {
+      "type": "object",
+      "required": ["repository", "tag"],
+      "properties": {
+        "repository": {"type": "string", "minLength": 1},
+        "tag": {"type": "string", "minLength": 1},
+        "pullPolicy": {"type": "string", "enum": ["Always", "IfNotPresent", "Never"]}
+      }
+    }
+  }
+}

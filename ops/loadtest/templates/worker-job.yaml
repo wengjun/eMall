@@ -1,0 +1,91 @@
+{{- if eq .Values.mode "worker" }}
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: {{ include "emall-loadtest.name" . }}-workers
+  labels:
+    app.kubernetes.io/name: emall-loadtest
+    app.kubernetes.io/instance: {{ .Release.Name }}
+    emall-loadtest-run: {{ .Values.runId | quote }}
+spec:
+  completionMode: Indexed
+  completions: {{ .Values.workers }}
+  parallelism: {{ .Values.workers }}
+  backoffLimit: 0
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: emall-loadtest
+        app.kubernetes.io/instance: {{ .Release.Name }}
+        emall-loadtest-run: {{ .Values.runId | quote }}
+    spec:
+      automountServiceAccountToken: false
+      restartPolicy: Never
+      securityContext:
+        runAsNonRoot: true
+        seccompProfile:
+          type: RuntimeDefault
+      topologySpreadConstraints:
+        - maxSkew: 1
+          topologyKey: kubernetes.io/hostname
+          whenUnsatisfiable: ScheduleAnyway
+          labelSelector:
+            matchLabels:
+              emall-loadtest-run: {{ .Values.runId | quote }}
+        - maxSkew: 1
+          topologyKey: topology.kubernetes.io/zone
+          whenUnsatisfiable: ScheduleAnyway
+          labelSelector:
+            matchLabels:
+              emall-loadtest-run: {{ .Values.runId | quote }}
+      containers:
+        - name: worker
+          image: "{{ .Values.image.repository }}:{{ .Values.image.tag }}"
+          imagePullPolicy: {{ .Values.image.pullPolicy }}
+          securityContext:
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: true
+            capabilities:
+              drop: ["ALL"]
+          env:
+            - name: JAVA_TOOL_OPTIONS
+              value: -XX:MaxRAMPercentage=70 -XX:+ExitOnOutOfMemoryError -Djava.io.tmpdir=/tmp
+            - name: EMALL_LOAD_ROLE
+              value: worker
+            - name: EMALL_LOAD_WORKER_INDEX
+              valueFrom:
+                fieldRef:
+                  fieldPath: metadata.annotations['batch.kubernetes.io/job-completion-index']
+            - name: EMALL_LOAD_WORKER_COUNT
+              value: {{ .Values.workers | quote }}
+            {{- include "emall-loadtest.commonEnv" . | nindent 12 }}
+          resources:
+            {{- toYaml .Values.resources | nindent 12 }}
+          volumeMounts:
+            - name: reports
+              mountPath: /reports
+            - name: temporary
+              mountPath: /tmp
+            {{- if .Values.identityFixtures.existingClaim }}
+            - name: identity-fixtures
+              mountPath: /fixtures
+              readOnly: true
+            {{- end }}
+      volumes:
+        - name: reports
+          persistentVolumeClaim:
+            claimName: {{ include "emall-loadtest.reportClaim" . }}
+        - name: temporary
+          emptyDir: {}
+        {{- if .Values.identityFixtures.existingClaim }}
+        - name: identity-fixtures
+          persistentVolumeClaim:
+            claimName: {{ .Values.identityFixtures.existingClaim | quote }}
+        {{- end }}
+      nodeSelector:
+        {{- toYaml .Values.nodeSelector | nindent 8 }}
+      tolerations:
+        {{- toYaml .Values.tolerations | nindent 8 }}
+      affinity:
+        {{- toYaml .Values.affinity | nindent 8 }}
+{{- end }}

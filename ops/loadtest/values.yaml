@@ -1,0 +1,82 @@
+mode: worker
+runId: local-capacity
+
+image:
+  repository: emall/loadtest
+  tag: 0.1.0-SNAPSHOT
+  pullPolicy: IfNotPresent
+
+baseUrl: http://emall-gateway:8080
+workers: 8
+ratePerSecond: 1000
+durationSeconds: 900
+maxInflightPerWorker: 2000
+scenario: production-mix
+pattern: constant
+auth:
+  existingSecret: ""
+  tokenKey: token
+  paymentCallbackSecretKey: payment-callback-secret
+
+traffic:
+  userCardinality: "1000000"
+  skuCardinality: "100000"
+  hotSkuPercent: 20
+  mix: read-heavy:65,checkout:15,hot-sku:10,payment-callbacks:5,mq-backlog:3,flash-sale-hotspot:2
+
+thresholds:
+  maxErrorRate: 0.01
+  maxP95Millis: 500
+  maxSchedulerLagMillis: 250
+  maxGeneratorCpu: 0.85
+
+evidence:
+  environment: local
+  scope: development
+  gitCommit: unknown
+  deployment: single-cell
+  targetResources: unspecified
+  datasetUsers: "1000000"
+  datasetSkus: "100000"
+  serviceInstances: 1
+  runIds: ""
+  requiredRepetitions: 3
+  requireVerified: false
+  faultExperiment: ""
+
+capacityModel:
+  projectedCells: 1
+  scalingEfficiency: 0.80
+  headroom: 0.70
+  targetPeakConcurrency: "1000000"
+  sessionThinkSeconds: 30
+
+paymentFixtures:
+  paymentIdBase: "800000000"
+  tradeNoPrefix: loadtest-trade-
+  channel: loadtest
+
+identityFixtures:
+  existingClaim: ""
+  fileTemplate: /fixtures/worker-{worker}.csv
+
+reports:
+  existingClaim: ""
+  storageClass: ""
+  size: 20Gi
+
+saturationMetrics:
+  enabled: false
+  file: /reports/saturation-metrics.json
+
+resources:
+  requests:
+    cpu: "4"
+    memory: 4Gi
+  limits:
+    cpu: "8"
+    memory: 8Gi
+
+nodeSelector: {}
+tolerations: []
+affinity: {}

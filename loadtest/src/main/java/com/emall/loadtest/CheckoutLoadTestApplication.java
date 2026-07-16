@@ -1,373 +1,71 @@
 package com.emall.loadtest;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.core.type.TypeReference;
-import com.fasterxml.jackson.databind.ObjectMapper;
-import java.io.IOException;
-import java.math.BigDecimal;
-import java.net.URI;
-import java.net.URLEncoder;
-import java.net.http.HttpClient;
-import java.net.http.HttpRequest;
-import java.net.http.HttpResponse;
-import java.nio.charset.StandardCharsets;
-import java.time.Duration;
-import java.util.ArrayList;
-import java.util.Comparator;
+import java.nio.file.Path;
 import java.util.List;
-import java.util.Map;
-import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
-import java.util.concurrent.TimeUnit;
-import java.util.concurrent.atomic.AtomicInteger;
+import java.util.Locale;
 
 public final class CheckoutLoadTestApplication {
-    private static final ObjectMapper OBJECT_MAPPER = new ObjectMapper();
-    private static final TypeReference<Map<String, Object>> MAP_TYPE = new TypeReference<>() {
-    };
-
-    private final LoadTestOptions options;
-    private final ExecutorService executor;
-    private final HttpClient httpClient;
-
-    private CheckoutLoadTestApplication(LoadTestOptions options) {
-        this.options = options;
-        this.executor = Executors.newFixedThreadPool(options.maxConcurrency());
-        this.httpClient = HttpClient.newBuilder().connectTimeout(Duration.ofSeconds(5)).executor(executor).build();
+    private CheckoutLoadTestApplication() {
     }
 
     public static void main(String[] args) throws Exception {
+        if (args.length > 0 && ("--help".equals(args[0]) || "-h".equals(args[0]))) {
+            printUsage();
+            return;
+        }
         LoadTestOptions options = LoadTestOptions.from(args);
-        CheckoutLoadTestApplication application = new CheckoutLoadTestApplication(options);
-        try {
-            application.run();
-        } finally {
-            application.shutdown();
-        }
-    }
-
-    private void run() throws InterruptedException {
-        if (options.bootstrapData()) {
-            bootstrapData();
-        }
-        long startNanos = System.nanoTime();
-        long endNanos = startNanos + options.duration().toNanos();
-        long intervalNanos = TimeUnit.SECONDS.toNanos(1) / options.ratePerSecond();
-        AtomicInteger sequence = new AtomicInteger();
-        List<CompletableFuture<Result>> futures = new ArrayList<>();
-
-        long nextNanos = startNanos;
-        while (System.nanoTime() < endNanos) {
-            int requestNo = sequence.incrementAndGet();
-            futures.add(sendScenarioRequest(requestNo));
-            nextNanos += intervalNanos;
-            sleepUntil(nextNanos);
+        LoadTestReportStore reportStore = new LoadTestReportStore(options.reportDirectory());
+        if (options.role() == LoadRole.COORDINATOR) {
+            CapacityReportCoordinator.Result result = new CapacityReportCoordinator(options, reportStore).aggregate();
+            printEvidence(result.evidence(), options.reportDirectory());
+            return;
         }
 
-        List<Result> results = futures.stream().map(CompletableFuture::join).toList();
-        printReport(results, Duration.ofNanos(System.nanoTime() - startNanos));
-    }
-
-    private void bootstrapData() {
-        post("/api/prices", Map.of("skuId", options.skuId(), "listPrice", options.listPrice(), "salePrice",
-                options.salePrice(), "currency", options.currency(), "active", true));
-        post("/api/inventory/" + options.skuId() + "/stock", Map.of("quantity", options.bootstrapStock()));
-        post("/api/search/documents",
-                Map.of("skuId", options.skuId(), "title", "loadtest flagship phone", "category", "digital", "price",
-                        options.salePrice(), "tags", List.of("phone", "loadtest", "hot"), "saleable", true));
-    }
-
-    private CompletableFuture<Result> sendScenarioRequest(int requestNo) {
-        return switch (options.scenario()) {
-            case CHECKOUT -> sendCheckout(requestNo, false);
-            case HOT_SKU -> sendCheckout(requestNo, true);
-            case READ_HEAVY -> sendReadHeavy(requestNo);
-            case PAYMENT_CALLBACKS -> sendPaymentCallback(requestNo);
-            case MQ_BACKLOG -> sendProductChange(requestNo);
-            case FLASH_SALE_HOTSPOT -> sendFlashSaleHotspot(requestNo);
-        };
-    }
-
-    private CompletableFuture<Result> sendCheckout(int requestNo, boolean hotSku) {
-        long started = System.nanoTime();
-        String requestId = "loadtest-" + started + "-" + requestNo;
-        String path = hotSku ? "/api/orders?skuId=" + options.skuId() : "/api/orders";
-        return sendAsync(started,
-                request(path).header("X-Device-Id", deviceId(requestNo))
-                        .POST(jsonBody(Map.of("requestId", requestId, "userId",
-                                hotSku ? options.userId() : options.userId() + requestNo, "skuId", options.skuId(),
-                                "quantity", options.quantity()))));
-    }
-
-    private CompletableFuture<Result> sendReadHeavy(int requestNo) {
-        long started = System.nanoTime();
-        String keyword = encode(options.keyword());
-        String path = switch (requestNo % 5) {
-            case 0 -> "/api/products/" + options.skuId();
-            case 1 -> "/api/products?keyword=" + keyword + "&limit=20&skuId=" + options.skuId();
-            case 2 -> "/api/search?keyword=" + keyword + "&limit=20&skuId=" + options.skuId();
-            case 3 -> "/api/inventory/" + options.skuId();
-            default -> "/api/prices/" + options.skuId();
-        };
-        return sendAsync(started, request(path).header("X-Device-Id", deviceId(requestNo)).GET());
-    }
-
-    private CompletableFuture<Result> sendPaymentCallback(int requestNo) {
-        long started = System.nanoTime();
-        String requestId = "payment-loadtest-" + started + "-" + requestNo;
-        HttpRequest createRequest = request("/api/payments").header("X-Device-Id", deviceId(requestNo))
-                .POST(jsonBody(Map.of("requestId", requestId, "orderId", options.orderIdBase() + requestNo, "userId",
-                        options.userId() + requestNo, "amount", options.salePrice(), "channel",
-                        options.paymentChannel())))
-                .build();
-        return httpClient.sendAsync(createRequest, HttpResponse.BodyHandlers.ofString())
-                .thenCompose(response -> sendCallbackIfCreated(started, requestNo, response))
-                .exceptionally(error -> Result.failed(elapsedMillis(started)));
-    }
-
-    private CompletableFuture<Result> sendCallbackIfCreated(long started, int requestNo,
-            HttpResponse<String> response) {
-        if (!isSuccess(response.statusCode())) {
-            return CompletableFuture.completedFuture(Result.failed(elapsedMillis(started)));
-        }
-        long paymentId = paymentId(response.body());
-        HttpRequest callbackRequest =
-                request("/api/payments/" + paymentId + "/callbacks")
-                        .header("X-Device-Id", deviceId(requestNo)).POST(jsonBody(Map.of("channelTradeNo",
-                                "loadtest-trade-" + started + "-" + requestNo, "paidAmount", options.salePrice())))
-                        .build();
-        return httpClient.sendAsync(callbackRequest, HttpResponse.BodyHandlers.discarding())
-                .<Result>handle((callbackResponse, error) -> toResult(started, callbackResponse, error));
-    }
-
-    private CompletableFuture<Result> sendProductChange(int requestNo) {
-        long started = System.nanoTime();
-        String title = "loadtest product title " + requestNo;
-        return sendAsync(started, request("/api/products/" + options.skuId() + "/title")
-                .header("X-Device-Id", deviceId(requestNo)).method("PATCH", jsonBody(Map.of("title", title))));
-    }
-
-    private CompletableFuture<Result> sendFlashSaleHotspot(int requestNo) {
-        long started = System.nanoTime();
-        long campaignId = options.flashSaleCampaignId();
-        long userId = options.userId() + requestNo;
-        return sendAsync(started,
-                request("/api/flash-sales/campaigns/" + campaignId + "/tokens")
-                        .header("X-Device-Id", deviceId(requestNo)).header("X-Client-Channel", "flash-sale-hotspot")
-                        .POST(jsonBody(Map.of("userId", userId, "quantity", options.quantity()))));
-    }
-
-    private HttpRequest.Builder request(String path) {
-        return HttpRequest.newBuilder(URI.create(options.baseUrl() + path)).timeout(Duration.ofSeconds(10))
-                .header("Content-Type", "application/json");
-    }
-
-    private HttpRequest.BodyPublisher jsonBody(Object body) {
-        try {
-            return HttpRequest.BodyPublishers.ofString(OBJECT_MAPPER.writeValueAsString(body));
-        } catch (JsonProcessingException ex) {
-            throw new IllegalStateException("failed to serialize request body", ex);
-        }
-    }
-
-    private CompletableFuture<Result> sendAsync(long started, HttpRequest.Builder request) {
-        return httpClient.sendAsync(request.build(), HttpResponse.BodyHandlers.discarding())
-                .<Result>handle((response, error) -> toResult(started, response, error));
-    }
-
-    private void post(String path, Object body) {
-        try {
-            HttpRequest request =
-                    request(path).header("X-Device-Id", "loadtest-bootstrap").POST(jsonBody(body)).build();
-            HttpResponse<String> response = httpClient.send(request, HttpResponse.BodyHandlers.ofString());
-            if (!isSuccess(response.statusCode())) {
-                throw new IllegalStateException("POST " + path + " failed with HTTP " + response.statusCode());
+        WorkerReport workerReport;
+        Path workerPath;
+        try (CheckoutHttpRequestDispatcher dispatcher = new CheckoutHttpRequestDispatcher(options)) {
+            if (options.bootstrapData()) {
+                dispatcher.bootstrapData();
             }
-        } catch (IOException ex) {
-            throw new IllegalStateException("POST " + path + " failed", ex);
-        } catch (InterruptedException ex) {
-            Thread.currentThread().interrupt();
-            throw new IllegalStateException("POST " + path + " interrupted", ex);
+            workerReport = new LoadExecutionEngine(options, dispatcher).execute();
+            workerPath = reportStore.writeWorker(workerReport);
+            printWorker(workerReport, workerPath);
+        }
+
+        if (options.role() == LoadRole.STANDALONE) {
+            CapacityReport capacityReport = new CapacityReportAggregator().aggregate(List.of(workerReport));
+            reportStore.writeCapacity(capacityReport);
+            CapacityEvidence evidence =
+                    new CapacityEvidenceVerifier().verify(List.of(capacityReport), options.requiredRuns());
+            reportStore.writeEvidence(evidence);
+            printEvidence(evidence, options.reportDirectory());
         }
     }
 
-    private Result toResult(long started, HttpResponse<?> response, Throwable error) {
-        long elapsedMillis = elapsedMillis(started);
-        if (error != null || response == null) {
-            return Result.failed(elapsedMillis);
-        }
-        return new Result(isSuccess(response.statusCode()), elapsedMillis);
+    private static void printWorker(WorkerReport report, Path reportPath) {
+        System.out.printf(Locale.ROOT,
+                "%s/%s worker %d of %d completed: requests=%d, success=%d, failed=%d, rejected=%d%n", report.scenario(),
+                report.pattern(), report.workerIndex(), report.workerCount(), report.metrics().attempted(),
+                report.metrics().success(), report.metrics().failed(), report.metrics().backpressureRejected());
+        System.out.printf(Locale.ROOT, "qps=%.2f, errorRate=%.4f, p50=%.2f ms, p95=%.2f ms, p99=%.2f ms%n",
+                report.metrics().measuredQps(), report.metrics().errorRate(), report.metrics().p50Micros() / 1_000.0,
+                report.metrics().p95Micros() / 1_000.0, report.metrics().p99Micros() / 1_000.0);
+        System.out.printf("workerReport=%s, generatorBottleneck=%s%n", reportPath, report.generator().bottleneck());
     }
 
-    private long paymentId(String responseBody) {
-        try {
-            Map<String, Object> response = OBJECT_MAPPER.readValue(responseBody, MAP_TYPE);
-            Object data = response.get("data");
-            if (data instanceof Map<?, ?> dataMap) {
-                return Long.parseLong(String.valueOf(dataMap.get("paymentId")));
-            }
-            throw new IllegalStateException("payment response does not contain data.paymentId");
-        } catch (IOException ex) {
-            throw new IllegalStateException("failed to parse payment response", ex);
-        }
-    }
-
-    private void printReport(List<Result> results, Duration elapsed) {
-        List<Long> latencies = results.stream().map(Result::latencyMillis).sorted(Comparator.naturalOrder()).toList();
-        long total = results.size();
-        long success = results.stream().filter(Result::success).count();
-        long failed = total - success;
-        double errorRate = total == 0 ? 0.0 : (double) failed / total;
-        LoadTestReport report = buildReport(results, elapsed);
-        System.out.printf("%s load test completed in %d ms%n", options.scenario().cliName(), elapsed.toMillis());
-        System.out.printf("requests=%d, success=%d, failed=%d, errorRate=%.4f%n", total, success, failed, errorRate);
-        System.out.printf("p50=%d ms, p95=%d ms, p99=%d ms%n", report.p50Millis(), report.p95Millis(),
-                report.p99Millis());
-        System.out.printf("safeQps=%.2f, bottleneck=%s%n", report.safeQps(), report.bottleneck());
-        if (report.errorRate() > options.maxErrorRate()) {
-            throw new IllegalStateException("error rate exceeded threshold " + options.maxErrorRate());
+    private static void printEvidence(CapacityEvidence evidence, Path reportDirectory) {
+        System.out.printf("capacityEvidence=%s, status=%s, eligibleRuns=%d%n",
+                reportDirectory.resolve("capacity-evidence.json"), evidence.status(), evidence.eligibleRuns());
+        if (!evidence.reasons().isEmpty()) {
+            System.out.println("Evidence remains unverified: " + String.join("; ", evidence.reasons()));
         }
     }
 
-    private LoadTestReport buildReport(List<Result> results, Duration elapsed) {
-        List<Long> latencies = results.stream().map(Result::latencyMillis).sorted(Comparator.naturalOrder()).toList();
-        long total = results.size();
-        long success = results.stream().filter(Result::success).count();
-        long failed = total - success;
-        double elapsedSeconds = Math.max(0.001, elapsed.toNanos() / 1_000_000_000.0);
-        double errorRate = total == 0 ? 0.0 : (double) failed / total;
-        long p50 = percentile(latencies, 50);
-        long p95 = percentile(latencies, 95);
-        long p99 = percentile(latencies, 99);
-        String bottleneck = bottleneck(errorRate, p95);
-        double measuredQps = success / elapsedSeconds;
-        double safeQps = "none".equals(bottleneck) ? measuredQps : measuredQps * 0.8;
-        return new LoadTestReport(total, success, failed, errorRate, p50, p95, p99, safeQps, bottleneck);
-    }
-
-    private String bottleneck(double errorRate, long p95Millis) {
-        if (errorRate > options.maxErrorRate()) {
-            return "error-rate";
-        }
-        if (p95Millis > options.maxP95Millis()) {
-            return "latency-p95";
-        }
-        return "none";
-    }
-
-    private long percentile(List<Long> values, int percentile) {
-        if (values.isEmpty()) {
-            return 0L;
-        }
-        int index = (int) Math.ceil(values.size() * percentile / 100.0) - 1;
-        return values.get(Math.max(0, Math.min(index, values.size() - 1)));
-    }
-
-    private long elapsedMillis(long startedNanos) {
-        return TimeUnit.NANOSECONDS.toMillis(System.nanoTime() - startedNanos);
-    }
-
-    private String deviceId(int requestNo) {
-        return "loadtest-" + (requestNo % options.maxConcurrency());
-    }
-
-    private boolean isSuccess(int statusCode) {
-        return statusCode >= 200 && statusCode < 300;
-    }
-
-    private String encode(String value) {
-        return URLEncoder.encode(value, StandardCharsets.UTF_8);
-    }
-
-    private void sleepUntil(long targetNanos) throws InterruptedException {
-        long remainingNanos = targetNanos - System.nanoTime();
-        if (remainingNanos > 0) {
-            TimeUnit.NANOSECONDS.sleep(remainingNanos);
-        }
-    }
-
-    private void shutdown() {
-        executor.shutdown();
-    }
-
-    private enum LoadScenario {
-        CHECKOUT("checkout"),
-        READ_HEAVY("read-heavy"),
-        HOT_SKU("hot-sku"),
-        PAYMENT_CALLBACKS("payment-callbacks"),
-        MQ_BACKLOG("mq-backlog"),
-        FLASH_SALE_HOTSPOT("flash-sale-hotspot");
-
-        private final String cliName;
-
-        LoadScenario(String cliName) {
-            this.cliName = cliName;
-        }
-
-        static LoadScenario from(String value) {
-            for (LoadScenario scenario : values()) {
-                if (scenario.cliName.equalsIgnoreCase(value)) {
-                    return scenario;
-                }
-            }
-            throw new IllegalArgumentException("unsupported load scenario: " + value);
-        }
-
-        String cliName() {
-            return cliName;
-        }
-    }
-
-    private record Result(boolean success, long latencyMillis) {
-        static Result failed(long latencyMillis) {
-            return new Result(false, latencyMillis);
-        }
-    }
-
-    private record LoadTestReport(long requests, long success, long failed, double errorRate, long p50Millis,
-            long p95Millis, long p99Millis, double safeQps, String bottleneck) {
-    }
-
-    private record LoadTestOptions(String baseUrl, int ratePerSecond, Duration duration, int maxConcurrency,
-            LoadScenario scenario, long userId, long skuId, long orderIdBase, int quantity, double maxErrorRate,
-            boolean bootstrapData, int bootstrapStock, BigDecimal listPrice, BigDecimal salePrice, String currency,
-            String keyword, String paymentChannel, long flashSaleCampaignId, long maxP95Millis) {
-        static LoadTestOptions from(String[] args) {
-            return new LoadTestOptions(value(args, 0, env("EMALL_BASE_URL", "http://localhost:8080")),
-                    integer(args, 1, env("EMALL_LOAD_RATE", "100")),
-                    Duration.ofSeconds(integer(args, 2, env("EMALL_LOAD_DURATION_SECONDS", "60"))),
-                    integer(args, 3, env("EMALL_LOAD_MAX_CONCURRENCY", "200")),
-                    LoadScenario.from(value(args, 4, env("EMALL_LOAD_SCENARIO", "checkout"))),
-                    Long.parseLong(env("EMALL_LOAD_USER_ID", "100001")),
-                    Long.parseLong(env("EMALL_LOAD_SKU_ID", "10001")),
-                    Long.parseLong(env("EMALL_LOAD_ORDER_ID_BASE", "900000000")),
-                    Integer.parseInt(env("EMALL_LOAD_QUANTITY", "1")),
-                    Double.parseDouble(env("EMALL_LOAD_MAX_ERROR_RATE", "0.01")),
-                    Boolean.parseBoolean(env("EMALL_LOAD_BOOTSTRAP_DATA", "true")),
-                    Integer.parseInt(env("EMALL_LOAD_BOOTSTRAP_STOCK", "1000000")),
-                    new BigDecimal(env("EMALL_LOAD_LIST_PRICE", "3999.00")),
-                    new BigDecimal(env("EMALL_LOAD_SALE_PRICE", "3799.00")), env("EMALL_LOAD_CURRENCY", "CNY"),
-                    env("EMALL_LOAD_KEYWORD", "phone"), env("EMALL_LOAD_PAYMENT_CHANNEL", "loadtest"),
-                    Long.parseLong(env("EMALL_FLASH_SALE_CAMPAIGN_ID", "90001")),
-                    Long.parseLong(env("EMALL_LOAD_MAX_P95_MS", "500")));
-        }
-
-        private static String value(String[] args, int index, String defaultValue) {
-            String value = args.length > index && !args[index].isBlank() ? args[index] : defaultValue;
-            return index == 0 ? trimTrailingSlash(value) : value;
-        }
-
-        private static int integer(String[] args, int index, String defaultValue) {
-            return Integer.parseInt(value(args, index, defaultValue));
-        }
-
-        private static String env(String key, String defaultValue) {
-            return System.getenv().getOrDefault(key, defaultValue);
-        }
-
-        private static String trimTrailingSlash(String value) {
-            return value.endsWith("/") ? value.substring(0, value.length() - 1) : value;
-        }
+    private static void printUsage() {
+        System.out.println("Usage: java -jar loadtest-*-all.jar [baseUrl ratePerSecond durationSeconds "
+                + "maxInflight scenario]");
+        System.out.println("Roles: EMALL_LOAD_ROLE=standalone|worker|coordinator");
+        System.out.println("Patterns: EMALL_LOAD_PATTERN=constant|step|spike|soak|fault-recovery|breakpoint");
+        System.out.println("See docs/capacity-verification.md for distributed execution and evidence settings.");
     }
 }
