@@ -13,11 +13,13 @@
 - [国内互联网技术栈适配](domestic-stack.md)：Sentinel、MyBatis-Plus、Nacos、Dubbo、Elasticsearch、ClickHouse 和 ELK 的接入说明。
 - [持久层规范](persistence-conventions.md)：MyBatis-Plus、强类型 Mapper、审计字段、乐观锁和 SQL 约定。
 - [Web/App 下单 API 契约](api/web-app-checkout.openapi.yml)：浏览器和手机 App 统一下单接口、请求头、请求体和响应结构。
-- [容量验证说明](capacity-verification.md)：Java 压测工具、容量指标、结果记录和 100 万并发扩展路径。
+- [容量验证说明](capacity-verification.md)：分布式 Java 压测、背压、流式直方图、证据门禁和单 Cell 容量模型。
 - [国内生产扩展说明](domestic-stack.md#生产扩展基线)：分库分表、多级缓存、Redis Cluster 和 Helm 部署基线。
 - [模块清单](modules.md)：所有 Maven 模块、职责分组和构建 profile。
 - [生产检查清单](production-checklist.md)：上线前需要检查的核心事项。
-- [生产就绪审查问题清单](project-review-issues.md)：当前工程已确认的 P0/P1 问题、证据、修复方向和验收标准。
+- [架构设计审查问题清单](architecture-review-issues.md)：2026 年 7 月 15 日确认的待处理 P0/P1 架构问题、证据、
+  修复方向和验收标准。
+- [历史生产就绪审查问题清单](project-review-issues.md)：2026 年 7 月 11 日审查且已经关闭的代码和部署问题。
 
 ## 构建和验证
 
@@ -44,8 +46,8 @@
 
 ## 部署资产
 
-- [Kubernetes 基线](../ops/k8s/README.md)：Kubernetes 清单使用方式和假设。
-- [Helm 部署基线](../ops/helm/emall)：面向国内云原生部署的 Helm Chart 示例。
+- [生产部署 Chart](../ops/helm/emall/README.md)：38 个在线服务的唯一 Kubernetes 部署事实源。
+- [Kubernetes 辅助资产](../ops/k8s/README.md)：ExternalSecret、迁移过渡入口和混沌演练边界。
 - [运维配置索引](../ops/README.md)：本地运行和部署配置地图。
 - `../docker-compose.yml`：本地运行拓扑。
 - `../ops/**`：Kubernetes、可观测、发布、混沌、MySQL 和压测基线。

@@ -14,7 +14,7 @@ eMall 是一个基于 Java 17 的微服务电商平台，用来学习和展示�
 - [学习手册](docs/learning/README.md)：按主题系统学习 Java 17 电商系统实现。
 - [按分类学习面试题](docs/interview/README.md)：唯一的面试学习入口，按分类顺序学习全部题目。
 - [运维配置索引](ops/README.md)：Docker Compose、Kubernetes、可观测和压测配置入口。
-- [Kubernetes 基线](ops/k8s/README.md)：Kubernetes 部署清单说明。
+- [生产部署 Chart](ops/helm/emall/README.md)：38 个在线服务的唯一 Kubernetes 部署入口。
 - [Web/App 下单 API 契约](docs/api/web-app-checkout.openapi.yml)：浏览器和手机 App 共用的后端下单接口契约。
 
 系统重点实现和表达以下能力：
@@ -66,13 +66,14 @@ eMall 是一个基于 Java 17 的微服务电商平台，用来学习和展示�
 
 ## 核心交易流程
 
-1. `POST /api/orders` 使用 `requestId` 幂等创建订单，并通过 `clientType=WEB|APP`、`deviceId`、`channel` 区分 Web 和手机 App 下单来源。
-2. 订单服务读取价格和优惠快照。
-3. 订单服务调用库存服务预占库存。
+1. Web/App 只调用 `POST /api/identity/registrations` 并传入 `Idempotency-Key`；身份服务通过 Outbox/Kafka 幂等创建用户档案，
+   档案 ACK 后账户才允许登录。
+2. `POST /api/orders` 使用 `requestId` 幂等创建订单，并通过 `clientType=WEB|APP`、`deviceId`、`channel` 区分来源。
+3. 订单服务读取价格和优惠快照，并调用库存服务预占库存。
 4. 预占成功后订单进入 `CREATED`。
 5. `POST /api/orders/{orderId}/pay` 确认支付并确认库存。
 6. `POST /api/orders/{orderId}/cancel` 释放库存并取消订单。
-7. 如果库存、支付或 MQ 出现异常，补偿任务和内部运维接口负责恢复。
+7. 如果档案投影、库存、支付或 MQ 出现异常，分区对账、补偿任务和内部运维接口负责恢复。
 
 下单请求示例：
 
@@ -108,11 +109,12 @@ HTTP/Dubbo + Nacos。`gateway` 会追加安全响应头作为后端兜底，并�
 - 搜索服务异步消费商品事件，保证搜索投影最终一致。
 - 内部运维接口支持补偿、Outbox 重放、库存释放和支付对账。
 - 用户手机号使用 AES-GCM 加密，并使用 HMAC hash 做精确查询。
+- 身份服务统一编排注册、停用、恢复、关闭和隐私删除，用户档案通过版本化事件最终一致投影。
 - 支付服务记录追加式流水，并对渠道账单做对账。
 - 秒杀服务通过活动窗口、用户令牌、库存预分配和队列隔离尖峰流量。
 - 流量、可靠性、发布和平台运维模块提供生产控制面模型。
 - Prometheus、Grafana、结构化日志和 OpenTelemetry 提供观测基础。
-- Kubernetes 清单包含探针、资源配置、安全上下文、NetworkPolicy 和优雅关闭。
+- 唯一 Helm Chart 包含渐进式发布、探针、资源配置、安全上下文、NetworkPolicy 和优雅关闭。
 
 ## 本地启动
 
@@ -138,6 +140,7 @@ mvn clean package
 
 ```powershell
 mvn -pl gateway spring-boot:run
+mvn -pl identity spring-boot:run
 mvn -pl user spring-boot:run
 mvn -pl product spring-boot:run
 mvn -pl inventory spring-boot:run
@@ -212,6 +215,7 @@ mvn clean package
 
 ```powershell
 mvn -pl gateway spring-boot:run
+mvn -pl identity spring-boot:run
 mvn -pl user spring-boot:run
 mvn -pl product spring-boot:run
 mvn -pl inventory spring-boot:run
@@ -311,7 +315,9 @@ mvn -Pstable-runtime verify
 
 ## 压测
 
-Java 17 压测工具位于 `loadtest` 模块。默认场景是 `checkout`：
+Java 17 压测工具位于 `loadtest` 模块。工具使用有界在途请求和 HdrHistogram 流式统计，支持
+`standalone/worker/coordinator` 三种角色；生产环境通过 Kubernetes Indexed Job 分布式执行。默认本地场景是
+`checkout`：
 
 ```powershell
 mvn -pl loadtest exec:java
@@ -323,7 +329,7 @@ mvn -pl loadtest exec:java
 mvn -pl loadtest exec:java -Dexec.args="http://localhost:8080 100 60 200 checkout"
 ```
 
-参数顺序为：`baseUrl`、`ratePerSecond`、`durationSeconds`、`maxConcurrency`、`scenario`。
+参数顺序为：`baseUrl`、全局 `ratePerSecond`、`durationSeconds`、单 worker `maxInflight`、`scenario`。
 
 支持场景：
 
@@ -332,6 +338,13 @@ mvn -pl loadtest exec:java -Dexec.args="http://localhost:8080 100 60 200 checkou
 - `hot-sku`
 - `payment-callbacks`
 - `mq-backlog`
+- `flash-sale-hotspot`
+- `production-mix`
+
+负载模式包括 `constant`、`step`、`spike`、`soak`、`fault-recovery` 和 `breakpoint`。每次执行都会输出
+worker JSON、聚合容量报告和证据状态；缺少预生产环境、完整 Git SHA、资源/数据规模或各层饱和指标时，不会把本地
+结果标记为容量已验证。完整参数、分布式部署和容量模型见[容量验证说明](docs/capacity-verification.md)及
+[压测 Helm Chart](ops/loadtest/README.md)。
 
 大促或热点 SKU 前，建议初始化库存桶：
 
@@ -379,12 +392,14 @@ Invoke-RestMethod -Method Post -Headers $headers `
 - [集成测试](docs/integration-testing.md)
 - [生产检查清单](docs/production-checklist.md)
 
-## Kubernetes 基线
+## Kubernetes 生产部署
 
-`ops/k8s` 目录包含在线服务的 Kubernetes 部署基线，包括 Deployment、Service、PDB、HPA、健康检查、
-资源配置和优雅关闭。真实集群使用前必须修改镜像仓库、Secret、域名、证书、资源规格和安全策略。
+`ops/helm/emall` 是全部 38 个在线服务的唯一部署事实源，统一生成 Argo Rollout、Service、PDB、HPA、健康检查、
+资源配置、拓扑分散、最小权限 RBAC、NetworkPolicy 和 Gateway API。`ops/k8s` 只保留 ExternalSecret、迁移过渡入口和
+非生产混沌演练，不再维护重复的服务清单。
 
 更多说明见：
 
 - [运维配置索引](ops/README.md)
-- [Kubernetes 基线](ops/k8s/README.md)
+- [生产部署 Chart](ops/helm/emall/README.md)
+- [Kubernetes 辅助资产](ops/k8s/README.md)

@@ -192,12 +192,13 @@ Web / App -> HTTPS -> Gateway API + ALB -> HTTP -> gateway -> HTTP/Dubbo -> orde
 
 当前工程的取舍是：
 
-- `ops/k8s/gateway-api.yml` 使用 Gateway API，配置 `Gateway`、`HTTPRoute`、TLS Secret、HTTP 强制跳转 HTTPS 和 HSTS。
+- `ops/helm/emall/templates/gateway-api.yaml` 由唯一 Chart 生成 Gateway API，配置 `Gateway`、`HTTPRoute`、TLS Secret、
+  HTTP 强制跳转 HTTPS 和 HSTS。
 - `GatewayClass` 默认使用 `alb`，由云厂商 ALB 控制器提供；实际落地时按 ACK、TKE、CCE 等集群的控制器名称调整。
 - 当前工程不再保留传统入口控制器清单，避免入口技术栈表达分散。
 - `gateway` 使用 Spring Cloud Gateway `SecureHeaders` 作为后端兜底，避免漏掉基础安全响应头。
 - 内部服务继续走 HTTP/Dubbo + Nacos，避免为了展示 HTTPS 把服务间调用复杂化。
-- 更高安全等级可以在 `ops/k8s/service-mesh/istio-mtls.yml` 的基础上引入服务网格 mTLS。
+- 更高安全等级可以启用 Chart 中默认关闭的 `serviceMesh.enabled`，由同一事实源生成 Istio mTLS 和授权策略。
 
 面试时可以这样解释：HTTPS 是外部客户端接入的必选项，TLS 证书通常不放在每个 Java 服务里，而是在 Gateway API + ALB
 这一层统一终止；Java 后端负责鉴权、签名、防重放、幂等、风控和审计。内部是否上 mTLS 要看安全等级、
@@ -225,7 +226,7 @@ Web / App -> HTTPS -> Gateway API + ALB -> HTTP -> gateway -> HTTP/Dubbo -> orde
 
 当前工程新增了通用分片路由示例：
 
-- `HashModShardRouter`：按用户 ID、订单 ID 等分片键做 hash/mod 路由。
+- `StaticVirtualShardPlacementProvider`：先把业务键映射到固定虚拟分片，再通过版本化放置表定位物理库表。
 - `ShardRoute`：返回物理库名、物理表名、库索引和表索引。
 
 面试时不要只说“用了分库分表”，要讲清楚三件事：
@@ -249,11 +250,13 @@ L2 缓存的读路径：
 
 ### Helm 部署
 
-`ops/helm/emall` 提供 Helm Chart 基线，覆盖稳定运行核心服务的 Deployment、Service、HPA、探针、资源规格和
-统一运行环境变量。它不是替代 `ops/k8s`，而是给国内云原生面试和真实集群部署提供更接近生产的发布入口。
+`ops/helm/emall` 是 38 个在线服务的唯一生产部署事实源，覆盖 Argo Rollout、Service、HPA、PDB、探针、资源规格、
+拓扑分散、安全上下文、NetworkPolicy、Gateway API 和统一运行环境变量。`ops/k8s` 只保留不与在线工作负载竞争的
+ExternalSecret、迁移过渡入口和混沌演练。
 
-可以这样说明取舍：`ops/k8s` 适合逐个看清 Kubernetes 对象，`ops/helm/emall` 适合批量参数化部署和环境差异化
-管理。真正生产还需要接入镜像仓库、Secret 管理、Gateway API、ALB、证书、灰度发布和云上托管中间件。
+可以这样说明取舍：生产清单必须只有一个可参数化源，避免手写 YAML 和 Helm 长期漂移；所有环境都从同一 Chart 渲染，
+CI 执行 values schema、策略测试、kubeconform 和 Kubernetes Server-Side Dry Run。真正生产仍需接入镜像仓库、
+Secret 管理、ALB、证书、预生产集群和云上托管中间件。
 
 ## 面试讲法
 

@@ -1,6 +1,7 @@
 # 工程生产就绪审查问题清单
 
-[文档索引](README.md) | [生产检查清单](production-checklist.md) | [架构设计](architecture.md)
+[文档索引](README.md) | [当前架构审查](architecture-review-issues.md) | [生产检查清单](production-checklist.md) |
+[架构设计](architecture.md)
 
 本文记录 2026 年 7 月 11 日对当前工程进行生产级代码审查时发现的问题。审查基线为提交
 `dcb59accdcf81661839283abeb0ff8a861510a77`，并记录截至 2026 年 7 月 14 日的修复和验证结果。
@@ -61,7 +62,7 @@
 - 证据：[PaymentService.java](../payment/src/main/java/com/emall/payment/service/PaymentService.java#L320)、
   [PaymentService.java](../payment/src/main/java/com/emall/payment/service/PaymentService.java#L192)、
   [payment/application.yml](../payment/src/main/resources/application.yml#L89)、
-  [ops/k8s/config.yml](../ops/k8s/config.yml#L104)。
+  [values.yaml](../ops/helm/emall/values.yaml)。
 - 修复方向：支付单只能根据服务端订单快照创建；校验订单、用户、金额、币种和状态；为每个支付渠道使用独立密钥
   或证书并由密钥管理系统下发；回调增加 nonce 防重放、渠道订单查询和来源校验。
 - 验收标准：客户端不能覆盖服务端金额；错误金额、币种、渠道、订单归属和签名全部拒绝；默认密钥不能启动生产实例。
@@ -89,7 +90,7 @@
 - 影响：多个副本在同一毫秒生成相同序列时会产生重复订单 ID、支付 ID、事件 ID或其他业务主键。
 - 证据：[SnowflakeIdGenerator.java](../common/src/main/java/com/emall/common/id/SnowflakeIdGenerator.java#L23)、
   [OrderConfig.java](../order/src/main/java/com/emall/order/config/OrderConfig.java#L16)、
-  [ops/k8s/order.yml](../ops/k8s/order.yml#L8)。
+  [rollout.yaml](../ops/helm/emall/templates/rollout.yaml)。
 - 修复方向：通过可靠的 worker 租约服务、StatefulSet ordinal 或统一发号服务分配实例 ID；增加租约续期、冲突检测、
   时钟回拨处理和实例重启隔离。
 - 验收标准：至少 20 个并行实例持续生成 ID 时无重复；重复 worker、租约过期、时钟回拨和滚动发布均能安全处理。
@@ -135,9 +136,9 @@
   另一个无 selector 的 ALLOW 策略会作用于命名空间内全部工作负载。生产配置同时选择 Dubbo 并使用随机端口 `-1`，
   NetworkPolicy 却只开放固定 HTTP 端口。
 - 影响：启用 Istio 和 NetworkPolicy 后，公网请求或网关到服务的请求会被拒绝，Dubbo 服务发现成功后也无法建立连接。
-- 证据：[istio-mtls.yml](../ops/k8s/service-mesh/istio-mtls.yml#L20)、
-  [ops/k8s/config.yml](../ops/k8s/config.yml#L16)、
-  [network-policy.yml](../ops/k8s/network-policy.yml#L155)、
+- 证据：[service-mesh.yaml](../ops/helm/emall/templates/service-mesh.yaml)、
+  [values.yaml](../ops/helm/emall/values.yaml)、
+  [network-policy.yaml](../ops/helm/emall/templates/network-policy.yaml)、
   [inventory/application.yml](../inventory/src/main/resources/application.yml#L69)。
 - 修复方向：按目标工作负载编写入站 AuthorizationPolicy；增加显式默认拒绝和最小允许矩阵；为 Dubbo 分配固定端口，
   在容器、Service、NetworkPolicy 和 Istio 中一致声明。
@@ -164,14 +165,14 @@
 ### P1-02 Migration Runner 无法覆盖生产数据库
 
 - 状态：`[x] 已完成`
-- 修复记录：103 个迁移脚本作为不可变 classpath 资产打入 Migration Runner，缺目录、零脚本和非法分片立即失败；
-  生产 Job 覆盖 36 个服务及核心分片物理库，并由资产测试和 MySQL Testcontainers 测试验证。
+- 修复记录：Migration Runner 不再聚合业务 SQL；37 个数据库服务分别构建只包含自身脚本的不可变迁移镜像，Helm
+  为每个服务生成独立 Job、ExternalSecret 和启动门禁。缺目录、零脚本、越权数据库 URL 和不安全 DDL 均立即失败。
 - 问题：通用 Dockerfile 只复制应用 JAR，Migration Runner 却从 `/migrations/{service}` 读取脚本，清单没有挂载该目录。
   Job 只列出 9 个服务，而生产配置为更多服务声明了独立数据库。
 - 影响：迁移任务可能失败或零迁移成功退出，大量服务启动后缺少数据表；数据库版本与应用版本无法可靠对应。
-- 证据：[Dockerfile](../Dockerfile#L12)、
-  [migration-runner.yml](../ops/k8s/migration-runner.yml#L27)、
-  [migration-runner/application.yml](../migration-runner/src/main/resources/application.yml#L21)。
+- 证据：[Dockerfile.migration](../Dockerfile.migration)、
+  [migration-job.yaml](../ops/helm/emall/templates/migration-job.yaml)、
+  [migration-runner/application.yml](../migration-runner/src/main/resources/application.yml)。
 - 修复方向：把全部迁移脚本作为不可变镜像资产打包，或显式挂载版本化制品；缺少目录和零迁移必须失败；维护完整服务清单，
   并在应用发布前执行和验证迁移 Job。
 - 验收标准：空数据库可由生产镜像一次性初始化全部 schema；重复执行幂等；漏脚本、校验和变化和部分失败会阻断发布。
@@ -223,7 +224,7 @@
 - 问题：可部署清单中包含 `root/root`、`replace-in-production` 等占位凭证。生产保护器默认不启用，并且只拒绝空值
   或以 `local-dev-` 开头的值，所以这些占位值会被接受。静态 Secret 与 External Secrets 还可能形成双重来源。
 - 影响：误用清单时会以弱凭证和公开密钥启动生产服务，造成数据库、字段加密和内部运维接口失守。
-- 证据：[ops/k8s/config.yml](../ops/k8s/config.yml#L98)、
+- 证据：[values.yaml](../ops/helm/emall/values.yaml)、
   [ProductionRuntimeGuard.java](../common/src/main/java/com/emall/common/runtime/ProductionRuntimeGuard.java#L23)、
   [runtime-secret.yml](../ops/k8s/external-secrets/runtime-secret.yml#L18)。
 - 修复方向：删除仓库中的可部署静态 Secret，只保留 External Secrets 或云 KMS 引用；生产模式默认开启保护器；
@@ -257,7 +258,7 @@
 - `mvn clean verify -DskipITs=false`：44 个 Reactor 项目全部成功，编译、Checkstyle、单元测试、Failsafe 和 JaCoCo
   门禁通过；真实环境 Smoke 用例因未设置显式开关而跳过。
 - `mvn formatter:validate`：44 个模块全部通过。
-- Migration Runner 构建产物包含 36 个服务的 103 个版本化 SQL 资产，资产完整性测试通过。
+- Migration Runner 构建产物不包含业务 SQL；37 个服务迁移目录、独立镜像构建输入和 Helm Job/Secret 映射的完整性测试通过。
 - 当前 PowerShell 无法使用 Docker，因此本地 Testcontainers 用例按设计跳过；CI 已设置
   `-Demall.integration.require-docker=true`，Docker 不可用时会直接失败而不是产生假绿。
 - 当前未连接真实 Kubernetes 集群，ALB、mTLS、NetworkPolicy、Dubbo 和跨服务连通性仅完成清单静态测试；
