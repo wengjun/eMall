@@ -29,6 +29,21 @@ spring:
 
 emall:
   storage: jdbc
+  control-plane:
+    enabled: true
+    required-targets:
+      - NACOS_CONFIG
+      - INFRASTRUCTURE_API
+    nacos:
+      enabled: true
+      base-url: ${EMALL_CONTROL_PLANE_NACOS_URL:http://localhost:8848}
+      namespace: ${EMALL_NACOS_NAMESPACE:public}
+      group: EMALL_CONTROL_PLANE
+      access-token: ${EMALL_CONTROL_PLANE_NACOS_ACCESS_TOKEN:}
+    infrastructure:
+      enabled: true
+      base-url: ${EMALL_INFRASTRUCTURE_OPERATOR_URL:http://localhost:8120}
+      bearer-token: ${EMALL_INFRASTRUCTURE_OPERATOR_TOKEN:}
 
 management:
   metrics:

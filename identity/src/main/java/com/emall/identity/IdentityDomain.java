@@ -14,9 +14,13 @@ enum IdentityType {
 }
 
 enum IdentityStatus {
+    PENDING_PROFILE,
     ACTIVE,
     LOCKED,
-    CLOSED
+    SUSPENDED,
+    CLOSED,
+    DELETION_PENDING,
+    DELETED
 }
 
 enum SessionStatus {
@@ -31,6 +35,11 @@ record IdentityAccount(@TableId(value = "account_id", type = IdType.INPUT) long 
         Instant createdAt, Instant updatedAt) {
     IdentityAccount changeStatus(IdentityStatus nextStatus) {
         return new IdentityAccount(accountId, type, subject, displayName, nextStatus, createdAt, Instant.now());
+    }
+
+    IdentityAccount erase() {
+        return new IdentityAccount(accountId, type, "deleted-" + accountId, "Deleted account", IdentityStatus.DELETED,
+                createdAt, Instant.now());
     }
 }
 

@@ -3,6 +3,8 @@ package com.emall.release;
 import com.emall.common.api.ErrorCode;
 import com.emall.common.exception.BusinessException;
 import com.emall.common.id.SnowflakeIdGenerator;
+import com.emall.common.controlplane.ControlPlaneAssertions;
+import com.emall.common.controlplane.ControlPlaneClient;
 import java.math.BigDecimal;
 import java.time.Instant;
 import java.util.ArrayList;
@@ -22,18 +24,25 @@ class ReleaseService {
 
     private final ReleaseRepository repository;
     private final SnowflakeIdGenerator idGenerator;
+    private final ReleaseControlPlanePublisher controlPlanePublisher;
+    private final ControlPlaneClient controlPlaneClient;
 
-    ReleaseService(ReleaseRepository repository, SnowflakeIdGenerator idGenerator) {
+    ReleaseService(ReleaseRepository repository, SnowflakeIdGenerator idGenerator,
+            ReleaseControlPlanePublisher controlPlanePublisher, ControlPlaneClient controlPlaneClient) {
         this.repository = repository;
         this.idGenerator = idGenerator;
+        this.controlPlanePublisher = controlPlanePublisher;
+        this.controlPlaneClient = controlPlaneClient;
     }
 
     @Transactional
     FeatureToggle createToggle(String flagKey, String serviceName, ToggleStatus status, int rolloutPercent) {
         requirePercent(rolloutPercent);
         Instant now = Instant.now();
-        return repository.saveToggle(new FeatureToggle(idGenerator.nextId(), normalize(flagKey), normalize(serviceName),
-                status, rolloutPercent, now, now));
+        FeatureToggle toggle = repository.saveToggle(new FeatureToggle(idGenerator.nextId(), normalize(flagKey),
+                normalize(serviceName), status, rolloutPercent, now, now));
+        controlPlanePublisher.publishToggles(toggle.serviceName(), repository.findToggles());
+        return toggle;
     }
 
     @Transactional
@@ -41,7 +50,9 @@ class ReleaseService {
         requirePercent(rolloutPercent);
         FeatureToggle toggle = repository.findToggle(toggleId)
                 .orElseThrow(() -> new BusinessException(ErrorCode.NOT_FOUND, "feature toggle not found"));
-        return repository.saveToggle(toggle.change(status, rolloutPercent));
+        FeatureToggle saved = repository.saveToggle(toggle.change(status, rolloutPercent));
+        controlPlanePublisher.publishToggles(saved.serviceName(), repository.findToggles());
+        return saved;
     }
 
     @Transactional
@@ -57,10 +68,19 @@ class ReleaseService {
         requirePercent(currentPercent);
         RolloutPlan rollout = repository.findRollout(rolloutId)
                 .orElseThrow(() -> new BusinessException(ErrorCode.NOT_FOUND, "rollout plan not found"));
+        if (status == RolloutStatus.COMPLETED) {
+            if (rollout.currentPercent() != currentPercent) {
+                throw new BusinessException(ErrorCode.CONFLICT,
+                        "rollout percent must converge before marking the rollout complete");
+            }
+            ControlPlaneAssertions.requireSucceeded(controlPlaneClient, "release", "rollout", Long.toString(rolloutId));
+        }
         if (status == RolloutStatus.RUNNING || status == RolloutStatus.COMPLETED) {
             requirePreTrafficGuardPassed(rollout);
         }
-        return repository.saveRollout(rollout.change(status, currentPercent));
+        RolloutPlan saved = repository.saveRollout(rollout.change(status, currentPercent));
+        controlPlanePublisher.publishRollout(saved);
+        return saved;
     }
 
     @Transactional
@@ -69,15 +89,20 @@ class ReleaseService {
             throw new BusinessException(ErrorCode.BAD_REQUEST, "lag budget must be positive");
         }
         Instant now = Instant.now();
-        return repository.saveTopic(new MessageTopicGovernance(idGenerator.nextId(), normalize(topicName),
-                normalize(owner), normalize(schemaVersion), lagBudget, TopicStatus.ACTIVE, now, now));
+        MessageTopicGovernance topic =
+                repository.saveTopic(new MessageTopicGovernance(idGenerator.nextId(), normalize(topicName),
+                        normalize(owner), normalize(schemaVersion), lagBudget, TopicStatus.ACTIVE, now, now));
+        controlPlanePublisher.publishTopics(repository.findTopics());
+        return topic;
     }
 
     @Transactional
     MessageTopicGovernance changeTopicStatus(long topicId, TopicStatus status) {
         MessageTopicGovernance topic = repository.findTopic(topicId)
                 .orElseThrow(() -> new BusinessException(ErrorCode.NOT_FOUND, "message topic not found"));
-        return repository.saveTopic(topic.changeStatus(status));
+        MessageTopicGovernance saved = repository.saveTopic(topic.changeStatus(status));
+        controlPlanePublisher.publishTopics(repository.findTopics());
+        return saved;
     }
 
     @Transactional
@@ -94,7 +119,15 @@ class ReleaseService {
     ReplayPlan changeReplayStatus(long replayId, RolloutStatus status) {
         ReplayPlan replay = repository.findReplay(replayId)
                 .orElseThrow(() -> new BusinessException(ErrorCode.NOT_FOUND, "replay plan not found"));
-        return repository.saveReplay(replay.changeStatus(status));
+        if (status == RolloutStatus.COMPLETED) {
+            ControlPlaneAssertions.requireSucceeded(controlPlaneClient, "release", "kafka-consumer-offsets",
+                    Long.toString(replayId));
+        }
+        ReplayPlan saved = repository.saveReplay(replay.changeStatus(status));
+        if (status == RolloutStatus.RUNNING) {
+            controlPlanePublisher.startReplay(saved);
+        }
+        return saved;
     }
 
     ReleaseSummary summary() {
@@ -118,7 +151,8 @@ class ReleaseService {
         boolean passed = sloPassed && alertsClear && capacityReady && dependenciesHealthy;
         ReleaseGuardDecision decision = passed ? ReleaseGuardDecision.PASS : ReleaseGuardDecision.BLOCK;
         RolloutStatus status = passed ? RolloutStatus.RUNNING : RolloutStatus.PAUSED;
-        repository.saveRollout(rollout.change(status, passed ? rollout.currentPercent() : 0));
+        RolloutPlan saved = repository.saveRollout(rollout.change(status, passed ? rollout.currentPercent() : 0));
+        controlPlanePublisher.publishRollout(saved);
         return repository.saveGuard(new ReleaseGuardRecord(idGenerator.nextId(), rollout.rolloutId(),
                 rollout.serviceName(), ReleaseGuardStage.PRE_TRAFFIC, decision, sloPassed, alertsClear, capacityReady,
                 dependenciesHealthy, null, null, null, null, null, null,
@@ -145,7 +179,8 @@ class ReleaseService {
             case BLOCK -> RolloutStatus.PAUSED;
         };
         int nextPercent = decision == ReleaseGuardDecision.ROLLBACK ? 0 : observedPercent;
-        repository.saveRollout(rollout.change(status, nextPercent));
+        RolloutPlan saved = repository.saveRollout(rollout.change(status, nextPercent));
+        controlPlanePublisher.publishRollout(saved);
         return repository.saveGuard(new ReleaseGuardRecord(idGenerator.nextId(), rollout.rolloutId(),
                 rollout.serviceName(), ReleaseGuardStage.CANARY, decision, null, null, null, null, errorRate,
                 latencyP95Ms, businessSuccessRate, null, null, null,

@@ -35,6 +35,45 @@ class InMemoryIdentityRepository implements IdentityRepository {
     }
 
     @Override
+    public Optional<IdentityAccount> findAccountForUpdate(long accountId) {
+        return findAccount(accountId);
+    }
+
+    @Override
+    public Optional<IdentityAccount> findAccountBySubjectForUpdate(String subject) {
+        return findAccountBySubject(subject);
+    }
+
+    @Override
+    public boolean transitionAccountStatus(long accountId, IdentityStatus expected, IdentityStatus next,
+            Instant updatedAt) {
+        boolean[] changed = {false};
+        accounts.computeIfPresent(accountId, (ignored, account) -> {
+            if (account.status() != expected) {
+                return account;
+            }
+            changed[0] = true;
+            return new IdentityAccount(account.accountId(), account.type(), account.subject(), account.displayName(),
+                    next, account.createdAt(), updatedAt);
+        });
+        return changed[0];
+    }
+
+    @Override
+    public boolean eraseAccount(long accountId, IdentityStatus expected, Instant updatedAt) {
+        boolean[] changed = {false};
+        accounts.computeIfPresent(accountId, (ignored, account) -> {
+            if (account.status() != expected) {
+                return account;
+            }
+            changed[0] = true;
+            return new IdentityAccount(account.accountId(), account.type(), "deleted-" + accountId, "Deleted account",
+                    IdentityStatus.DELETED, account.createdAt(), updatedAt);
+        });
+        return changed[0];
+    }
+
+    @Override
     public IdentityCredential saveCredential(IdentityCredential credential) {
         credentials.put(credential.accountId(), credential);
         return credential;
@@ -43,6 +82,11 @@ class InMemoryIdentityRepository implements IdentityRepository {
     @Override
     public Optional<IdentityCredential> findCredential(long accountId) {
         return Optional.ofNullable(credentials.get(accountId));
+    }
+
+    @Override
+    public void deleteCredential(long accountId) {
+        credentials.remove(accountId);
     }
 
     @Override
@@ -90,6 +134,31 @@ class InMemoryIdentityRepository implements IdentityRepository {
             return session;
         });
         return revoked[0];
+    }
+
+    @Override
+    public int revokeAllSessions(long accountId, Instant updatedAt) {
+        java.util.concurrent.atomic.AtomicInteger revoked = new java.util.concurrent.atomic.AtomicInteger();
+        sessions.replaceAll((ignored, session) -> {
+            if (session.accountId() != accountId || session.status() != SessionStatus.ACTIVE) {
+                return session;
+            }
+            revoked.incrementAndGet();
+            return new DeviceSession(session.sessionId(), session.accountId(), session.deviceId(),
+                    session.accessToken(), session.refreshToken(), SessionStatus.REVOKED, session.expiresAt(),
+                    session.createdAt(), updatedAt);
+        });
+        return revoked.get();
+    }
+
+    @Override
+    public List<DeviceSession> findActiveSessionsForRevocation(long accountId, long afterSessionId,
+            Instant createdAfter, int limit) {
+        return sessions.values().stream()
+                .filter(session -> session.accountId() == accountId && session.status() == SessionStatus.ACTIVE)
+                .filter(session -> session.sessionId() > afterSessionId && !session.createdAt().isBefore(createdAfter))
+                .sorted(java.util.Comparator.comparingLong(DeviceSession::sessionId)).limit(Math.max(1, limit))
+                .toList();
     }
 
     @Override

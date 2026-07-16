@@ -3,6 +3,8 @@ package com.emall.platformops;
 import com.emall.common.api.ErrorCode;
 import com.emall.common.exception.BusinessException;
 import com.emall.common.id.SnowflakeIdGenerator;
+import com.emall.common.controlplane.ControlPlaneAssertions;
+import com.emall.common.controlplane.ControlPlaneClient;
 import java.math.BigDecimal;
 import java.time.Instant;
 import java.util.Locale;
@@ -13,10 +15,15 @@ import org.springframework.transaction.annotation.Transactional;
 class PlatformOpsService {
     private final PlatformOpsRepository repository;
     private final SnowflakeIdGenerator idGenerator;
+    private final PlatformControlPlanePublisher controlPlanePublisher;
+    private final ControlPlaneClient controlPlaneClient;
 
-    PlatformOpsService(PlatformOpsRepository repository, SnowflakeIdGenerator idGenerator) {
+    PlatformOpsService(PlatformOpsRepository repository, SnowflakeIdGenerator idGenerator,
+            PlatformControlPlanePublisher controlPlanePublisher, ControlPlaneClient controlPlaneClient) {
         this.repository = repository;
         this.idGenerator = idGenerator;
+        this.controlPlanePublisher = controlPlanePublisher;
+        this.controlPlaneClient = controlPlaneClient;
     }
 
     @Transactional
@@ -25,15 +32,20 @@ class PlatformOpsService {
             throw new BusinessException(ErrorCode.BAD_REQUEST, "retention days must be positive");
         }
         Instant now = Instant.now();
-        return repository.saveBackupPlan(new BackupPlan(idGenerator.nextId(), normalize(databaseName),
+        BackupPlan plan = repository.saveBackupPlan(new BackupPlan(idGenerator.nextId(), normalize(databaseName),
                 normalize(backupType), retentionDays, OpsStatus.OPEN, now, now));
+        controlPlanePublisher.reconcileBackupPlan(plan);
+        return plan;
     }
 
     @Transactional
     BackupPlan changeBackupStatus(long planId, OpsStatus status) {
         BackupPlan plan = repository.findBackupPlan(planId)
                 .orElseThrow(() -> new BusinessException(ErrorCode.NOT_FOUND, "backup plan not found"));
-        return repository.saveBackupPlan(plan.changeStatus(status));
+        requireCompletion(status, "database-backup", planId);
+        BackupPlan saved = repository.saveBackupPlan(plan.changeStatus(status));
+        controlPlanePublisher.reconcileBackupPlan(saved);
+        return saved;
     }
 
     @Transactional
@@ -48,7 +60,12 @@ class PlatformOpsService {
     DatabaseOperation changeDatabaseOperationStatus(long operationId, OpsStatus status) {
         DatabaseOperation operation = repository.findDatabaseOperation(operationId)
                 .orElseThrow(() -> new BusinessException(ErrorCode.NOT_FOUND, "database operation not found"));
-        return repository.saveDatabaseOperation(operation.changeStatus(status));
+        requireCompletion(status, "database-operation", operationId);
+        DatabaseOperation saved = repository.saveDatabaseOperation(operation.changeStatus(status));
+        if (status == OpsStatus.APPROVED || status == OpsStatus.RUNNING) {
+            controlPlanePublisher.executeDatabaseOperation(saved);
+        }
+        return saved;
     }
 
     @Transactional
@@ -65,7 +82,9 @@ class PlatformOpsService {
     FinOpsAction approveFinOpsAction(long actionId) {
         FinOpsAction action = repository.findFinOpsAction(actionId)
                 .orElseThrow(() -> new BusinessException(ErrorCode.NOT_FOUND, "finops action not found"));
-        return repository.saveFinOpsAction(action.changeStatus(OpsStatus.APPROVED));
+        FinOpsAction approved = repository.saveFinOpsAction(action.changeStatus(OpsStatus.APPROVED));
+        controlPlanePublisher.executeFinOpsAction(approved);
+        return approved;
     }
 
     @Transactional
@@ -79,7 +98,12 @@ class PlatformOpsService {
     SecurityOperation changeSecurityStatus(long operationId, OpsStatus status) {
         SecurityOperation operation = repository.findSecurityOperation(operationId)
                 .orElseThrow(() -> new BusinessException(ErrorCode.NOT_FOUND, "security operation not found"));
-        return repository.saveSecurityOperation(operation.changeStatus(status));
+        requireCompletion(status, "security-operation", operationId);
+        SecurityOperation saved = repository.saveSecurityOperation(operation.changeStatus(status));
+        if (status == OpsStatus.APPROVED || status == OpsStatus.RUNNING) {
+            controlPlanePublisher.executeSecurityOperation(saved);
+        }
+        return saved;
     }
 
     PlatformOpsSummary summary() {
@@ -100,5 +124,12 @@ class PlatformOpsService {
             throw new BusinessException(ErrorCode.BAD_REQUEST, "platform ops value must not be blank");
         }
         return normalized;
+    }
+
+    private void requireCompletion(OpsStatus status, String resourceType, long resourceId) {
+        if (status == OpsStatus.COMPLETED) {
+            ControlPlaneAssertions.requireSucceeded(controlPlaneClient, "platform-ops", resourceType,
+                    Long.toString(resourceId));
+        }
     }
 }

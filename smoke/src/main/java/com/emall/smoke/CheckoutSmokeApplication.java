@@ -37,8 +37,13 @@ public final class CheckoutSmokeApplication {
         String suffix = String.valueOf(System.currentTimeMillis());
         String mobile = "155" + suffix.substring(suffix.length() - 8);
         String password = "SmokeCheckout!" + suffix;
+        String registrationId = "smoke-registration-" + suffix;
 
-        post("/api/identity/accounts", Map.of("subject", mobile, "displayName", "smoke", "password", password), null);
+        JsonNode registration = post("/api/identity/registrations",
+                Map.of("mobile", mobile, "displayName", "smoke", "password", password), null,
+                Map.of("Idempotency-Key", registrationId));
+        long accountId = registration.path("data").path("accountId").asLong();
+        awaitActiveRegistration(registrationId, accountId);
         JsonNode session = post("/api/identity/sessions",
                 Map.of("subject", mobile, "password", password, "deviceId", "java-smoke"), null);
         String shopperAccessToken = session.path("data").path("accessToken").asText();
@@ -46,12 +51,13 @@ public final class CheckoutSmokeApplication {
             throw new IllegalStateException("Identity login did not return an access token");
         }
 
-        JsonNode user = post("/api/users", Map.of("mobile", mobile, "nickname", "smoke"), shopperAccessToken);
+        JsonNode user = get("/api/users/" + accountId, shopperAccessToken);
 
         post("/api/prices", Map.of("skuId", 10001L, "listPrice", BigDecimal.valueOf(3999, 0), "salePrice",
                 BigDecimal.valueOf(3799, 0), "currency", "CNY", "active", true), setupAccessToken);
 
-        post("/api/inventory/10001/stock", Map.of("quantity", 10), setupAccessToken);
+        post("/api/inventory/10001/stock", Map.of("requestId", "smoke-stock-" + suffix, "quantity", 10),
+                setupAccessToken);
 
         JsonNode order = post("/api/orders",
                 Map.of("requestId", "smoke-order-" + suffix, "userId", user.path("data").path("userId").asLong(),
@@ -90,9 +96,15 @@ public final class CheckoutSmokeApplication {
     }
 
     private JsonNode post(String path, Object body, String accessToken) throws IOException, InterruptedException {
+        return post(path, body, accessToken, Map.of());
+    }
+
+    private JsonNode post(String path, Object body, String accessToken, Map<String, String> headers)
+            throws IOException, InterruptedException {
         HttpRequest.Builder builder = HttpRequest.newBuilder(URI.create(baseUrl + path)).timeout(Duration.ofSeconds(10))
                 .header("Content-Type", "application/json").header("X-Device-Id", "java-smoke")
                 .header("X-Client-Channel", "web-smoke");
+        headers.forEach(builder::header);
         authorize(builder, accessToken);
         HttpRequest request =
                 builder.POST(HttpRequest.BodyPublishers.ofString(OBJECT_MAPPER.writeValueAsString(body))).build();
@@ -106,6 +118,38 @@ public final class CheckoutSmokeApplication {
             throw new IllegalStateException("POST " + path + " failed: " + response.body());
         }
         return json;
+    }
+
+    private JsonNode get(String path, String accessToken) throws IOException, InterruptedException {
+        HttpRequest.Builder builder =
+                HttpRequest.newBuilder(URI.create(baseUrl + path)).timeout(Duration.ofSeconds(10));
+        authorize(builder, accessToken);
+        HttpResponse<String> response = httpClient.send(builder.GET().build(), HttpResponse.BodyHandlers.ofString());
+        if (response.statusCode() < 200 || response.statusCode() >= 300) {
+            throw new IllegalStateException(
+                    "GET " + path + " failed with HTTP " + response.statusCode() + ": " + response.body());
+        }
+        JsonNode json = OBJECT_MAPPER.readTree(response.body());
+        if (!json.path("success").asBoolean(false)) {
+            throw new IllegalStateException("GET " + path + " failed: " + response.body());
+        }
+        return json;
+    }
+
+    private void awaitActiveRegistration(String registrationId, long expectedAccountId)
+            throws IOException, InterruptedException {
+        String path = "/api/identity/registrations/" + registrationId;
+        for (int attempt = 0; attempt < 40; attempt++) {
+            JsonNode registration = get(path, null).path("data");
+            if (registration.path("accountId").asLong() != expectedAccountId) {
+                throw new IllegalStateException("registration account binding changed during projection");
+            }
+            if ("ACTIVE".equals(registration.path("accountStatus").asText())) {
+                return;
+            }
+            Thread.sleep(250);
+        }
+        throw new IllegalStateException("identity registration did not become active: " + registrationId);
     }
 
     private JsonNode awaitFulfillment(long orderId) throws IOException, InterruptedException {

@@ -3,6 +3,8 @@ package com.emall.reliability;
 import com.emall.common.api.ErrorCode;
 import com.emall.common.exception.BusinessException;
 import com.emall.common.id.SnowflakeIdGenerator;
+import com.emall.common.controlplane.ControlPlaneAssertions;
+import com.emall.common.controlplane.ControlPlaneClient;
 import java.math.BigDecimal;
 import java.time.Instant;
 import java.util.Locale;
@@ -13,31 +15,44 @@ import org.springframework.transaction.annotation.Transactional;
 class ReliabilityService {
     private final ReliabilityRepository repository;
     private final SnowflakeIdGenerator idGenerator;
+    private final ReliabilityControlPlanePublisher controlPlanePublisher;
+    private final ControlPlaneClient controlPlaneClient;
 
-    ReliabilityService(ReliabilityRepository repository, SnowflakeIdGenerator idGenerator) {
+    ReliabilityService(ReliabilityRepository repository, SnowflakeIdGenerator idGenerator,
+            ReliabilityControlPlanePublisher controlPlanePublisher, ControlPlaneClient controlPlaneClient) {
         this.repository = repository;
         this.idGenerator = idGenerator;
+        this.controlPlanePublisher = controlPlanePublisher;
+        this.controlPlaneClient = controlPlaneClient;
     }
 
     @Transactional
     CapacityRehearsal createRehearsal(String serviceName, int targetQps, int peakConcurrency) {
         Instant now = Instant.now();
-        return repository.saveRehearsal(new CapacityRehearsal(idGenerator.nextId(), normalize(serviceName), targetQps,
-                peakConcurrency, GateStatus.OPEN, now, now));
+        CapacityRehearsal rehearsal = repository.saveRehearsal(new CapacityRehearsal(idGenerator.nextId(),
+                normalize(serviceName), targetQps, peakConcurrency, GateStatus.OPEN, now, now));
+        controlPlanePublisher.runCapacityRehearsal(rehearsal);
+        return rehearsal;
     }
 
     @Transactional
     CapacityRehearsal changeRehearsalStatus(long rehearsalId, GateStatus status) {
         CapacityRehearsal rehearsal = repository.findRehearsal(rehearsalId)
                 .orElseThrow(() -> new BusinessException(ErrorCode.NOT_FOUND, "capacity rehearsal not found"));
+        if (status == GateStatus.PASSED) {
+            ControlPlaneAssertions.requireSucceeded(controlPlaneClient, "reliability", "capacity-rehearsal",
+                    Long.toString(rehearsalId));
+        }
         return repository.saveRehearsal(rehearsal.changeStatus(status));
     }
 
     @Transactional
     SloObjective defineSlo(String serviceName, BigDecimal availabilityTarget, int latencyP95Ms,
             BigDecimal errorBudgetPercent) {
-        return repository.saveSlo(new SloObjective(idGenerator.nextId(), normalize(serviceName), availabilityTarget,
-                latencyP95Ms, errorBudgetPercent, Instant.now()));
+        SloObjective slo = repository.saveSlo(new SloObjective(idGenerator.nextId(), normalize(serviceName),
+                availabilityTarget, latencyP95Ms, errorBudgetPercent, Instant.now()));
+        controlPlanePublisher.publishSlo(slo);
+        return slo;
     }
 
     @Transactional
@@ -53,7 +68,9 @@ class ReliabilityService {
     ChaosSchedule approveChaos(long chaosId) {
         ChaosSchedule chaos = repository.findChaos(chaosId)
                 .orElseThrow(() -> new BusinessException(ErrorCode.NOT_FOUND, "chaos schedule not found"));
-        return repository.saveChaos(chaos.approve());
+        ChaosSchedule approved = repository.saveChaos(chaos.approve());
+        controlPlanePublisher.scheduleChaos(approved);
+        return approved;
     }
 
     @Transactional

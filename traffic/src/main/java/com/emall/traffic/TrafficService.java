@@ -3,6 +3,8 @@ package com.emall.traffic;
 import com.emall.common.api.ErrorCode;
 import com.emall.common.exception.BusinessException;
 import com.emall.common.id.SnowflakeIdGenerator;
+import com.emall.common.controlplane.ControlPlaneAssertions;
+import com.emall.common.controlplane.ControlPlaneClient;
 import java.time.Instant;
 import java.util.Locale;
 import org.springframework.stereotype.Service;
@@ -12,10 +14,15 @@ import org.springframework.transaction.annotation.Transactional;
 class TrafficService {
     private final TrafficRepository repository;
     private final SnowflakeIdGenerator idGenerator;
+    private final TrafficControlPlanePublisher controlPlanePublisher;
+    private final ControlPlaneClient controlPlaneClient;
 
-    TrafficService(TrafficRepository repository, SnowflakeIdGenerator idGenerator) {
+    TrafficService(TrafficRepository repository, SnowflakeIdGenerator idGenerator,
+            TrafficControlPlanePublisher controlPlanePublisher, ControlPlaneClient controlPlaneClient) {
         this.repository = repository;
         this.idGenerator = idGenerator;
+        this.controlPlanePublisher = controlPlanePublisher;
+        this.controlPlaneClient = controlPlaneClient;
     }
 
     @Transactional
@@ -24,15 +31,19 @@ class TrafficService {
             throw new BusinessException(ErrorCode.BAD_REQUEST, "capacity weight must be positive");
         }
         Instant now = Instant.now();
-        return repository.saveUnit(new UnitCell(idGenerator.nextId(), normalize(unitCode), normalize(regionCode),
-                capacityWeight, UnitStatus.ACTIVE, now, now));
+        UnitCell unit = repository.saveUnit(new UnitCell(idGenerator.nextId(), normalize(unitCode),
+                normalize(regionCode), capacityWeight, UnitStatus.ACTIVE, now, now));
+        publishRouting();
+        return unit;
     }
 
     @Transactional
     ShardRoute routeShard(String domainName, int shardNo, String unitCode, String databaseKey) {
         requireUnit(unitCode);
-        return repository.saveRoute(new ShardRoute(idGenerator.nextId(), normalize(domainName), shardNo,
+        ShardRoute route = repository.saveRoute(new ShardRoute(idGenerator.nextId(), normalize(domainName), shardNo,
                 normalize(unitCode), normalize(databaseKey), Instant.now()));
+        publishRouting();
+        return route;
     }
 
     @Transactional
@@ -43,20 +54,30 @@ class TrafficService {
             throw new BusinessException(ErrorCode.BAD_REQUEST, "traffic percent must be 0-100");
         }
         Instant now = Instant.now();
-        return repository.saveShift(new TrafficShift(idGenerator.nextId(), normalize(sourceUnit), normalize(targetUnit),
-                percent, ShiftStatus.PLANNED, reason, now, now));
+        TrafficShift shift = repository.saveShift(new TrafficShift(idGenerator.nextId(), normalize(sourceUnit),
+                normalize(targetUnit), percent, ShiftStatus.PLANNED, reason, now, now));
+        publishRouting();
+        return shift;
     }
 
     @Transactional
     TrafficShift changeShiftStatus(long shiftId, ShiftStatus status) {
         TrafficShift shift = repository.findShift(shiftId)
                 .orElseThrow(() -> new BusinessException(ErrorCode.NOT_FOUND, "traffic shift not found"));
-        return repository.saveShift(shift.changeStatus(status));
+        if (status == ShiftStatus.COMPLETED) {
+            ControlPlaneAssertions.requireSucceeded(controlPlaneClient, "traffic", "global-traffic-policy",
+                    "multi-region");
+        }
+        TrafficShift saved = repository.saveShift(shift.changeStatus(status));
+        publishRouting();
+        return saved;
     }
 
     @Transactional
     UnitCell isolateUnit(String unitCode) {
-        return repository.saveUnit(requireUnit(unitCode).changeStatus(UnitStatus.ISOLATED));
+        UnitCell unit = repository.saveUnit(requireUnit(unitCode).changeStatus(UnitStatus.ISOLATED));
+        publishRouting();
+        return unit;
     }
 
     @Transactional
@@ -67,15 +88,20 @@ class TrafficService {
         }
         requireUnit(unitCode);
         Instant now = Instant.now();
-        return repository.saveControlRule(new TrafficControlRule(idGenerator.nextId(), normalize(resource), type,
-                normalize(dimension), normalize(matchValue), threshold, normalize(unitCode), enabled, now, now));
+        TrafficControlRule rule = repository.saveControlRule(
+                new TrafficControlRule(idGenerator.nextId(), normalize(resource), type, normalize(dimension),
+                        normalize(matchValue), threshold, normalize(unitCode), enabled, now, now));
+        controlPlanePublisher.publishControlRules(repository.findControlRules());
+        return rule;
     }
 
     @Transactional
     TrafficControlRule changeControlRule(long ruleId, boolean enabled) {
         TrafficControlRule rule = repository.findControlRule(ruleId)
                 .orElseThrow(() -> new BusinessException(ErrorCode.NOT_FOUND, "traffic control rule not found"));
-        return repository.saveControlRule(rule.changeEnabled(enabled));
+        TrafficControlRule saved = repository.saveControlRule(rule.changeEnabled(enabled));
+        controlPlanePublisher.publishControlRules(repository.findControlRules());
+        return saved;
     }
 
     java.util.List<TrafficControlRule> controlRules() {
@@ -95,6 +121,10 @@ class TrafficService {
     private UnitCell requireUnit(String unitCode) {
         return repository.findUnit(normalize(unitCode))
                 .orElseThrow(() -> new BusinessException(ErrorCode.NOT_FOUND, "unit cell not found"));
+    }
+
+    private void publishRouting() {
+        controlPlanePublisher.publishRouting(repository.findUnits(), repository.findRoutes(), repository.findShifts());
     }
 
     private String normalize(String value) {

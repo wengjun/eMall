@@ -67,9 +67,10 @@ class IdentityService {
         return account;
     }
 
+    @Transactional
     AuthToken login(String subject, String password, String deviceId) {
         String normalizedSubject = normalize(subject);
-        IdentityAccount account = repository.findAccountBySubject(normalizedSubject).orElse(null);
+        IdentityAccount account = repository.findAccountBySubjectForUpdate(normalizedSubject).orElse(null);
         if (account == null) {
             passwordEncoder.matches(password == null ? "" : password, dummyPasswordHash);
             throw invalidCredentials();
@@ -101,7 +102,11 @@ class IdentityService {
                 || !existing.deviceId().equals(normalize(deviceId))) {
             throw new BusinessException(ErrorCode.UNAUTHORIZED, "refresh token is expired, revoked, or device-bound");
         }
-        IdentityAccount account = requireAccount(existing.accountId());
+        IdentityAccount account = repository.findAccountForUpdate(existing.accountId())
+                .orElseThrow(() -> new BusinessException(ErrorCode.NOT_FOUND, "identity account not found"));
+        if (account.status() != IdentityStatus.ACTIVE) {
+            throw new BusinessException(ErrorCode.FORBIDDEN, "identity account is not active");
+        }
         if (!repository.revokeSessionIfActive(existing.sessionId(), tokenHash, now)) {
             throw new BusinessException(ErrorCode.UNAUTHORIZED, "refresh token has already been used");
         }

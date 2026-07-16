@@ -29,6 +29,20 @@ spring:
 
 emall:
   storage: jdbc
+  control-plane:
+    enabled: true
+    required-targets:
+      - KUBERNETES_RESOURCE
+      - INFRASTRUCTURE_API
+    kubernetes:
+      enabled: true
+      base-url: ${EMALL_KUBERNETES_API_URL:https://kubernetes.default.svc}
+      namespace: ${EMALL_KUBERNETES_NAMESPACE:emall}
+      bearer-token: ${EMALL_KUBERNETES_BEARER_TOKEN:}
+    infrastructure:
+      enabled: true
+      base-url: ${EMALL_INFRASTRUCTURE_OPERATOR_URL:http://localhost:8120}
+      bearer-token: ${EMALL_INFRASTRUCTURE_OPERATOR_TOKEN:}
 
 management:
   metrics:

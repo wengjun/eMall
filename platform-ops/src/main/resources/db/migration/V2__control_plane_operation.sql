@@ -1,0 +1,26 @@
+CREATE TABLE control_plane_operation (
+    operation_id VARCHAR(36) PRIMARY KEY,
+    idempotency_key VARCHAR(191) NOT NULL,
+    module_name VARCHAR(64) NOT NULL,
+    target_type VARCHAR(64) NOT NULL,
+    action_name VARCHAR(96) NOT NULL,
+    resource_type VARCHAR(96) NOT NULL,
+    resource_id VARCHAR(191) NOT NULL,
+    desired_state LONGTEXT NOT NULL,
+    desired_digest CHAR(64) NOT NULL,
+    rollback_state LONGTEXT NULL,
+    observed_state LONGTEXT NULL,
+    status VARCHAR(32) NOT NULL,
+    attempt_count INT NOT NULL DEFAULT 0,
+    max_attempts INT NOT NULL,
+    next_attempt_at TIMESTAMP(6) NOT NULL,
+    lease_owner VARCHAR(191) NULL,
+    lease_until TIMESTAMP(6) NULL,
+    last_error VARCHAR(2000) NULL,
+    created_at TIMESTAMP(6) NOT NULL,
+    updated_at TIMESTAMP(6) NOT NULL,
+    UNIQUE KEY uk_control_plane_idempotency (idempotency_key),
+    KEY idx_control_plane_claim (status, next_attempt_at, lease_until),
+    KEY idx_control_plane_resource (module_name, resource_type, resource_id, created_at)
+);
+

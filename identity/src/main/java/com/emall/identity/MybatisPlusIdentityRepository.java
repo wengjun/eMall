@@ -48,6 +48,27 @@ class MybatisPlusIdentityRepository implements IdentityRepository {
     }
 
     @Override
+    public Optional<IdentityAccount> findAccountForUpdate(long accountId) {
+        return Optional.ofNullable(identityMapper.findAccountForUpdate(accountId));
+    }
+
+    @Override
+    public Optional<IdentityAccount> findAccountBySubjectForUpdate(String subject) {
+        return Optional.ofNullable(identityMapper.findAccountBySubjectForUpdate(subject));
+    }
+
+    @Override
+    public boolean transitionAccountStatus(long accountId, IdentityStatus expected, IdentityStatus next,
+            java.time.Instant updatedAt) {
+        return identityMapper.transitionAccountStatus(accountId, expected, next, updatedAt) == 1;
+    }
+
+    @Override
+    public boolean eraseAccount(long accountId, IdentityStatus expected, java.time.Instant updatedAt) {
+        return identityMapper.eraseAccount(accountId, expected, updatedAt) == 1;
+    }
+
+    @Override
     public IdentityCredential saveCredential(IdentityCredential credential) {
         if (credentialMapper.selectById(credential.accountId()) == null) {
             credentialMapper.insert(credential);
@@ -60,6 +81,11 @@ class MybatisPlusIdentityRepository implements IdentityRepository {
     @Override
     public Optional<IdentityCredential> findCredential(long accountId) {
         return Optional.ofNullable(credentialMapper.selectById(accountId));
+    }
+
+    @Override
+    public void deleteCredential(long accountId) {
+        identityMapper.deleteCredential(accountId);
     }
 
     @Override
@@ -99,6 +125,18 @@ class MybatisPlusIdentityRepository implements IdentityRepository {
     @Override
     public boolean revokeSessionIfActive(long sessionId, String refreshToken, java.time.Instant updatedAt) {
         return identityMapper.revokeSessionIfActive(sessionId, refreshToken, updatedAt) == 1;
+    }
+
+    @Override
+    public int revokeAllSessions(long accountId, java.time.Instant updatedAt) {
+        return identityMapper.revokeAllSessions(accountId, updatedAt);
+    }
+
+    @Override
+    public List<DeviceSession> findActiveSessionsForRevocation(long accountId, long afterSessionId,
+            java.time.Instant createdAfter, int limit) {
+        return identityMapper.findActiveSessionsForRevocation(accountId, afterSessionId, createdAfter,
+                BoundedQuery.limit(limit));
     }
 
     @Override

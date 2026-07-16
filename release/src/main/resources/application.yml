@@ -24,11 +24,37 @@ spring:
     url: ${EMALL_RELEASE_DB_URL:jdbc:mysql://localhost:3306/emall_release?useUnicode=true&characterEncoding=utf8&serverTimezone=UTC}
     username: ${EMALL_DB_USERNAME:root}
     password: ${EMALL_DB_PASSWORD:root}
+  kafka:
+    bootstrap-servers: ${EMALL_KAFKA_BOOTSTRAP_SERVERS:localhost:9092}
   flyway:
     enabled: ${EMALL_FLYWAY_ENABLED:false}
 
 emall:
   storage: jdbc
+  control-plane:
+    enabled: true
+    required-targets:
+      - NACOS_CONFIG
+      - KUBERNETES_RESOURCE
+      - KAFKA_CONSUMER_OFFSETS
+      - INFRASTRUCTURE_API
+    nacos:
+      enabled: true
+      base-url: ${EMALL_CONTROL_PLANE_NACOS_URL:http://localhost:8848}
+      namespace: ${EMALL_NACOS_NAMESPACE:public}
+      group: EMALL_CONTROL_PLANE
+      access-token: ${EMALL_CONTROL_PLANE_NACOS_ACCESS_TOKEN:}
+    kubernetes:
+      enabled: true
+      base-url: ${EMALL_KUBERNETES_API_URL:https://kubernetes.default.svc}
+      namespace: ${EMALL_KUBERNETES_NAMESPACE:emall}
+      bearer-token: ${EMALL_KUBERNETES_BEARER_TOKEN:}
+    kafka:
+      enabled: true
+    infrastructure:
+      enabled: true
+      base-url: ${EMALL_INFRASTRUCTURE_OPERATOR_URL:http://localhost:8120}
+      bearer-token: ${EMALL_INFRASTRUCTURE_OPERATOR_TOKEN:}
 
 management:
   metrics:

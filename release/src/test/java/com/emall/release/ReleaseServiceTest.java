@@ -2,15 +2,27 @@ package com.emall.release;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.mockito.Mockito.atLeastOnce;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.verify;
 
+import com.emall.common.controlplane.ControlPlaneCommand;
 import com.emall.common.exception.BusinessException;
 import com.emall.common.id.SnowflakeIdGenerator;
+import com.emall.common.controlplane.ControlPlaneClient;
+import com.emall.common.controlplane.ControlPlaneProperties;
+import com.emall.common.controlplane.ControlPlaneTarget;
 import java.math.BigDecimal;
 import org.junit.jupiter.api.Test;
+import org.mockito.ArgumentCaptor;
 
 class ReleaseServiceTest {
     private final InMemoryReleaseRepository repository = new InMemoryReleaseRepository();
-    private final ReleaseService service = new ReleaseService(repository, new SnowflakeIdGenerator(63L));
+    private final ControlPlaneClient controlPlaneClient = mock(ControlPlaneClient.class);
+    private final ReleaseControlPlanePublisher publisher =
+            new ReleaseControlPlanePublisher(controlPlaneClient, new ControlPlaneProperties());
+    private final ReleaseService service =
+            new ReleaseService(repository, new SnowflakeIdGenerator(63L), publisher, controlPlaneClient);
 
     @Test
     void managesFeatureRolloutTopicAndReplayGovernance() {
@@ -29,6 +41,13 @@ class ReleaseServiceTest {
         assertThat(summary.runningRollouts()).isEqualTo(1);
         assertThat(summary.activeTopics()).isEqualTo(1);
         assertThat(summary.openReplays()).isEqualTo(1);
+        ArgumentCaptor<ControlPlaneCommand> commands = ArgumentCaptor.forClass(ControlPlaneCommand.class);
+        verify(controlPlaneClient, atLeastOnce()).submit(commands.capture());
+        assertThat(commands.getAllValues()).extracting(ControlPlaneCommand::target).contains(
+                ControlPlaneTarget.NACOS_CONFIG, ControlPlaneTarget.KUBERNETES_RESOURCE,
+                ControlPlaneTarget.KAFKA_CONSUMER_OFFSETS);
+        assertThatThrownBy(() -> service.changeReplayStatus(replay.replayId(), RolloutStatus.COMPLETED))
+                .isInstanceOf(BusinessException.class).hasMessageContaining("has not been submitted");
     }
 
     @Test

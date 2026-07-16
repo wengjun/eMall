@@ -28,11 +28,37 @@ spring:
     url: ${EMALL_IDENTITY_DB_URL:jdbc:mysql://localhost:3306/emall_identity?useUnicode=true&characterEncoding=utf8&serverTimezone=UTC}
     username: ${EMALL_DB_USERNAME:root}
     password: ${EMALL_DB_PASSWORD:root}
+  kafka:
+    bootstrap-servers: ${EMALL_KAFKA_BOOTSTRAP_SERVERS:localhost:9092}
+    producer:
+      key-serializer: org.apache.kafka.common.serialization.StringSerializer
+      value-serializer: org.apache.kafka.common.serialization.StringSerializer
+    consumer:
+      group-id: identity-lifecycle
+      enable-auto-commit: false
+      auto-offset-reset: earliest
+      key-deserializer: org.apache.kafka.common.serialization.StringDeserializer
+      value-deserializer: org.apache.kafka.common.serialization.StringDeserializer
+    listener:
+      ack-mode: record
   flyway:
     enabled: ${EMALL_FLYWAY_ENABLED:false}
 
 emall:
   storage: jdbc
+  events:
+    identity-topic: ${EMALL_IDENTITY_EVENTS_TOPIC:emall.identity.events}
+    user-profile-topic: ${EMALL_USER_PROFILE_EVENTS_TOPIC:emall.user-profile.events}
+    profile-consumer-max-attempts: ${EMALL_USER_PROFILE_CONSUMER_MAX_ATTEMPTS:8}
+  identity:
+    lifecycle:
+      pending-retry-interval: ${EMALL_IDENTITY_PENDING_RETRY_INTERVAL:1m}
+      reconciliation-interval: ${EMALL_IDENTITY_RECONCILIATION_INTERVAL:24h}
+      reconciliation-partitions: ${EMALL_IDENTITY_RECONCILIATION_PARTITIONS:256}
+      max-partitions-per-run: ${EMALL_IDENTITY_RECONCILIATION_MAX_PARTITIONS:16}
+      reconciliation-batch-size: ${EMALL_IDENTITY_RECONCILIATION_BATCH_SIZE:200}
+      reconciliation-lease-ttl: ${EMALL_IDENTITY_RECONCILIATION_LEASE_TTL:30s}
+      reconciliation-delay: ${EMALL_IDENTITY_RECONCILIATION_DELAY:30s}
 
 management:
   metrics:

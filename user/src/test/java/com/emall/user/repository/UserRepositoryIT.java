@@ -4,8 +4,22 @@ import static org.assertj.core.api.Assertions.assertThat;
 
 import com.emall.user.domain.UserAccount;
 import com.emall.user.domain.UserStatus;
+import com.emall.common.event.AccountLifecycleEventPayload;
+import com.emall.common.event.EventTypes;
+import com.emall.common.event.OutboxEvent;
+import com.emall.common.messaging.AggregateVersionRecord;
+import com.emall.common.messaging.AggregateVersionRecordMapper;
+import com.emall.common.messaging.ProcessedMessageRecord;
+import com.emall.common.messaging.ProcessedMessageRecordMapper;
+import com.emall.common.outbox.OutboxEventRecord;
+import com.emall.user.messaging.IdentityAccountEventConsumer;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
+import java.nio.charset.StandardCharsets;
+import java.security.MessageDigest;
 import java.time.Duration;
 import java.time.Instant;
+import java.util.HexFormat;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.condition.EnabledIf;
@@ -15,7 +29,9 @@ import org.springframework.test.context.DynamicPropertyRegistry;
 import org.springframework.test.context.DynamicPropertySource;
 import org.testcontainers.containers.MySQLContainer;
 
-@SpringBootTest(properties = {"emall.storage=jdbc", "spring.flyway.enabled=true"})
+@SpringBootTest(
+        properties = {"emall.storage=jdbc", "spring.flyway.enabled=true", "spring.kafka.listener.auto-startup=false",
+                "spring.task.scheduling.enabled=false", "emall.events.outbox-publish-delay=1h"})
 @EnabledIf("dockerIsAvailable")
 class UserRepositoryIT {
     static final MySQLContainer<?> mysql = new MySQLContainer<>("mysql:8.4").withDatabaseName("emall_user")
@@ -23,6 +39,21 @@ class UserRepositoryIT {
 
     @Autowired
     private UserRepository userRepository;
+
+    @Autowired
+    private IdentityAccountEventConsumer identityEventConsumer;
+
+    @Autowired
+    private UserOutboxEventMapper outboxMapper;
+
+    @Autowired
+    private ProcessedMessageRecordMapper processedMessageMapper;
+
+    @Autowired
+    private AggregateVersionRecordMapper aggregateVersionMapper;
+
+    @Autowired
+    private ObjectMapper objectMapper;
 
     @DynamicPropertySource
     static void databaseProperties(DynamicPropertyRegistry registry) {
@@ -49,6 +80,33 @@ class UserRepositoryIT {
 
         assertThat(userRepository.findByMobile("15500000000")).isPresent().get().extracting(UserAccount::userId)
                 .isEqualTo(1L);
+    }
+
+    @Test
+    void atomicallyProjectsIdentityEventAndDeduplicatesRedelivery() throws Exception {
+        long accountId = 2L;
+        String mobile = "15500000001";
+        String bindingHash = HexFormat.of().formatHex(MessageDigest.getInstance("SHA-256")
+                .digest(("identity-binding-v1:" + mobile).getBytes(StandardCharsets.UTF_8)));
+        OutboxEvent event = OutboxEvent
+                .create("mysql-identity-register-2", "IdentityAccount", Long.toString(accountId),
+                        EventTypes.ACCOUNT_REGISTERED, "identity", "1.0.0", new AccountLifecycleEventPayload(accountId,
+                                mobile, "Projection User", bindingHash, "PENDING_PROFILE", "registration"))
+                .withAggregateVersion(1L);
+        String message = objectMapper.writeValueAsString(event);
+
+        identityEventConsumer.onIdentityEvent(message);
+        identityEventConsumer.onIdentityEvent(message);
+
+        assertThat(userRepository.findById(accountId)).isPresent();
+        assertThat(outboxMapper
+                .selectCount(new QueryWrapper<OutboxEventRecord>().eq("aggregate_id", Long.toString(accountId))))
+                .isEqualTo(1L);
+        assertThat(processedMessageMapper
+                .selectCount(new QueryWrapper<ProcessedMessageRecord>().eq("message_id", event.eventId())))
+                .isEqualTo(1L);
+        assertThat(aggregateVersionMapper.selectCount(new QueryWrapper<AggregateVersionRecord>()
+                .eq("aggregate_id", Long.toString(accountId)).eq("aggregate_version", 1L))).isEqualTo(1L);
     }
 
     private static MySQLContainer<?> mysql() {

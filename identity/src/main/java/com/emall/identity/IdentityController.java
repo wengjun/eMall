@@ -1,33 +1,57 @@
 package com.emall.identity;
 
 import com.emall.common.api.ApiResponse;
+import com.emall.common.security.AuthorizationGuard;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Positive;
+import jakarta.validation.constraints.Pattern;
 import jakarta.validation.constraints.Size;
 import java.time.Instant;
+import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PatchMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestHeader;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.ResponseStatus;
 
 @RestController
 @RequestMapping("/api/identity")
 class IdentityController {
     private final IdentityService identityService;
+    private final AccountLifecycleService lifecycleService;
+    private final AuthorizationGuard authorizationGuard;
 
-    IdentityController(IdentityService identityService) {
+    IdentityController(IdentityService identityService, AccountLifecycleService lifecycleService,
+            AuthorizationGuard authorizationGuard) {
         this.identityService = identityService;
+        this.lifecycleService = lifecycleService;
+        this.authorizationGuard = authorizationGuard;
     }
 
-    @PostMapping("/accounts")
-    ApiResponse<IdentityAccount> createAccount(@Valid @RequestBody CreateAccountRequest request) {
-        return ApiResponse.ok(identityService.createAccount(IdentityType.CUSTOMER, request.subject(),
-                request.displayName(), request.password()));
+    @PostMapping("/registrations")
+    @ResponseStatus(HttpStatus.ACCEPTED)
+    ApiResponse<AccountRegistration> register(@RequestHeader("Idempotency-Key") String registrationId,
+            @Valid @RequestBody RegisterAccountRequest request) {
+        return ApiResponse.ok(
+                lifecycleService.register(registrationId, request.mobile(), request.displayName(), request.password()));
+    }
+
+    @GetMapping("/registrations/{registrationId}")
+    ApiResponse<AccountRegistration> registrationStatus(@PathVariable String registrationId) {
+        return ApiResponse.ok(lifecycleService.registrationStatus(registrationId));
+    }
+
+    @PatchMapping("/accounts/{accountId}/lifecycle")
+    ApiResponse<IdentityAccount> changeAccountLifecycle(@PathVariable long accountId,
+            @Valid @RequestBody ChangeAccountLifecycleRequest request) {
+        authorizationGuard.requireOwnerOrOperator(accountId);
+        return ApiResponse.ok(lifecycleService.changeStatus(accountId, request.action(), request.reason()));
     }
 
     @PostMapping("/sessions")
@@ -85,8 +109,12 @@ class IdentityController {
                 .ok(identityService.createMerchantSubAccount(merchantId, request.accountId(), request.roleCode()));
     }
 
-    record CreateAccountRequest(@NotBlank String subject, @NotBlank String displayName,
-            @NotBlank @Size(min = 12, max = 128) String password) {
+    record RegisterAccountRequest(@NotBlank @Pattern(regexp = "^1[3-9]\\d{9}$") String mobile,
+            @NotBlank @Size(max = 128) String displayName, @NotBlank @Size(min = 12, max = 128) String password) {
+    }
+
+    record ChangeAccountLifecycleRequest(@jakarta.validation.constraints.NotNull AccountLifecycleAction action,
+            @NotBlank @Size(max = 256) String reason) {
     }
 
     record LoginRequest(@NotBlank String subject, @NotBlank String password, @NotBlank String deviceId) {

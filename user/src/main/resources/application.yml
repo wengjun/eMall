@@ -28,16 +28,33 @@ spring:
     url: ${EMALL_USER_DB_URL:jdbc:mysql://localhost:3306/emall_user?useUnicode=true&characterEncoding=utf8&serverTimezone=UTC}
     username: ${EMALL_DB_USERNAME:root}
     password: ${EMALL_DB_PASSWORD:root}
+  kafka:
+    bootstrap-servers: ${EMALL_KAFKA_BOOTSTRAP_SERVERS:localhost:9092}
+    producer:
+      key-serializer: org.apache.kafka.common.serialization.StringSerializer
+      value-serializer: org.apache.kafka.common.serialization.StringSerializer
+    consumer:
+      group-id: user-lifecycle
+      enable-auto-commit: false
+      auto-offset-reset: earliest
+      key-deserializer: org.apache.kafka.common.serialization.StringDeserializer
+      value-deserializer: org.apache.kafka.common.serialization.StringDeserializer
+    listener:
+      ack-mode: record
   flyway:
     enabled: ${EMALL_FLYWAY_ENABLED:false}
 
 emall:
   storage: jdbc
+  events:
+    identity-topic: ${EMALL_IDENTITY_EVENTS_TOPIC:emall.identity.events}
+    user-profile-topic: ${EMALL_USER_PROFILE_EVENTS_TOPIC:emall.user-profile.events}
+    identity-consumer-max-attempts: ${EMALL_IDENTITY_CONSUMER_MAX_ATTEMPTS:8}
   sharding:
     enabled: ${EMALL_SHARDING_ENABLED:false}
     database-prefix: ${EMALL_USER_DB_SHARD_PREFIX:emall_user}
     database-shard-count: ${EMALL_DB_SHARD_COUNT:16}
-    logical-shard-count: ${EMALL_LOGICAL_SHARD_COUNT:64}
+    virtual-shard-count: ${EMALL_VIRTUAL_SHARD_COUNT:4096}
     default-cell-id: ${EMALL_CELL_ID:cell-a}
     tables:
       user_account:

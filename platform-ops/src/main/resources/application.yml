@@ -29,6 +29,14 @@ spring:
 
 emall:
   storage: jdbc
+  control-plane:
+    enabled: true
+    required-targets:
+      - INFRASTRUCTURE_API
+    infrastructure:
+      enabled: true
+      base-url: ${EMALL_INFRASTRUCTURE_OPERATOR_URL:http://localhost:8120}
+      bearer-token: ${EMALL_INFRASTRUCTURE_OPERATOR_TOKEN:}
 
 management:
   metrics:

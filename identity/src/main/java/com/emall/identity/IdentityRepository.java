@@ -11,9 +11,19 @@ interface IdentityRepository {
 
     Optional<IdentityAccount> findAccountBySubject(String subject);
 
+    Optional<IdentityAccount> findAccountForUpdate(long accountId);
+
+    Optional<IdentityAccount> findAccountBySubjectForUpdate(String subject);
+
+    boolean transitionAccountStatus(long accountId, IdentityStatus expected, IdentityStatus next, Instant updatedAt);
+
+    boolean eraseAccount(long accountId, IdentityStatus expected, Instant updatedAt);
+
     IdentityCredential saveCredential(IdentityCredential credential);
 
     Optional<IdentityCredential> findCredential(long accountId);
+
+    void deleteCredential(long accountId);
 
     void recordCredentialFailure(long accountId, Instant now, Instant lockedUntil, int maximumAttempts);
 
@@ -28,6 +38,11 @@ interface IdentityRepository {
     Optional<DeviceSession> findSessionByRefreshToken(String refreshToken);
 
     boolean revokeSessionIfActive(long sessionId, String refreshToken, Instant updatedAt);
+
+    int revokeAllSessions(long accountId, Instant updatedAt);
+
+    List<DeviceSession> findActiveSessionsForRevocation(long accountId, long afterSessionId, Instant createdAfter,
+            int limit);
 
     PermissionGrant saveGrant(PermissionGrant grant);
 

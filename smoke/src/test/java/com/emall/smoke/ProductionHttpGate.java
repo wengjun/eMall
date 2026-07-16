@@ -12,6 +12,7 @@ import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
 import java.time.Duration;
+import java.util.Map;
 
 final class ProductionHttpGate {
     private static final ObjectMapper OBJECT_MAPPER = new ObjectMapper().registerModule(new JavaTimeModule());
@@ -44,9 +45,33 @@ final class ProductionHttpGate {
 
     static JsonNode postJson(String baseUrl, String path, Object body, String token)
             throws IOException, InterruptedException {
-        HttpRequest request = requestBuilder(baseUrl, path, token).header("Content-Type", "application/json")
-                .POST(HttpRequest.BodyPublishers.ofString(OBJECT_MAPPER.writeValueAsString(body))).build();
+        return postJson(baseUrl, path, body, token, Map.of());
+    }
+
+    static JsonNode postJson(String baseUrl, String path, Object body, String token, Map<String, String> headers)
+            throws IOException, InterruptedException {
+        HttpRequest.Builder builder = requestBuilder(baseUrl, path, token).header("Content-Type", "application/json");
+        headers.forEach(builder::header);
+        HttpRequest request =
+                builder.POST(HttpRequest.BodyPublishers.ofString(OBJECT_MAPPER.writeValueAsString(body))).build();
         return sendApiRequest(request, "POST " + path);
+    }
+
+    static long registerShopper(String baseUrl, String mobile, String nickname) throws Exception {
+        String registrationId = "production-it-registration-" + System.currentTimeMillis() + "-" + mobile;
+        JsonNode response = postJson(baseUrl, "/api/identity/registrations",
+                Map.of("mobile", mobile, "displayName", nickname, "password", "ProductionIT12345"), null,
+                Map.of("Idempotency-Key", registrationId));
+        long accountId = response.path("data").path("accountId").asLong();
+        for (int attempt = 0; attempt < 40; attempt++) {
+            JsonNode status = getJson(baseUrl, "/api/identity/registrations/" + registrationId).path("data");
+            assertThat(status.path("accountId").asLong()).isEqualTo(accountId);
+            if ("ACTIVE".equals(status.path("accountStatus").asText())) {
+                return accountId;
+            }
+            Thread.sleep(250);
+        }
+        throw new AssertionError("registration did not become active: " + registrationId);
     }
 
     static JsonNode patchJson(String baseUrl, String path, Object body, String token)
