@@ -1,12 +1,14 @@
 package com.emall.common.runtime;
 
 import java.nio.charset.StandardCharsets;
+import java.time.Duration;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
 import java.util.Set;
 import org.springframework.boot.ApplicationArguments;
 import org.springframework.boot.ApplicationRunner;
+import org.springframework.boot.convert.DurationStyle;
 import org.springframework.core.env.Environment;
 import org.springframework.util.StringUtils;
 
@@ -67,6 +69,8 @@ public class ProductionRuntimeGuard implements ApplicationRunner {
         if (SHARDED_SERVICES.contains(service)) {
             requireTrue("emall.sharding.enabled", unsafe);
             requireTrue("emall.sharding.datasource.enabled", unsafe);
+            requireValue("emall.sharding.route-directory.endpoint", unsafe);
+            validateVirtualShardTopology(unsafe);
         }
         if ("order".equals(service)) {
             requirePositiveInt("emall.capacity.order.max-submissions-per-user-per-minute", unsafe);
@@ -84,6 +88,9 @@ public class ProductionRuntimeGuard implements ApplicationRunner {
             requireTrue("emall.payment.security.callback-signature-enabled", unsafe);
             requireTrue("emall.payment.security.replay-store-fail-closed", unsafe);
         }
+        if ("search".equals(service)) {
+            requireExact("emall.search.engine", "elasticsearch", unsafe);
+        }
         if ("flash-sale".equals(service)) {
             requireSecret("emall.flash-sale.security.token-secret", unsafe);
             requireTrue("emall.trust.identity.enabled", unsafe);
@@ -99,6 +106,33 @@ public class ProductionRuntimeGuard implements ApplicationRunner {
             requirePositiveInt("emall.gateway.rate-limit.subject-burst-capacity", unsafe);
             requirePositiveInt("emall.gateway.rate-limit.hot-resource-replenish-rate", unsafe);
             requirePositiveInt("emall.gateway.rate-limit.hot-resource-burst-capacity", unsafe);
+        }
+    }
+
+    private void validateVirtualShardTopology(List<String> unsafe) {
+        int virtualShardCount = environment.getProperty("emall.sharding.virtual-shard-count", Integer.class, 0);
+        if (virtualShardCount < 4096 || Integer.bitCount(virtualShardCount) != 1) {
+            unsafe.add("emall.sharding.virtual-shard-count");
+        }
+        Duration cacheTtl = durationProperty("emall.sharding.mapping-cache-ttl");
+        Duration cutoverDelay = durationProperty("emall.sharding.minimum-cutover-delay");
+        if (cacheTtl.isZero() || cacheTtl.isNegative()) {
+            unsafe.add("emall.sharding.mapping-cache-ttl");
+        }
+        if (cutoverDelay.compareTo(cacheTtl.multipliedBy(2)) < 0) {
+            unsafe.add("emall.sharding.minimum-cutover-delay");
+        }
+    }
+
+    private Duration durationProperty(String property) {
+        String value = environment.getProperty(property);
+        if (!StringUtils.hasText(value)) {
+            return Duration.ZERO;
+        }
+        try {
+            return DurationStyle.detectAndParse(value.trim());
+        } catch (IllegalArgumentException exception) {
+            return Duration.ZERO;
         }
     }
 

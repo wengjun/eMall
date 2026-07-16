@@ -8,19 +8,36 @@ import java.util.Comparator;
 import java.util.List;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
+import java.util.concurrent.atomic.AtomicLong;
 
 public abstract class InMemoryOutboxRepositorySupport implements OutboxRepository {
     private final ConcurrentMap<String, OutboxEvent> events = new ConcurrentHashMap<>();
+    private final ConcurrentMap<String, AtomicLong> aggregateVersions = new ConcurrentHashMap<>();
 
     @Override
     public OutboxEvent save(OutboxEvent event) {
-        events.put(event.eventId(), event);
-        return event;
+        AtomicBox<OutboxEvent> saved = new AtomicBox<>();
+        events.compute(event.eventId(), (eventId, existing) -> {
+            if (existing != null && event.status() == OutboxStatus.NEW) {
+                saved.set(existing);
+                return existing;
+            }
+            OutboxEvent persisted = event;
+            if (event.aggregateVersion() <= 0 && event.status() == OutboxStatus.NEW) {
+                String aggregateKey = event.aggregateType() + ':' + event.aggregateId();
+                long version =
+                        aggregateVersions.computeIfAbsent(aggregateKey, ignored -> new AtomicLong()).incrementAndGet();
+                persisted = event.withAggregateVersion(version);
+            }
+            saved.set(persisted);
+            return persisted;
+        });
+        return saved.value();
     }
 
     @Override
     public List<OutboxEvent> claimPublishable(String ownerId, Instant now, Duration leaseTtl, int limit) {
-        return events.values().stream().filter(event -> publishable(event, now))
+        return events.values().stream().filter(event -> publishable(event, now)).filter(this::isAggregateHead)
                 .sorted(Comparator.comparing(OutboxEvent::createdAt)).limit(limit)
                 .map(event -> claimOne(event.eventId(), ownerId, now.plus(leaseTtl), now)).flatMap(List::stream)
                 .toList();
@@ -28,7 +45,7 @@ public abstract class InMemoryOutboxRepositorySupport implements OutboxRepositor
 
     @Override
     public List<OutboxEvent> findPublishable(Instant now, int limit) {
-        return events.values().stream().filter(event -> publishable(event, now))
+        return events.values().stream().filter(event -> publishable(event, now)).filter(this::isAggregateHead)
                 .sorted(Comparator.comparing(OutboxEvent::createdAt)).limit(limit).toList();
     }
 
@@ -60,6 +77,13 @@ public abstract class InMemoryOutboxRepositorySupport implements OutboxRepositor
         }
         return event.status() == OutboxStatus.PROCESSING && event.claimedUntil() != null
                 && !event.claimedUntil().isAfter(now);
+    }
+
+    private boolean isAggregateHead(OutboxEvent candidate) {
+        return events.values().stream().filter(event -> event.aggregateType().equals(candidate.aggregateType()))
+                .filter(event -> event.aggregateId().equals(candidate.aggregateId()))
+                .filter(event -> event.status() != OutboxStatus.PUBLISHED && event.status() != OutboxStatus.DEAD)
+                .noneMatch(event -> event.aggregateVersion() < candidate.aggregateVersion());
     }
 
     private static final class AtomicBox<T> {

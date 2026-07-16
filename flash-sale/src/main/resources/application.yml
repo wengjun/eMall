@@ -41,7 +41,7 @@ emall:
     enabled: ${EMALL_SHARDING_ENABLED:false}
     database-prefix: ${EMALL_FLASH_SALE_DB_SHARD_PREFIX:emall_flash_sale}
     database-shard-count: ${EMALL_DB_SHARD_COUNT:16}
-    logical-shard-count: ${EMALL_LOGICAL_SHARD_COUNT:64}
+    virtual-shard-count: ${EMALL_VIRTUAL_SHARD_COUNT:4096}
     default-cell-id: ${EMALL_CELL_ID:cell-a}
     tables:
       flash_sale_campaign:

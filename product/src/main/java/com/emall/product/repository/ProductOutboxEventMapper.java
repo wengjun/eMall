@@ -1,9 +1,8 @@
 package com.emall.product.repository;
 
-import com.baomidou.mybatisplus.core.mapper.BaseMapper;
-import com.emall.common.outbox.OutboxEventRecord;
+import com.emall.common.outbox.OutboxEventMapper;
 import org.apache.ibatis.annotations.Mapper;
 
 @Mapper
-public interface ProductOutboxEventMapper extends BaseMapper<OutboxEventRecord> {
+public interface ProductOutboxEventMapper extends OutboxEventMapper {
 }

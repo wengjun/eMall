@@ -23,7 +23,7 @@ class InventoryConcurrencyTest {
         InventoryService inventoryService =
                 new InventoryService(inventoryRepository, new InMemoryOutboxRepository(), new SnowflakeIdGenerator(2));
         long skuId = 930001L;
-        inventoryService.addStock(skuId, 20);
+        inventoryService.addStock("race-initial-stock", skuId, 20);
 
         ExecutorService executor = Executors.newFixedThreadPool(12);
         CountDownLatch start = new CountDownLatch(1);
@@ -49,5 +49,38 @@ class InventoryConcurrencyTest {
         assertThat(reserved).isEqualTo(20);
         assertThat(inventoryService.get(skuId).reserved()).isEqualTo(20);
         assertThat(inventoryService.get(skuId).available()).isZero();
+    }
+
+    @Test
+    void shouldNotLoseConcurrentBucketedRestocks() throws Exception {
+        InMemoryInventoryRepository inventoryRepository = new InMemoryInventoryRepository();
+        InventoryService inventoryService =
+                new InventoryService(inventoryRepository, new InMemoryOutboxRepository(), new SnowflakeIdGenerator(2));
+        long skuId = 930002L;
+        inventoryService.addStock("bucketed-initial-stock", skuId, 1);
+        inventoryService.initializeBuckets(skuId, 8);
+
+        ExecutorService executor = Executors.newFixedThreadPool(12);
+        CountDownLatch start = new CountDownLatch(1);
+        List<Callable<Void>> tasks = new ArrayList<>();
+        for (int index = 0; index < 100; index++) {
+            int requestNo = index;
+            tasks.add(() -> {
+                start.await();
+                inventoryService.addStock("concurrent-stock-" + requestNo, skuId, 1);
+                return null;
+            });
+        }
+
+        List<Future<Void>> futures = tasks.stream().map(executor::submit).toList();
+        start.countDown();
+        for (Future<Void> future : futures) {
+            future.get();
+        }
+        executor.shutdownNow();
+
+        assertThat(inventoryService.get(skuId).total()).isEqualTo(101);
+        assertThat(inventoryService.buckets(skuId).stream().mapToLong(bucket -> bucket.total()).sum()).isEqualTo(101);
+        assertThat(inventoryRepository.findStockLedger(skuId, 200)).hasSize(102);
     }
 }

@@ -17,8 +17,16 @@ import com.emall.order.service.OrderService;
 import java.math.BigDecimal;
 import java.time.Instant;
 import org.junit.jupiter.api.Test;
+import org.springframework.transaction.annotation.Transactional;
 
 class OrderPaymentConfirmationServiceTest {
+    @Test
+    void confirmationOrchestrationMustNotHoldATransactionAcrossOrderPayment() throws Exception {
+        assertThat(OrderPaymentConfirmationService.class
+                .getDeclaredMethod("confirm", OrderPaymentConfirmationCommand.class).getAnnotation(Transactional.class))
+                .isNull();
+    }
+
     private final OrderService orderService = mock(OrderService.class);
     private final OrderPaymentConfirmationService service = new OrderPaymentConfirmationService(orderService,
             new InMemoryOrderPaymentConfirmationRepository(), ShardRoutingOperations.noop(), ShardRouteIndex.local());

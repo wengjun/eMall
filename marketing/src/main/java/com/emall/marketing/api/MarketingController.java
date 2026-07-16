@@ -43,6 +43,11 @@ public class MarketingController {
         return ApiResponse.ok(marketingService.list(userId));
     }
 
+    @GetMapping("/coupons/{couponId}")
+    public ApiResponse<CouponReservationView> getCoupon(@PathVariable String couponId) {
+        return ApiResponse.ok(toReservationView(marketingService.getCoupon(couponId)));
+    }
+
     @PostMapping("/quotes")
     public ApiResponse<PromotionQuote> quote(@Valid @RequestBody PromotionQuoteRequest request) {
         return ApiResponse.ok(marketingService.quote(request.userId(), request.orderAmount()));

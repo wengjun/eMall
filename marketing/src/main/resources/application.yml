@@ -33,11 +33,15 @@ spring:
 
 emall:
   storage: jdbc
+  jobs:
+    coupon-expiration:
+      max-partitions-per-run: 8
+      lease-ttl: 30s
   sharding:
     enabled: ${EMALL_SHARDING_ENABLED:false}
     database-prefix: ${EMALL_MARKETING_DB_SHARD_PREFIX:emall_marketing}
     database-shard-count: ${EMALL_DB_SHARD_COUNT:16}
-    logical-shard-count: ${EMALL_LOGICAL_SHARD_COUNT:64}
+    virtual-shard-count: ${EMALL_VIRTUAL_SHARD_COUNT:4096}
     default-cell-id: ${EMALL_CELL_ID:cell-a}
     tables:
       coupon:

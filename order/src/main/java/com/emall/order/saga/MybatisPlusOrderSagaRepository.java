@@ -23,14 +23,22 @@ public class MybatisPlusOrderSagaRepository implements OrderSagaRepository {
     @Override
     public OrderCreateSaga save(OrderCreateSaga saga) {
         OrderSagaEntity entity = toEntity(saga);
-        try {
-            mapper.insert(entity);
-        } catch (DuplicateKeyException ex) {
-            mapper.update(null, new UpdateWrapper<OrderSagaEntity>().set("coupon_id", entity.getCouponId())
-                    .set("inventory_reservation_id", entity.getInventoryReservationId()).set("stage", entity.getStage())
-                    .set("status", entity.getStatus()).set("attempts", entity.getAttempts())
-                    .set("last_error", entity.getLastError()).set("next_retry_at", entity.getNextRetryAt())
-                    .set("updated_at", entity.getUpdatedAt()).eq("saga_id", entity.getSagaId()));
+        if (saga.version() == 0L) {
+            try {
+                mapper.insert(entity);
+            } catch (DuplicateKeyException ex) {
+                return findByRequestId(saga.requestId()).orElseThrow(() -> ex);
+            }
+            return saga;
+        }
+        int updated = mapper.update(null, new UpdateWrapper<OrderSagaEntity>().set("coupon_id", entity.getCouponId())
+                .set("inventory_reservation_id", entity.getInventoryReservationId()).set("stage", entity.getStage())
+                .set("status", entity.getStatus()).set("attempts", entity.getAttempts())
+                .set("version", entity.getVersion()).set("last_error", entity.getLastError())
+                .set("next_retry_at", entity.getNextRetryAt()).set("updated_at", entity.getUpdatedAt())
+                .eq("saga_id", entity.getSagaId()).eq("version", saga.version() - 1));
+        if (updated != 1) {
+            throw new OrderSagaConcurrencyException(saga.requestId(), saga.version() - 1);
         }
         return saga;
     }
@@ -72,6 +80,7 @@ public class MybatisPlusOrderSagaRepository implements OrderSagaRepository {
         entity.setStage(saga.stage().name());
         entity.setStatus(saga.status().name());
         entity.setAttempts(saga.attempts());
+        entity.setVersion(saga.version());
         entity.setLastError(saga.lastError());
         entity.setNextRetryAt(databaseTime(saga.nextRetryAt()));
         entity.setCreatedAt(databaseTime(saga.createdAt()));
@@ -83,7 +92,7 @@ public class MybatisPlusOrderSagaRepository implements OrderSagaRepository {
         return new OrderCreateSaga(entity.getSagaId(), entity.getRequestId(), entity.getOrderId(), entity.getUserId(),
                 entity.getSkuId(), entity.getCouponId(), entity.getInventoryReservationId(),
                 OrderSagaStage.valueOf(entity.getStage()), OrderSagaStatus.valueOf(entity.getStatus()),
-                entity.getAttempts(), entity.getLastError(), domainTime(entity.getNextRetryAt()),
+                entity.getAttempts(), entity.getVersion(), entity.getLastError(), domainTime(entity.getNextRetryAt()),
                 domainTime(entity.getCreatedAt()), domainTime(entity.getUpdatedAt()));
     }
 

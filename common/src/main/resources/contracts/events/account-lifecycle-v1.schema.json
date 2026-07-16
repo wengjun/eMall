@@ -1,0 +1,14 @@
+{
+    "$schema": "https://json-schema.org/draft/2020-12/schema",
+    "type": "object",
+    "required": ["accountId", "subject", "displayName", "bindingHash", "status", "reason"],
+    "properties": {
+        "accountId": {"type": "integer", "minimum": 1},
+        "subject": {"type": "string"},
+        "displayName": {"type": "string"},
+        "bindingHash": {"type": "string"},
+        "status": {"type": "string", "minLength": 1},
+        "reason": {"type": "string", "minLength": 1}
+    },
+    "additionalProperties": false
+}

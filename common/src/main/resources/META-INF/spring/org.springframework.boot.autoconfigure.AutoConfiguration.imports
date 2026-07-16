@@ -1,4 +1,5 @@
 com.emall.common.archive.ArchiveAutoConfiguration
+com.emall.common.controlplane.ControlPlaneAutoConfiguration
 com.emall.common.crypto.FieldEncryptionAutoConfiguration
 com.emall.common.idempotency.IdempotencyAutoConfiguration
 com.emall.common.id.SnowflakeIdAutoConfiguration

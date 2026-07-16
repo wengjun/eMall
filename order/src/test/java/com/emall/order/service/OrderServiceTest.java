@@ -3,6 +3,7 @@ package com.emall.order.service;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
+import com.emall.common.event.OutboxEvent;
 import com.emall.common.id.SnowflakeIdGenerator;
 import com.emall.common.idempotency.IdempotencyService;
 import com.emall.common.idempotency.InMemoryIdempotencyRepository;
@@ -30,15 +31,27 @@ import java.time.Clock;
 import java.time.Duration;
 import java.time.Instant;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 import java.util.function.Supplier;
 import org.junit.jupiter.api.Test;
+import org.springframework.transaction.annotation.Transactional;
 
 class OrderServiceTest {
     private final InMemoryOutboxRepository outboxRepository = new InMemoryOutboxRepository();
     private final FakeInventoryClient inventoryClient = new FakeInventoryClient();
     private final OrderService orderService = new OrderService(new InMemoryOrderRepository(), outboxRepository,
             new SnowflakeIdGenerator(3), inventoryClient, new FakePricingClient(), new FakeMarketingClient());
+
+    @Test
+    void orchestrationEntryPointsMustNotOpenDatabaseTransactions() {
+        List<String> orchestrationMethods = List.of("create", "pay", "cancel", "retryPending");
+
+        assertThat(Arrays.stream(OrderService.class.getDeclaredMethods())
+                .filter(method -> orchestrationMethods.contains(method.getName())))
+                .allSatisfy(method -> assertThat(method.getAnnotation(Transactional.class)).as(method.toGenericString())
+                        .isNull());
+    }
 
     @Test
     void shouldCreateAndPayOrderWithDownstreamClients() {
@@ -54,11 +67,11 @@ class OrderServiceTest {
         assertThat(paid.status()).isEqualTo(OrderStatus.PAID);
         assertThat(paid.payableAmount()).isEqualByComparingTo("190.00");
         assertThat(inventoryClient.confirmedRequestId).isEqualTo(created.inventoryReservationId());
-        assertThat(outboxRepository.findPublishable(Instant.now(), 10)).hasSize(2);
-        assertThat(outboxRepository.findPublishable(Instant.now(), 10))
-                .extracting(event -> event.payload().get("clientType")).containsOnly("WEB");
-        assertThat(outboxRepository.findPublishable(Instant.now(), 10))
-                .extracting(event -> event.payload().get("deviceId")).containsOnly(OrderClientContext.UNKNOWN_DEVICE);
+        List<OutboxEvent> events = drainOutbox();
+        assertThat(events).hasSize(2).extracting(OutboxEvent::aggregateVersion).containsExactly(1L, 2L);
+        assertThat(events).extracting(event -> event.payload().get("clientType")).containsOnly("WEB");
+        assertThat(events).extracting(event -> event.payload().get("deviceId"))
+                .containsOnly(OrderClientContext.UNKNOWN_DEVICE);
     }
 
     @Test
@@ -82,8 +95,7 @@ class OrderServiceTest {
 
         assertThat(cancelled.status()).isEqualTo(OrderStatus.CANCELLED);
         assertThat(inventoryClient.releasedRequestId).isEqualTo(created.inventoryReservationId());
-        assertThat(outboxRepository.findPublishable(Instant.now(), 10)).extracting(event -> event.eventType())
-                .contains("order.created", "order.cancelled");
+        assertThat(drainOutbox()).extracting(OutboxEvent::eventType).contains("order.created", "order.cancelled");
     }
 
     @Test
@@ -140,6 +152,22 @@ class OrderServiceTest {
         service.pay(created.orderId());
 
         assertThat(routingOperations.longShardKeys()).containsOnly(70001L);
+    }
+
+    private List<OutboxEvent> drainOutbox() {
+        List<OutboxEvent> drained = new ArrayList<>();
+        Instant now = Instant.now().plusSeconds(1);
+        while (true) {
+            List<OutboxEvent> claimed =
+                    outboxRepository.claimPublishable("order-test", now, Duration.ofSeconds(30), 100);
+            if (claimed.isEmpty()) {
+                return List.copyOf(drained);
+            }
+            claimed.forEach(event -> {
+                drained.add(event);
+                outboxRepository.save(event.published());
+            });
+        }
     }
 
     private static final class FakeInventoryClient extends InventoryClient {

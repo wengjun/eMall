@@ -1,0 +1,15 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "urn:emall:event:flash-sale-order-queued:v1",
+  "type": "object",
+  "required": ["requestId", "campaignId", "userId", "skuId"],
+  "properties": {
+    "requestId": {"type": "integer"},
+    "campaignId": {"type": "integer"},
+    "userId": {"type": "integer"},
+    "skuId": {"type": "integer"},
+    "quantity": {"type": "integer", "minimum": 1},
+    "status": {"type": "string"}
+  },
+  "additionalProperties": true
+}

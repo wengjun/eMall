@@ -8,9 +8,10 @@ import com.emall.common.sharding.ShardRoutingOperations;
 import com.emall.order.domain.Order;
 import com.emall.order.domain.OrderStatus;
 import com.emall.order.service.OrderService;
+import com.emall.order.transaction.OrderLocalTransaction;
 import java.time.Instant;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
 
 @Service
 public class OrderPaymentConfirmationService {
@@ -18,16 +19,24 @@ public class OrderPaymentConfirmationService {
     private final OrderPaymentConfirmationRepository repository;
     private final ShardRoutingOperations shardRoutingOperations;
     private final ShardRouteIndex shardRouteIndex;
+    private final OrderLocalTransaction localTransaction;
 
     public OrderPaymentConfirmationService(OrderService orderService, OrderPaymentConfirmationRepository repository,
             ShardRoutingOperations shardRoutingOperations, ShardRouteIndex shardRouteIndex) {
+        this(orderService, repository, shardRoutingOperations, shardRouteIndex, OrderLocalTransaction.direct());
+    }
+
+    @Autowired
+    public OrderPaymentConfirmationService(OrderService orderService, OrderPaymentConfirmationRepository repository,
+            ShardRoutingOperations shardRoutingOperations, ShardRouteIndex shardRouteIndex,
+            OrderLocalTransaction localTransaction) {
         this.orderService = orderService;
         this.repository = repository;
         this.shardRoutingOperations = shardRoutingOperations;
         this.shardRouteIndex = shardRouteIndex;
+        this.localTransaction = localTransaction;
     }
 
-    @Transactional
     public boolean confirm(OrderPaymentConfirmationCommand command) {
         validate(command);
         long routeKey =
@@ -47,7 +56,8 @@ public class OrderPaymentConfirmationService {
         }
         OrderPaymentConfirmation supplied = new OrderPaymentConfirmation(command.orderId(), command.paymentId(),
                 command.paidAmount(), command.currency(), command.channelTradeNo(), Instant.now());
-        OrderPaymentConfirmation persisted = repository.saveIfAbsent(supplied);
+        OrderPaymentConfirmation persisted =
+                localTransaction.execute("payment-confirmation", () -> repository.saveIfAbsent(supplied));
         if (!persisted.matches(command)) {
             throw new BusinessException(ErrorCode.CONFLICT, "order is already bound to another payment");
         }

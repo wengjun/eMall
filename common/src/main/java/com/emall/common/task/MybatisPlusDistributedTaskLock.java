@@ -36,6 +36,15 @@ public class MybatisPlusDistributedTaskLock implements DistributedTaskLock {
     }
 
     @Override
+    public boolean renew(String lockName, Duration ttl) {
+        Instant nowInstant = clock.instant();
+        LocalDateTime now = databaseTime(nowInstant);
+        LocalDateTime lockedUntil = databaseTime(nowInstant.plus(ttl));
+        return taskLockMapper.update(null, new UpdateWrapper<ScheduledTaskLockRecord>().set("locked_until", lockedUntil)
+                .set("updated_at", now).eq("lock_name", lockName).eq("owner_id", ownerId).gt("locked_until", now)) == 1;
+    }
+
+    @Override
     public void unlock(String lockName) {
         LocalDateTime now = databaseTime(clock.instant());
         taskLockMapper.update(null, new UpdateWrapper<ScheduledTaskLockRecord>().set("locked_until", now)

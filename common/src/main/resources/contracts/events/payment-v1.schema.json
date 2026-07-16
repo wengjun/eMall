@@ -1,0 +1,14 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "urn:emall:event:payment:v1",
+  "type": "object",
+  "required": ["paymentId", "orderId"],
+  "properties": {
+    "paymentId": {"type": "integer"},
+    "orderId": {"type": "integer"},
+    "userId": {"type": "integer"},
+    "amount": {"type": "number"},
+    "status": {"type": "string"}
+  },
+  "additionalProperties": true
+}

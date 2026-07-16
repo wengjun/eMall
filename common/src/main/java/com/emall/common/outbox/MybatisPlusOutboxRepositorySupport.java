@@ -1,8 +1,6 @@
 package com.emall.common.outbox;
 
-import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import com.baomidou.mybatisplus.core.conditions.update.UpdateWrapper;
-import com.baomidou.mybatisplus.core.mapper.BaseMapper;
 import com.emall.common.event.OutboxEvent;
 import com.emall.common.event.OutboxStatus;
 import com.emall.common.persistence.BoundedQuery;
@@ -18,26 +16,37 @@ import java.util.List;
 import java.util.Map;
 import org.springframework.dao.DataAccessResourceFailureException;
 import org.springframework.dao.DuplicateKeyException;
+import org.springframework.transaction.annotation.Transactional;
 
 public abstract class MybatisPlusOutboxRepositorySupport implements OutboxRepository {
     private static final TypeReference<Map<String, Object>> PAYLOAD_TYPE = new TypeReference<>() {
     };
 
-    private final BaseMapper<OutboxEventRecord> outboxEventMapper;
+    private final OutboxEventMapper outboxEventMapper;
     private final ObjectMapper objectMapper;
 
-    protected MybatisPlusOutboxRepositorySupport(BaseMapper<OutboxEventRecord> outboxEventMapper,
-            ObjectMapper objectMapper) {
+    protected MybatisPlusOutboxRepositorySupport(OutboxEventMapper outboxEventMapper, ObjectMapper objectMapper) {
         this.outboxEventMapper = outboxEventMapper;
         this.objectMapper = objectMapper;
     }
 
     @Override
+    @Transactional
     public OutboxEvent save(OutboxEvent event) {
+        if (event.status() == OutboxStatus.NEW && event.aggregateVersion() <= 0) {
+            return insertAndAssignAggregateVersion(event);
+        }
         OutboxEventRecord record = toRecord(event);
         try {
             outboxEventMapper.insert(record);
         } catch (DuplicateKeyException ex) {
+            if (event.status() == OutboxStatus.NEW) {
+                OutboxEventRecord existing = outboxEventMapper.selectById(record.getEventId());
+                if (existing != null) {
+                    return toDomain(existing);
+                }
+                throw ex;
+            }
             outboxEventMapper.update(null,
                     new UpdateWrapper<OutboxEventRecord>().set("status", record.getStatus())
                             .set("shard_id", record.getShardId()).set("retry_count", record.getRetryCount())
@@ -52,7 +61,8 @@ public abstract class MybatisPlusOutboxRepositorySupport implements OutboxReposi
     @Override
     public List<OutboxEvent> claimPublishable(String ownerId, Instant now, Duration leaseTtl, int limit) {
         LocalDateTime currentTime = databaseTime(now);
-        List<OutboxEventRecord> candidates = outboxEventMapper.selectList(publishableQuery(currentTime, limit));
+        List<OutboxEventRecord> candidates =
+                outboxEventMapper.selectPublishableHeads(currentTime, BoundedQuery.limit(limit));
         List<OutboxEvent> claimed = new ArrayList<>();
         for (OutboxEventRecord candidate : candidates) {
             LocalDateTime claimDeadline = databaseTime(now.plus(leaseTtl));
@@ -72,8 +82,8 @@ public abstract class MybatisPlusOutboxRepositorySupport implements OutboxReposi
 
     @Override
     public List<OutboxEvent> findPublishable(Instant now, int limit) {
-        return outboxEventMapper.selectList(publishableQuery(databaseTime(now), limit)).stream().map(this::toDomain)
-                .toList();
+        return outboxEventMapper.selectPublishableHeads(databaseTime(now), BoundedQuery.limit(limit)).stream()
+                .map(this::toDomain).toList();
     }
 
     @Override
@@ -91,6 +101,13 @@ public abstract class MybatisPlusOutboxRepositorySupport implements OutboxReposi
         record.setAggregateType(event.aggregateType());
         record.setAggregateId(event.aggregateId());
         record.setEventType(event.eventType());
+        record.setSchemaVersion(event.schemaVersion());
+        record.setAggregateVersion(event.aggregateVersion());
+        record.setProducer(event.producer());
+        record.setProducerVersion(event.producerVersion());
+        record.setOccurredAt(databaseTime(event.occurredAt()));
+        record.setTraceId(event.traceId());
+        record.setCorrelationId(event.correlationId());
         record.setShardId(event.shardId());
         record.setPayload(serialize(event.payload()));
         record.setStatus(event.status().name());
@@ -108,11 +125,42 @@ public abstract class MybatisPlusOutboxRepositorySupport implements OutboxReposi
 
     private OutboxEvent toDomain(OutboxEventRecord record) {
         return new OutboxEvent(record.getEventId(), record.getAggregateType(), record.getAggregateId(),
-                record.getEventType(), deserialize(record.getPayload()), OutboxStatus.valueOf(record.getStatus()),
+                record.getEventType(), record.getSchemaVersion() == null ? 1 : record.getSchemaVersion(),
+                record.getAggregateVersion() == null ? 0L : record.getAggregateVersion(), record.getProducer(),
+                record.getProducerVersion(), domainTime(record.getOccurredAt()), record.getTraceId(),
+                record.getCorrelationId(), deserialize(record.getPayload()), OutboxStatus.valueOf(record.getStatus()),
                 record.getRetryCount(), domainTime(record.getNextRetryAt()), domainTime(record.getCreatedAt()),
                 domainTime(record.getUpdatedAt()), record.getShardId() == null ? 0 : record.getShardId(),
                 record.getClaimedBy(), domainTime(record.getClaimedUntil()), domainTime(record.getPublishedAt()),
                 record.getErrorCode(), record.getLastError());
+    }
+
+    private OutboxEvent insertAndAssignAggregateVersion(OutboxEvent event) {
+        OutboxEventRecord existing = outboxEventMapper.selectById(event.eventId());
+        if (existing != null) {
+            return toDomain(existing);
+        }
+        try {
+            outboxEventMapper.insert(toRecord(event));
+        } catch (DuplicateKeyException exception) {
+            OutboxEventRecord concurrent = outboxEventMapper.selectById(event.eventId());
+            if (concurrent != null) {
+                return toDomain(concurrent);
+            }
+            throw exception;
+        }
+        String aggregateKey = event.aggregateType() + ':' + event.aggregateId();
+        outboxEventMapper.advanceAggregateVersion(aggregateKey, databaseTime(event.createdAt()));
+        Long version = outboxEventMapper.currentAggregateVersion(aggregateKey);
+        if (version == null || version <= 0) {
+            throw new DataAccessResourceFailureException("failed to allocate outbox aggregate version");
+        }
+        int updated = outboxEventMapper.update(null, new UpdateWrapper<OutboxEventRecord>()
+                .set("aggregate_version", version).eq("event_id", event.eventId()).eq("aggregate_version", 0));
+        if (updated != 1) {
+            throw new DataAccessResourceFailureException("failed to persist outbox aggregate version");
+        }
+        return event.withAggregateVersion(version);
     }
 
     private String serialize(Map<String, Object> payload) {
@@ -129,14 +177,6 @@ public abstract class MybatisPlusOutboxRepositorySupport implements OutboxReposi
         } catch (JsonProcessingException ex) {
             throw new DataAccessResourceFailureException("failed to deserialize outbox payload", ex);
         }
-    }
-
-    private QueryWrapper<OutboxEventRecord> publishableQuery(LocalDateTime currentTime, int limit) {
-        return new QueryWrapper<OutboxEventRecord>()
-                .and(wrapper -> wrapper.in("status", OutboxStatus.NEW.name(), OutboxStatus.FAILED.name())
-                        .le("next_retry_at", currentTime).or().eq("status", OutboxStatus.PROCESSING.name())
-                        .le("claimed_until", currentTime))
-                .orderByAsc("shard_id", "created_at").last("LIMIT " + BoundedQuery.limit(limit));
     }
 
     private LocalDateTime databaseTime(Instant instant) {

@@ -1,0 +1,14 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "urn:emall:event:inventory-reservation:v1",
+  "type": "object",
+  "required": ["requestId", "skuId"],
+  "properties": {
+    "requestId": {"type": "string", "minLength": 1},
+    "skuId": {"type": "integer"},
+    "quantity": {"type": "integer"},
+    "bucketNo": {"type": ["integer", "string"]},
+    "status": {"type": "string"}
+  },
+  "additionalProperties": true
+}

@@ -59,7 +59,7 @@ public class CartService {
     }
 
     public CartSnapshot list(long userId) {
-        return shardRoutingOperations.execute("cart_item", userId,
+        return shardRoutingOperations.executeRead("cart_item", userId,
                 () -> CartSnapshot.of(userId, cartRepository.findByUserId(userId)));
     }
 

@@ -4,10 +4,11 @@ import java.net.http.HttpClient;
 import java.time.Duration;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+import javax.net.ssl.SSLContext;
 import org.springframework.http.client.JdkClientHttpRequestFactory;
 import org.springframework.web.client.RestClient;
 
-public class OutboundHttpClientFactory {
+public class OutboundHttpClientFactory implements AutoCloseable {
     private final OutboundHttpClientProperties properties;
     private final ExecutorService executor;
     private final HttpClient httpClient;
@@ -20,7 +21,17 @@ public class OutboundHttpClientFactory {
     }
 
     public RestClient restClient(String clientName, String baseUrl) {
-        JdkClientHttpRequestFactory requestFactory = new JdkClientHttpRequestFactory(httpClient);
+        return restClient(clientName, baseUrl, httpClient);
+    }
+
+    public RestClient restClient(String clientName, String baseUrl, SSLContext sslContext) {
+        HttpClient client = HttpClient.newBuilder().connectTimeout(properties.getConnectTimeout()).executor(executor)
+                .sslContext(sslContext).build();
+        return restClient(clientName, baseUrl, client);
+    }
+
+    private RestClient restClient(String clientName, String baseUrl, HttpClient client) {
+        JdkClientHttpRequestFactory requestFactory = new JdkClientHttpRequestFactory(client);
         requestFactory.setReadTimeout(properties.getReadTimeout());
         return RestClient.builder().baseUrl(baseUrl).requestFactory(requestFactory)
                 .requestInterceptor(new TraceIdClientHttpRequestInterceptor())
@@ -29,5 +40,10 @@ public class OutboundHttpClientFactory {
 
     public Duration timeoutBudget() {
         return properties.getConnectTimeout().plus(properties.getReadTimeout());
+    }
+
+    @Override
+    public void close() {
+        executor.shutdown();
     }
 }

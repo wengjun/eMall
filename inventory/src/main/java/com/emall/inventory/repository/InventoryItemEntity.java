@@ -25,6 +25,12 @@ public class InventoryItemEntity {
     @TableField("sold")
     private Long sold;
 
+    @TableField("inventory_mode")
+    private String mode;
+
+    @TableField("version")
+    private Long version;
+
     @TableField(value = "updated_at", fill = FieldFill.INSERT_UPDATE)
     private LocalDateTime updatedAt;
 }

@@ -23,12 +23,21 @@ public final class BusinessMetricNames {
     public static final String SEARCH_PRODUCT_EVENT_DEAD = "emall_search_product_event_dead_total";
     public static final String MESSAGE_CONSUMED = "emall_message_consumed_total";
     public static final String MESSAGE_DUPLICATED = "emall_message_duplicated_total";
+    public static final String MESSAGE_STALE = "emall_message_stale_total";
     public static final String MESSAGE_FAILED = "emall_message_failed_total";
     public static final String MESSAGE_DEAD = "emall_message_dead_total";
     public static final String COUPON_RESERVED = "emall_coupon_reserved_total";
     public static final String COUPON_CONFIRMED = "emall_coupon_confirmed_total";
     public static final String COUPON_RELEASED = "emall_coupon_released_total";
     public static final String ORDER_PENDING_RETRY = "emall_order_pending_retry_total";
+    public static final String TASK_PARTITION_ACQUIRED = "emall_task_partition_acquired_total";
+    public static final String TASK_PARTITION_BUSY = "emall_task_partition_busy_total";
+    public static final String TASK_PARTITION_LEASE_LOST = "emall_task_partition_lease_lost_total";
+    public static final String SHARD_ROUTE_CACHE_HIT = "emall_shard_route_cache_hit_total";
+    public static final String SHARD_ROUTE_CACHE_MISS = "emall_shard_route_cache_miss_total";
+    public static final String SHARD_ROUTE_DIRECTORY_LOOKUP = "emall_shard_route_directory_lookup_total";
+    public static final String SHARD_ROUTE_CACHE_REBUILT = "emall_shard_route_cache_rebuilt";
+    public static final String IDENTITY_LIFECYCLE_DUE = "emall_identity_lifecycle_due";
 
     private BusinessMetricNames() {
     }

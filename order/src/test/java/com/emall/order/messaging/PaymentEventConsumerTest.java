@@ -6,11 +6,12 @@ import static org.mockito.Mockito.verify;
 
 import com.emall.common.event.EventTypes;
 import com.emall.common.event.OutboxEvent;
+import com.emall.common.event.PaymentEventPayload;
 import com.emall.common.messaging.InMemoryProcessedMessageRepository;
 import com.emall.common.metrics.BusinessMetrics;
 import com.emall.order.service.OrderService;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import java.util.Map;
+import java.math.BigDecimal;
 import org.junit.jupiter.api.Test;
 
 class PaymentEventConsumerTest {
@@ -30,8 +31,10 @@ class PaymentEventConsumerTest {
     }
 
     private String message() throws Exception {
+        PaymentEventPayload payload =
+                new PaymentEventPayload(80001L, 90001L, 10001L, new BigDecimal("99.00"), "SUCCEEDED");
         OutboxEvent event = OutboxEvent.create("payment-event-90001", "Payment", "80001", EventTypes.PAYMENT_SUCCEEDED,
-                Map.of("orderId", 90001L));
+                "payment", "1.0.0", payload).withAggregateVersion(1);
         return objectMapper.writeValueAsString(event);
     }
 }

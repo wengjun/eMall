@@ -2,14 +2,27 @@ package com.emall.common.region;
 
 import com.emall.common.api.ErrorCode;
 import com.emall.common.exception.BusinessException;
+import com.emall.common.sharding.ShardAccessMode;
+import com.emall.common.sharding.ShardRoutingProperties;
+import com.emall.common.sharding.VirtualShardPlacement;
+import com.emall.common.sharding.VirtualShardPlacementProvider;
 import java.util.List;
 import java.util.Objects;
 
 public class OwnershipGuard {
     private final OwnershipProperties properties;
+    private final ShardRoutingProperties shardRoutingProperties;
+    private final VirtualShardPlacementProvider placementProvider;
 
     public OwnershipGuard(OwnershipProperties properties) {
+        this(properties, null, null);
+    }
+
+    public OwnershipGuard(OwnershipProperties properties, ShardRoutingProperties shardRoutingProperties,
+            VirtualShardPlacementProvider placementProvider) {
         this.properties = Objects.requireNonNull(properties, "properties must not be null");
+        this.shardRoutingProperties = shardRoutingProperties;
+        this.placementProvider = placementProvider;
     }
 
     public OwnershipDecision checkWrite(String domain, long partitionKey) {
@@ -25,9 +38,9 @@ public class OwnershipGuard {
             return accepted(domain, partitionKey, properties.getCurrentRegion(), properties.getCurrentRegion(),
                     properties.getCurrentCell(), properties.getCurrentCell(), RegionWriteStatus.ACTIVE);
         }
-        OwnershipProperties.DomainOwnership domainOwnership = properties.domain(domain);
-        String ownerRegion = ownerRegion(domainOwnership, partitionKey);
-        String ownerCell = ownerCell(domainOwnership, partitionKey);
+        Owner owner = resolveOwner(domain, partitionKey);
+        String ownerRegion = owner.region();
+        String ownerCell = owner.cell();
         RegionWriteStatus currentStatus =
                 properties.getRegionStatuses().getOrDefault(properties.getCurrentRegion(), RegionWriteStatus.ACTIVE);
         if (currentStatus != RegionWriteStatus.ACTIVE) {
@@ -44,6 +57,17 @@ public class OwnershipGuard {
         }
         return accepted(domain, partitionKey, properties.getCurrentRegion(), ownerRegion, properties.getCurrentCell(),
                 ownerCell, currentStatus);
+    }
+
+    private Owner resolveOwner(String domain, long partitionKey) {
+        if (shardRoutingProperties != null && shardRoutingProperties.isEnabled() && placementProvider != null) {
+            int virtualShard = Math.floorMod(partitionKey, shardRoutingProperties.getVirtualShardCount());
+            VirtualShardPlacement placement = placementProvider.resolve(shardRoutingProperties.mappingNamespace(),
+                    virtualShard, ShardAccessMode.WRITE);
+            return new Owner(placement.primary().regionId(), placement.primary().cellId());
+        }
+        OwnershipProperties.DomainOwnership domainOwnership = properties.domain(domain);
+        return new Owner(ownerRegion(domainOwnership, partitionKey), ownerCell(domainOwnership, partitionKey));
     }
 
     private OwnershipDecision accepted(String domain, long partitionKey, String currentRegion, String ownerRegion,
@@ -84,5 +108,8 @@ public class OwnershipGuard {
         OwnershipProperties noop = new OwnershipProperties();
         noop.setEnabled(false);
         return new OwnershipGuard(noop);
+    }
+
+    private record Owner(String region, String cell) {
     }
 }

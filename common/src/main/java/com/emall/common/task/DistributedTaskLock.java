@@ -6,6 +6,8 @@ import java.util.function.IntSupplier;
 public interface DistributedTaskLock {
     boolean tryLock(String lockName, Duration ttl);
 
+    boolean renew(String lockName, Duration ttl);
+
     void unlock(String lockName);
 
     default int executeIfAcquired(String lockName, Duration ttl, IntSupplier task) {

@@ -3,6 +3,7 @@ package com.emall.payment.service;
 import com.emall.common.api.ErrorCode;
 import com.emall.common.event.EventTypes;
 import com.emall.common.event.OutboxEvent;
+import com.emall.common.event.PaymentEventPayload;
 import com.emall.common.exception.BusinessException;
 import com.emall.common.id.SnowflakeIdGenerator;
 import com.emall.common.idempotency.IdempotencyExecutor;
@@ -161,7 +162,7 @@ public class PaymentService {
     private PaymentOrder replayCreate(String requestId) {
         var routeOrderId = shardRouteIndex.resolve("payment-request", requestId);
         if (routeOrderId.isPresent()) {
-            return shardRoutingOperations.execute("payment_order", routeOrderId.getAsLong(),
+            return shardRoutingOperations.executeRead("payment_order", routeOrderId.getAsLong(),
                     () -> findByRequestId(requestId));
         }
         return findByRequestId(requestId);
@@ -173,7 +174,7 @@ public class PaymentService {
     }
 
     public PaymentOrder get(long paymentId) {
-        return shardRoutingOperations.execute("payment_order", paymentRouteKey(paymentId),
+        return shardRoutingOperations.executeRead("payment_order", paymentRouteKey(paymentId),
                 () -> paymentRepository.findById(paymentId)
                         .orElseThrow(() -> new BusinessException(ErrorCode.NOT_FOUND, "payment not found")));
     }
@@ -356,13 +357,7 @@ public class PaymentService {
     }
 
     public List<PaymentChannelStatement> findUnreconciledStatements(int limit) {
-        int boundedLimit = Math.max(1, Math.min(limit, 1000));
-        int shardCount = shardRoutingOperations.physicalShardCount("payment_channel_statement");
-        int perShardLimit = Math.max(1, (boundedLimit + shardCount - 1) / shardCount);
-        return shardRoutingOperations
-                .executeAll("payment_channel_statement",
-                        () -> settlementRepository.findUnreconciledStatements(perShardLimit))
-                .stream().flatMap(List::stream).limit(boundedLimit).toList();
+        return settlementRepository.findUnreconciledStatements(Math.max(1, Math.min(limit, 1000)));
     }
 
     @Transactional
@@ -389,33 +384,17 @@ public class PaymentService {
     }
 
     public List<PaymentOrder> findSucceededButUnconfirmed(int limit) {
-        int boundedLimit = Math.max(1, Math.min(limit, 1000));
-        int shardCount = shardRoutingOperations.physicalShardCount("payment_order");
-        int perShardLimit = Math.max(1, (boundedLimit + shardCount - 1) / shardCount);
-        return shardRoutingOperations
-                .executeAll("payment_order",
-                        () -> paymentRepository.findUnconfirmedByStatus(PaymentStatus.SUCCEEDED, perShardLimit))
-                .stream().flatMap(List::stream).limit(boundedLimit).toList();
+        return paymentRepository.findUnconfirmedByStatus(PaymentStatus.SUCCEEDED, Math.max(1, Math.min(limit, 1000)));
     }
 
     public List<PaymentRefundOrder> findProcessingRefunds(int limit) {
-        int boundedLimit = Math.max(1, Math.min(limit, 1000));
-        int shardCount = shardRoutingOperations.physicalShardCount("payment_refund_order");
-        int perShardLimit = Math.max(1, (boundedLimit + shardCount - 1) / shardCount);
-        return shardRoutingOperations
-                .executeAll("payment_refund_order",
-                        () -> settlementRepository.findRefundsByStatus(PaymentRefundStatus.PROCESSING, perShardLimit))
-                .stream().flatMap(List::stream).limit(boundedLimit).toList();
+        return settlementRepository.findRefundsByStatus(PaymentRefundStatus.PROCESSING,
+                Math.max(1, Math.min(limit, 1000)));
     }
 
     public List<PaymentRefundOrder> findCreatedRefunds(int limit) {
-        int boundedLimit = Math.max(1, Math.min(limit, 1000));
-        int shardCount = shardRoutingOperations.physicalShardCount("payment_refund_order");
-        int perShardLimit = Math.max(1, (boundedLimit + shardCount - 1) / shardCount);
-        return shardRoutingOperations
-                .executeAll("payment_refund_order",
-                        () -> settlementRepository.findRefundsByStatus(PaymentRefundStatus.CREATED, perShardLimit))
-                .stream().flatMap(List::stream).limit(boundedLimit).toList();
+        return settlementRepository.findRefundsByStatus(PaymentRefundStatus.CREATED,
+                Math.max(1, Math.min(limit, 1000)));
     }
 
     @Transactional
@@ -615,9 +594,9 @@ public class PaymentService {
 
     private void appendEvent(PaymentOrder payment, String eventType) {
         outboxRepository.save(OutboxEvent.create("payment-event-" + idGenerator.nextId(), "Payment",
-                String.valueOf(payment.paymentId()), eventType,
-                Map.of("paymentId", payment.paymentId(), "orderId", payment.orderId(), "userId", payment.userId(),
-                        "amount", payment.amount(), "status", payment.status().name())));
+                String.valueOf(payment.paymentId()), eventType, "payment", "0.1.0",
+                new PaymentEventPayload(payment.paymentId(), payment.orderId(), payment.userId(), payment.amount(),
+                        payment.status().name())));
     }
 
     private long paymentRouteKey(long paymentId) {

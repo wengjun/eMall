@@ -83,6 +83,19 @@ public class MarketingClient {
         }
     }
 
+    public CouponReservation getCoupon(String couponId) {
+        CouponReservation result;
+        if (dubboEnabled()) {
+            result = toLocal(marketingRpcService.getCoupon(couponId));
+        } else {
+            CouponReservationResponse response =
+                    marketingRestClient.get().uri("/api/marketing/coupons/{couponId}", couponId).retrieve()
+                            .body(CouponReservationResponse.class);
+            result = response == null ? null : response.data();
+        }
+        return result;
+    }
+
     public boolean confirmCoupon(String reservationId, String couponId, long orderId) {
         if (couponId == null || couponId.isBlank()) {
             return true;

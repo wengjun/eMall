@@ -2,49 +2,51 @@ package com.emall.common.sharding;
 
 import com.emall.common.api.ErrorCode;
 import com.emall.common.exception.BusinessException;
+import com.emall.common.metrics.BusinessMetricNames;
+import com.emall.common.metrics.BusinessMetrics;
 import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
+import java.time.Clock;
 import java.time.Duration;
+import java.time.Instant;
 import java.util.HexFormat;
-import java.util.List;
+import java.util.Optional;
 import java.util.OptionalLong;
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.ConcurrentMap;
+import java.util.concurrent.atomic.AtomicReference;
 import org.springframework.data.redis.core.StringRedisTemplate;
-import org.springframework.data.redis.core.script.DefaultRedisScript;
 import org.springframework.transaction.support.TransactionSynchronization;
 import org.springframework.transaction.support.TransactionSynchronizationManager;
 
 public class ShardRouteIndex {
     private static final String KEY_PREFIX = "emall:shard-route:";
-    private static final int MAXIMUM_LOCAL_ROUTES = 100_000;
-    private static final DefaultRedisScript<Long> REMOVE_IF_OWNED_SCRIPT = new DefaultRedisScript<>("""
-            if redis.call('GET', KEYS[1]) == ARGV[1] then
-                return redis.call('DEL', KEYS[1])
-            end
-            return 0
-            """, Long.class);
-    private static final DefaultRedisScript<Long> PERSIST_IF_OWNED_SCRIPT = new DefaultRedisScript<>("""
-            if redis.call('GET', KEYS[1]) == ARGV[1] then
-                if redis.call('PTTL', KEYS[1]) == -1 then
-                    return 1
-                end
-                return redis.call('PERSIST', KEYS[1])
-            end
-            return 0
-            """, Long.class);
     private static final Duration PENDING_ROUTE_TTL = Duration.ofMinutes(10);
+    private static final int MAXIMUM_REBUILD_RECORDS = 100_000;
     private final StringRedisTemplate redisTemplate;
     private final boolean distributedRequired;
-    private final ConcurrentMap<String, String> localRoutes = new ConcurrentHashMap<>();
+    private final ShardRouteDirectory directory;
+    private final ShardRouteDirectoryProperties properties;
+    private final Clock clock;
+    private final BusinessMetrics metrics;
 
     ShardRouteIndex(StringRedisTemplate redisTemplate, boolean distributedRequired) {
+        this(redisTemplate, distributedRequired, new InMemoryShardRouteDirectory(), new ShardRouteDirectoryProperties(),
+                Clock.systemUTC(), BusinessMetrics.noop());
+    }
+
+    ShardRouteIndex(StringRedisTemplate redisTemplate, boolean distributedRequired, ShardRouteDirectory directory,
+            ShardRouteDirectoryProperties properties, Clock clock) {
+        this(redisTemplate, distributedRequired, directory, properties, clock, BusinessMetrics.noop());
+    }
+
+    ShardRouteIndex(StringRedisTemplate redisTemplate, boolean distributedRequired, ShardRouteDirectory directory,
+            ShardRouteDirectoryProperties properties, Clock clock, BusinessMetrics metrics) {
         this.redisTemplate = redisTemplate;
         this.distributedRequired = distributedRequired;
-        if (distributedRequired && redisTemplate == null) {
-            throw new IllegalStateException("Redis route index is required when sharding is enabled");
-        }
+        this.directory = directory;
+        this.properties = properties;
+        this.clock = clock;
+        this.metrics = metrics;
     }
 
     public static ShardRouteIndex local() {
@@ -52,15 +54,15 @@ public class ShardRouteIndex {
     }
 
     public void bind(String namespace, String lookupKey, long shardKey) {
-        write(routeKey(namespace, lookupKey), Long.toString(shardKey), null, false);
+        write(namespace, lookupKey, shardKey, null, false);
     }
 
     public void bind(String namespace, String lookupKey, long shardKey, Duration ttl) {
-        write(routeKey(namespace, lookupKey), Long.toString(shardKey), ttl, false);
+        write(namespace, lookupKey, shardKey, ttl, false);
     }
 
     public void bindUnique(String namespace, String lookupKey, long shardKey) {
-        write(routeKey(namespace, lookupKey), Long.toString(shardKey), null, true);
+        write(namespace, lookupKey, shardKey, null, true);
     }
 
     public void bindUniqueTransactional(String namespace, String lookupKey, long shardKey) {
@@ -68,43 +70,39 @@ public class ShardRouteIndex {
             bindUnique(namespace, lookupKey, shardKey);
             return;
         }
-        String key = routeKey(namespace, lookupKey);
-        String value = Long.toString(shardKey);
-        write(key, value, PENDING_ROUTE_TTL, true);
+        RouteCoordinates coordinates = coordinates(namespace, lookupKey);
+        Optional<ShardRouteRecord> previous = directory.resolve(namespace, coordinates.lookupHash());
+        AtomicReference<ShardRouteRecord> latest =
+                new AtomicReference<>(write(namespace, lookupKey, shardKey, PENDING_ROUTE_TTL, true));
         TransactionSynchronizationManager.registerSynchronization(new TransactionSynchronization() {
             @Override
             public void beforeCommit(boolean readOnly) {
-                persistIfOwned(key, value);
+                latest.set(write(namespace, lookupKey, shardKey, null, true));
             }
 
             @Override
             public void afterCompletion(int status) {
                 if (status == TransactionSynchronization.STATUS_ROLLED_BACK) {
-                    removeIfOwned(namespace, lookupKey, shardKey);
+                    rollbackBinding(coordinates, latest.get(), previous);
                 }
             }
         });
     }
 
     public OptionalLong resolve(String namespace, String lookupKey) {
-        String key = routeKey(namespace, lookupKey);
-        String value;
-        try {
-            value = redisTemplate == null ? localRoutes.get(key) : redisTemplate.opsForValue().get(key);
-        } catch (RuntimeException ex) {
-            if (distributedRequired) {
-                throw new BusinessException(ErrorCode.DOWNSTREAM_UNAVAILABLE, "shard route index is unavailable");
-            }
-            value = localRoutes.get(key);
+        RouteCoordinates coordinates = coordinates(namespace, lookupKey);
+        OptionalLong cached = cached(coordinates.cacheKey());
+        if (cached.isPresent()) {
+            return cached;
         }
-        if (value == null) {
+        Optional<ShardRouteRecord> route = directory.resolve(namespace, coordinates.lookupHash());
+        metrics.increment(BusinessMetricNames.SHARD_ROUTE_DIRECTORY_LOOKUP, "result",
+                route.isPresent() ? "found" : "missing");
+        if (route.isEmpty() || route.get().expired(clock.instant())) {
             return OptionalLong.empty();
         }
-        try {
-            return OptionalLong.of(Long.parseLong(value));
-        } catch (NumberFormatException ex) {
-            throw new IllegalStateException("Shard route index contains an invalid value", ex);
-        }
+        cache(coordinates.cacheKey(), route.get());
+        return OptionalLong.of(route.get().shardKey());
     }
 
     public long resolveRequired(String namespace, String lookupKey, long localFallback) {
@@ -119,19 +117,10 @@ public class ShardRouteIndex {
     }
 
     public void removeIfOwned(String namespace, String lookupKey, long shardKey) {
-        String key = routeKey(namespace, lookupKey);
-        String expected = Long.toString(shardKey);
-        if (redisTemplate != null) {
-            try {
-                redisTemplate.execute(REMOVE_IF_OWNED_SCRIPT, List.of(key), expected);
-                return;
-            } catch (RuntimeException ex) {
-                if (distributedRequired) {
-                    throw new BusinessException(ErrorCode.DOWNSTREAM_UNAVAILABLE, "shard route index is unavailable");
-                }
-            }
+        RouteCoordinates coordinates = coordinates(namespace, lookupKey);
+        if (directory.removeIfOwned(namespace, coordinates.lookupHash(), shardKey)) {
+            evict(coordinates.cacheKey());
         }
-        localRoutes.remove(key, expected);
     }
 
     public void removeIfOwnedTransactional(String namespace, String lookupKey, long shardKey) {
@@ -139,82 +128,147 @@ public class ShardRouteIndex {
             removeIfOwned(namespace, lookupKey, shardKey);
             return;
         }
+        RouteCoordinates coordinates = coordinates(namespace, lookupKey);
+        Optional<ShardRouteRecord> previous = directory.resolve(namespace, coordinates.lookupHash());
+        AtomicReference<Boolean> removed = new AtomicReference<>(false);
         TransactionSynchronizationManager.registerSynchronization(new TransactionSynchronization() {
             @Override
             public void beforeCommit(boolean readOnly) {
-                removeIfOwned(namespace, lookupKey, shardKey);
+                Long expectedVersion = previous.map(ShardRouteRecord::version).orElse(null);
+                removed.set(directory.removeIfOwned(namespace, coordinates.lookupHash(), shardKey, expectedVersion));
+                if (removed.get()) {
+                    evict(coordinates.cacheKey());
+                }
             }
 
             @Override
             public void afterCompletion(int status) {
-                if (status == TransactionSynchronization.STATUS_ROLLED_BACK) {
-                    bindUnique(namespace, lookupKey, shardKey);
+                if (status == TransactionSynchronization.STATUS_ROLLED_BACK && removed.get() && previous.isPresent()) {
+                    restore(coordinates, previous.get());
                 }
             }
         });
     }
 
-    private void write(String key, String value, Duration ttl, boolean unique) {
+    public int rebuildCache() {
+        return rebuildCache(null, MAXIMUM_REBUILD_RECORDS).rebuilt();
+    }
+
+    public ShardRouteCacheRebuildResult rebuildCache(String startCursor, int requestedLimit) {
+        if (redisTemplate == null) {
+            return new ShardRouteCacheRebuildResult(0, startCursor, true);
+        }
+        int limit = Math.max(1, Math.min(requestedLimit, MAXIMUM_REBUILD_RECORDS));
+        int rebuilt = 0;
+        String cursor = startCursor;
+        String nextCursor;
+        do {
+            ShardRoutePage page = directory.scan(cursor, Math.min(1000, limit - rebuilt));
+            for (ShardRouteRecord route : page.routes()) {
+                cache(cacheKey(route.namespace(), route.lookupHash()), route);
+                rebuilt++;
+            }
+            nextCursor = page.nextCursor();
+            cursor = nextCursor;
+        } while (nextCursor != null && rebuilt < limit);
+        metrics.recordGauge(BusinessMetricNames.SHARD_ROUTE_CACHE_REBUILT, rebuilt);
+        return new ShardRouteCacheRebuildResult(rebuilt, nextCursor, nextCursor == null);
+    }
+
+    private ShardRouteRecord write(String namespace, String lookupKey, long shardKey, Duration requestedTtl,
+            boolean unique) {
+        RouteCoordinates coordinates = coordinates(namespace, lookupKey);
+        Duration retention = requestedTtl == null ? properties.retentionFor(namespace) : requestedTtl;
+        Instant expiresAt = retention == null ? null : clock.instant().plus(retention);
+        ShardRouteRecord route = directory.bind(namespace, coordinates.lookupHash(), shardKey, expiresAt, unique);
+        cache(coordinates.cacheKey(), route);
+        return route;
+    }
+
+    private OptionalLong cached(String key) {
+        if (redisTemplate == null) {
+            return OptionalLong.empty();
+        }
         try {
-            if (redisTemplate != null) {
-                if (unique) {
-                    Boolean created = ttl == null
-                            ? redisTemplate.opsForValue().setIfAbsent(key, value)
-                            : redisTemplate.opsForValue().setIfAbsent(key, value, ttl);
-                    if (!Boolean.TRUE.equals(created) && !value.equals(redisTemplate.opsForValue().get(key))) {
-                        throw new BusinessException(ErrorCode.CONFLICT,
-                                "global route key already belongs to another entity");
-                    }
-                } else if (ttl == null) {
-                    redisTemplate.opsForValue().set(key, value);
-                } else {
-                    redisTemplate.opsForValue().set(key, value, ttl);
-                }
-                return;
+            String value = redisTemplate.opsForValue().get(key);
+            if (value == null) {
+                metrics.increment(BusinessMetricNames.SHARD_ROUTE_CACHE_MISS, "reason", "absent");
+                return OptionalLong.empty();
             }
-        } catch (BusinessException ex) {
-            throw ex;
+            metrics.increment(BusinessMetricNames.SHARD_ROUTE_CACHE_HIT);
+            return OptionalLong.of(Long.parseLong(value));
+        } catch (NumberFormatException ex) {
+            metrics.increment(BusinessMetricNames.SHARD_ROUTE_CACHE_MISS, "reason", "invalid");
+            evict(key);
+            return OptionalLong.empty();
         } catch (RuntimeException ex) {
-            if (distributedRequired) {
-                throw new BusinessException(ErrorCode.DOWNSTREAM_UNAVAILABLE, "shard route index is unavailable");
-            }
-        }
-        if (localRoutes.size() >= MAXIMUM_LOCAL_ROUTES && !localRoutes.containsKey(key)) {
-            throw new BusinessException(ErrorCode.SYSTEM_BUSY, "local shard route index reached its limit");
-        }
-        if (unique) {
-            String existing = localRoutes.putIfAbsent(key, value);
-            if (existing != null && !existing.equals(value)) {
-                throw new BusinessException(ErrorCode.CONFLICT, "global route key already belongs to another entity");
-            }
-        } else {
-            localRoutes.put(key, value);
+            metrics.increment(BusinessMetricNames.SHARD_ROUTE_CACHE_MISS, "reason", "redis-error");
+            return OptionalLong.empty();
         }
     }
 
-    private void persistIfOwned(String key, String value) {
+    private void cache(String key, ShardRouteRecord route) {
         if (redisTemplate == null) {
             return;
         }
-        try {
-            Long persisted = redisTemplate.execute(PERSIST_IF_OWNED_SCRIPT, List.of(key), value);
-            if (!Long.valueOf(1L).equals(persisted)) {
-                throw new BusinessException(ErrorCode.CONFLICT, "global route ownership changed before commit");
+        Duration ttl = properties.getCacheTtl();
+        if (route.expiresAt() != null) {
+            Duration remaining = Duration.between(clock.instant(), route.expiresAt());
+            if (remaining.isNegative() || remaining.isZero()) {
+                evict(key);
+                return;
             }
-        } catch (BusinessException ex) {
-            throw ex;
-        } catch (RuntimeException ex) {
-            if (distributedRequired) {
-                throw new BusinessException(ErrorCode.DOWNSTREAM_UNAVAILABLE, "shard route index is unavailable");
+            if (ttl == null || remaining.compareTo(ttl) < 0) {
+                ttl = remaining;
+            }
+        }
+        if (ttl == null || ttl.isNegative() || ttl.isZero()) {
+            throw new IllegalStateException("route cache TTL must be positive");
+        }
+        try {
+            redisTemplate.opsForValue().set(key, Long.toString(route.shardKey()), ttl);
+        } catch (RuntimeException ignored) {
+            // Redis is a cache; the persistent route directory remains authoritative.
+        }
+    }
+
+    private void rollbackBinding(RouteCoordinates coordinates, ShardRouteRecord pending,
+            Optional<ShardRouteRecord> previous) {
+        boolean removed = directory.removeIfOwned(coordinates.namespace(), coordinates.lookupHash(), pending.shardKey(),
+                pending.version());
+        if (removed && previous.isPresent()) {
+            restore(coordinates, previous.get());
+        } else if (removed) {
+            evict(coordinates.cacheKey());
+        }
+    }
+
+    private void restore(RouteCoordinates coordinates, ShardRouteRecord previous) {
+        ShardRouteRecord restored = directory.bind(previous.namespace(), previous.lookupHash(), previous.shardKey(),
+                previous.expiresAt(), false);
+        cache(coordinates.cacheKey(), restored);
+    }
+
+    private void evict(String key) {
+        if (redisTemplate != null) {
+            try {
+                redisTemplate.delete(key);
+            } catch (RuntimeException ignored) {
+                // A stale cache entry expires naturally and cannot delete authoritative data.
             }
         }
     }
 
-    private String routeKey(String namespace, String lookupKey) {
+    private RouteCoordinates coordinates(String namespace, String lookupKey) {
         if (namespace == null || namespace.isBlank() || lookupKey == null || lookupKey.isBlank()) {
             throw new IllegalArgumentException("route namespace and lookup key must not be blank");
         }
-        return KEY_PREFIX + namespace + ':' + sha256(lookupKey);
+        String lookupHash = sha256(lookupKey);
+        return new RouteCoordinates(namespace, lookupHash, cacheKey(namespace, lookupHash));
+    }
+
+    private String cacheKey(String namespace, String lookupHash) {
+        return KEY_PREFIX + namespace + ':' + lookupHash;
     }
 
     private String sha256(String value) {
@@ -224,5 +278,8 @@ public class ShardRouteIndex {
         } catch (NoSuchAlgorithmException ex) {
             throw new IllegalStateException("SHA-256 digest is unavailable", ex);
         }
+    }
+
+    private record RouteCoordinates(String namespace, String lookupHash, String cacheKey) {
     }
 }

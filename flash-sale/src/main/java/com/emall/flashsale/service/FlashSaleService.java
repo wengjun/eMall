@@ -2,6 +2,7 @@ package com.emall.flashsale.service;
 
 import com.emall.common.api.ErrorCode;
 import com.emall.common.event.EventTypes;
+import com.emall.common.event.FlashSaleOrderQueuedEventPayload;
 import com.emall.common.event.OutboxEvent;
 import com.emall.common.exception.BusinessException;
 import com.emall.common.id.SnowflakeIdGenerator;
@@ -38,7 +39,6 @@ import java.time.Clock;
 import java.time.Duration;
 import java.time.Instant;
 import java.util.List;
-import java.util.Map;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -326,9 +326,8 @@ public class FlashSaleService {
     private void appendOrderQueued(FlashSaleOrderRequest request) {
         outboxRepository.save(OutboxEvent.create("flash-sale-order-event-" + idGenerator.nextId(),
                 "FlashSaleOrderRequest", String.valueOf(request.requestId()), EventTypes.FLASH_SALE_ORDER_QUEUED,
-                Map.of("requestId", request.requestId(), "campaignId", request.campaignId(), "userId", request.userId(),
-                        "skuId", request.skuId(), "quantity", request.quantity(), "token", request.token(), "status",
-                        request.status().name())));
+                "flash-sale", "0.1.0", new FlashSaleOrderQueuedEventPayload(request.requestId(), request.campaignId(),
+                        request.userId(), request.skuId(), request.quantity(), request.status().name())));
     }
 
     private void validateOpenCampaign(FlashSaleCampaign campaign, Instant now) {

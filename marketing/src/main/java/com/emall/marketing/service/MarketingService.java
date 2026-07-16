@@ -59,11 +59,15 @@ public class MarketingService {
     }
 
     public List<Coupon> list(long userId) {
-        return shardRoutingOperations.execute("coupon", userId, () -> couponRepository.findByUserId(userId));
+        return shardRoutingOperations.executeRead("coupon", userId, () -> couponRepository.findByUserId(userId));
+    }
+
+    public Coupon getCoupon(String couponId) {
+        return executeReadByCouponId(couponId, () -> requireCoupon(couponId));
     }
 
     public PromotionQuote quote(long userId, BigDecimal orderAmount) {
-        return shardRoutingOperations.execute("coupon", userId, () -> couponRepository.findByUserId(userId).stream()
+        return shardRoutingOperations.executeRead("coupon", userId, () -> couponRepository.findByUserId(userId).stream()
                 .filter(coupon -> coupon.usable(orderAmount, Instant.now()))
                 .max(Comparator.comparing(Coupon::discountAmount)).map(coupon -> quoteWithCoupon(coupon, orderAmount))
                 .orElseGet(() -> PromotionQuote.none(userId, orderAmount)));
@@ -170,20 +174,19 @@ public class MarketingService {
 
     public int releaseExpiredReservations(int limit) {
         int boundedLimit = Math.max(1, Math.min(limit, 1000));
-        int shardCount = shardRoutingOperations.physicalShardCount("coupon");
-        int perShardLimit = Math.max(1, (boundedLimit + shardCount - 1) / shardCount);
-        return shardRoutingOperations
-                .executeAll("coupon",
-                        () -> couponRepository.findExpiredReservations(Instant.now(), perShardLimit).stream()
-                                .map(coupon -> releaseCouponInShard(coupon.reservationId(), coupon.couponId(),
-                                        coupon.reservedOrderId()))
-                                .toList().size())
-                .stream().mapToInt(Integer::intValue).sum();
+        return couponRepository.findExpiredReservations(Instant.now(), boundedLimit).stream().map(
+                coupon -> releaseCouponInShard(coupon.reservationId(), coupon.couponId(), coupon.reservedOrderId()))
+                .toList().size();
     }
 
     private <T> T executeByCouponId(String couponId, java.util.function.Supplier<T> action) {
         long userId = shardRouteIndex.resolveRequired("coupon", couponId, couponId.hashCode());
         return shardRoutingOperations.execute("coupon", userId, action);
+    }
+
+    private <T> T executeReadByCouponId(String couponId, java.util.function.Supplier<T> action) {
+        long userId = shardRouteIndex.resolveRequired("coupon", couponId, couponId.hashCode());
+        return shardRoutingOperations.executeRead("coupon", userId, action);
     }
 
     private Coupon requireCoupon(String couponId) {

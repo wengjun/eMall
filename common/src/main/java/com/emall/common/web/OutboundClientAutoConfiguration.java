@@ -11,7 +11,7 @@ import org.springframework.web.client.RestClient;
 @ConditionalOnClass(RestClient.class)
 @EnableConfigurationProperties(OutboundHttpClientProperties.class)
 public class OutboundClientAutoConfiguration {
-    @Bean
+    @Bean(destroyMethod = "close")
     @ConditionalOnMissingBean
     public OutboundHttpClientFactory outboundHttpClientFactory(OutboundHttpClientProperties properties) {
         return new OutboundHttpClientFactory(properties);

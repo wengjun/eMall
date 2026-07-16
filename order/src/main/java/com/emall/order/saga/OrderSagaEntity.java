@@ -24,6 +24,7 @@ public class OrderSagaEntity {
     private String stage;
     private String status;
     private Integer attempts;
+    private Long version;
     private String lastError;
     private LocalDateTime nextRetryAt;
     @TableField(value = "created_at", fill = FieldFill.INSERT)

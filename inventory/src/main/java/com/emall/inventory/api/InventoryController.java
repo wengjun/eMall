@@ -35,7 +35,7 @@ public class InventoryController {
 
     @PostMapping("/{skuId}/stock")
     public ApiResponse<InventoryItem> addStock(@PathVariable long skuId, @Valid @RequestBody AddStockRequest request) {
-        return ApiResponse.ok(inventoryService.addStock(skuId, request.quantity()));
+        return ApiResponse.ok(inventoryService.addStock(request.requestId(), skuId, request.quantity()));
     }
 
     @GetMapping("/{skuId}/buckets")
@@ -55,6 +55,11 @@ public class InventoryController {
         return ApiResponse.ok(inventoryService.reserve(request.requestId(), request.skuId(), request.quantity()));
     }
 
+    @GetMapping("/reservations/{requestId}")
+    public ApiResponse<InventoryReservation> reservation(@PathVariable String requestId) {
+        return ApiResponse.ok(inventoryService.reservation(requestId));
+    }
+
     @PostMapping("/reservations/{requestId}/confirm")
     public ApiResponse<InventoryReservation> confirm(@PathVariable String requestId) {
         return ApiResponse.ok(inventoryService.confirm(requestId));
@@ -65,7 +70,7 @@ public class InventoryController {
         return ApiResponse.ok(inventoryService.release(requestId));
     }
 
-    public record AddStockRequest(@Positive int quantity) {
+    public record AddStockRequest(@NotBlank String requestId, @Positive int quantity) {
     }
 
     public record InitBucketsRequest(@Positive @Max(256) int bucketCount) {

@@ -5,11 +5,11 @@ import com.emall.common.exception.BusinessException;
 import com.emall.common.sharding.ShardRoutingOperations;
 import com.emall.search.domain.SearchDocument;
 import com.emall.search.domain.SearchResult;
+import com.emall.search.domain.SearchPage;
+import com.emall.search.domain.SearchQuery;
 import com.emall.search.repository.SearchRepository;
 import java.math.BigDecimal;
 import java.time.Instant;
-import java.util.Comparator;
-import java.util.List;
 import java.util.Set;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
@@ -48,18 +48,24 @@ public class SearchService {
     }
 
     public SearchDocument get(long skuId) {
-        return shardRoutingOperations.execute("search_document", skuId, () -> searchRepository.findBySkuId(skuId)
+        return shardRoutingOperations.executeRead("search_document", skuId, () -> searchRepository.findBySkuId(skuId)
                 .orElseThrow(() -> new BusinessException(ErrorCode.NOT_FOUND, "search document not found")));
     }
 
     public SearchResult search(String keyword, int limit) {
+        return search(keyword, limit, null);
+    }
+
+    public SearchResult search(String keyword, int limit, String cursor) {
         int safeLimit = Math.min(Math.max(limit, 1), 100);
-        List<SearchDocument> documents = jdbcSearch
-                ? shardRoutingOperations
-                        .executeAll("search_document", () -> searchRepository.search(keyword, safeLimit)).stream()
-                        .flatMap(List::stream).sorted(Comparator.comparing(SearchDocument::indexedAt).reversed())
-                        .limit(safeLimit).toList()
-                : searchRepository.search(keyword, safeLimit);
+        if (!jdbcSearch) {
+            SearchPage page = searchRepository.searchPage(new SearchQuery(keyword, safeLimit, cursor));
+            return SearchResult.of(keyword, page);
+        }
+        if (cursor != null && !cursor.isBlank()) {
+            throw new BusinessException(ErrorCode.BAD_REQUEST, "cursor is only supported by Elasticsearch search");
+        }
+        var documents = searchRepository.search(keyword, safeLimit);
         return SearchResult.of(keyword, documents);
     }
 

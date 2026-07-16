@@ -28,6 +28,17 @@ public class InMemoryDistributedTaskLock implements DistributedTaskLock {
     }
 
     @Override
+    public synchronized boolean renew(String lockName, Duration ttl) {
+        Instant now = clock.instant();
+        Lease current = leases.get(lockName);
+        if (current == null || !current.ownerId().equals(ownerId) || !current.lockedUntil().isAfter(now)) {
+            return false;
+        }
+        leases.put(lockName, new Lease(ownerId, now.plus(ttl)));
+        return true;
+    }
+
+    @Override
     public synchronized void unlock(String lockName) {
         Lease current = leases.get(lockName);
         if (current != null && current.ownerId().equals(ownerId)) {

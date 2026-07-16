@@ -75,6 +75,14 @@ class MybatisPlusDistributedTaskLockTest {
     }
 
     @Test
+    void shouldRenewOnlyAStillValidLeaseOwnedByThisNode() {
+        when(taskLockMapper.update(isNull(), anyWrapper())).thenReturn(1);
+
+        assertThat(taskLock.renew("order.outbox.publish", Duration.ofSeconds(30))).isTrue();
+        verify(taskLockMapper).update(isNull(), anyWrapper());
+    }
+
+    @Test
     void shouldPreferMybatisPlusTaskLockWhenSqlSessionTemplateExists() {
         Configuration configuration = mock(Configuration.class);
         SqlSessionFactory sqlSessionFactory = mock(SqlSessionFactory.class);

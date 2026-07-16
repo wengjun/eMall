@@ -19,4 +19,14 @@ class InMemoryDistributedTaskLockTest {
         assertThat(result).isEqualTo(7);
         assertThat(taskLock.tryLock("order.compensation", Duration.ofSeconds(30))).isTrue();
     }
+
+    @Test
+    void shouldRenewOnlyAnOwnedUnexpiredLease() {
+        DistributedTaskLock taskLock = new InMemoryDistributedTaskLock(
+                Clock.fixed(Instant.parse("2026-01-01T00:00:00Z"), ZoneOffset.UTC), "node-a");
+
+        assertThat(taskLock.renew("missing", Duration.ofSeconds(30))).isFalse();
+        assertThat(taskLock.tryLock("inventory.expiration", Duration.ofSeconds(30))).isTrue();
+        assertThat(taskLock.renew("inventory.expiration", Duration.ofSeconds(30))).isTrue();
+    }
 }

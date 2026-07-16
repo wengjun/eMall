@@ -69,6 +69,7 @@ class ProductionRuntimeGuardTest {
                 .withProperty("emall.sharding.datasource.jdbc-url-template", "jdbc:mysql://db/{database}")
                 .withProperty("emall.sharding.datasource.username", "emall_app")
                 .withProperty("emall.sharding.datasource.password", "database-password-strong-123")
+                .withProperty("emall.sharding.route-directory.endpoint", "http://routing:8117")
                 .withProperty("emall.flash-sale.security.token-secret", "flash-sale-secret-strong-value-123456")
                 .withProperty("emall.trust.identity.enabled", "false")
                 .withProperty("emall.trust.identity.fail-closed", "true")
@@ -78,6 +79,56 @@ class ProductionRuntimeGuardTest {
 
         assertThatThrownBy(() -> guard.run(new DefaultApplicationArguments()))
                 .hasMessageContaining("emall.trust.identity.enabled");
+    }
+
+    @Test
+    void rejectsJdbcSearchInProduction() {
+        MockEnvironment environment = strongEnvironment().withProperty("spring.application.name", "search")
+                .withProperty("emall.sharding.enabled", "true")
+                .withProperty("emall.sharding.datasource.enabled", "true")
+                .withProperty("emall.sharding.datasource.jdbc-url-template", "jdbc:mysql://db/{database}")
+                .withProperty("emall.sharding.datasource.username", "emall_app")
+                .withProperty("emall.sharding.datasource.password", "database-password-strong-123")
+                .withProperty("emall.sharding.route-directory.endpoint", "http://routing:8117")
+                .withProperty("emall.search.engine", "jdbc");
+        ProductionRuntimeGuard guard = new ProductionRuntimeGuard(environment, List.of());
+
+        assertThatThrownBy(() -> guard.run(new DefaultApplicationArguments()))
+                .hasMessageContaining("emall.search.engine");
+    }
+
+    @Test
+    void rejectsShardedServiceWithoutPersistentRouteDirectory() {
+        MockEnvironment environment = strongEnvironment().withProperty("spring.application.name", "product")
+                .withProperty("emall.sharding.enabled", "true")
+                .withProperty("emall.sharding.datasource.enabled", "true")
+                .withProperty("emall.sharding.datasource.jdbc-url-template", "jdbc:mysql://db/{database}")
+                .withProperty("emall.sharding.datasource.username", "emall_app")
+                .withProperty("emall.sharding.datasource.password", "database-password-strong-123");
+        ProductionRuntimeGuard guard = new ProductionRuntimeGuard(environment, List.of());
+
+        assertThatThrownBy(() -> guard.run(new DefaultApplicationArguments()))
+                .hasMessageContaining("emall.sharding.route-directory.endpoint");
+    }
+
+    @Test
+    void validatesShardDurationPropertiesWithoutEnvironmentConverters() {
+        MockEnvironment valid = strongEnvironment().withProperty("spring.application.name", "product")
+                .withProperty("emall.sharding.enabled", "true")
+                .withProperty("emall.sharding.datasource.enabled", "true")
+                .withProperty("emall.sharding.datasource.jdbc-url-template", "jdbc:mysql://db/{database}")
+                .withProperty("emall.sharding.datasource.username", "emall_app")
+                .withProperty("emall.sharding.datasource.password", "database-password-strong-123")
+                .withProperty("emall.sharding.route-directory.endpoint", "http://routing:8117")
+                .withProperty("emall.sharding.mapping-cache-ttl", "PT30S")
+                .withProperty("emall.sharding.minimum-cutover-delay", "PT1M");
+
+        assertThatCode(() -> new ProductionRuntimeGuard(valid, List.of()).run(new DefaultApplicationArguments()))
+                .doesNotThrowAnyException();
+
+        MockEnvironment invalid = valid.withProperty("emall.sharding.mapping-cache-ttl", "invalid");
+        assertThatThrownBy(() -> new ProductionRuntimeGuard(invalid, List.of()).run(new DefaultApplicationArguments()))
+                .hasMessageContaining("emall.sharding.mapping-cache-ttl");
     }
 
     private MockEnvironment strongEnvironment() {
@@ -90,6 +141,9 @@ class ProductionRuntimeGuardTest {
                 .withProperty("emall.internal.operations-token", "operations-token-strong-value-123456")
                 .withProperty("emall.security.auth.token-secret", "authentication-secret-strong-value-123")
                 .withProperty("emall.security.auth.fail-closed-on-revocation-store-error", "true")
+                .withProperty("emall.sharding.virtual-shard-count", "4096")
+                .withProperty("emall.sharding.mapping-cache-ttl", "30s")
+                .withProperty("emall.sharding.minimum-cutover-delay", "60s")
                 .withProperty("emall.id.lease-enabled", "true");
     }
 }

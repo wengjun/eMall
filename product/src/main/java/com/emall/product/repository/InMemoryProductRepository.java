@@ -4,9 +4,6 @@ import com.emall.product.domain.Product;
 import com.emall.product.domain.ProductStatus;
 import java.math.BigDecimal;
 import java.time.Instant;
-import java.util.Comparator;
-import java.util.List;
-import java.util.Locale;
 import java.util.Optional;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
@@ -35,14 +32,5 @@ public class InMemoryProductRepository implements ProductRepository {
     @Override
     public Optional<Product> findBySkuId(long skuId) {
         return Optional.ofNullable(products.get(skuId));
-    }
-
-    @Override
-    public List<Product> search(String keyword, int limit) {
-        String normalized = keyword == null ? "" : keyword.toLowerCase(Locale.ROOT);
-        return products.values().stream().filter(product -> product.status() == ProductStatus.ON_SALE)
-                .filter(product -> normalized.isBlank() || product.title().toLowerCase(Locale.ROOT).contains(normalized)
-                        || product.category().toLowerCase(Locale.ROOT).contains(normalized))
-                .sorted(Comparator.comparing(Product::updatedAt).reversed()).limit(limit).toList();
     }
 }

@@ -1,12 +1,15 @@
 package com.emall.common.sharding;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.mockito.Mockito.mock;
 
 import java.util.LinkedHashMap;
 import java.util.Map;
 import javax.sql.DataSource;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
+import org.springframework.beans.factory.ObjectProvider;
+import io.micrometer.core.instrument.MeterRegistry;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.jdbc.datasource.DataSourceTransactionManager;
 import org.springframework.transaction.support.TransactionTemplate;
@@ -28,7 +31,10 @@ class ShardRoutingDataSourceIT {
         routing.setDatabasePrefix("emall_order");
         routing.setDatabaseShardCount(2);
         ShardDataSourceProperties dataSources = dataSources();
-        DataSource routed = new ShardRoutingAutoConfiguration().routedDataSource(dataSources, routing);
+        @SuppressWarnings("unchecked")
+        ObjectProvider<MeterRegistry> meterRegistryProvider = mock(ObjectProvider.class);
+        DataSource routed =
+                new ShardRoutingAutoConfiguration().routedDataSource(dataSources, routing, meterRegistryProvider);
         DefaultShardRoutingOperations operations = new DefaultShardRoutingOperations(routing);
         JdbcTemplate jdbc = new JdbcTemplate(routed);
         TransactionTemplate transaction = new TransactionTemplate(new DataSourceTransactionManager(routed));

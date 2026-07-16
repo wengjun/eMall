@@ -12,6 +12,8 @@ import com.emall.common.sharding.ShardRoutingOperations;
 import com.emall.order.integration.InventoryClient;
 import com.emall.order.integration.MarketingClient;
 import com.emall.order.repository.InMemoryOrderRepository;
+import java.math.BigDecimal;
+import java.time.Instant;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
@@ -24,8 +26,18 @@ class OrderSagaCoordinatorTest {
 
     @BeforeEach
     void configureIdempotentCompensations() {
+        when(inventoryClient.getReservation(anyString())).thenAnswer(invocation -> {
+            String requestId = invocation.getArgument(0);
+            return new InventoryClient.InventoryReservation(requestId, 3001L, 1, "RESERVED", null, null, null, null);
+        });
         when(inventoryClient.release(anyString())).thenReturn(
                 new InventoryClient.InventoryReservation("request-1", 3001L, 1, "RELEASED", null, null, null, null));
+        when(marketingClient.getCoupon(anyString())).thenAnswer(invocation -> {
+            String couponId = invocation.getArgument(0);
+            int suffix = Integer.parseInt(couponId.substring(couponId.lastIndexOf('-') + 1));
+            return new MarketingClient.CouponReservation("request-" + suffix, 2000L + suffix, couponId, "RESERVED",
+                    BigDecimal.TEN, 1000L + suffix, Instant.now(), null);
+        });
         when(marketingClient.releaseCoupon(anyString(), anyString(), anyLong())).thenReturn(true);
     }
 
@@ -103,5 +115,18 @@ class OrderSagaCoordinatorTest {
         assertThat(restarted.orderId()).isEqualTo(1006L);
         assertThat(restarted.status()).isEqualTo(OrderSagaStatus.RUNNING);
         assertThat(restarted.stage()).isEqualTo(OrderSagaStage.STARTED);
+    }
+
+    @Test
+    void doesNotBlindlyReleaseInventoryWhenReservationStateCannotBeConfirmed() {
+        OrderCreateSaga saga = coordinator.start(7L, "request-7", 1007L, 2007L, 3007L);
+        saga = coordinator.advance(saga, OrderSagaStage.INVENTORY_RESERVING, null, "request-7");
+        when(inventoryClient.getReservation("request-7")).thenThrow(new IllegalStateException("query timeout"));
+
+        coordinator.compensateAfterRollback(saga, "reserve response timeout");
+
+        assertThat(repository.findByRequestId("request-7").orElseThrow().status())
+                .isEqualTo(OrderSagaStatus.MANUAL_REVIEW);
+        verify(inventoryClient, never()).release("request-7");
     }
 }

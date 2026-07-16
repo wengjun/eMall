@@ -24,6 +24,26 @@ public class OutboxEventRecord {
     @TableField("event_type")
     private String eventType;
 
+    @TableField("schema_version")
+    private Integer schemaVersion;
+
+    @TableField("aggregate_version")
+    private Long aggregateVersion;
+
+    private String producer;
+
+    @TableField("producer_version")
+    private String producerVersion;
+
+    @TableField("occurred_at")
+    private LocalDateTime occurredAt;
+
+    @TableField("trace_id")
+    private String traceId;
+
+    @TableField("correlation_id")
+    private String correlationId;
+
     @TableField("shard_id")
     private Integer shardId;
 

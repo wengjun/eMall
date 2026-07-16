@@ -5,12 +5,14 @@ import static org.assertj.core.api.Assertions.assertThat;
 import com.emall.common.event.EventTypes;
 import com.emall.common.event.OutboxEvent;
 import com.emall.common.event.OutboxStatus;
+import com.emall.common.event.ProductChangedEventPayload;
 import com.emall.common.outbox.InMemoryOutboxRepositorySupport;
 import com.emall.common.outbox.OutboxRepository;
 import com.emall.common.outbox.OutboxPublisherSupport;
 import com.emall.common.task.InMemoryDistributedTaskLock;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import java.math.BigDecimal;
 import java.time.Clock;
 import java.time.Duration;
 import java.time.Instant;
@@ -59,8 +61,10 @@ class KafkaOutboxPublisherIT {
     @Test
     void shouldPublishOutboxEventToKafkaAndMarkItPublished() throws Exception {
         TestOutboxRepository outboxRepository = new TestOutboxRepository();
-        OutboxEvent event = OutboxEvent.create("event-001", "Product", "30001", EventTypes.PRODUCT_CHANGED,
-                Map.of("skuId", 30001L));
+        ProductChangedEventPayload payload = new ProductChangedEventPayload(30001L, 3000L, "Phone", "mobile",
+                new BigDecimal("3999.00"), "ON_SALE", true, Instant.parse("2026-07-15T00:00:00Z"));
+        OutboxEvent event = OutboxEvent.create("event-001", "Product", "30001", EventTypes.PRODUCT_CHANGED, "product",
+                "1.0.0", payload);
         outboxRepository.save(event);
         KafkaTemplate<String, String> kafkaTemplate = kafkaTemplate();
         try {
@@ -75,6 +79,9 @@ class KafkaOutboxPublisherIT {
             assertThat(message.path("eventId").asText()).isEqualTo("event-001");
             assertThat(message.path("eventType").asText()).isEqualTo(EventTypes.PRODUCT_CHANGED);
             assertThat(message.path("aggregateId").asText()).isEqualTo("30001");
+            assertThat(message.path("schemaVersion").asInt()).isEqualTo(2);
+            assertThat(message.path("aggregateVersion").asLong()).isOne();
+            assertThat(message.path("producer").asText()).isEqualTo("product");
         } finally {
             kafkaTemplate.destroy();
         }
@@ -120,8 +127,9 @@ class KafkaOutboxPublisherIT {
 
         @Override
         public OutboxEvent save(OutboxEvent event) {
-            events.put(event.eventId(), event);
-            return super.save(event);
+            OutboxEvent persisted = super.save(event);
+            events.put(persisted.eventId(), persisted);
+            return persisted;
         }
 
         private OutboxEvent event(String eventId) {

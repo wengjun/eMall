@@ -1,13 +1,10 @@
 package com.emall.product.repository;
 
-import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
-import com.emall.common.persistence.BoundedQuery;
 import com.baomidou.mybatisplus.core.conditions.update.UpdateWrapper;
 import com.emall.product.domain.Product;
 import com.emall.product.domain.ProductStatus;
 import java.time.LocalDateTime;
 import java.time.ZoneOffset;
-import java.util.List;
 import java.util.Optional;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.dao.DuplicateKeyException;
@@ -41,17 +38,6 @@ public class MybatisPlusProductRepository implements ProductRepository {
     public Optional<Product> findBySkuId(long skuId) {
         return Optional.ofNullable(productMapper.selectById(skuId)).map(this::toDomain);
     }
-
-    @Override
-    public List<Product> search(String keyword, int limit) {
-        String pattern = keyword == null ? "" : keyword;
-        return productMapper
-                .selectList(new QueryWrapper<ProductEntity>().eq("status", ProductStatus.ON_SALE.name())
-                        .and(query -> query.like("title", pattern).or().like("category", pattern))
-                        .orderByDesc("updated_at").last("LIMIT " + BoundedQuery.limit(limit)))
-                .stream().map(this::toDomain).toList();
-    }
-
     private ProductEntity toEntity(Product product) {
         ProductEntity entity = new ProductEntity();
         entity.setSkuId(product.skuId());

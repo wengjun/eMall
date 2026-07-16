@@ -9,6 +9,7 @@ import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.Optional;
 import java.util.regex.Pattern;
+import com.emall.common.idempotency.IdempotencyHeaders;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.slf4j.MDC;
@@ -24,6 +25,7 @@ public class RequestLoggingContextFilter extends OncePerRequestFilter {
         Map<String, String> previous = captureMdc();
         long startNanos = System.nanoTime();
         putIfPresent(TraceHeaders.REQUEST_ID_MDC_KEY, requestId(request));
+        putIfPresent(IdempotencyHeaders.IDEMPOTENCY_KEY, request.getHeader(IdempotencyHeaders.IDEMPOTENCY_KEY));
         putIfPresent(TraceHeaders.USER_ID_MDC_KEY,
                 firstPresent(request.getHeader(TraceHeaders.USER_ID_HEADER), request.getParameter("userId")));
         putIfPresent(TraceHeaders.ORDER_ID_MDC_KEY, orderId(request));
@@ -42,6 +44,7 @@ public class RequestLoggingContextFilter extends OncePerRequestFilter {
     private Map<String, String> captureMdc() {
         Map<String, String> previous = new LinkedHashMap<>();
         previous.put(TraceHeaders.REQUEST_ID_MDC_KEY, MDC.get(TraceHeaders.REQUEST_ID_MDC_KEY));
+        previous.put(IdempotencyHeaders.IDEMPOTENCY_KEY, MDC.get(IdempotencyHeaders.IDEMPOTENCY_KEY));
         previous.put(TraceHeaders.USER_ID_MDC_KEY, MDC.get(TraceHeaders.USER_ID_MDC_KEY));
         previous.put(TraceHeaders.ORDER_ID_MDC_KEY, MDC.get(TraceHeaders.ORDER_ID_MDC_KEY));
         previous.put(TraceHeaders.ROUTE_MDC_KEY, MDC.get(TraceHeaders.ROUTE_MDC_KEY));

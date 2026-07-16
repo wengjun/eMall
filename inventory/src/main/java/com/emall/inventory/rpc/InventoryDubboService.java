@@ -23,6 +23,11 @@ public class InventoryDubboService implements InventoryRpcService {
     }
 
     @Override
+    public InventoryReservationView getReservation(String requestId) {
+        return toView(inventoryService.reservation(requestId));
+    }
+
+    @Override
     public InventoryReservationView confirm(String requestId) {
         return toView(inventoryService.confirm(requestId));
     }

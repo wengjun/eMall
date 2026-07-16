@@ -11,6 +11,7 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Import;
 import com.fasterxml.jackson.core.JsonProcessingException;
+import com.emall.common.event.EventContractException;
 import org.apache.kafka.common.TopicPartition;
 import org.springframework.kafka.core.KafkaTemplate;
 import org.springframework.kafka.listener.CommonErrorHandler;
@@ -37,13 +38,27 @@ public class MessagingAutoConfiguration {
     }
 
     @Bean
+    @ConditionalOnBean(AggregateVersionRecordMapper.class)
+    @ConditionalOnMissingBean
+    AggregateVersionGuard mybatisPlusAggregateVersionGuard(AggregateVersionRecordMapper mapper) {
+        return new MybatisPlusAggregateVersionGuard(mapper);
+    }
+
+    @Bean
+    @ConditionalOnMissingBean({AggregateVersionGuard.class, AggregateVersionRecordMapper.class})
+    AggregateVersionGuard inMemoryAggregateVersionGuard() {
+        return new InMemoryAggregateVersionGuard();
+    }
+
+    @Bean
     @ConditionalOnBean(KafkaTemplate.class)
     @ConditionalOnMissingBean(CommonErrorHandler.class)
     CommonErrorHandler databaseRetryAwareKafkaErrorHandler(KafkaTemplate<Object, Object> kafkaTemplate) {
         DeadLetterPublishingRecoverer recoverer = new DeadLetterPublishingRecoverer(kafkaTemplate,
                 (record, exception) -> new TopicPartition(record.topic() + ".dlt", record.partition()));
         DefaultErrorHandler errorHandler = new DefaultErrorHandler(recoverer, new FixedBackOff(1000L, Long.MAX_VALUE));
-        errorHandler.addNotRetryableExceptions(DeadMessageException.class, JsonProcessingException.class);
+        errorHandler.addNotRetryableExceptions(DeadMessageException.class, EventContractException.class,
+                JsonProcessingException.class);
         errorHandler.setCommitRecovered(true);
         errorHandler.setAckAfterHandle(true);
         return errorHandler;

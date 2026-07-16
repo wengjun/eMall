@@ -18,9 +18,9 @@ public class AuthSecurityProperties {
     private Duration accessTokenTtl = Duration.ofMinutes(10);
     private boolean failClosedOnRevocationStoreError;
     private List<String> publicEndpoints = new ArrayList<>(List.of("GET:/actuator/health/**", "GET:/actuator/info",
-            "GET:/api/products/**", "GET:/api/catalog/**", "GET:/api/search/**", "POST:/api/identity/accounts",
-            "POST:/api/identity/sessions", "POST:/api/identity/sessions/refresh", "POST:/api/identity/service-sessions",
-            "POST:/api/payments/*/callbacks"));
+            "GET:/api/products/**", "GET:/api/catalog/**", "GET:/api/search/**", "POST:/api/identity/registrations",
+            "GET:/api/identity/registrations/**", "POST:/api/identity/sessions", "POST:/api/identity/sessions/refresh",
+            "POST:/api/identity/service-sessions", "POST:/api/payments/*/callbacks"));
     private List<String> customerEndpoints = new ArrayList<>(List.of("*:/api/users/**", "*:/api/carts/**",
             "*:/api/orders/**", "*:/api/payments/**", "*:/api/after-sales/**", "PATCH:/api/identity/sessions/*/revoke",
             "POST:/api/identity/sessions/validate", "GET:/api/identity/access"));

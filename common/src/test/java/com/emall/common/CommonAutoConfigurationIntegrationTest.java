@@ -17,6 +17,7 @@ import com.emall.common.runtime.ProductionRuntimeGuard;
 import com.emall.common.runtime.ProductionRuntimeGuardAutoConfiguration;
 import com.emall.common.sharding.ShardRoutingAutoConfiguration;
 import com.emall.common.sharding.ShardRoutingOperations;
+import com.emall.common.sharding.VirtualShardPlacementProvider;
 import com.emall.common.trust.IdentityAccessGuard;
 import com.emall.common.trust.IdentityVerifier;
 import com.emall.common.trust.RiskEvaluator;
@@ -61,7 +62,7 @@ class CommonAutoConfigurationIntegrationTest {
         contextRunner.withPropertyValues("emall.idempotency.processing-ttl=45s", "emall.idempotency.record-ttl=2d",
                 "emall.http-client.connect-timeout=250ms", "emall.http-client.read-timeout=750ms",
                 "emall.sharding.enabled=true", "emall.sharding.database-shard-count=4",
-                "emall.sharding.logical-shard-count=16",
+                "emall.sharding.virtual-shard-count=4096",
                 "emall.runtime.guard.required-properties[0]=emall.internal.operations-token").run(context -> {
                     assertThat(context).hasSingleBean(IdempotencyRepository.class);
                     assertThat(context).hasSingleBean(IdempotencyService.class);
@@ -75,6 +76,7 @@ class CommonAutoConfigurationIntegrationTest {
                     assertThat(context).hasSingleBean(BusinessMetrics.class);
                     assertThat(context).hasSingleBean(OwnershipGuard.class);
                     assertThat(context).hasSingleBean(ShardRoutingOperations.class);
+                    assertThat(context).hasSingleBean(VirtualShardPlacementProvider.class);
                     assertThat(context).hasSingleBean(MybatisPlusInterceptor.class);
                     assertThat(context).hasSingleBean(ProductionRuntimeGuard.class);
                     assertThat(context.getBean(OutboundHttpClientFactory.class).timeoutBudget())

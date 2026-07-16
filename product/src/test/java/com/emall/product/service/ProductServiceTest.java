@@ -5,6 +5,7 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 import com.emall.common.cache.ExpiringMapCacheStore;
 import com.emall.common.cache.TwoLevelCache;
+import com.emall.common.event.OutboxEvent;
 import com.emall.common.exception.BusinessException;
 import com.emall.common.id.SnowflakeIdGenerator;
 import com.emall.common.region.OwnershipGuard;
@@ -16,6 +17,8 @@ import com.emall.product.repository.InMemoryProductRepository;
 import java.math.BigDecimal;
 import java.time.Duration;
 import java.time.Instant;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Optional;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.ObjectProvider;
@@ -26,7 +29,7 @@ class ProductServiceTest {
             new ProductService(new InMemoryProductRepository(), outboxRepository, new SnowflakeIdGenerator(1));
 
     @Test
-    void shouldCreatePublishAndSearchProduct() {
+    void shouldCreatePublishAndReadProduct() {
         Product created = productService.create(1001L, "flagship phone", "digital", new BigDecimal("3999.00"));
 
         Product onSale = productService.changeStatus(created.skuId(), ProductStatus.ON_SALE);
@@ -34,8 +37,8 @@ class ProductServiceTest {
 
         assertThat(onSale.status()).isEqualTo(ProductStatus.ON_SALE);
         assertThat(repriced.price()).isEqualByComparingTo("3799.00");
-        assertThat(productService.search("phone", 10)).extracting(Product::skuId).contains(created.skuId());
-        assertThat(outboxRepository.findPublishable(Instant.now(), 10)).hasSize(3);
+        assertThat(productService.get(created.skuId())).isEqualTo(repriced);
+        assertThat(drainOutbox()).hasSize(3).extracting(OutboxEvent::aggregateVersion).containsExactly(1L, 2L, 3L);
     }
 
     @Test
@@ -61,6 +64,22 @@ class ProductServiceTest {
         assertThat(second.skuId()).isEqualTo(10001L);
         assertThat(repository.findCalls).isEqualTo(1);
         assertThat(cache.getIfPresent(10001L)).get().extracting(ProductCacheEntry::present).isEqualTo(true);
+    }
+
+    private List<OutboxEvent> drainOutbox() {
+        List<OutboxEvent> drained = new ArrayList<>();
+        Instant now = Instant.now().plusSeconds(1);
+        while (true) {
+            List<OutboxEvent> claimed =
+                    outboxRepository.claimPublishable("product-test", now, Duration.ofSeconds(30), 100);
+            if (claimed.isEmpty()) {
+                return List.copyOf(drained);
+            }
+            claimed.forEach(event -> {
+                drained.add(event);
+                outboxRepository.save(event.published());
+            });
+        }
     }
 
     private static <T> ObjectProvider<T> provider(T value) {

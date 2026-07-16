@@ -11,6 +11,7 @@ import org.apache.dubbo.config.annotation.DubboReference;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
+import org.springframework.web.client.HttpClientErrorException;
 import org.springframework.web.client.RestClient;
 
 @Service
@@ -70,6 +71,20 @@ public class InventoryClient {
     public InventoryReservation blockReserve(ReserveInventoryRequest request, BlockException error) {
         return InventoryReservation.unavailable(request.requestId(), request.skuId(), request.quantity(),
                 "SENTINEL_BLOCKED_FOR_ASYNC_RETRY");
+    }
+
+    public InventoryReservation getReservation(String requestId) {
+        try {
+            if (dubboEnabled()) {
+                return toLocal(inventoryRpcService.getReservation(requestId));
+            }
+            InventoryApiResponse response =
+                    inventoryRestClient.get().uri("/api/inventory/reservations/{requestId}", requestId).retrieve()
+                            .body(InventoryApiResponse.class);
+            return response == null ? null : response.data();
+        } catch (HttpClientErrorException.NotFound ex) {
+            return InventoryReservation.missing(requestId);
+        }
     }
 
     @SentinelResource(value = "order.inventory.confirm", blockHandler = "blockConfirm", fallback = "fallbackConfirm")
@@ -164,9 +179,18 @@ public class InventoryClient {
             return "RELEASED".equals(status) || "REJECTED".equals(status);
         }
 
+        public boolean missing() {
+            return "NOT_FOUND".equals(status);
+        }
+
         static InventoryReservation unavailable(String requestId, long skuId, int quantity, String reason) {
             Instant now = Instant.now();
             return new InventoryReservation(requestId, skuId, quantity, "UNAVAILABLE", reason, now, now, now);
+        }
+
+        static InventoryReservation missing(String requestId) {
+            Instant now = Instant.now();
+            return new InventoryReservation(requestId, 0L, 0, "NOT_FOUND", null, now, now, now);
         }
     }
 

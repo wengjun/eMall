@@ -1,0 +1,33 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "urn:emall:event:envelope:v1",
+  "title": "eMall event envelope v1",
+  "type": "object",
+  "required": [
+    "eventId",
+    "aggregateType",
+    "aggregateId",
+    "eventType",
+    "schemaVersion",
+    "aggregateVersion",
+    "producer",
+    "producerVersion",
+    "occurredAt",
+    "payload"
+  ],
+  "properties": {
+    "eventId": {"type": "string", "minLength": 1},
+    "aggregateType": {"type": "string", "minLength": 1},
+    "aggregateId": {"type": "string", "minLength": 1},
+    "eventType": {"type": "string", "minLength": 1},
+    "schemaVersion": {"type": "integer", "minimum": 1},
+    "aggregateVersion": {"type": "integer", "minimum": 0},
+    "producer": {"type": "string", "minLength": 1},
+    "producerVersion": {"type": "string", "minLength": 1},
+    "occurredAt": {"type": "string", "format": "date-time"},
+    "traceId": {"type": ["string", "null"]},
+    "correlationId": {"type": ["string", "null"]},
+    "payload": {"type": "object"}
+  },
+  "additionalProperties": true
+}

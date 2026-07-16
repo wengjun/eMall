@@ -1,0 +1,18 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "urn:emall:event:product-changed:v2",
+  "type": "object",
+  "required": ["skuId", "title", "category", "price", "saleable"],
+  "properties": {
+    "skuId": {"type": "integer"},
+    "spuId": {"type": "integer"},
+    "title": {"type": "string", "minLength": 1},
+    "category": {"type": "string", "minLength": 1},
+    "price": {"type": "number"},
+    "status": {"type": "string"},
+    "saleable": {"type": "boolean"},
+    "version": {"type": "integer", "deprecated": true},
+    "updatedAt": {"type": "string", "format": "date-time"}
+  },
+  "additionalProperties": true
+}

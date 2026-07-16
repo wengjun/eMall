@@ -16,7 +16,15 @@ public class InMemoryOrderSagaRepository implements OrderSagaRepository {
 
     @Override
     public OrderCreateSaga save(OrderCreateSaga saga) {
-        sagas.put(saga.requestId(), saga);
+        if (saga.version() == 0L) {
+            return sagas.computeIfAbsent(saga.requestId(), ignored -> saga);
+        }
+        sagas.compute(saga.requestId(), (requestId, current) -> {
+            if (current == null || current.sagaId() != saga.sagaId() || current.version() != saga.version() - 1) {
+                throw new OrderSagaConcurrencyException(saga.requestId(), saga.version() - 1);
+            }
+            return saga;
+        });
         return saga;
     }
 

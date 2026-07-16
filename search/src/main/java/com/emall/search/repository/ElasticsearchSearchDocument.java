@@ -10,14 +10,14 @@ import org.springframework.data.elasticsearch.annotations.Field;
 import org.springframework.data.elasticsearch.annotations.FieldType;
 import lombok.Getter;
 
-@Document(indexName = "emall-search-document")
+@Document(indexName = "${emall.search.elasticsearch.write-alias}", createIndex = false)
 @Getter
-class ElasticsearchSearchDocument {
+public class ElasticsearchSearchDocument {
     @Id
     private String id;
     @Field(type = FieldType.Long)
     private long skuId;
-    @Field(type = FieldType.Text)
+    @Field(type = FieldType.Text, analyzer = "ik_max_word", searchAnalyzer = "ik_smart")
     private String title;
     @Field(type = FieldType.Keyword)
     private String category;

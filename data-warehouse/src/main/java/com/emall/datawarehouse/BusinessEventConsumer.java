@@ -1,6 +1,8 @@
 package com.emall.datawarehouse;
 
 import com.emall.common.event.OutboxEvent;
+import com.emall.common.messaging.AggregateVersionGuard;
+import com.emall.common.messaging.InMemoryAggregateVersionGuard;
 import com.emall.common.messaging.MessageConsumerTemplate;
 import com.emall.common.messaging.ProcessedMessageRepository;
 import com.emall.common.metrics.BusinessMetrics;
@@ -24,15 +26,22 @@ class BusinessEventConsumer {
         this(objectMapper, dataWarehouseService, businessMetrics, processedMessageRepository, maxAttempts, null);
     }
 
+    private BusinessEventConsumer(ObjectMapper objectMapper, DataWarehouseService dataWarehouseService,
+            BusinessMetrics businessMetrics, ProcessedMessageRepository processedMessageRepository, int maxAttempts,
+            PlatformTransactionManager transactionManager) {
+        this(objectMapper, dataWarehouseService, businessMetrics, processedMessageRepository, maxAttempts,
+                transactionManager, new InMemoryAggregateVersionGuard());
+    }
+
     @Autowired
     BusinessEventConsumer(ObjectMapper objectMapper, DataWarehouseService dataWarehouseService,
             BusinessMetrics businessMetrics, ProcessedMessageRepository processedMessageRepository,
             @Value("${emall.events.business-consumer-max-attempts:4}") int maxAttempts,
-            PlatformTransactionManager transactionManager) {
+            PlatformTransactionManager transactionManager, AggregateVersionGuard aggregateVersionGuard) {
         this.objectMapper = objectMapper;
         this.dataWarehouseService = dataWarehouseService;
         this.consumerTemplate = new MessageConsumerTemplate(objectMapper, processedMessageRepository, businessMetrics,
-                maxAttempts, "data-warehouse-business-event-consumer", transactionManager);
+                maxAttempts, "data-warehouse-business-event-consumer", transactionManager, aggregateVersionGuard);
     }
 
     @KafkaListener(

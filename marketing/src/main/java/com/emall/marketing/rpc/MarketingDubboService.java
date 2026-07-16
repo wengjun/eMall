@@ -36,6 +36,11 @@ public class MarketingDubboService implements MarketingRpcService {
     }
 
     @Override
+    public CouponReservationView getCoupon(String couponId) {
+        return toView(marketingService.getCoupon(couponId));
+    }
+
+    @Override
     public CouponReservationView confirmCoupon(CouponConfirmationCommand command) {
         return toView(marketingService.confirmCoupon(command.reservationId(), command.couponId(), command.orderId()));
     }

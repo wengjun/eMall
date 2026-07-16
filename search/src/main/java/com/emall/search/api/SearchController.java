@@ -42,8 +42,8 @@ public class SearchController {
 
     @GetMapping
     public ApiResponse<SearchResult> search(@RequestParam(defaultValue = "") String keyword,
-            @RequestParam(defaultValue = "20") int limit) {
-        return ApiResponse.ok(searchService.search(keyword, limit));
+            @RequestParam(defaultValue = "20") int limit, @RequestParam(required = false) String cursor) {
+        return ApiResponse.ok(searchService.search(keyword, limit, cursor));
     }
 
     @DeleteMapping("/documents/{skuId}")

@@ -43,12 +43,15 @@ spring:
       value-serializer: org.apache.kafka.common.serialization.StringSerializer
 
 emall:
+  internal:
+    operations-token: ${EMALL_INTERNAL_OPERATIONS_TOKEN:local-operations-token}
+    require-approval: ${EMALL_INTERNAL_REQUIRE_APPROVAL:false}
   storage: jdbc
   sharding:
     enabled: ${EMALL_SHARDING_ENABLED:false}
     database-prefix: ${EMALL_SEARCH_DB_SHARD_PREFIX:emall_search}
     database-shard-count: ${EMALL_DB_SHARD_COUNT:16}
-    logical-shard-count: ${EMALL_LOGICAL_SHARD_COUNT:64}
+    virtual-shard-count: ${EMALL_VIRTUAL_SHARD_COUNT:4096}
     default-cell-id: ${EMALL_CELL_ID:cell-a}
     tables:
       search_document:
@@ -64,6 +67,12 @@ emall:
   search:
     engine: elasticsearch
     url: ${EMALL_ELASTICSEARCH_URL:http://localhost:9200}
+    elasticsearch:
+      index-prefix: ${EMALL_SEARCH_INDEX_PREFIX:emall-search-document-v}
+      read-alias: ${EMALL_SEARCH_READ_ALIAS:emall-search-document-read}
+      write-alias: ${EMALL_SEARCH_WRITE_ALIAS:emall-search-document-write}
+      pit-keep-alive: ${EMALL_SEARCH_PIT_KEEP_ALIVE:2m}
+      cursor-secret: ${EMALL_SEARCH_CURSOR_SECRET:local-search-cursor-secret-change-me-32}
   events:
     product-topic: ${EMALL_PRODUCT_EVENTS_TOPIC:emall.product.events}
     product-dlt-topic: ${EMALL_PRODUCT_EVENTS_DLT_TOPIC:emall.product.events.dlt}

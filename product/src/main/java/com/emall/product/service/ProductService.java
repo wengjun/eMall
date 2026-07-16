@@ -5,6 +5,7 @@ import com.emall.common.cache.CacheTtlPolicy;
 import com.emall.common.cache.TwoLevelCache;
 import com.emall.common.event.EventTypes;
 import com.emall.common.event.OutboxEvent;
+import com.emall.common.event.ProductChangedEventPayload;
 import com.emall.common.exception.BusinessException;
 import com.emall.common.id.SnowflakeIdGenerator;
 import com.emall.common.outbox.OutboxRepository;
@@ -16,14 +17,8 @@ import com.emall.product.repository.ProductRepository;
 import java.math.BigDecimal;
 import java.time.Duration;
 import java.time.Instant;
-import java.util.Comparator;
-import java.util.List;
-import java.util.Map;
 import org.springframework.beans.factory.ObjectProvider;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.cache.annotation.CacheEvict;
-import org.springframework.cache.annotation.Cacheable;
-import org.springframework.cache.annotation.Caching;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -60,7 +55,6 @@ public class ProductService {
         this.productDetailCache = cacheProvider.getIfAvailable();
     }
 
-    @Caching(evict = @CacheEvict(value = "productSearch", allEntries = true))
     @Transactional
     public Product create(long spuId, String title, String category, BigDecimal price) {
         long skuId = idGenerator.nextId();
@@ -91,15 +85,6 @@ public class ProductService {
         return entry.product();
     }
 
-    @Cacheable(value = "productSearch", key = "(#keyword == null ? '' : #keyword) + ':' + #limit")
-    public List<Product> search(String keyword, int limit) {
-        int safeLimit = Math.min(Math.max(limit, 1), 100);
-        return shardRoutingOperations.executeAll("product", () -> productRepository.search(keyword, safeLimit)).stream()
-                .flatMap(List::stream).sorted(Comparator.comparing(Product::updatedAt).reversed()).limit(safeLimit)
-                .toList();
-    }
-
-    @Caching(evict = @CacheEvict(value = "productSearch", allEntries = true))
     @Transactional
     public Product changePrice(long skuId, BigDecimal price) {
         return shardRoutingOperations.execute("product", skuId, () -> {
@@ -114,7 +99,6 @@ public class ProductService {
         });
     }
 
-    @Caching(evict = @CacheEvict(value = "productSearch", allEntries = true))
     @Transactional
     public Product changeStatus(long skuId, ProductStatus status) {
         return shardRoutingOperations.execute("product", skuId, () -> {
@@ -126,7 +110,6 @@ public class ProductService {
         });
     }
 
-    @Caching(evict = @CacheEvict(value = "productSearch", allEntries = true))
     @Transactional
     public Product rename(long skuId, String title) {
         return shardRoutingOperations.execute("product", skuId, () -> {
@@ -139,7 +122,7 @@ public class ProductService {
     }
 
     private ProductCacheEntry loadProductCacheEntry(long skuId) {
-        return shardRoutingOperations.execute("product", skuId, () -> productRepository.findBySkuId(skuId)
+        return shardRoutingOperations.executeRead("product", skuId, () -> productRepository.findBySkuId(skuId)
                 .map(ProductCacheEntry::hit).orElseGet(ProductCacheEntry::miss));
     }
 
@@ -152,10 +135,9 @@ public class ProductService {
 
     private void appendProductChanged(Product product) {
         outboxRepository.save(OutboxEvent.create("product-event-" + idGenerator.nextId(), "Product",
-                String.valueOf(product.skuId()), EventTypes.PRODUCT_CHANGED,
-                Map.of("skuId", product.skuId(), "spuId", product.spuId(), "title", product.title(), "category",
-                        product.category(), "price", product.price(), "status", product.status().name(), "saleable",
-                        product.status() == ProductStatus.ON_SALE, "version", product.updatedAt().toEpochMilli(),
-                        "updatedAt", product.updatedAt().toString())));
+                String.valueOf(product.skuId()), EventTypes.PRODUCT_CHANGED, "product", "0.1.0",
+                new ProductChangedEventPayload(product.skuId(), product.spuId(), product.title(), product.category(),
+                        product.price(), product.status().name(), product.status() == ProductStatus.ON_SALE,
+                        product.updatedAt())));
     }
 }

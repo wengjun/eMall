@@ -1,5 +1,6 @@
 package com.emall.common.messaging;
 
+import com.emall.common.event.EventContractRegistry;
 import com.emall.common.event.OutboxEvent;
 import com.emall.common.metrics.BusinessMetricNames;
 import com.emall.common.metrics.BusinessMetrics;
@@ -16,22 +17,32 @@ public class MessageConsumerTemplate {
     private final BusinessMetrics businessMetrics;
     private final int maxAttempts;
     private final String consumerName;
+    private final AggregateVersionGuard aggregateVersionGuard;
     private final TransactionTemplate businessTransaction;
     private final TransactionTemplate failureTransaction;
 
     public MessageConsumerTemplate(ObjectMapper objectMapper, ProcessedMessageRepository repository,
             BusinessMetrics businessMetrics, int maxAttempts, String consumerName) {
-        this(objectMapper, repository, businessMetrics, maxAttempts, consumerName, null);
+        this(objectMapper, repository, businessMetrics, maxAttempts, consumerName, null,
+                new InMemoryAggregateVersionGuard());
     }
 
     public MessageConsumerTemplate(ObjectMapper objectMapper, ProcessedMessageRepository repository,
             BusinessMetrics businessMetrics, int maxAttempts, String consumerName,
             PlatformTransactionManager transactionManager) {
+        this(objectMapper, repository, businessMetrics, maxAttempts, consumerName, transactionManager,
+                new InMemoryAggregateVersionGuard());
+    }
+
+    public MessageConsumerTemplate(ObjectMapper objectMapper, ProcessedMessageRepository repository,
+            BusinessMetrics businessMetrics, int maxAttempts, String consumerName,
+            PlatformTransactionManager transactionManager, AggregateVersionGuard aggregateVersionGuard) {
         this.objectMapper = objectMapper;
         this.repository = repository;
         this.businessMetrics = businessMetrics;
         this.maxAttempts = Math.max(1, maxAttempts);
         this.consumerName = consumerName;
+        this.aggregateVersionGuard = aggregateVersionGuard;
         if (transactionManager == null) {
             this.businessTransaction = null;
             this.failureTransaction = null;
@@ -54,7 +65,10 @@ public class MessageConsumerTemplate {
             return ConsumerExecutionResult.IGNORED;
         }
         try {
-            return executeBusiness(() -> consumeInTransaction(event, handler));
+            return executeBusiness(() -> {
+                EventContractRegistry.validate(event);
+                return consumeInTransaction(event, handler);
+            });
         } catch (RuntimeException ex) {
             int retryCount = executeFailure(() -> recordFailure(event, ex));
             if (retryCount >= maxAttempts) {
@@ -70,11 +84,23 @@ public class MessageConsumerTemplate {
                     event.eventType());
             return ConsumerExecutionResult.DUPLICATED;
         }
-        handler.accept(event);
-        repository.markProcessed(event.eventId());
-        businessMetrics.increment(BusinessMetricNames.MESSAGE_CONSUMED, "consumer", consumerName, "event_type",
-                event.eventType());
-        return ConsumerExecutionResult.PROCESSED;
+        AggregateVersionClaim versionClaim = aggregateVersionGuard.tryAdvance(consumerName, event);
+        if (!versionClaim.accepted()) {
+            repository.markProcessed(event.eventId());
+            businessMetrics.increment(BusinessMetricNames.MESSAGE_STALE, "consumer", consumerName, "event_type",
+                    event.eventType());
+            return ConsumerExecutionResult.STALE;
+        }
+        try {
+            handler.accept(event);
+            repository.markProcessed(event.eventId());
+            businessMetrics.increment(BusinessMetricNames.MESSAGE_CONSUMED, "consumer", consumerName, "event_type",
+                    event.eventType());
+            return ConsumerExecutionResult.PROCESSED;
+        } catch (RuntimeException exception) {
+            aggregateVersionGuard.rollback(versionClaim);
+            throw exception;
+        }
     }
 
     private int recordFailure(OutboxEvent event, RuntimeException ex) {

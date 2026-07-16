@@ -91,7 +91,7 @@ public class PricingService {
     }
 
     private PriceBookCacheEntry loadPriceBookCacheEntry(long skuId) {
-        return shardRoutingOperations.execute("price_book", skuId, () -> priceRepository.findBySkuId(skuId)
+        return shardRoutingOperations.executeRead("price_book", skuId, () -> priceRepository.findBySkuId(skuId)
                 .map(PriceBookCacheEntry::hit).orElseGet(PriceBookCacheEntry::miss));
     }
 

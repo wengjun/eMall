@@ -5,6 +5,8 @@ public interface MarketingRpcService {
 
     CouponReservationView reserveCoupon(CouponReservationCommand command);
 
+    CouponReservationView getCoupon(String couponId);
+
     CouponReservationView confirmCoupon(CouponConfirmationCommand command);
 
     CouponReservationView releaseCoupon(CouponReleaseCommand command);

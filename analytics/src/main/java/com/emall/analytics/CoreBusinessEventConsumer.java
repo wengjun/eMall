@@ -1,6 +1,8 @@
 package com.emall.analytics;
 
 import com.emall.common.event.OutboxEvent;
+import com.emall.common.messaging.AggregateVersionGuard;
+import com.emall.common.messaging.InMemoryAggregateVersionGuard;
 import com.emall.common.messaging.MessageConsumerTemplate;
 import com.emall.common.messaging.ProcessedMessageRepository;
 import com.emall.common.metrics.BusinessMetrics;
@@ -24,15 +26,22 @@ class CoreBusinessEventConsumer {
         this(objectMapper, analyticsService, businessMetrics, processedMessageRepository, maxAttempts, null);
     }
 
+    private CoreBusinessEventConsumer(ObjectMapper objectMapper, AnalyticsService analyticsService,
+            BusinessMetrics businessMetrics, ProcessedMessageRepository processedMessageRepository, int maxAttempts,
+            PlatformTransactionManager transactionManager) {
+        this(objectMapper, analyticsService, businessMetrics, processedMessageRepository, maxAttempts,
+                transactionManager, new InMemoryAggregateVersionGuard());
+    }
+
     @Autowired
     CoreBusinessEventConsumer(ObjectMapper objectMapper, AnalyticsService analyticsService,
             BusinessMetrics businessMetrics, ProcessedMessageRepository processedMessageRepository,
             @Value("${emall.events.core-consumer-max-attempts:4}") int maxAttempts,
-            PlatformTransactionManager transactionManager) {
+            PlatformTransactionManager transactionManager, AggregateVersionGuard aggregateVersionGuard) {
         this.objectMapper = objectMapper;
         this.analyticsService = analyticsService;
         this.consumerTemplate = new MessageConsumerTemplate(objectMapper, processedMessageRepository, businessMetrics,
-                maxAttempts, "analytics-core-event-consumer", transactionManager);
+                maxAttempts, "analytics-core-event-consumer", transactionManager, aggregateVersionGuard);
     }
 
     @KafkaListener(

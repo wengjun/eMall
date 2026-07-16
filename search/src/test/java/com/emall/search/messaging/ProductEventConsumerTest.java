@@ -5,6 +5,7 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 import com.emall.common.event.EventTypes;
 import com.emall.common.event.OutboxEvent;
+import com.emall.common.event.ProductChangedEventPayload;
 import com.emall.common.metrics.BusinessMetrics;
 import com.emall.search.domain.SearchDocument;
 import com.emall.search.repository.InMemoryProcessedMessageRepository;
@@ -17,7 +18,6 @@ import java.time.Clock;
 import java.time.Duration;
 import java.time.Instant;
 import java.time.ZoneId;
-import java.util.Map;
 import java.util.Set;
 import org.junit.jupiter.api.Test;
 
@@ -67,10 +67,25 @@ class ProductEventConsumerTest {
         assertThat(repository.markProcessing("event-crash")).isTrue();
     }
 
+    @Test
+    void doesNotRegressIndexWhenOlderAggregateVersionIsReplayed() throws Exception {
+        CountingSearchService searchService = new CountingSearchService();
+        ProductEventConsumer consumer =
+                new ProductEventConsumer(objectMapper, searchService, processedMessages, BusinessMetrics.noop(), 4);
+
+        consumer.onProductEvent(productChangedMessage("event-new", 30003L, "new title", 8L));
+        consumer.onProductEvent(productChangedMessage("event-old", 30003L, "old title", 7L));
+
+        assertThat(searchService.indexCount).isEqualTo(1);
+        assertThat(searchService.get(30003L).title()).isEqualTo("new title");
+        assertThat(searchService.get(30003L).version()).isEqualTo(8L);
+    }
+
     private String productChangedMessage(String eventId, long skuId, String title, long version) throws Exception {
+        ProductChangedEventPayload payload = new ProductChangedEventPayload(skuId, skuId / 10, title, "digital",
+                new BigDecimal("3999.00"), "ON_SALE", true, Instant.parse("2026-07-15T00:00:00Z"));
         OutboxEvent event = OutboxEvent.create(eventId, "Product", String.valueOf(skuId), EventTypes.PRODUCT_CHANGED,
-                Map.of("skuId", skuId, "title", title, "category", "digital", "price", new BigDecimal("3999.00"),
-                        "saleable", true, "version", version));
+                "product", "1.0.0", payload).withAggregateVersion(version);
         return objectMapper.writeValueAsString(event);
     }
 

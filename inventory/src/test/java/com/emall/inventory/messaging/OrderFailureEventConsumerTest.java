@@ -5,12 +5,13 @@ import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 
 import com.emall.common.event.EventTypes;
+import com.emall.common.event.OrderEventPayload;
 import com.emall.common.event.OutboxEvent;
 import com.emall.common.messaging.InMemoryProcessedMessageRepository;
 import com.emall.common.metrics.BusinessMetrics;
 import com.emall.inventory.service.InventoryService;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import java.util.Map;
+import java.math.BigDecimal;
 import org.junit.jupiter.api.Test;
 
 class OrderFailureEventConsumerTest {
@@ -30,8 +31,12 @@ class OrderFailureEventConsumerTest {
     }
 
     private String message() throws Exception {
-        OutboxEvent event = OutboxEvent.create("order-event-90001", "Order", "90001", EventTypes.ORDER_CANCELLED,
-                Map.of("inventoryReservationId", "reservation-001"));
+        OrderEventPayload payload =
+                new OrderEventPayload(90001L, 10001L, 30001L, 1, "WEB", "device-1", "direct", BigDecimal.TEN,
+                        BigDecimal.TEN, BigDecimal.ZERO, BigDecimal.TEN, "CNY", 1L, "", "reservation-001", "CANCELLED");
+        OutboxEvent event = OutboxEvent
+                .create("order-event-90001", "Order", "90001", EventTypes.ORDER_CANCELLED, "order", "1.0.0", payload)
+                .withAggregateVersion(1);
         return objectMapper.writeValueAsString(event);
     }
 }

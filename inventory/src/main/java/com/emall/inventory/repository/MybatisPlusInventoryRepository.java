@@ -1,12 +1,15 @@
 package com.emall.inventory.repository;
 
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
-import com.emall.common.persistence.BoundedQuery;
-import com.emall.common.persistence.BoundedQuery;
 import com.baomidou.mybatisplus.core.conditions.update.UpdateWrapper;
+import com.emall.common.persistence.BoundedQuery;
 import com.emall.inventory.domain.InventoryBucket;
 import com.emall.inventory.domain.InventoryItem;
+import com.emall.inventory.domain.InventoryLedgerOperation;
+import com.emall.inventory.domain.InventoryMode;
 import com.emall.inventory.domain.InventoryReservation;
+import com.emall.inventory.domain.InventoryStockLedger;
+import com.emall.inventory.domain.InventoryStockSummary;
 import com.emall.inventory.domain.ReservationStatus;
 import java.time.Instant;
 import java.time.LocalDateTime;
@@ -23,12 +26,14 @@ public class MybatisPlusInventoryRepository implements InventoryRepository {
     private final InventoryItemMapper itemMapper;
     private final InventoryBucketMapper bucketMapper;
     private final InventoryReservationMapper reservationMapper;
+    private final InventoryStockLedgerMapper stockLedgerMapper;
 
     public MybatisPlusInventoryRepository(InventoryItemMapper itemMapper, InventoryBucketMapper bucketMapper,
-            InventoryReservationMapper reservationMapper) {
+            InventoryReservationMapper reservationMapper, InventoryStockLedgerMapper stockLedgerMapper) {
         this.itemMapper = itemMapper;
         this.bucketMapper = bucketMapper;
         this.reservationMapper = reservationMapper;
+        this.stockLedgerMapper = stockLedgerMapper;
     }
 
     @Override
@@ -40,6 +45,7 @@ public class MybatisPlusInventoryRepository implements InventoryRepository {
             itemMapper.update(null,
                     new UpdateWrapper<InventoryItemEntity>().set("total", entity.getTotal())
                             .set("reserved", entity.getReserved()).set("sold", entity.getSold())
+                            .set("inventory_mode", entity.getMode()).set("version", entity.getVersion())
                             .set("updated_at", entity.getUpdatedAt()).eq("sku_id", entity.getSkuId()));
         }
         return item;
@@ -48,6 +54,72 @@ public class MybatisPlusInventoryRepository implements InventoryRepository {
     @Override
     public Optional<InventoryItem> findItem(long skuId) {
         return Optional.ofNullable(itemMapper.selectById(skuId)).map(this::toItem);
+    }
+
+    @Override
+    public Optional<InventoryItem> findItemForUpdate(long skuId) {
+        return Optional
+                .ofNullable(itemMapper
+                        .selectOne(new QueryWrapper<InventoryItemEntity>().eq("sku_id", skuId).last("FOR UPDATE")))
+                .map(this::toItem);
+    }
+
+    @Override
+    public InventoryItem ensureItem(long skuId) {
+        InventoryItem item = new InventoryItem(skuId, 0, 0, 0, Instant.now());
+        try {
+            itemMapper.insert(toItemEntity(item));
+            return item;
+        } catch (DuplicateKeyException ex) {
+            return findItem(skuId).orElseThrow(() -> new IllegalStateException("inventory item disappeared", ex));
+        }
+    }
+
+    @Override
+    public boolean addItemStock(long skuId, int quantity, InventoryMode expectedMode) {
+        return itemMapper.update(null,
+                new UpdateWrapper<InventoryItemEntity>().setSql("total = total + {0}", quantity)
+                        .setSql("version = version + 1").set("updated_at", LocalDateTime.now(ZoneOffset.UTC))
+                        .eq("sku_id", skuId).eq("inventory_mode", expectedMode.name())) == 1;
+    }
+
+    @Override
+    public boolean initializeBuckets(InventoryItem expectedItem, List<InventoryBucket> initialBuckets) {
+        for (InventoryBucket bucket : initialBuckets) {
+            bucketMapper.insert(toBucketEntity(bucket));
+        }
+        InventoryItem bucketedBase = expectedItem.activateBuckets();
+        return itemMapper.update(null, new UpdateWrapper<InventoryItemEntity>().set("total", bucketedBase.total())
+                .set("reserved", bucketedBase.reserved()).set("sold", bucketedBase.sold())
+                .set("inventory_mode", bucketedBase.mode().name()).set("version", bucketedBase.version())
+                .set("updated_at", databaseTime(bucketedBase.updatedAt())).eq("sku_id", expectedItem.skuId())
+                .eq("inventory_mode", InventoryMode.SINGLE_ROW.name()).eq("version", expectedItem.version())) == 1;
+    }
+
+    @Override
+    public boolean createBucketIfAbsent(InventoryBucket bucket) {
+        try {
+            bucketMapper.insert(toBucketEntity(bucket));
+            return true;
+        } catch (DuplicateKeyException ex) {
+            return false;
+        }
+    }
+
+    @Override
+    public boolean addBucketStock(long skuId, int bucketNo, int quantity) {
+        return bucketMapper.update(null,
+                new UpdateWrapper<InventoryBucketEntity>().setSql("total = total + {0}", quantity)
+                        .set("updated_at", LocalDateTime.now(ZoneOffset.UTC)).eq("sku_id", skuId)
+                        .eq("bucket_no", bucketNo)) == 1;
+    }
+
+    @Override
+    public InventoryStockSummary summarizeBuckets(long skuId) {
+        InventoryBucketSummaryProjection summary = bucketMapper.summarize(skuId);
+        return new InventoryStockSummary(value(summary.getTotal()), value(summary.getReserved()),
+                value(summary.getSold()), Math.toIntExact(value(summary.getBucketCount())),
+                summary.getUpdatedAt() == null ? null : domainTime(summary.getUpdatedAt()));
     }
 
     @Override
@@ -92,7 +164,8 @@ public class MybatisPlusInventoryRepository implements InventoryRepository {
     public boolean reserveItem(long skuId, int quantity) {
         return itemMapper.update(null,
                 new UpdateWrapper<InventoryItemEntity>().setSql("reserved = reserved + {0}", quantity)
-                        .set("updated_at", LocalDateTime.now(ZoneOffset.UTC)).eq("sku_id", skuId)
+                        .setSql("version = version + 1").set("updated_at", LocalDateTime.now(ZoneOffset.UTC))
+                        .eq("sku_id", skuId).eq("inventory_mode", InventoryMode.SINGLE_ROW.name())
                         .apply("total - reserved - sold >= {0}", quantity)) == 1;
     }
 
@@ -100,16 +173,17 @@ public class MybatisPlusInventoryRepository implements InventoryRepository {
     public boolean confirmItem(long skuId, int quantity) {
         return itemMapper.update(null,
                 new UpdateWrapper<InventoryItemEntity>().setSql("reserved = reserved - {0}", quantity)
-                        .setSql("sold = sold + {0}", quantity).set("updated_at", LocalDateTime.now(ZoneOffset.UTC))
-                        .eq("sku_id", skuId).ge("reserved", quantity)) == 1;
+                        .setSql("sold = sold + {0}", quantity).setSql("version = version + 1")
+                        .set("updated_at", LocalDateTime.now(ZoneOffset.UTC)).eq("sku_id", skuId)
+                        .ge("reserved", quantity)) == 1;
     }
 
     @Override
     public boolean releaseItem(long skuId, int quantity) {
         return itemMapper.update(null,
                 new UpdateWrapper<InventoryItemEntity>().setSql("reserved = reserved - {0}", quantity)
-                        .set("updated_at", LocalDateTime.now(ZoneOffset.UTC)).eq("sku_id", skuId)
-                        .ge("reserved", quantity)) == 1;
+                        .setSql("version = version + 1").set("updated_at", LocalDateTime.now(ZoneOffset.UTC))
+                        .eq("sku_id", skuId).ge("reserved", quantity)) == 1;
     }
 
     @Override
@@ -174,19 +248,38 @@ public class MybatisPlusInventoryRepository implements InventoryRepository {
                 .stream().map(this::toReservation).toList();
     }
 
+    @Override
+    public boolean appendStockLedger(InventoryStockLedger ledger) {
+        try {
+            return stockLedgerMapper.insert(toStockLedgerEntity(ledger)) == 1;
+        } catch (DuplicateKeyException ex) {
+            return false;
+        }
+    }
+
+    @Override
+    public List<InventoryStockLedger> findStockLedger(long skuId, int limit) {
+        return stockLedgerMapper
+                .selectList(new QueryWrapper<InventoryStockLedgerEntity>().eq("sku_id", skuId)
+                        .orderByAsc("created_at", "ledger_id").last("LIMIT " + BoundedQuery.limit(limit)))
+                .stream().map(this::toStockLedger).toList();
+    }
+
     private InventoryItemEntity toItemEntity(InventoryItem item) {
         InventoryItemEntity entity = new InventoryItemEntity();
         entity.setSkuId(item.skuId());
         entity.setTotal(item.total());
         entity.setReserved(item.reserved());
         entity.setSold(item.sold());
+        entity.setMode(item.mode().name());
+        entity.setVersion(item.version());
         entity.setUpdatedAt(databaseTime(item.updatedAt()));
         return entity;
     }
 
     private InventoryItem toItem(InventoryItemEntity entity) {
         return new InventoryItem(entity.getSkuId(), entity.getTotal(), entity.getReserved(), entity.getSold(),
-                domainTime(entity.getUpdatedAt()));
+                InventoryMode.valueOf(entity.getMode()), entity.getVersion(), domainTime(entity.getUpdatedAt()));
     }
 
     private InventoryBucketEntity toBucketEntity(InventoryBucket bucket) {
@@ -226,11 +319,35 @@ public class MybatisPlusInventoryRepository implements InventoryRepository {
                 domainTime(entity.getUpdatedAt()));
     }
 
+    private InventoryStockLedgerEntity toStockLedgerEntity(InventoryStockLedger ledger) {
+        InventoryStockLedgerEntity entity = new InventoryStockLedgerEntity();
+        entity.setLedgerId(ledger.ledgerId());
+        entity.setSkuId(ledger.skuId());
+        entity.setRequestId(ledger.requestId());
+        entity.setOperation(ledger.operation().name());
+        entity.setBucketNo(ledger.bucketNo());
+        entity.setTotalDelta(ledger.totalDelta());
+        entity.setReservedDelta(ledger.reservedDelta());
+        entity.setSoldDelta(ledger.soldDelta());
+        entity.setCreatedAt(databaseTime(ledger.createdAt()));
+        return entity;
+    }
+
+    private InventoryStockLedger toStockLedger(InventoryStockLedgerEntity entity) {
+        return new InventoryStockLedger(entity.getLedgerId(), entity.getSkuId(), entity.getRequestId(),
+                InventoryLedgerOperation.valueOf(entity.getOperation()), entity.getBucketNo(), entity.getTotalDelta(),
+                entity.getReservedDelta(), entity.getSoldDelta(), domainTime(entity.getCreatedAt()));
+    }
+
     private LocalDateTime databaseTime(Instant instant) {
         return LocalDateTime.ofInstant(instant, ZoneOffset.UTC);
     }
 
     private Instant domainTime(LocalDateTime time) {
         return time.toInstant(ZoneOffset.UTC);
+    }
+
+    private long value(Long value) {
+        return value == null ? 0 : value;
     }
 }

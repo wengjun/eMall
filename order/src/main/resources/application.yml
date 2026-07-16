@@ -38,6 +38,15 @@ spring:
 
 emall:
   storage: jdbc
+  order:
+    local-transaction-timeout-seconds: 3
+  jobs:
+    saga-recovery:
+      max-partitions-per-run: 8
+      lease-ttl: 30s
+    order-compensation:
+      max-partitions-per-run: 8
+      lease-ttl: 30s
   capacity:
     order:
       max-submissions-per-user-per-minute: ${EMALL_ORDER_SUBMISSION_LIMIT:60}
@@ -47,7 +56,7 @@ emall:
     enabled: ${EMALL_SHARDING_ENABLED:false}
     database-prefix: ${EMALL_ORDER_DB_SHARD_PREFIX:emall_order}
     database-shard-count: ${EMALL_DB_SHARD_COUNT:16}
-    logical-shard-count: ${EMALL_LOGICAL_SHARD_COUNT:64}
+    virtual-shard-count: ${EMALL_VIRTUAL_SHARD_COUNT:4096}
     default-cell-id: ${EMALL_CELL_ID:cell-a}
     tables:
       order_record:

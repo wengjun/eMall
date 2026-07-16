@@ -56,6 +56,9 @@ public class OrderSagaCoordinator {
         if (current.status() != OrderSagaStatus.RUNNING) {
             return current;
         }
+        if (current.stage().ordinal() >= stage.ordinal()) {
+            return current;
+        }
         return stateService.save(current.advance(stage, couponId, inventoryReservationId));
     }
 
@@ -94,6 +97,10 @@ public class OrderSagaCoordinator {
         if (current.status() == OrderSagaStatus.COMPLETED || current.status() == OrderSagaStatus.COMPENSATED) {
             return;
         }
+        if (orderRepository.findById(current.orderId()).isPresent()) {
+            stateService.save(current.status(OrderSagaStatus.COMPLETED, null, null));
+            return;
+        }
         if (current.attempts() >= MAXIMUM_COMPENSATION_ATTEMPTS) {
             stateService.save(current.status(OrderSagaStatus.MANUAL_REVIEW, truncate(error), null));
             return;
@@ -104,6 +111,9 @@ public class OrderSagaCoordinator {
         boolean inventoryReleased = releaseInventory(compensating);
         boolean couponReleased = releaseCoupon(compensating);
         OrderCreateSaga latest = stateService.require(requestId);
+        if (latest.status() == OrderSagaStatus.COMPLETED || latest.status() == OrderSagaStatus.COMPENSATED) {
+            return;
+        }
         if (inventoryReleased && couponReleased) {
             stateService.save(latest.status(OrderSagaStatus.COMPENSATED, truncate(error), null));
             return;
@@ -122,6 +132,17 @@ public class OrderSagaCoordinator {
             return true;
         }
         try {
+            InventoryClient.InventoryReservation observed =
+                    inventoryClient.getReservation(saga.inventoryReservationId());
+            if (observed == null) {
+                return false;
+            }
+            if (observed.missing() || observed.released()) {
+                return true;
+            }
+            if (!observed.reserved()) {
+                return false;
+            }
             InventoryClient.InventoryReservation reservation = inventoryClient.release(saga.inventoryReservationId());
             return reservation != null && reservation.released();
         } catch (RuntimeException ex) {
@@ -135,6 +156,16 @@ public class OrderSagaCoordinator {
             return true;
         }
         try {
+            MarketingClient.CouponReservation observed = marketingClient.getCoupon(saga.couponId());
+            if (observed == null) {
+                return false;
+            }
+            if (!"RESERVED".equals(observed.status())) {
+                return !"USED".equals(observed.status());
+            }
+            if (!saga.requestId().equals(observed.reservationId()) || saga.orderId() != observed.orderId()) {
+                return true;
+            }
             return marketingClient.releaseCoupon(saga.requestId(), saga.couponId(), saga.orderId());
         } catch (RuntimeException ex) {
             return false;

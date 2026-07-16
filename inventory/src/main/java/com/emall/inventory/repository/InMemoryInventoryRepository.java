@@ -2,7 +2,10 @@ package com.emall.inventory.repository;
 
 import com.emall.inventory.domain.InventoryBucket;
 import com.emall.inventory.domain.InventoryItem;
+import com.emall.inventory.domain.InventoryMode;
 import com.emall.inventory.domain.InventoryReservation;
+import com.emall.inventory.domain.InventoryStockSummary;
+import com.emall.inventory.domain.InventoryStockLedger;
 import com.emall.inventory.domain.ReservationStatus;
 import java.time.Instant;
 import java.util.Comparator;
@@ -19,6 +22,7 @@ public class InMemoryInventoryRepository implements InventoryRepository {
     private final ConcurrentMap<Long, InventoryItem> items = new ConcurrentHashMap<>();
     private final ConcurrentMap<String, InventoryBucket> buckets = new ConcurrentHashMap<>();
     private final ConcurrentMap<String, InventoryReservation> reservations = new ConcurrentHashMap<>();
+    private final ConcurrentMap<String, InventoryStockLedger> stockLedger = new ConcurrentHashMap<>();
 
     public InMemoryInventoryRepository() {
         saveItem(new InventoryItem(10001L, 1_000_000, 0, 0, Instant.now()));
@@ -34,6 +38,66 @@ public class InMemoryInventoryRepository implements InventoryRepository {
     @Override
     public Optional<InventoryItem> findItem(long skuId) {
         return Optional.ofNullable(items.get(skuId));
+    }
+
+    @Override
+    public Optional<InventoryItem> findItemForUpdate(long skuId) {
+        return findItem(skuId);
+    }
+
+    @Override
+    public InventoryItem ensureItem(long skuId) {
+        return items.computeIfAbsent(skuId, key -> new InventoryItem(key, 0, 0, 0, Instant.now()));
+    }
+
+    @Override
+    public boolean addItemStock(long skuId, int quantity, InventoryMode expectedMode) {
+        AtomicFlag updated = new AtomicFlag();
+        items.computeIfPresent(skuId, (key, item) -> {
+            if (item.mode() != expectedMode) {
+                return item;
+            }
+            updated.mark();
+            return item.add(quantity);
+        });
+        return updated.value();
+    }
+
+    @Override
+    public synchronized boolean initializeBuckets(InventoryItem expectedItem, List<InventoryBucket> initialBuckets) {
+        InventoryItem current = items.get(expectedItem.skuId());
+        if (current == null || current.mode() != InventoryMode.SINGLE_ROW
+                || current.version() != expectedItem.version()) {
+            return false;
+        }
+        initialBuckets.forEach(bucket -> buckets.put(bucketKey(bucket.skuId(), bucket.bucketNo()), bucket));
+        items.put(current.skuId(), current.activateBuckets());
+        return true;
+    }
+
+    @Override
+    public boolean createBucketIfAbsent(InventoryBucket bucket) {
+        return buckets.putIfAbsent(bucketKey(bucket.skuId(), bucket.bucketNo()), bucket) == null;
+    }
+
+    @Override
+    public boolean addBucketStock(long skuId, int bucketNo, int quantity) {
+        AtomicFlag updated = new AtomicFlag();
+        buckets.computeIfPresent(bucketKey(skuId, bucketNo), (key, bucket) -> {
+            updated.mark();
+            return bucket.add(quantity);
+        });
+        return updated.value();
+    }
+
+    @Override
+    public InventoryStockSummary summarizeBuckets(long skuId) {
+        List<InventoryBucket> skuBuckets = findBuckets(skuId);
+        Instant updatedAt =
+                skuBuckets.stream().map(InventoryBucket::updatedAt).max(Comparator.naturalOrder()).orElse(null);
+        return new InventoryStockSummary(skuBuckets.stream().mapToLong(InventoryBucket::total).sum(),
+                skuBuckets.stream().mapToLong(InventoryBucket::reserved).sum(),
+                skuBuckets.stream().mapToLong(InventoryBucket::sold).sum(), skuBuckets.size(), updatedAt);
     }
 
     @Override
@@ -63,7 +127,7 @@ public class InMemoryInventoryRepository implements InventoryRepository {
     public boolean reserveItem(long skuId, int quantity) {
         AtomicFlag updated = new AtomicFlag();
         items.computeIfPresent(skuId, (key, item) -> {
-            if (item.available() < quantity) {
+            if (item.mode() != InventoryMode.SINGLE_ROW || item.available() < quantity) {
                 return item;
             }
             updated.mark();
@@ -167,6 +231,19 @@ public class InMemoryInventoryRepository implements InventoryRepository {
         return reservations.values().stream().filter(reservation -> reservation.status() == ReservationStatus.RESERVED)
                 .filter(reservation -> !reservation.expiresAt().isAfter(now))
                 .sorted(Comparator.comparing(InventoryReservation::expiresAt)).limit(limit).toList();
+    }
+
+    @Override
+    public boolean appendStockLedger(InventoryStockLedger ledger) {
+        return stockLedger.putIfAbsent(ledger.ledgerId(), ledger) == null;
+    }
+
+    @Override
+    public List<InventoryStockLedger> findStockLedger(long skuId, int limit) {
+        return stockLedger
+                .values().stream().filter(entry -> entry.skuId() == skuId).sorted(Comparator
+                        .comparing(InventoryStockLedger::createdAt).thenComparing(InventoryStockLedger::ledgerId))
+                .limit(limit).toList();
     }
 
     private String bucketKey(long skuId, int bucketNo) {

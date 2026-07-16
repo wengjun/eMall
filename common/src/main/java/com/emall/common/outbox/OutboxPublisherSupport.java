@@ -1,6 +1,7 @@
 package com.emall.common.outbox;
 
 import com.emall.common.event.OutboxEvent;
+import com.emall.common.event.EventContractRegistry;
 import com.emall.common.metrics.BusinessMetricNames;
 import com.emall.common.metrics.BusinessMetrics;
 import com.emall.common.task.DistributedTaskLock;
@@ -76,11 +77,22 @@ public abstract class OutboxPublisherSupport {
     }
 
     public int retryFailedNow(int limit) {
-        shardRoutingOperations.executeAll(scanLogicalTable, () -> {
-            outboxRepository.rescheduleFailed(Instant.now(), Math.max(1, Math.min(limit, 1000)));
-            return 0;
-        });
+        rescheduleFailedAcrossBoundedShards(Math.max(1, Math.min(limit, 1000)));
         return publishBatch(limit);
+    }
+
+    private int rescheduleFailedAcrossBoundedShards(int limit) {
+        int shardCount = shardRoutingOperations.physicalShardCount(scanLogicalTable);
+        int shardsToScan = Math.min(shardCount, 8);
+        int perShardLimit = Math.max(1, (int) Math.ceil((double) limit / shardsToScan));
+        int rescheduled = 0;
+        for (int offset = 0; offset < shardsToScan && rescheduled < limit; offset++) {
+            int shardIndex = Math.floorMod(nextShard.getAndIncrement(), shardCount);
+            int remaining = limit - rescheduled;
+            rescheduled += shardRoutingOperations.executePhysicalShard(scanLogicalTable, shardIndex,
+                    () -> outboxRepository.rescheduleFailed(Instant.now(), Math.min(perShardLimit, remaining)));
+        }
+        return rescheduled;
     }
 
     private List<RoutedOutboxEvent> claimAcrossShards(int limit) {
@@ -101,6 +113,7 @@ public abstract class OutboxPublisherSupport {
     private CompletableFuture<Boolean> publishOne(RoutedOutboxEvent routedEvent) {
         OutboxEvent event = routedEvent.event();
         try {
+            EventContractRegistry.validate(event);
             CompletableFuture<SendResult<String, String>> send =
                     kafkaTemplate.send(topic, event.aggregateId(), serialize(event));
             return send.thenApply(result -> {
@@ -114,6 +127,10 @@ public abstract class OutboxPublisherSupport {
                 businessMetrics.increment(BusinessMetricNames.OUTBOX_FAILED, "service", serviceName, "topic", topic);
                 return false;
             });
+        } catch (IllegalArgumentException ex) {
+            saveInOriginShard(routedEvent.shardIndex(), event.dead("CONTRACT_INVALID", ex.getMessage()));
+            businessMetrics.increment(BusinessMetricNames.OUTBOX_FAILED, "service", serviceName, "topic", topic);
+            return CompletableFuture.completedFuture(false);
         } catch (JsonProcessingException ex) {
             saveInOriginShard(routedEvent.shardIndex(), failedEvent(event, ex));
             businessMetrics.increment(BusinessMetricNames.OUTBOX_FAILED, "service", serviceName, "topic", topic);

@@ -21,6 +21,7 @@
         <mybatis.plus.version>3.5.9</mybatis.plus.version>
         <clickhouse.jdbc.version>0.9.7</clickhouse.jdbc.version>
         <testcontainers.version>1.21.4</testcontainers.version>
+        <hdrhistogram.version>2.2.2</hdrhistogram.version>
         <formatter.maven.plugin.version>2.29.0</formatter.maven.plugin.version>
         <jacoco.version>0.8.13</jacoco.version>
         <skipITs>false</skipITs>
@@ -80,6 +81,11 @@
                 <groupId>com.clickhouse</groupId>
                 <artifactId>clickhouse-jdbc</artifactId>
                 <version>${clickhouse.jdbc.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.hdrhistogram</groupId>
+                <artifactId>HdrHistogram</artifactId>
+                <version>${hdrhistogram.version}</version>
             </dependency>
             <dependency>
                 <groupId>com.emall</groupId>
@@ -308,6 +314,7 @@
                 <module>common</module>
                 <module>governance</module>
                 <module>gateway</module>
+                <module>routing</module>
                 <module>user</module>
                 <module>product</module>
                 <module>inventory</module>
@@ -363,6 +370,7 @@
                 <module>common</module>
                 <module>governance</module>
                 <module>gateway</module>
+                <module>routing</module>
                 <module>user</module>
                 <module>product</module>
                 <module>inventory</module>
@@ -441,6 +449,7 @@
                 <module>common</module>
                 <module>governance</module>
                 <module>gateway</module>
+                <module>routing</module>
                 <module>user</module>
                 <module>product</module>
                 <module>inventory</module>
@@ -586,6 +595,11 @@
                         <goals>
                             <goal>prepare-agent</goal>
                         </goals>
+                        <configuration>
+                            <excludes>
+                                <exclude>net.sf.jsqlparser.*</exclude>
+                            </excludes>
+                        </configuration>
                     </execution>
                     <execution>
                         <id>report</id>

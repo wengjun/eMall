@@ -3,6 +3,7 @@ package com.emall.order.service;
 import static org.assertj.core.api.Assertions.assertThat;
 
 import com.emall.common.event.EventTypes;
+import com.emall.common.event.OutboxEvent;
 import com.emall.common.id.SnowflakeIdGenerator;
 import com.emall.order.domain.Order;
 import com.emall.order.integration.InventoryClient;
@@ -15,6 +16,7 @@ import com.emall.order.integration.PricingClient.PriceQuote;
 import com.emall.order.repository.InMemoryOrderRepository;
 import com.emall.order.repository.InMemoryOutboxRepository;
 import java.math.BigDecimal;
+import java.time.Duration;
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.List;
@@ -51,9 +53,25 @@ class OrderConcurrencyTest {
         }
         executor.shutdownNow();
 
-        long paidEvents = outboxRepository.findPublishable(Instant.now(), 100).stream()
+        long paidEvents = drainOutbox(outboxRepository).stream()
                 .filter(event -> EventTypes.ORDER_PAID.equals(event.eventType())).count();
         assertThat(paidEvents).isEqualTo(1);
+    }
+
+    private List<OutboxEvent> drainOutbox(InMemoryOutboxRepository repository) {
+        List<OutboxEvent> drained = new ArrayList<>();
+        Instant now = Instant.now().plusSeconds(1);
+        while (true) {
+            List<OutboxEvent> claimed =
+                    repository.claimPublishable("order-concurrency-test", now, Duration.ofSeconds(30), 100);
+            if (claimed.isEmpty()) {
+                return List.copyOf(drained);
+            }
+            claimed.forEach(event -> {
+                drained.add(event);
+                repository.save(event.published());
+            });
+        }
     }
 
     private static final class AlwaysConfirmInventoryClient extends InventoryClient {

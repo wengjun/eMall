@@ -2,6 +2,7 @@ package com.emall.order.service;
 
 import com.emall.common.api.ErrorCode;
 import com.emall.common.event.EventTypes;
+import com.emall.common.event.OrderEventPayload;
 import com.emall.common.event.OutboxEvent;
 import com.emall.common.exception.BusinessException;
 import com.emall.common.id.SnowflakeIdGenerator;
@@ -30,17 +31,16 @@ import com.emall.order.integration.InventoryClient.ReserveInventoryRequest;
 import com.emall.order.integration.MarketingClient;
 import com.emall.order.integration.PricingClient;
 import com.emall.order.repository.OrderRepository;
-import com.emall.order.workflow.OrderCreateWorkflow;
 import com.emall.order.saga.OrderSagaCoordinator;
+import com.emall.order.transaction.OrderLocalTransaction;
+import com.emall.order.workflow.OrderCreateWorkflow;
 import java.time.Clock;
 import java.time.Duration;
 import java.time.Instant;
 import java.util.List;
-import java.util.Map;
 import java.util.Optional;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
 
 @Service
 public class OrderService {
@@ -59,6 +59,7 @@ public class OrderService {
     private final IdempotencyService idempotencyService;
     private final OrderCreateWorkflow orderCreateWorkflow;
     private final OrderSubmissionGuard orderSubmissionGuard;
+    private final OrderLocalTransaction localTransaction;
 
     public OrderService(OrderRepository orderRepository, OutboxRepository outboxRepository,
             SnowflakeIdGenerator idGenerator, InventoryClient inventoryClient, PricingClient pricingClient,
@@ -66,7 +67,8 @@ public class OrderService {
         this(orderRepository, outboxRepository, idGenerator, inventoryClient, pricingClient, marketingClient,
                 ShardRoutingOperations.noop(), OwnershipGuard.noop(), BusinessMetrics.noop(),
                 IdentityAccessGuard.noop(), RiskGuard.noop(), localIdempotencyService(), OrderSubmissionGuard.noop(),
-                ShardRouteIndex.local(), OrderSagaCoordinator.local(orderRepository, inventoryClient, marketingClient));
+                ShardRouteIndex.local(), OrderSagaCoordinator.local(orderRepository, inventoryClient, marketingClient),
+                OrderLocalTransaction.direct());
     }
 
     public OrderService(OrderRepository orderRepository, OutboxRepository outboxRepository,
@@ -77,7 +79,8 @@ public class OrderService {
         this(orderRepository, outboxRepository, idGenerator, inventoryClient, pricingClient, marketingClient,
                 shardRoutingOperations, ownershipGuard, businessMetrics, identityAccessGuard, riskGuard,
                 idempotencyService, orderSubmissionGuard, ShardRouteIndex.local(),
-                OrderSagaCoordinator.local(orderRepository, inventoryClient, marketingClient));
+                OrderSagaCoordinator.local(orderRepository, inventoryClient, marketingClient),
+                OrderLocalTransaction.direct());
     }
 
     @Autowired
@@ -86,7 +89,8 @@ public class OrderService {
             MarketingClient marketingClient, ShardRoutingOperations shardRoutingOperations,
             OwnershipGuard ownershipGuard, BusinessMetrics businessMetrics, IdentityAccessGuard identityAccessGuard,
             RiskGuard riskGuard, IdempotencyService idempotencyService, OrderSubmissionGuard orderSubmissionGuard,
-            ShardRouteIndex shardRouteIndex, OrderSagaCoordinator sagaCoordinator) {
+            ShardRouteIndex shardRouteIndex, OrderSagaCoordinator sagaCoordinator,
+            OrderLocalTransaction localTransaction) {
         this.orderRepository = orderRepository;
         this.outboxRepository = outboxRepository;
         this.idGenerator = idGenerator;
@@ -101,27 +105,25 @@ public class OrderService {
         this.riskGuard = riskGuard;
         this.idempotencyService = idempotencyService;
         this.orderSubmissionGuard = orderSubmissionGuard;
-        this.orderCreateWorkflow = new OrderCreateWorkflow(orderRepository, outboxRepository, idGenerator,
-                inventoryClient, pricingClient, marketingClient, businessMetrics, riskGuard, sagaCoordinator);
+        this.localTransaction = localTransaction;
+        this.orderCreateWorkflow =
+                new OrderCreateWorkflow(orderRepository, outboxRepository, idGenerator, inventoryClient, pricingClient,
+                        marketingClient, businessMetrics, riskGuard, sagaCoordinator, localTransaction);
     }
 
-    @Transactional
     public Order create(String requestId, long userId, long skuId, int quantity) {
         return create(requestId, userId, skuId, quantity, OrderClientContext.webDefault());
     }
 
-    @Transactional
     public Order create(String requestId, long userId, long skuId, int quantity, OrderClientType clientType) {
         return create(requestId, userId, skuId, quantity, OrderClientContext.of(clientType,
                 OrderClientContext.UNKNOWN_DEVICE, OrderClientContext.DIRECT_CHANNEL));
     }
 
-    @Transactional
     public Order create(String requestId, long userId, long skuId, int quantity, OrderClientContext clientContext) {
         return create(requestId, userId, skuId, quantity, clientContext, null);
     }
 
-    @Transactional
     public Order create(String requestId, long userId, long skuId, int quantity, OrderClientContext clientContext,
             ClientTrustContext trustContext) {
         OrderClientContext safeContext = clientContext == null ? OrderClientContext.webDefault() : clientContext;
@@ -157,7 +159,7 @@ public class OrderService {
     private Order replayCreate(String requestId) {
         var routeUserId = shardRouteIndex.resolve("order-request", requestId);
         if (routeUserId.isPresent()) {
-            return shardRoutingOperations.execute("order_record", routeUserId.getAsLong(),
+            return shardRoutingOperations.executeRead("order_record", routeUserId.getAsLong(),
                     () -> findByRequestId(requestId));
         }
         return findByRequestId(requestId);
@@ -169,20 +171,14 @@ public class OrderService {
     }
 
     public Order get(long orderId) {
-        return shardRoutingOperations.execute("order_record", orderRouteKey(orderId), () -> orderRepository
+        return shardRoutingOperations.executeRead("order_record", orderRouteKey(orderId), () -> orderRepository
                 .findById(orderId).orElseThrow(() -> new BusinessException(ErrorCode.NOT_FOUND, "order not found")));
     }
 
     public List<Order> findByStatus(OrderStatus status, int limit) {
-        int boundedLimit = Math.max(1, Math.min(limit, 1000));
-        int shardCount = shardRoutingOperations.physicalShardCount("order_record");
-        int perShardLimit = Math.max(1, (boundedLimit + shardCount - 1) / shardCount);
-        return shardRoutingOperations
-                .executeAll("order_record", () -> orderRepository.findByStatus(status, perShardLimit)).stream()
-                .flatMap(List::stream).limit(boundedLimit).toList();
+        return orderRepository.findByStatus(status, Math.max(1, Math.min(limit, 1000)));
     }
 
-    @Transactional
     public Order pay(long orderId) {
         return shardRoutingOperations.execute("order_record", orderRouteKey(orderId), () -> payInShard(orderId));
     }
@@ -199,26 +195,20 @@ public class OrderService {
         InventoryReservation reservation = inventoryClient.confirm(order.inventoryReservationId());
         if (reservation == null || !reservation.confirmed()) {
             Order pending = order.markPendingRetry("inventory confirm pending");
-            return orderRepository.updateStatus(order.orderId(), OrderStatus.CREATED, pending)
-                    ? pending
-                    : get(order.orderId());
+            return persistTransition("pay-pending-inventory", order, OrderStatus.CREATED, pending, null);
         }
         if (!marketingClient.confirmCoupon(order.requestId(), order.couponId(), order.orderId())) {
             Order pending = order.markPendingRetry("coupon confirm pending");
-            return orderRepository.updateStatus(order.orderId(), OrderStatus.CREATED, pending)
-                    ? pending
-                    : get(order.orderId());
+            return persistTransition("pay-pending-coupon", order, OrderStatus.CREATED, pending, null);
         }
         Order paid = order.markPaid();
-        if (!orderRepository.updateStatus(order.orderId(), OrderStatus.CREATED, paid)) {
-            return get(order.orderId());
+        Order persisted = persistTransition("pay", order, OrderStatus.CREATED, paid, EventTypes.ORDER_PAID);
+        if (persisted.equals(paid)) {
+            businessMetrics.increment(BusinessMetricNames.ORDER_PAID, "channel", order.channel());
         }
-        appendEvent(paid, EventTypes.ORDER_PAID);
-        businessMetrics.increment(BusinessMetricNames.ORDER_PAID, "channel", order.channel());
-        return paid;
+        return persisted;
     }
 
-    @Transactional
     public Order cancel(long orderId) {
         return shardRoutingOperations.execute("order_record", orderRouteKey(orderId), () -> cancelInShard(orderId));
     }
@@ -235,26 +225,20 @@ public class OrderService {
         InventoryReservation reservation = inventoryClient.release(order.inventoryReservationId());
         if (reservation == null || !reservation.released()) {
             Order pending = order.markPendingRetry("inventory release pending");
-            return orderRepository.updateStatus(order.orderId(), order.status(), pending)
-                    ? pending
-                    : get(order.orderId());
+            return persistTransition("cancel-pending-inventory", order, order.status(), pending, null);
         }
         if (!marketingClient.releaseCoupon(order.requestId(), order.couponId(), order.orderId())) {
             Order pending = order.markPendingRetry("coupon release pending");
-            return orderRepository.updateStatus(order.orderId(), order.status(), pending)
-                    ? pending
-                    : get(order.orderId());
+            return persistTransition("cancel-pending-coupon", order, order.status(), pending, null);
         }
         Order cancelled = order.markCancelled();
-        if (!orderRepository.updateStatus(order.orderId(), order.status(), cancelled)) {
-            return get(order.orderId());
+        Order persisted = persistTransition("cancel", order, order.status(), cancelled, EventTypes.ORDER_CANCELLED);
+        if (persisted.equals(cancelled)) {
+            businessMetrics.increment(BusinessMetricNames.ORDER_CANCELLED, "channel", order.channel());
         }
-        appendEvent(cancelled, EventTypes.ORDER_CANCELLED);
-        businessMetrics.increment(BusinessMetricNames.ORDER_CANCELLED, "channel", order.channel());
-        return cancelled;
+        return persisted;
     }
 
-    @Transactional
     public Order retryPending(long orderId) {
         return shardRoutingOperations.execute("order_record", orderRouteKey(orderId),
                 () -> retryPendingInShard(orderId));
@@ -277,16 +261,11 @@ public class OrderService {
                 .reserve(new ReserveInventoryRequest(order.inventoryReservationId(), order.skuId(), order.quantity()));
         if (reservation.reserved()) {
             Order created = order.markCreated();
-            if (!orderRepository.updateStatus(order.orderId(), OrderStatus.PENDING_RETRY, created)) {
-                return get(order.orderId());
-            }
-            appendEvent(created, EventTypes.ORDER_CREATED);
-            return created;
+            return persistTransition("retry-reserve", order, OrderStatus.PENDING_RETRY, created,
+                    EventTypes.ORDER_CREATED);
         }
         Order pending = order.markPendingRetry(reservation.reason());
-        return orderRepository.updateStatus(order.orderId(), OrderStatus.PENDING_RETRY, pending)
-                ? pending
-                : get(order.orderId());
+        return persistTransition("retry-pending", order, OrderStatus.PENDING_RETRY, pending, null);
     }
 
     private Order validateIdempotentCreate(Order existing, long userId, long skuId, int quantity,
@@ -313,12 +292,12 @@ public class OrderService {
                 return order;
             }
             Order paid = order.markPaid();
-            if (!orderRepository.updateStatus(order.orderId(), OrderStatus.PENDING_RETRY, paid)) {
-                return get(order.orderId());
+            Order persisted =
+                    persistTransition("retry-pay", order, OrderStatus.PENDING_RETRY, paid, EventTypes.ORDER_PAID);
+            if (persisted.equals(paid)) {
+                businessMetrics.increment(BusinessMetricNames.ORDER_PAID, "channel", order.channel());
             }
-            appendEvent(paid, EventTypes.ORDER_PAID);
-            businessMetrics.increment(BusinessMetricNames.ORDER_PAID, "channel", order.channel());
-            return paid;
+            return persisted;
         }
         return order;
     }
@@ -330,30 +309,39 @@ public class OrderService {
                 return order;
             }
             Order cancelled = order.markCancelled();
-            if (!orderRepository.updateStatus(order.orderId(), OrderStatus.PENDING_RETRY, cancelled)) {
-                return get(order.orderId());
+            Order persisted = persistTransition("retry-cancel", order, OrderStatus.PENDING_RETRY, cancelled,
+                    EventTypes.ORDER_CANCELLED);
+            if (persisted.equals(cancelled)) {
+                businessMetrics.increment(BusinessMetricNames.ORDER_CANCELLED, "channel", order.channel());
             }
-            appendEvent(cancelled, EventTypes.ORDER_CANCELLED);
-            businessMetrics.increment(BusinessMetricNames.ORDER_CANCELLED, "channel", order.channel());
-            return cancelled;
+            return persisted;
         }
         return order;
     }
 
+    private Order persistTransition(String operation, Order current, OrderStatus expectedStatus, Order next,
+            String eventType) {
+        return localTransaction.execute(operation, () -> {
+            if (!orderRepository.updateStatus(current.orderId(), expectedStatus, next)) {
+                return get(current.orderId());
+            }
+            if (eventType != null) {
+                appendEvent(next, eventType);
+            }
+            return next;
+        });
+    }
+
     private void appendEvent(Order order, String eventType) {
         outboxRepository.save(OutboxEvent.create("order-event-" + idGenerator.nextId(), "Order",
-                String.valueOf(order.orderId()), eventType,
-                Map.ofEntries(Map.entry("orderId", order.orderId()), Map.entry("userId", order.userId()),
-                        Map.entry("skuId", order.skuId()), Map.entry("quantity", order.quantity()),
-                        Map.entry("clientType", order.clientType().name()), Map.entry("deviceId", order.deviceId()),
-                        Map.entry("channel", order.channel()), Map.entry("unitPrice", order.unitPrice()),
-                        Map.entry("subtotalAmount", order.subtotalAmount()),
-                        Map.entry("discountAmount", order.discountAmount()),
-                        Map.entry("payableAmount", order.payableAmount()), Map.entry("currency", order.currency()),
-                        Map.entry("priceVersion", order.priceVersion()),
-                        Map.entry("couponId", order.couponId() == null ? "" : order.couponId()),
-                        Map.entry("inventoryReservationId", order.inventoryReservationId()),
-                        Map.entry("status", order.status().name()))));
+                String.valueOf(order.orderId()), eventType, "order", "0.1.0", orderEventPayload(order)));
+    }
+
+    private OrderEventPayload orderEventPayload(Order order) {
+        return new OrderEventPayload(order.orderId(), order.userId(), order.skuId(), order.quantity(),
+                order.clientType().name(), order.deviceId(), order.channel(), order.unitPrice(), order.subtotalAmount(),
+                order.discountAmount(), order.payableAmount(), order.currency(), order.priceVersion(), order.couponId(),
+                order.inventoryReservationId(), order.status().name());
     }
 
     private long orderRouteKey(long orderId) {

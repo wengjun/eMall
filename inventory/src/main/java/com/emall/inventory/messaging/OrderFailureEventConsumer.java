@@ -1,7 +1,11 @@
 package com.emall.inventory.messaging;
 
+import com.emall.common.event.EventContractRegistry;
 import com.emall.common.event.EventTypes;
 import com.emall.common.event.OutboxEvent;
+import com.emall.common.event.OrderEventPayload;
+import com.emall.common.messaging.AggregateVersionGuard;
+import com.emall.common.messaging.InMemoryAggregateVersionGuard;
 import com.emall.common.messaging.MessageConsumerTemplate;
 import com.emall.common.messaging.ProcessedMessageRepository;
 import com.emall.common.metrics.BusinessMetrics;
@@ -10,7 +14,6 @@ import com.emall.common.sharding.ShardRoutingOperations;
 import com.emall.inventory.service.InventoryService;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import java.util.Map;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.kafka.annotation.KafkaListener;
@@ -29,7 +32,7 @@ public class OrderFailureEventConsumer {
             BusinessMetrics businessMetrics, ProcessedMessageRepository processedMessageRepository,
             @Value("${emall.events.order-failure-consumer-max-attempts:4}") int maxAttempts) {
         this(objectMapper, inventoryService, businessMetrics, processedMessageRepository, maxAttempts, null,
-                ShardRoutingOperations.noop(), ShardRouteIndex.local());
+                ShardRoutingOperations.noop(), ShardRouteIndex.local(), new InMemoryAggregateVersionGuard());
     }
 
     @Autowired
@@ -37,13 +40,13 @@ public class OrderFailureEventConsumer {
             BusinessMetrics businessMetrics, ProcessedMessageRepository processedMessageRepository,
             @Value("${emall.events.order-failure-consumer-max-attempts:4}") int maxAttempts,
             PlatformTransactionManager transactionManager, ShardRoutingOperations shardRoutingOperations,
-            ShardRouteIndex shardRouteIndex) {
+            ShardRouteIndex shardRouteIndex, AggregateVersionGuard aggregateVersionGuard) {
         this.inventoryService = inventoryService;
         this.objectMapper = objectMapper;
         this.shardRoutingOperations = shardRoutingOperations;
         this.shardRouteIndex = shardRouteIndex;
         this.consumerTemplate = new MessageConsumerTemplate(objectMapper, processedMessageRepository, businessMetrics,
-                maxAttempts, "inventory-order-failure-consumer", transactionManager);
+                maxAttempts, "inventory-order-failure-consumer", transactionManager, aggregateVersionGuard);
     }
 
     @KafkaListener(topics = "${emall.events.order-topic:emall.order.events}",
@@ -54,8 +57,9 @@ public class OrderFailureEventConsumer {
             consumerTemplate.consume(event, EventTypes.ORDER_CANCELLED, this::releaseReservation);
             return;
         }
-        String reservationId = String.valueOf(event.payload().get("inventoryReservationId"));
-        if (reservationId.isBlank() || "null".equals(reservationId)) {
+        EventContractRegistry.validate(event);
+        String reservationId = OrderEventPayload.from(event).inventoryReservationId();
+        if (reservationId.isBlank()) {
             consumerTemplate.consume(event, EventTypes.ORDER_CANCELLED, this::releaseReservation);
             return;
         }
@@ -65,9 +69,8 @@ public class OrderFailureEventConsumer {
     }
 
     private void releaseReservation(OutboxEvent event) {
-        Map<String, Object> payload = event.payload();
-        String reservationId = String.valueOf(payload.get("inventoryReservationId"));
-        if (!reservationId.isBlank() && !"null".equals(reservationId)) {
+        String reservationId = OrderEventPayload.from(event).inventoryReservationId();
+        if (!reservationId.isBlank()) {
             inventoryService.release(reservationId);
         }
     }
