@@ -8,29 +8,27 @@ spring:
 
 emall:
   migration:
-    dry-run: ${EMALL_MIGRATION_DRY_RUN:false}
-    baseline-on-migrate: ${EMALL_MIGRATION_BASELINE_ON_MIGRATE:false}
-    operator: ${EMALL_MIGRATION_OPERATOR:unknown}
+    service: ${EMALL_MIGRATION_SERVICE:}
+    region: ${EMALL_MIGRATION_REGION:default}
+    shards: ${EMALL_MIGRATION_SHARDS:0}
     jdbc-url-template: ${EMALL_MIGRATION_JDBC_URL_TEMPLATE:}
     username: ${EMALL_MIGRATION_DB_USERNAME:}
     password: ${EMALL_MIGRATION_DB_PASSWORD:}
+    locations: ${EMALL_MIGRATION_LOCATIONS:filesystem:/app/migrations}
     history-table: ${EMALL_MIGRATION_HISTORY_TABLE:flyway_schema_history}
+    operator: ${EMALL_MIGRATION_OPERATOR:unknown}
+    batch-id: ${EMALL_MIGRATION_BATCH_ID:unknown}
+    baseline-on-migrate: ${EMALL_MIGRATION_BASELINE_ON_MIGRATE:false}
+    dry-run: ${EMALL_MIGRATION_DRY_RUN:false}
     create-physical-tables: ${EMALL_MIGRATION_CREATE_PHYSICAL_TABLES:false}
     default-table-shard-count: ${EMALL_TABLE_SHARD_COUNT:64}
     cell-id: ${EMALL_CELL_ID:cell-a}
-    services: ${EMALL_MIGRATION_SERVICES:}
-    regions: ${EMALL_MIGRATION_REGIONS:default}
-    shards: ${EMALL_MIGRATION_SHARDS:}
-    default-service-shard-count: 1
-    service-shard-counts:
-      user: ${EMALL_USER_DB_SHARD_COUNT:${EMALL_DB_SHARD_COUNT:8}}
-      product: ${EMALL_PRODUCT_DB_SHARD_COUNT:${EMALL_DB_SHARD_COUNT:8}}
-      inventory: ${EMALL_INVENTORY_DB_SHARD_COUNT:${EMALL_DB_SHARD_COUNT:8}}
-      order: ${EMALL_ORDER_DB_SHARD_COUNT:${EMALL_DB_SHARD_COUNT:8}}
-      cart: ${EMALL_CART_DB_SHARD_COUNT:${EMALL_DB_SHARD_COUNT:8}}
-      payment: ${EMALL_PAYMENT_DB_SHARD_COUNT:${EMALL_DB_SHARD_COUNT:8}}
-      pricing: ${EMALL_PRICING_DB_SHARD_COUNT:${EMALL_DB_SHARD_COUNT:8}}
-      marketing: ${EMALL_MARKETING_DB_SHARD_COUNT:${EMALL_DB_SHARD_COUNT:8}}
-      search: ${EMALL_SEARCH_DB_SHARD_COUNT:${EMALL_DB_SHARD_COUNT:8}}
-      flash-sale: ${EMALL_FLASH_SALE_DB_SHARD_COUNT:${EMALL_DB_SHARD_COUNT:8}}
-    locations: ${EMALL_MIGRATION_LOCATIONS:classpath:migrations/{service}/src/main/resources/db/migration}
+    canary-shard-count: ${EMALL_MIGRATION_CANARY_SHARD_COUNT:1}
+    batch-size: ${EMALL_MIGRATION_BATCH_SIZE:4}
+    max-parallelism: ${EMALL_MIGRATION_MAX_PARALLELISM:2}
+    batch-timeout: ${EMALL_MIGRATION_BATCH_TIMEOUT:15m}
+    pause-between-batches: ${EMALL_MIGRATION_PAUSE_BETWEEN_BATCHES:0s}
+    phase: ${EMALL_MIGRATION_PHASE:EXPAND}
+    allow-destructive-changes: ${EMALL_MIGRATION_ALLOW_DESTRUCTIVE_CHANGES:false}
+    minimum-compatible-version: ${EMALL_MIGRATION_MINIMUM_COMPATIBLE_VERSION:}
+    approval-reference: ${EMALL_MIGRATION_APPROVAL_REFERENCE:}

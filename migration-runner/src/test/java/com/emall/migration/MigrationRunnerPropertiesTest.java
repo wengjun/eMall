@@ -3,98 +3,96 @@ package com.emall.migration;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
+import java.time.Duration;
 import java.util.List;
-import java.util.Map;
 import org.junit.jupiter.api.Test;
 
 class MigrationRunnerPropertiesTest {
     @Test
-    void shouldExpandServiceRegionShardTargets() {
-        MigrationRunnerProperties properties = new MigrationRunnerProperties();
-        properties.setServices(List.of("order", "payment"));
-        properties.setRegions(List.of("cn-east", "cn-south"));
-        properties.setShards(List.of(0, 1));
-        properties.setJdbcUrlTemplate(
-                "jdbc:mysql://mysql-{region}:3306/emall_{service}_{shard}?useUnicode=true&serverTimezone=UTC");
-        properties.setLocations(List.of("filesystem:/migrations/{service}"));
-        properties.setOperator("release-bot");
+    void expandsOnlyOneServiceAndPlansCanaryBeforeBoundedBatches() {
+        MigrationRunnerProperties properties = validProperties("order");
+        properties.setRegion("cn-east");
+        properties.setShards(List.of(7, 0, 3, 2, 1, 6, 5, 4));
+        properties.setCanaryShardCount(1);
+        properties.setBatchSize(3);
 
-        List<MigrationTarget> targets = properties.expandTargets();
+        List<List<MigrationTarget>> batches = properties.planBatches();
 
-        assertThat(targets).hasSize(8);
-        assertThat(targets).anySatisfy(target -> {
-            assertThat(target.jdbcUrl())
-                    .isEqualTo("jdbc:mysql://mysql-cn-east:3306/emall_payment_01?useUnicode=true&serverTimezone=UTC");
-            assertThat(target.locations()).containsExactly("filesystem:/migrations/payment");
-            assertThat(target.operator()).isEqualTo("release-bot");
+        assertThat(batches).hasSize(4);
+        assertThat(batches.get(0)).extracting(MigrationTarget::shard).containsExactly(0);
+        assertThat(batches.get(1)).extracting(MigrationTarget::shard).containsExactly(1, 2, 3);
+        assertThat(batches.get(2)).extracting(MigrationTarget::shard).containsExactly(4, 5, 6);
+        assertThat(batches.get(3)).extracting(MigrationTarget::shard).containsExactly(7);
+        assertThat(batches.stream().flatMap(List::stream)).allSatisfy(target -> {
+            assertThat(target.service()).isEqualTo("order");
+            assertThat(target.region()).isEqualTo("cn-east");
+            assertThat(target.jdbcUrl()).contains("/emall_order_%02d".formatted(target.shard()));
         });
     }
 
     @Test
-    void shouldRequireExplicitServices() {
-        MigrationRunnerProperties properties = new MigrationRunnerProperties();
-        properties.setJdbcUrlTemplate("jdbc:mysql://localhost:3306/emall_{service}");
+    void usesUnsuffixedDatabaseForAnUnshardedService() {
+        MigrationRunnerProperties properties = validProperties("analytics");
 
-        assertThatThrownBy(properties::expandTargets).isInstanceOf(IllegalStateException.class)
-                .hasMessageContaining("services");
+        assertThat(properties.expandTargets()).singleElement().satisfies(target -> {
+            assertThat(target.database()).isEqualTo("emall_analytics");
+            assertThat(target.jdbcUrl()).contains("/emall_analytics?");
+        });
     }
 
     @Test
-    void shouldExpandDefaultPhysicalTableRulesForCoreServices() {
-        MigrationRunnerProperties properties = new MigrationRunnerProperties();
-        properties.setServices(List.of("order", "payment", "search"));
-        properties.setJdbcUrlTemplate("jdbc:mysql://localhost:3306/emall_{service}_{shard}");
+    void rejectsJdbcUrlThatEscapesTheServiceDatabaseBoundary() {
+        MigrationRunnerProperties properties = validProperties("order");
+        properties.setJdbcUrlTemplate("jdbc:mysql://mysql:3306/emall_payment?serverTimezone=UTC");
+
+        assertThatThrownBy(properties::expandTargets).isInstanceOf(IllegalStateException.class)
+                .hasMessageContaining("escapes service database boundary");
+    }
+
+    @Test
+    void rejectsDatabaseCreationAndMissingServiceCredentials() {
+        MigrationRunnerProperties properties = validProperties("order");
+        properties.setJdbcUrlTemplate(
+                "jdbc:mysql://mysql:3306/{database}?serverTimezone=UTC&createDatabaseIfNotExist=true");
+        assertThatThrownBy(properties::expandTargets).hasMessageContaining("cannot create databases");
+
+        properties.setJdbcUrlTemplate("jdbc:mysql://mysql:3306/{database}?serverTimezone=UTC");
+        properties.setPassword("");
+        assertThatThrownBy(properties::expandTargets).hasMessageContaining("service-scoped migration username");
+    }
+
+    @Test
+    void configuresPhysicalTablesOnlyForTheSelectedService() {
+        MigrationRunnerProperties properties = validProperties("payment");
         properties.setCreatePhysicalTables(true);
         properties.setDefaultTableShardCount(16);
         properties.setCellId("cell-b");
 
-        List<MigrationTarget> targets = properties.expandTargets();
+        MigrationTarget target = properties.expandTargets().get(0);
 
-        assertThat(targets).hasSize(3);
-        assertThat(targets).anySatisfy(target -> {
-            assertThat(target.service()).isEqualTo("order");
-            assertThat(target.createPhysicalTables()).isTrue();
-            assertThat(target.physicalTables()).extracting(PhysicalTableRule::tablePrefix)
-                    .containsExactly("order_record", "outbox_event", "order_create_saga", "order_payment_confirmation");
-            assertThat(target.physicalTables()).allSatisfy(rule -> {
-                assertThat(rule.tableShardCount()).isEqualTo(16);
-                assertThat(rule.cellId()).isEqualTo("cell-b");
-            });
-        });
-        assertThat(targets).anySatisfy(target -> {
-            assertThat(target.service()).isEqualTo("payment");
-            assertThat(target.physicalTables()).extracting(PhysicalTableRule::tablePrefix).contains("payment_order",
-                    "payment_reconciliation_record");
-        });
-        assertThat(targets).anySatisfy(target -> {
-            assertThat(target.service()).isEqualTo("search");
-            assertThat(target.physicalTables()).extracting(PhysicalTableRule::tablePrefix)
-                    .containsExactly("search_document", "processed_message");
+        assertThat(target.physicalTables()).extracting(PhysicalTableRule::tablePrefix).containsExactly("payment_order",
+                "payment_ledger_entry", "payment_channel_statement", "payment_reconciliation_record");
+        assertThat(target.physicalTables()).allSatisfy(rule -> {
+            assertThat(rule.tableShardCount()).isEqualTo(16);
+            assertThat(rule.cellId()).isEqualTo("cell-b");
         });
     }
 
     @Test
-    void shouldUseSuffixedDatabasesOnlyForServicesThatAreActuallySharded() {
-        MigrationRunnerProperties properties = new MigrationRunnerProperties();
-        properties.setServices(List.of("order", "analytics"));
-        properties.setJdbcUrlTemplate("jdbc:mysql://mysql:3306/{database}");
-        properties.setServiceShardCounts(Map.of("order", 2));
+    void validatesBatchSafetyLimits() {
+        MigrationRunnerProperties properties = validProperties("order");
+        properties.setBatchTimeout(Duration.ZERO);
 
-        List<MigrationTarget> targets = properties.expandTargets();
-
-        assertThat(targets).extracting(MigrationTarget::jdbcUrl).containsExactlyInAnyOrder(
-                "jdbc:mysql://mysql:3306/emall_order_00", "jdbc:mysql://mysql:3306/emall_order_01",
-                "jdbc:mysql://mysql:3306/emall_analytics");
+        assertThatThrownBy(properties::planBatches).hasMessageContaining("batch-timeout");
     }
 
-    @Test
-    void shouldHonorDefaultServiceShardCountWhenExplicitShardsAreAbsent() {
+    private MigrationRunnerProperties validProperties(String service) {
         MigrationRunnerProperties properties = new MigrationRunnerProperties();
-        properties.setServices(List.of("analytics"));
-        properties.setJdbcUrlTemplate("jdbc:mysql://mysql:3306/{database}");
-        properties.setDefaultServiceShardCount(2);
-
-        assertThat(properties.expandTargets()).extracting(MigrationTarget::jdbcUrl).containsExactly(
-                "jdbc:mysql://mysql:3306/emall_analytics_00", "jdbc:mysql://mysql:3306/emall_analytics_01");
+        properties.setService(service);
+        properties.setJdbcUrlTemplate("jdbc:mysql://mysql:3306/{database}?serverTimezone=UTC");
+        properties.setUsername(service.replace('-', '_') + "_migration");
+        properties.setPassword("secret");
+        properties.setLocations(List.of("filesystem:/app/migrations"));
+        return properties;
     }
 }

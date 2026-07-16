@@ -1,0 +1,41 @@
+{{- if .Values.migration.enabled }}
+{{- $tag := replace "." "-" .Values.migration.imageTag }}
+{{- range .Values.services }}
+{{- if ne .database false }}
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  name: {{ .name }}-migration-gate
+  labels:
+    {{- include "emall.labels" $ | nindent 4 }}
+    app.kubernetes.io/component: {{ .name }}-migration-gate
+rules:
+  - apiGroups:
+      - batch
+    resources:
+      - jobs
+    resourceNames:
+      - {{ printf "%s-migration-%s" .name $tag | trunc 63 | trimSuffix "-" }}
+    verbs:
+      - get
+      - watch
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: {{ .name }}-migration-gate
+  labels:
+    {{- include "emall.labels" $ | nindent 4 }}
+    app.kubernetes.io/component: {{ .name }}-migration-gate
+subjects:
+  - kind: ServiceAccount
+    name: {{ .name }}
+    namespace: {{ $.Release.Namespace }}
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: Role
+  name: {{ .name }}-migration-gate
+{{- end }}
+{{- end }}
+{{- end }}

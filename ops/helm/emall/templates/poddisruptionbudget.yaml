@@ -1,0 +1,20 @@
+{{- range .Values.services }}
+{{- $pdb := mustMergeOverwrite (deepCopy $.Values.serviceDefaults.podDisruptionBudget) (default dict .podDisruptionBudget) }}
+{{- if $pdb.enabled }}
+---
+apiVersion: policy/v1
+kind: PodDisruptionBudget
+metadata:
+  name: {{ .name }}
+  labels:
+    {{- include "emall.labels" $ | nindent 4 }}
+    app.kubernetes.io/component: {{ .name }}
+spec:
+  maxUnavailable: {{ $pdb.maxUnavailable }}
+  unhealthyPodEvictionPolicy: AlwaysAllow
+  selector:
+    matchLabels:
+      app.kubernetes.io/instance: {{ $.Release.Name }}
+      app.kubernetes.io/component: {{ .name }}
+{{- end }}
+{{- end }}

@@ -1,0 +1,222 @@
+{{- if .Values.progressiveDelivery.enabled }}
+{{- range .Values.services }}
+{{- $tierName := default $.Values.serviceDefaults.tier .tier }}
+{{- $tier := index $.Values.capacityTiers $tierName }}
+{{- $resources := mustMergeOverwrite (deepCopy $.Values.serviceDefaults.resources) (default dict $tier.resources) (default dict .resources) }}
+---
+apiVersion: argoproj.io/v1alpha1
+kind: Rollout
+metadata:
+  name: {{ .name }}
+  labels:
+    {{- include "emall.labels" $ | nindent 4 }}
+    app.kubernetes.io/component: {{ .name }}
+spec:
+  replicas: {{ default (default $.Values.serviceDefaults.replicas $tier.replicas) .replicas }}
+  revisionHistoryLimit: {{ $.Values.serviceDefaults.revisionHistoryLimit }}
+  minReadySeconds: {{ $.Values.serviceDefaults.minReadySeconds }}
+  progressDeadlineSeconds: {{ $.Values.serviceDefaults.progressDeadlineSeconds }}
+  progressDeadlineAbort: true
+  selector:
+    matchLabels:
+      app.kubernetes.io/instance: {{ $.Release.Name }}
+      app.kubernetes.io/component: {{ .name }}
+  strategy:
+    canary:
+      maxSurge: {{ $.Values.progressiveDelivery.maxSurge | quote }}
+      maxUnavailable: {{ $.Values.progressiveDelivery.maxUnavailable }}
+      steps:
+        - setWeight: 5
+        - pause:
+            duration: 2m
+        {{- if $.Values.progressiveDelivery.analysisTemplates.enabled }}
+        - analysis:
+            templates:
+              - templateName: emall-http-slo
+            args:
+              - name: application
+                value: {{ .name | quote }}
+        {{- end }}
+        - setWeight: 25
+        - pause:
+            duration: 5m
+        - setWeight: 50
+        - pause:
+            duration: 10m
+        - setWeight: 100
+  template:
+    metadata:
+      annotations:
+        checksum/runtime-config: {{ include (print $.Template.BasePath "/configmap.yaml") $ | sha256sum }}
+      labels:
+        app.kubernetes.io/instance: {{ $.Release.Name }}
+        app.kubernetes.io/component: {{ .name }}
+        app: {{ .name }}
+        emall.io/gateway-reachable: "true"
+        {{- if .rpcProvider }}
+        emall.io/rpc-provider: "true"
+        {{- end }}
+    spec:
+      serviceAccountName: {{ .name }}
+      automountServiceAccountToken: {{ default false .kubernetesApiAccess }}
+      enableServiceLinks: false
+      terminationGracePeriodSeconds: {{ $.Values.serviceDefaults.terminationGracePeriodSeconds }}
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 10001
+        runAsGroup: 10001
+        fsGroup: 10001
+        seccompProfile:
+          type: RuntimeDefault
+      topologySpreadConstraints:
+        - maxSkew: 1
+          topologyKey: topology.kubernetes.io/zone
+          whenUnsatisfiable: ScheduleAnyway
+          labelSelector:
+            matchLabels:
+              app.kubernetes.io/instance: {{ $.Release.Name }}
+              app.kubernetes.io/component: {{ .name }}
+        - maxSkew: 1
+          topologyKey: kubernetes.io/hostname
+          whenUnsatisfiable: DoNotSchedule
+          labelSelector:
+            matchLabels:
+              app.kubernetes.io/instance: {{ $.Release.Name }}
+              app.kubernetes.io/component: {{ .name }}
+      affinity:
+        podAntiAffinity:
+          preferredDuringSchedulingIgnoredDuringExecution:
+            - weight: 100
+              podAffinityTerm:
+                topologyKey: kubernetes.io/hostname
+                labelSelector:
+                  matchLabels:
+                    app.kubernetes.io/instance: {{ $.Release.Name }}
+                    app.kubernetes.io/component: {{ .name }}
+      {{- if and $.Values.migration.enabled (ne .database false) }}
+      initContainers:
+        - name: wait-for-schema-migration
+          image: {{ $.Values.migration.waiterImage | quote }}
+          imagePullPolicy: IfNotPresent
+          command:
+            - sh
+            - -ec
+            - >-
+              kubectl --server=https://kubernetes.default.svc
+              --token="$(cat /var/run/secrets/emall/token)"
+              --certificate-authority=/var/run/secrets/emall/ca.crt
+              --namespace={{ $.Release.Namespace }} wait --for=condition=complete
+              job/{{ printf "%s-migration-%s" .name (replace "." "-" $.Values.migration.imageTag) | trunc 63 | trimSuffix "-" }}
+              --timeout={{ $.Values.migration.activeDeadlineSeconds }}s
+          securityContext:
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: true
+            capabilities:
+              drop:
+                - ALL
+          resources:
+            requests:
+              cpu: 10m
+              memory: 32Mi
+            limits:
+              cpu: 100m
+              memory: 128Mi
+          volumeMounts:
+            - name: migration-api
+              mountPath: /var/run/secrets/emall
+              readOnly: true
+      {{- end }}
+      containers:
+        - name: {{ .name }}
+          image: "{{ $.Values.image.repositoryPrefix }}/{{ .name }}:{{ default $.Values.image.tag .imageTag }}"
+          imagePullPolicy: {{ $.Values.image.pullPolicy }}
+          securityContext:
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: true
+            capabilities:
+              drop:
+                - ALL
+          ports:
+            - name: http
+              containerPort: {{ .port }}
+              protocol: TCP
+            {{- if .rpcProvider }}
+            - name: dubbo
+              containerPort: 20880
+              protocol: TCP
+            {{- end }}
+          env:
+            - name: SPRING_PROFILES_ACTIVE
+              value: {{ $.Values.global.springProfiles | quote }}
+            - name: MODULE
+              value: {{ .name | quote }}
+            - name: JAVA_TOOL_OPTIONS
+              value: -Djava.io.tmpdir=/tmp
+            {{- if .sharding }}
+            - name: EMALL_SHARDING_ENABLED
+              value: "true"
+            - name: EMALL_SHARDING_DATASOURCE_ENABLED
+              value: "true"
+            {{- end }}
+            {{- range $name, $value := .env }}
+            - name: {{ $name }}
+              value: {{ $value | quote }}
+            {{- end }}
+          envFrom:
+            - configMapRef:
+                name: {{ $.Values.global.runtimeConfigName }}
+            - secretRef:
+                name: {{ $.Values.global.existingSecret }}
+          volumeMounts:
+            - name: tmp
+              mountPath: /tmp
+          lifecycle:
+            preStop:
+              exec:
+                command:
+                  - sh
+                  - -c
+                  - {{ printf "sleep %v" $.Values.serviceDefaults.preStopDelaySeconds | quote }}
+          startupProbe:
+            httpGet:
+              path: /actuator/health/liveness
+              port: http
+            periodSeconds: {{ $.Values.serviceDefaults.probes.startup.periodSeconds }}
+            failureThreshold: {{ $.Values.serviceDefaults.probes.startup.failureThreshold }}
+          readinessProbe:
+            httpGet:
+              path: /actuator/health/readiness
+              port: http
+            periodSeconds: {{ $.Values.serviceDefaults.probes.readiness.periodSeconds }}
+            timeoutSeconds: {{ $.Values.serviceDefaults.probes.readiness.timeoutSeconds }}
+            failureThreshold: {{ $.Values.serviceDefaults.probes.readiness.failureThreshold }}
+          livenessProbe:
+            httpGet:
+              path: /actuator/health/liveness
+              port: http
+            periodSeconds: {{ $.Values.serviceDefaults.probes.liveness.periodSeconds }}
+            timeoutSeconds: {{ $.Values.serviceDefaults.probes.liveness.timeoutSeconds }}
+            failureThreshold: {{ $.Values.serviceDefaults.probes.liveness.failureThreshold }}
+          resources:
+            {{- toYaml $resources | nindent 12 }}
+      volumes:
+        - name: tmp
+          emptyDir:
+            sizeLimit: 1Gi
+        {{- if and $.Values.migration.enabled (ne .database false) }}
+        - name: migration-api
+          projected:
+            defaultMode: 0440
+            sources:
+              - serviceAccountToken:
+                  audience: https://kubernetes.default.svc
+                  expirationSeconds: 3600
+                  path: token
+              - configMap:
+                  name: kube-root-ca.crt
+                  items:
+                    - key: ca.crt
+                      path: ca.crt
+        {{- end }}
+{{- end }}
+{{- end }}

@@ -9,6 +9,7 @@ metadata:
     app.kubernetes.io/component: {{ .name }}
 spec:
   type: ClusterIP
+  publishNotReadyAddresses: false
   selector:
     app.kubernetes.io/instance: {{ $.Release.Name }}
     app.kubernetes.io/component: {{ .name }}

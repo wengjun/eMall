@@ -1,6 +1,9 @@
 apiVersion: v2
 name: emall
-description: Helm baseline for deploying eMall Java services on Kubernetes.
+description: Authoritative production deployment chart for all eMall Java services.
 type: application
-version: 0.1.0
-appVersion: "0.1.0-SNAPSHOT"
+version: 1.0.0
+appVersion: "0.1.0"
+kubeVersion: ">=1.30.0-0"
+annotations:
+  emall.io/deployment-source: authoritative

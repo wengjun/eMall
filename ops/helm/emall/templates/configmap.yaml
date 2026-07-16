@@ -1,10 +1,19 @@
 apiVersion: v1
 kind: ConfigMap
 metadata:
-  name: {{ include "emall.fullname" . }}-runtime
+  name: {{ .Values.global.runtimeConfigName }}
   labels:
     {{- include "emall.labels" . | nindent 4 }}
 data:
+  EMALL_KUBERNETES_NAMESPACE: {{ .Release.Namespace | quote }}
   {{- range $key, $value := .Values.global.env }}
   {{ $key }}: {{ $value | quote }}
+  {{- end }}
+  {{- range .Values.services }}
+  {{- $environmentName := upper (replace "-" "_" .name) }}
+  EMALL_{{ $environmentName }}_URL: {{ printf "http://%s:%v" .name .port | quote }}
+  {{- if ne .database false }}
+  {{- $databaseName := replace "-" "_" .name }}
+  EMALL_{{ $environmentName }}_DB_URL: {{ printf "jdbc:mysql://%s:%v/emall_%s?%s" $.Values.database.host $.Values.database.port $databaseName $.Values.database.jdbcParameters | quote }}
+  {{- end }}
   {{- end }}

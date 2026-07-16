@@ -1,26 +1,53 @@
-{{- if .Values.serviceDefaults.autoscaling.enabled }}
 {{- range .Values.services }}
+{{- $tierName := default $.Values.serviceDefaults.tier .tier }}
+{{- $tier := index $.Values.capacityTiers $tierName }}
+{{- $autoscaling := mustMergeOverwrite (deepCopy $.Values.serviceDefaults.autoscaling) (default dict $tier.autoscaling) (default dict .autoscaling) }}
+{{- if $autoscaling.enabled }}
 ---
 apiVersion: autoscaling/v2
 kind: HorizontalPodAutoscaler
 metadata:
-  name: {{ $.Release.Name }}-{{ .name }}
+  name: {{ .name }}
   labels:
     {{- include "emall.labels" $ | nindent 4 }}
     app.kubernetes.io/component: {{ .name }}
 spec:
   scaleTargetRef:
-    apiVersion: apps/v1
-    kind: Deployment
-    name: {{ $.Release.Name }}-{{ .name }}
-  minReplicas: {{ $.Values.serviceDefaults.autoscaling.minReplicas }}
-  maxReplicas: {{ $.Values.serviceDefaults.autoscaling.maxReplicas }}
+    apiVersion: argoproj.io/v1alpha1
+    kind: Rollout
+    name: {{ .name }}
+  minReplicas: {{ $autoscaling.minReplicas }}
+  maxReplicas: {{ $autoscaling.maxReplicas }}
+  behavior:
+    scaleUp:
+      stabilizationWindowSeconds: {{ $autoscaling.scaleUpStabilizationSeconds }}
+      selectPolicy: Max
+      policies:
+        - type: Percent
+          value: 100
+          periodSeconds: 60
+        - type: Pods
+          value: 20
+          periodSeconds: 60
+    scaleDown:
+      stabilizationWindowSeconds: {{ $autoscaling.scaleDownStabilizationSeconds }}
+      selectPolicy: Min
+      policies:
+        - type: Percent
+          value: 10
+          periodSeconds: 60
   metrics:
     - type: Resource
       resource:
         name: cpu
         target:
           type: Utilization
-          averageUtilization: {{ $.Values.serviceDefaults.autoscaling.targetCPUUtilizationPercentage }}
+          averageUtilization: {{ $autoscaling.targetCPUUtilizationPercentage }}
+    - type: Resource
+      resource:
+        name: memory
+        target:
+          type: Utilization
+          averageUtilization: {{ $autoscaling.targetMemoryUtilizationPercentage }}
 {{- end }}
 {{- end }}

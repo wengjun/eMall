@@ -36,11 +36,9 @@ class MigrationTargetExecutorIT {
     }
 
     @Test
-    void migratesPackagedAssetsAndCreatesPhysicalTablesIdempotently() throws SQLException {
-        MigrationTarget target = new MigrationTarget("user", "default", 0, MYSQL.getJdbcUrl(), MYSQL.getUsername(),
-                MYSQL.getPassword(), List.of("classpath:migrations/user/src/main/resources/db/migration"),
-                "flyway_schema_history", "integration-test", false, false, true,
-                List.of(new PhysicalTableRule("user_account", "user_account", 2, "cell-a")));
+    void migratesServiceScopedAssetAndCreatesPhysicalTablesIdempotently() throws SQLException {
+        MigrationTarget target = target(MYSQL.getJdbcUrl(), MYSQL.getUsername(), MYSQL.getPassword(),
+                List.of("classpath:db/migration"), "flyway_schema_history", true);
 
         executor.execute(target);
         executor.execute(target);
@@ -49,17 +47,45 @@ class MigrationTargetExecutorIT {
         assertThat(tableExists("user_account")).isTrue();
         assertThat(tableExists("user_account_00")).isTrue();
         assertThat(tableExists("user_account_01")).isTrue();
-        assertThat(appliedMigrationCount()).isEqualTo(4);
+        assertThat(appliedMigrationCount()).isEqualTo(1);
     }
 
     @Test
     void failsWhenMigrationAssetsAreMissing() {
-        MigrationTarget target = new MigrationTarget("user", "default", 0, MYSQL.getJdbcUrl(), MYSQL.getUsername(),
-                MYSQL.getPassword(), List.of("classpath:migrations/missing"), "missing_history", "integration-test",
-                false, false, false, List.of());
+        MigrationTarget target = target(MYSQL.getJdbcUrl(), MYSQL.getUsername(), MYSQL.getPassword(),
+                List.of("classpath:migrations/missing"), "missing_history", false);
 
         assertThatThrownBy(() -> executor.execute(target)).isInstanceOf(RuntimeException.class)
                 .hasMessageContaining("locations");
+    }
+
+    @Test
+    void serviceMigrationCredentialCannotAccessAnotherServiceDatabase() throws SQLException {
+        try (Connection root = DriverManager.getConnection(MYSQL.getJdbcUrl(), "root", MYSQL.getPassword());
+                Statement statement = root.createStatement()) {
+            statement.execute("CREATE DATABASE IF NOT EXISTS emall_payment");
+            statement.execute("CREATE USER IF NOT EXISTS 'user_migration_scoped'@'%' IDENTIFIED BY 'scoped_secret'");
+            statement.execute("GRANT ALL PRIVILEGES ON emall_user.* TO 'user_migration_scoped'@'%'");
+        }
+
+        String scopedUserUrl = MYSQL.getJdbcUrl();
+        try (Connection ignored =
+                DriverManager.getConnection(scopedUserUrl, "user_migration_scoped", "scoped_secret")) {
+            assertThat(ignored.isValid(2)).isTrue();
+        }
+        String paymentUrl = scopedUserUrl.replace("/emall_user", "/emall_payment");
+        assertThatThrownBy(() -> DriverManager.getConnection(paymentUrl, "user_migration_scoped", "scoped_secret"))
+                .isInstanceOf(SQLException.class);
+    }
+
+    private MigrationTarget target(String jdbcUrl, String username, String password, List<String> locations,
+            String historyTable, boolean createPhysicalTables) {
+        return new MigrationTarget("user", "default", 0, "emall_user", jdbcUrl, username, password, locations,
+                historyTable, "integration-test", "it-batch", false, false, createPhysicalTables,
+                createPhysicalTables
+                        ? List.of(new PhysicalTableRule("user_account", "user_account", 2, "cell-a"))
+                        : List.of(),
+                MigrationPhase.EXPAND, false, "", "");
     }
 
     private boolean tableExists(String tableName) throws SQLException {

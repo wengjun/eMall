@@ -14,11 +14,14 @@ import org.springframework.stereotype.Component;
 @Component
 public class MigrationTargetExecutor {
     private static final Logger log = LoggerFactory.getLogger(MigrationTargetExecutor.class);
+    private final MigrationScriptSafetyValidator safetyValidator = new MigrationScriptSafetyValidator();
 
     public void execute(MigrationTarget target) {
+        safetyValidator.validate(target);
         if (target.dryRun()) {
-            log.info("Dry-run schema migration service={} region={} shard={} locations={} jdbcUrl={}", target.service(),
-                    target.region(), target.shard(), target.locations(), maskJdbcUrl(target.jdbcUrl()));
+            log.info("Dry-run migration service={} region={} shard={} database={} batchId={} locations={} jdbcUrl={}",
+                    target.service(), target.region(), target.shard(), target.database(), target.batchId(),
+                    target.locations(), maskJdbcUrl(target.jdbcUrl()));
             return;
         }
         FluentConfiguration configuration =
@@ -34,8 +37,9 @@ public class MigrationTargetExecutor {
         }
         flyway.validate();
         var result = flyway.migrate();
-        log.info("Schema migration completed service={} region={} shard={} migrationsExecuted={} targetSchema={}",
-                target.service(), target.region(), target.shard(), result.migrationsExecuted, result.schemaName);
+        log.info("Migration completed service={} region={} shard={} database={} batchId={} executed={} targetSchema={}",
+                target.service(), target.region(), target.shard(), target.database(), target.batchId(),
+                result.migrationsExecuted, result.schemaName);
         createPhysicalTables(target);
     }
 

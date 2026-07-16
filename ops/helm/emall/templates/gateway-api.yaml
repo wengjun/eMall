@@ -1,0 +1,81 @@
+{{- if .Values.gatewayApi.enabled }}
+apiVersion: gateway.networking.k8s.io/v1
+kind: Gateway
+metadata:
+  name: emall-public-gateway
+  labels:
+    {{- include "emall.labels" . | nindent 4 }}
+spec:
+  gatewayClassName: {{ .Values.gatewayApi.gatewayClassName }}
+  listeners:
+    - name: http
+      hostname: {{ .Values.gatewayApi.hostname | quote }}
+      port: 80
+      protocol: HTTP
+      allowedRoutes:
+        namespaces:
+          from: Same
+    - name: https
+      hostname: {{ .Values.gatewayApi.hostname | quote }}
+      port: 443
+      protocol: HTTPS
+      tls:
+        mode: Terminate
+        certificateRefs:
+          - group: ""
+            kind: Secret
+            name: {{ .Values.gatewayApi.tlsSecretName }}
+      allowedRoutes:
+        namespaces:
+          from: Same
+---
+apiVersion: gateway.networking.k8s.io/v1
+kind: HTTPRoute
+metadata:
+  name: emall-http-to-https
+  labels:
+    {{- include "emall.labels" . | nindent 4 }}
+spec:
+  parentRefs:
+    - name: emall-public-gateway
+      sectionName: http
+  hostnames:
+    - {{ .Values.gatewayApi.hostname | quote }}
+  rules:
+    - filters:
+        - type: RequestRedirect
+          requestRedirect:
+            scheme: https
+            statusCode: 301
+---
+apiVersion: gateway.networking.k8s.io/v1
+kind: HTTPRoute
+metadata:
+  name: emall-api
+  labels:
+    {{- include "emall.labels" . | nindent 4 }}
+spec:
+  parentRefs:
+    - name: emall-public-gateway
+      sectionName: https
+  hostnames:
+    - {{ .Values.gatewayApi.hostname | quote }}
+  rules:
+    - matches:
+        - path:
+            type: PathPrefix
+            value: /
+      filters:
+        - type: ResponseHeaderModifier
+          responseHeaderModifier:
+            add:
+              - name: Strict-Transport-Security
+                value: max-age=31536000; includeSubDomains
+              - name: X-Content-Type-Options
+                value: nosniff
+              - name: X-Frame-Options
+                value: DENY
+      backendRefs:
+        - name: gateway
+          port: 8080
+{{- end }}

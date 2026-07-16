@@ -1,0 +1,19 @@
+FROM eclipse-temurin:17-jre
+
+ARG MODULE
+ARG VERSION=0.1.0-SNAPSHOT
+
+ENV JAVA_OPTS=""
+WORKDIR /app
+
+RUN groupadd --system emall \
+    && useradd --system --gid emall --home-dir /app --shell /usr/sbin/nologin emall \
+    && mkdir --parents /app/migrations
+
+COPY migration-runner/target/migration-runner-${VERSION}.jar /app/migration-runner.jar
+COPY ${MODULE}/src/main/resources/db/migration/ /app/migrations/
+RUN chown --recursive emall:emall /app
+
+USER emall
+
+ENTRYPOINT ["sh", "-c", "java $JAVA_OPTS -jar /app/migration-runner.jar"]

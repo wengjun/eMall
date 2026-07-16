@@ -99,6 +99,53 @@ groups:
           summary: "Kafka dead-letter topic is receiving messages"
           description: "Dead-letter topic {{ $labels.topic }} received messages in the last 10 minutes."
 
+      - alert: EmallShardRouteDirectoryErrorBudgetBurn
+        expr: |
+          sum(rate(http_server_requests_seconds_count{application="routing",status=~"5.."}[5m]))
+          /
+          clamp_min(sum(rate(http_server_requests_seconds_count{application="routing"}[5m])), 1)
+          > 0.001
+        for: 5m
+        labels:
+          severity: critical
+        annotations:
+          summary: "Shard route directory error budget is burning"
+          description: "Routing service HTTP 5xx rate is above the 99.9% availability budget for 5 minutes."
+
+      - alert: EmallShardRouteDirectoryP99LatencyHigh
+        expr: |
+          histogram_quantile(
+            0.99,
+            sum by (le) (rate(http_server_requests_seconds_bucket{application="routing"}[5m]))
+          ) > 0.05
+        for: 10m
+        labels:
+          severity: critical
+        annotations:
+          summary: "Shard route directory P99 latency is high"
+          description: "Routing service P99 latency is above its 50 ms budget for 10 minutes."
+
+      - alert: EmallShardRouteRedisFallbackHigh
+        expr: sum(rate(emall_shard_route_cache_miss_total{reason="redis-error"}[5m])) > 100
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "Shard route Redis fallback rate is high"
+          description: "More than 100 route lookups per second are bypassing Redis and reading the directory."
+
+  - name: emall-identity-lifecycle
+    interval: 30s
+    rules:
+      - alert: EmallIdentityLifecycleProjectionBacklog
+        expr: sum(emall_identity_lifecycle_due) > 0
+        for: 15m
+        labels:
+          severity: critical
+        annotations:
+          summary: "Identity and user profile lifecycle is not converging"
+          description: "Identity lifecycle records have remained due for reconciliation for more than 15 minutes."
+
   - name: emall-cost-governance
     interval: 30s
     rules:

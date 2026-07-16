@@ -1,11 +1,17 @@
 image:
   repositoryPrefix: emall
-  tag: latest
+  tag: "0.1.0"
   pullPolicy: IfNotPresent
 
 global:
   existingSecret: emall-runtime-secret
+  runtimeConfigName: emall-runtime-config
+  springProfiles: production,redis-cluster
   env:
+    EMALL_REDIS_HOST: redis
+    EMALL_REDIS_PORT: "6379"
+    EMALL_REDIS_CLUSTER_NODES: redis-cluster:6379
+    SPRING_DATA_REDIS_CLUSTER_NODES: redis-cluster:6379
     EMALL_SENTINEL_ENABLED: "true"
     EMALL_SENTINEL_DASHBOARD: sentinel-dashboard:8858
     EMALL_NACOS_SERVER_ADDR: nacos:8848
@@ -13,35 +19,44 @@ global:
     EMALL_NACOS_CONFIG_ENABLED: "false"
     EMALL_NACOS_NAMESPACE: public
     EMALL_NACOS_GROUP: DEFAULT_GROUP
+    EMALL_CONTROL_PLANE_NACOS_URL: http://nacos:8848
+    EMALL_INFRASTRUCTURE_OPERATOR_URL: http://infrastructure-operator.platform-system.svc:8120
     EMALL_RPC_PROTOCOL: dubbo
+    EMALL_DUBBO_REGISTRY_ADDRESS: nacos://nacos:8848
+    EMALL_DUBBO_PORT: "20880"
     EMALL_FLYWAY_ENABLED: "false"
-    EMALL_LOGICAL_SHARD_COUNT: "64"
+    EMALL_RUNTIME_MODE: production
+    EMALL_RUNTIME_GUARD_ENABLED: "true"
+    EMALL_SECURITY_AUTH_ENABLED: "true"
+    EMALL_SECURITY_AUTH_FAIL_CLOSED_ON_REVOCATION_STORE_ERROR: "true"
+    EMALL_TRUST_IDENTITY_ENABLED: "true"
+    EMALL_TRUST_IDENTITY_FAIL_CLOSED: "true"
+    EMALL_TRUST_RISK_ENABLED: "true"
+    EMALL_TRUST_RISK_FAIL_CLOSED: "true"
+    EMALL_TRUSTED_PROXY_CIDRS: 10.0.0.0/16
+    EMALL_ID_LEASE_ENABLED: "true"
+    EMALL_SHARDING_DATASOURCE_JDBC_URL_TEMPLATE: jdbc:mysql://mysql:3306/{database}?useUnicode=true&characterEncoding=utf8&serverTimezone=UTC
+    EMALL_SHARDING_DATASOURCE_DEFAULT_MAXIMUM_POOL_SIZE: "4"
+    EMALL_SHARDING_DATASOURCE_DEFAULT_MINIMUM_IDLE: "0"
+    EMALL_SHARDING_DATASOURCE_POD_CONNECTION_BUDGET: "64"
+    EMALL_SHARDING_DATASOURCE_PLANNED_MAX_REPLICAS: "10"
+    EMALL_SHARDING_DATASOURCE_DATABASE_INSTANCE_CONNECTION_BUDGET: "50"
+    EMALL_SHARDING_DATASOURCE_GLOBAL_CONNECTION_BUDGET: "800"
+    EMALL_SHARDING_DATASOURCE_CONNECTION_HEADROOM_PERCENT: "20"
+    EMALL_SHARDING_DATASOURCE_LAZY_INITIALIZATION: "true"
+    EMALL_SHARDING_ROUTE_DIRECTORY_ENDPOINT: http://routing:8117
+    EMALL_SHARDING_ROUTE_DIRECTORY_CACHE_TTL: 6h
     EMALL_DB_SHARD_COUNT: "8"
+    EMALL_VIRTUAL_SHARD_COUNT: "4096"
+    EMALL_SHARDING_MAPPING_CACHE_TTL: 30s
+    EMALL_SHARDING_STALE_READ_TTL: 24h
+    EMALL_SHARDING_MINIMUM_CUTOVER_DELAY: 60s
+    EMALL_SHARDING_OBSERVATION_PERIOD: 10m
     EMALL_TABLE_SHARD_COUNT: "64"
     EMALL_OUTBOX_TABLE_SHARD_COUNT: "64"
     EMALL_OWNERSHIP_ENABLED: "true"
     EMALL_CURRENT_REGION: cn-east-1
     EMALL_CURRENT_CELL: cell-a
-    EMALL_HTTP_CONNECT_TIMEOUT: 300ms
-    EMALL_HTTP_READ_TIMEOUT: 800ms
-    EMALL_HTTP_MAX_CONNECTIONS: "1024"
-    EMALL_HTTP_BULKHEAD_MAX_CONCURRENT: "512"
-    EMALL_HTTP_MAX_ATTEMPTS: "2"
-    EMALL_HTTP_RETRY_BACKOFF: 50ms
-    EMALL_INTERNAL_REQUIRE_APPROVAL: "true"
-    EMALL_TRUST_IDENTITY_ENABLED: "true"
-    EMALL_TRUST_IDENTITY_FAIL_CLOSED: "true"
-    EMALL_TRUST_RISK_ENABLED: "true"
-    EMALL_TRUST_RISK_FAIL_CLOSED: "true"
-    EMALL_IDENTITY_URL: http://identity:8097
-    EMALL_RISK_URL: http://risk:8098
-    EMALL_DUBBO_REGISTRY_ADDRESS: nacos://nacos:8848
-    EMALL_DUBBO_PORT: "20880"
-    EMALL_RUNTIME_MODE: production
-    EMALL_RUNTIME_GUARD_ENABLED: "true"
-    EMALL_SECURITY_AUTH_ENABLED: "true"
-    EMALL_SECURITY_AUTH_FAIL_CLOSED_ON_REVOCATION_STORE_ERROR: "true"
-    EMALL_ID_LEASE_ENABLED: "true"
     EMALL_ORDER_SUBMISSION_FAIL_CLOSED: "true"
     EMALL_GLOBAL_REPLENISH_RATE: "1000000"
     EMALL_GLOBAL_BURST_CAPACITY: "1200000"
@@ -52,81 +67,381 @@ global:
     EMALL_PAYMENT_CALLBACK_SIGNATURE_ENABLED: "true"
     EMALL_PAYMENT_REPLAY_STORE_FAIL_CLOSED: "true"
     EMALL_PAYMENT_CHANNEL_MODE: http
-    EMALL_SHARDING_DATASOURCE_JDBC_URL_TEMPLATE: jdbc:mysql://mysql:3306/{database}?useUnicode=true&characterEncoding=utf8&serverTimezone=UTC
     EMALL_KAFKA_BOOTSTRAP_SERVERS: kafka:9092
-    EMALL_REDIS_CLUSTER_NODES: redis-cluster:6379
-    SPRING_DATA_REDIS_CLUSTER_NODES: redis-cluster:6379
-    EMALL_TRUSTED_PROXY_CIDRS: "10.0.0.0/16"
+    EMALL_IDENTITY_EVENTS_TOPIC: emall.identity.events
+    EMALL_USER_PROFILE_EVENTS_TOPIC: emall.user-profile.events
+    EMALL_IDENTITY_RECONCILIATION_PARTITIONS: "256"
     EMALL_ELASTICSEARCH_URL: http://elasticsearch:9200
-    EMALL_PRODUCT_EVENTS_CONSUMER_MAX_ATTEMPTS: "4"
     EMALL_CLICKHOUSE_URL: jdbc:clickhouse://clickhouse:8123/emall
+    EMALL_PRODUCT_EVENTS_TOPIC: emall.product.events
+    EMALL_PRODUCT_EVENTS_DLT_TOPIC: emall.product.events.dlt
+    EMALL_PRODUCT_EVENTS_CONSUMER_MAX_ATTEMPTS: "4"
     EMALL_OTLP_TRACES_ENDPOINT: http://otel-collector:4318/v1/traces
+    EMALL_TRACING_SAMPLING_PROBABILITY: "0.1"
+    EMALL_HTTP_CONNECT_TIMEOUT: 300ms
+    EMALL_HTTP_READ_TIMEOUT: 800ms
+    EMALL_HTTP_MAX_CONNECTIONS: "1024"
+    EMALL_HTTP_BULKHEAD_MAX_CONCURRENT: "512"
+    EMALL_HTTP_MAX_ATTEMPTS: "2"
+    EMALL_HTTP_RETRY_BACKOFF: 50ms
+    EMALL_INTERNAL_REQUIRE_APPROVAL: "true"
 
-serviceDefaults:
-  replicas: 2
+database:
+  host: mysql
+  port: 3306
+  jdbcParameters: useUnicode=true&characterEncoding=utf8&serverTimezone=UTC
+
+migration:
+  enabled: true
+  imageTag: "0.1.0"
+  operator: release-controller
+  region: default
+  shardedShards: "0,1,2,3,4,5,6,7"
+  canaryShardCount: 1
+  batchSize: 3
+  maxParallelism: 2
+  batchTimeout: 15m
+  pauseBetweenBatches: 30s
+  activeDeadlineSeconds: 3600
+  backoffLimit: 0
+  waiterImage: registry.k8s.io/kubectl:v1.30.14
+  createPhysicalTables: true
+  phase: EXPAND
+  allowDestructiveChanges: false
+  minimumCompatibleVersion: ""
+  approvalReference: ""
+  externalSecrets:
+    enabled: true
+    storeKind: ClusterSecretStore
+    storeName: emall-platform-vault
+    remoteKeyPrefix: emall/migrations
+    refreshInterval: 1h
   resources:
     requests:
       cpu: 250m
-      memory: 512Mi
+      memory: 256Mi
     limits:
       cpu: "1"
       memory: 1Gi
+
+serviceDefaults:
+  tier: standard
+  terminationGracePeriodSeconds: 45
+  revisionHistoryLimit: 5
+  minReadySeconds: 15
+  progressDeadlineSeconds: 900
+  preStopDelaySeconds: 15
+  probes:
+    startup:
+      failureThreshold: 30
+      periodSeconds: 5
+    readiness:
+      periodSeconds: 5
+      timeoutSeconds: 2
+      failureThreshold: 3
+    liveness:
+      periodSeconds: 10
+      timeoutSeconds: 2
+      failureThreshold: 3
+  podDisruptionBudget:
+    enabled: true
+    maxUnavailable: 1
   autoscaling:
     enabled: true
-    minReplicas: 2
-    maxReplicas: 10
-    targetCPUUtilizationPercentage: 65
+    minReplicas: 3
+    maxReplicas: 80
+    targetCPUUtilizationPercentage: 60
+    targetMemoryUtilizationPercentage: 75
+    scaleUpStabilizationSeconds: 0
+    scaleDownStabilizationSeconds: 300
+  resources:
+    requests:
+      cpu: 500m
+      memory: 512Mi
+    limits:
+      cpu: "2"
+      memory: 2Gi
+
+capacityTiers:
+  edge:
+    replicas: 6
+    autoscaling:
+      minReplicas: 6
+      maxReplicas: 300
+      targetCPUUtilizationPercentage: 55
+      targetMemoryUtilizationPercentage: 70
+    resources:
+      requests:
+        cpu: "1"
+        memory: 1Gi
+      limits:
+        cpu: "4"
+        memory: 4Gi
+  transaction:
+    replicas: 6
+    autoscaling:
+      minReplicas: 6
+      maxReplicas: 300
+      targetCPUUtilizationPercentage: 55
+      targetMemoryUtilizationPercentage: 70
+    resources:
+      requests:
+        cpu: "1"
+        memory: 1Gi
+      limits:
+        cpu: "4"
+        memory: 4Gi
+  burst:
+    replicas: 4
+    autoscaling:
+      minReplicas: 4
+      maxReplicas: 300
+      targetCPUUtilizationPercentage: 55
+      targetMemoryUtilizationPercentage: 70
+    resources:
+      requests:
+        cpu: "1"
+        memory: 1Gi
+      limits:
+        cpu: "4"
+        memory: 4Gi
+  core:
+    replicas: 4
+    autoscaling:
+      minReplicas: 4
+      maxReplicas: 200
+      targetCPUUtilizationPercentage: 60
+      targetMemoryUtilizationPercentage: 75
+    resources:
+      requests:
+        cpu: 750m
+        memory: 768Mi
+      limits:
+        cpu: "3"
+        memory: 3Gi
+  high:
+    replicas: 3
+    autoscaling:
+      minReplicas: 3
+      maxReplicas: 120
+      targetCPUUtilizationPercentage: 60
+      targetMemoryUtilizationPercentage: 75
+    resources:
+      requests:
+        cpu: 500m
+        memory: 512Mi
+      limits:
+        cpu: "2"
+        memory: 2Gi
+  standard:
+    replicas: 3
+    autoscaling:
+      minReplicas: 3
+      maxReplicas: 80
+      targetCPUUtilizationPercentage: 60
+      targetMemoryUtilizationPercentage: 75
+    resources:
+      requests:
+        cpu: 500m
+        memory: 512Mi
+      limits:
+        cpu: "2"
+        memory: 2Gi
+  control:
+    replicas: 3
+    autoscaling:
+      minReplicas: 3
+      maxReplicas: 30
+      targetCPUUtilizationPercentage: 60
+      targetMemoryUtilizationPercentage: 75
+    resources:
+      requests:
+        cpu: 500m
+        memory: 512Mi
+      limits:
+        cpu: "2"
+        memory: 2Gi
+
+progressiveDelivery:
+  enabled: true
+  maxSurge: 25%
+  maxUnavailable: 0
+  analysisTemplates:
+    enabled: true
+    prometheusAddress: http://prometheus.monitoring.svc:9090
+    maxErrorRatio: "0.01"
+    maxP95LatencySeconds: "0.5"
+
+gatewayApi:
+  enabled: true
+  gatewayClassName: alb
+  hostname: api.emall.example.com
+  tlsSecretName: emall-gateway-tls
+
+networkPolicy:
+  enabled: true
+  monitoringNamespace: monitoring
+  prometheusServiceAccount: prometheus
+
+serviceMesh:
+  enabled: false
+  trustDomain: cluster.local
 
 services:
   - name: gateway
     port: 8080
-    replicas: 3
+    tier: edge
+    database: false
+  - name: routing
+    port: 8117
+    tier: control
   - name: user
     port: 8081
+    tier: core
     sharding: true
   - name: product
     port: 8082
+    tier: core
     sharding: true
   - name: inventory
     port: 8083
+    tier: transaction
     sharding: true
     rpcProvider: true
   - name: order
     port: 8084
-    replicas: 4
+    tier: transaction
     sharding: true
     rpcProvider: true
   - name: cart
     port: 8085
+    tier: core
     sharding: true
   - name: payment
     port: 8086
-    replicas: 4
+    tier: transaction
     sharding: true
   - name: pricing
     port: 8087
+    tier: core
     sharding: true
     rpcProvider: true
   - name: marketing
     port: 8088
+    tier: core
     sharding: true
     rpcProvider: true
   - name: search
     port: 8089
+    tier: core
     sharding: true
   - name: fulfillment
     port: 8090
+    tier: high
   - name: review
     port: 8091
+    tier: high
   - name: after-sales
     port: 8092
+    tier: high
+  - name: merchant
+    port: 8093
+    tier: high
   - name: flash-sale
     port: 8094
-    replicas: 4
+    tier: burst
     sharding: true
+  - name: recommendation
+    port: 8095
+    tier: burst
+  - name: cost
+    port: 8096
+    tier: standard
   - name: identity
     port: 8097
+    tier: transaction
   - name: risk
     port: 8098
+    tier: transaction
+  - name: operations
+    port: 8099
+    tier: control
   - name: openapi
     port: 8100
+    tier: edge
+  - name: catalog
+    port: 8101
+    tier: core
+  - name: promotion
+    port: 8102
+    tier: burst
+  - name: experiment
+    port: 8103
+    tier: standard
+  - name: advertising
+    port: 8104
+    tier: high
+  - name: supply-chain
+    port: 8105
+    tier: high
+  - name: finance
+    port: 8106
+    tier: high
+  - name: customer-service
+    port: 8107
+    tier: high
+  - name: forecasting
+    port: 8108
+    tier: standard
+  - name: event-platform
+    port: 8109
+    tier: burst
+  - name: data-warehouse
+    port: 8110
+    tier: standard
+  - name: intelligence
+    port: 8111
+    tier: high
+  - name: analytics
+    port: 8112
+    tier: high
+  - name: traffic
+    port: 8113
+    tier: burst
+  - name: reliability
+    port: 8114
+    tier: control
+    kubernetesApiAccess: true
+    rbacRules:
+      - apiGroups:
+          - monitoring.coreos.com
+        resources:
+          - prometheusrules
+        verbs:
+          - get
+          - list
+          - watch
+          - create
+          - patch
+          - update
+          - delete
+  - name: release
+    port: 8115
+    tier: control
+    kubernetesApiAccess: true
+    rbacRules:
+      - apiGroups:
+          - argoproj.io
+        resources:
+          - rollouts
+        verbs:
+          - get
+          - list
+          - watch
+          - create
+          - patch
+          - update
+          - delete
+  - name: platform-ops
+    port: 8116
+    tier: control

@@ -8,7 +8,16 @@ x-app-runtime-env: &app-runtime-env
   EMALL_INTERNAL_OPERATIONS_TOKEN: ${EMALL_INTERNAL_OPERATIONS_TOKEN:-local-dev-token}
   EMALL_REDIS_HOST: ${EMALL_REDIS_HOST:-redis}
   EMALL_KAFKA_BOOTSTRAP_SERVERS: ${EMALL_KAFKA_BOOTSTRAP_SERVERS:-kafka:9092}
+  EMALL_IDENTITY_EVENTS_TOPIC: ${EMALL_IDENTITY_EVENTS_TOPIC:-emall.identity.events}
+  EMALL_USER_PROFILE_EVENTS_TOPIC: ${EMALL_USER_PROFILE_EVENTS_TOPIC:-emall.user-profile.events}
+  EMALL_IDENTITY_RECONCILIATION_PARTITIONS: ${EMALL_IDENTITY_RECONCILIATION_PARTITIONS:-256}
   EMALL_ELASTICSEARCH_URL: ${EMALL_ELASTICSEARCH_URL:-http://elasticsearch:9200}
+  EMALL_SHARDING_ROUTE_DIRECTORY_ENDPOINT: ${EMALL_SHARDING_ROUTE_DIRECTORY_ENDPOINT:-http://routing-app:8117}
+  EMALL_VIRTUAL_SHARD_COUNT: ${EMALL_VIRTUAL_SHARD_COUNT:-4096}
+  EMALL_SHARDING_MAPPING_CACHE_TTL: ${EMALL_SHARDING_MAPPING_CACHE_TTL:-30s}
+  EMALL_SHARDING_STALE_READ_TTL: ${EMALL_SHARDING_STALE_READ_TTL:-24h}
+  EMALL_SHARDING_MINIMUM_CUTOVER_DELAY: ${EMALL_SHARDING_MINIMUM_CUTOVER_DELAY:-60s}
+  EMALL_SHARDING_OBSERVATION_PERIOD: ${EMALL_SHARDING_OBSERVATION_PERIOD:-10m}
   EMALL_CLICKHOUSE_URL: ${EMALL_CLICKHOUSE_URL:-jdbc:clickhouse://clickhouse:8123/emall}
   EMALL_OTLP_TRACES_ENDPOINT: ${EMALL_OTLP_TRACES_ENDPOINT:-http://otel-collector:4318/v1/traces}
   EMALL_RPC_PROTOCOL: ${EMALL_RPC_PROTOCOL:-dubbo}
@@ -114,6 +123,22 @@ services:
       - ./ops/grafana/provisioning:/etc/grafana/provisioning:ro
       - ./ops/grafana/dashboards:/var/lib/grafana/dashboards:ro
 
+  routing-app:
+    profiles: ["app"]
+    build:
+      context: .
+      args:
+        MODULE: routing
+    ports:
+      - "8117:8117"
+    environment:
+      <<: *app-runtime-env
+      EMALL_ROUTING_DB_URL: jdbc:mysql://mysql:3306/emall_routing?useUnicode=true&characterEncoding=utf8&serverTimezone=UTC
+    depends_on:
+      - mysql
+      - redis
+      - otel-collector
+
   gateway-app:
     profiles: ["app"]
     build:
@@ -215,6 +240,7 @@ services:
     depends_on:
       - nacos
       - mysql
+      - kafka
       - otel-collector
 
   product-app:
@@ -492,6 +518,8 @@ services:
     depends_on:
       - nacos
       - mysql
+      - redis
+      - kafka
       - otel-collector
 
   risk-app:

@@ -1,0 +1,98 @@
+{{- if .Values.migration.enabled }}
+{{- range .Values.services }}
+{{- if ne .database false }}
+{{- $tag := replace "." "-" $.Values.migration.imageTag }}
+---
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: {{ printf "%s-migration-%s" .name $tag | trunc 63 | trimSuffix "-" }}
+  labels:
+    {{- include "emall.labels" $ | nindent 4 }}
+    app.kubernetes.io/component: {{ .name }}-migration
+  annotations:
+    emall.io/operator: {{ $.Values.migration.operator | quote }}
+    emall.io/failure-domain: {{ .name | quote }}
+    emall.io/recovery-policy: flyway-idempotent-rerun
+    emall.io/schema-phase: {{ $.Values.migration.phase | lower | quote }}
+spec:
+  backoffLimit: {{ $.Values.migration.backoffLimit }}
+  activeDeadlineSeconds: {{ $.Values.migration.activeDeadlineSeconds }}
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: emall
+        app.kubernetes.io/instance: {{ $.Release.Name }}
+        app.kubernetes.io/component: {{ .name }}-migration
+    spec:
+      serviceAccountName: {{ .name }}-migration
+      automountServiceAccountToken: false
+      enableServiceLinks: false
+      restartPolicy: Never
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 10001
+        runAsGroup: 10001
+        fsGroup: 10001
+        seccompProfile:
+          type: RuntimeDefault
+      containers:
+        - name: migration-runner
+          image: "{{ $.Values.image.repositoryPrefix }}/{{ .name }}-migration:{{ $.Values.migration.imageTag }}"
+          imagePullPolicy: {{ $.Values.image.pullPolicy }}
+          securityContext:
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: true
+            capabilities:
+              drop:
+                - ALL
+          env:
+            - name: EMALL_MIGRATION_SERVICE
+              value: {{ .name | quote }}
+            - name: EMALL_MIGRATION_REGION
+              value: {{ $.Values.migration.region | quote }}
+            - name: EMALL_MIGRATION_SHARDS
+              value: {{ ternary $.Values.migration.shardedShards "0" (default false .sharding) | quote }}
+            - name: EMALL_MIGRATION_JDBC_URL_TEMPLATE
+              value: {{ printf "jdbc:mysql://%s:%v/{database}?%s" $.Values.database.host $.Values.database.port $.Values.database.jdbcParameters | quote }}
+            - name: EMALL_MIGRATION_LOCATIONS
+              value: filesystem:/app/migrations
+            - name: EMALL_MIGRATION_OPERATOR
+              value: {{ $.Values.migration.operator | quote }}
+            - name: EMALL_MIGRATION_BATCH_ID
+              value: {{ printf "%s-%s" .name $.Values.migration.imageTag | quote }}
+            - name: EMALL_MIGRATION_CANARY_SHARD_COUNT
+              value: {{ $.Values.migration.canaryShardCount | quote }}
+            - name: EMALL_MIGRATION_BATCH_SIZE
+              value: {{ $.Values.migration.batchSize | quote }}
+            - name: EMALL_MIGRATION_MAX_PARALLELISM
+              value: {{ $.Values.migration.maxParallelism | quote }}
+            - name: EMALL_MIGRATION_BATCH_TIMEOUT
+              value: {{ $.Values.migration.batchTimeout | quote }}
+            - name: EMALL_MIGRATION_PAUSE_BETWEEN_BATCHES
+              value: {{ $.Values.migration.pauseBetweenBatches | quote }}
+            - name: EMALL_MIGRATION_CREATE_PHYSICAL_TABLES
+              value: {{ and $.Values.migration.createPhysicalTables (default false .sharding) | quote }}
+            - name: EMALL_MIGRATION_PHASE
+              value: {{ $.Values.migration.phase | quote }}
+            - name: EMALL_MIGRATION_ALLOW_DESTRUCTIVE_CHANGES
+              value: {{ $.Values.migration.allowDestructiveChanges | quote }}
+            - name: EMALL_MIGRATION_MINIMUM_COMPATIBLE_VERSION
+              value: {{ $.Values.migration.minimumCompatibleVersion | quote }}
+            - name: EMALL_MIGRATION_APPROVAL_REFERENCE
+              value: {{ $.Values.migration.approvalReference | quote }}
+          envFrom:
+            - secretRef:
+                name: {{ .name }}-migration
+          resources:
+            {{- toYaml $.Values.migration.resources | nindent 12 }}
+          volumeMounts:
+            - name: tmp
+              mountPath: /tmp
+      volumes:
+        - name: tmp
+          emptyDir:
+            sizeLimit: 256Mi
+{{- end }}
+{{- end }}
+{{- end }}

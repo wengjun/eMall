@@ -1,0 +1,156 @@
+{{- if .Values.serviceMesh.enabled }}
+apiVersion: security.istio.io/v1beta1
+kind: PeerAuthentication
+metadata:
+  name: emall-strict-mtls
+  labels:
+    {{- include "emall.labels" . | nindent 4 }}
+spec:
+  mtls:
+    mode: STRICT
+---
+apiVersion: security.istio.io/v1beta1
+kind: PeerAuthentication
+metadata:
+  name: gateway-public-ingress
+  labels:
+    {{- include "emall.labels" . | nindent 4 }}
+spec:
+  selector:
+    matchLabels:
+      app.kubernetes.io/instance: {{ .Release.Name }}
+      app.kubernetes.io/component: gateway
+  portLevelMtls:
+    "8080":
+      mode: PERMISSIVE
+---
+apiVersion: networking.istio.io/v1beta1
+kind: DestinationRule
+metadata:
+  name: emall-default-mtls
+  labels:
+    {{- include "emall.labels" . | nindent 4 }}
+spec:
+  host: "*.{{ .Release.Namespace }}.svc.cluster.local"
+  trafficPolicy:
+    tls:
+      mode: ISTIO_MUTUAL
+---
+apiVersion: security.istio.io/v1beta1
+kind: AuthorizationPolicy
+metadata:
+  name: emall-default-deny
+  labels:
+    {{- include "emall.labels" . | nindent 4 }}
+spec: {}
+---
+apiVersion: security.istio.io/v1beta1
+kind: AuthorizationPolicy
+metadata:
+  name: allow-public-ingress-to-gateway
+  labels:
+    {{- include "emall.labels" . | nindent 4 }}
+spec:
+  selector:
+    matchLabels:
+      app.kubernetes.io/instance: {{ .Release.Name }}
+      app.kubernetes.io/component: gateway
+  action: ALLOW
+  rules:
+    - to:
+        - operation:
+            ports:
+              - "8080"
+---
+apiVersion: security.istio.io/v1beta1
+kind: AuthorizationPolicy
+metadata:
+  name: allow-gateway-to-http-services
+  labels:
+    {{- include "emall.labels" . | nindent 4 }}
+spec:
+  selector:
+    matchLabels:
+      app.kubernetes.io/instance: {{ .Release.Name }}
+      emall.io/gateway-reachable: "true"
+  action: ALLOW
+  rules:
+    - from:
+        - source:
+            principals:
+              - {{ printf "%s/ns/%s/sa/gateway" .Values.serviceMesh.trustDomain .Release.Namespace | quote }}
+      to:
+        - operation:
+            ports:
+              {{- range .Values.services }}
+              {{- if ne .name "gateway" }}
+              - {{ .port | quote }}
+              {{- end }}
+              {{- end }}
+---
+apiVersion: security.istio.io/v1beta1
+kind: AuthorizationPolicy
+metadata:
+  name: allow-order-to-rpc-providers
+  labels:
+    {{- include "emall.labels" . | nindent 4 }}
+spec:
+  selector:
+    matchLabels:
+      app.kubernetes.io/instance: {{ .Release.Name }}
+      emall.io/rpc-provider: "true"
+  action: ALLOW
+  rules:
+    - from:
+        - source:
+            principals:
+              - {{ printf "%s/ns/%s/sa/order" .Values.serviceMesh.trustDomain .Release.Namespace | quote }}
+      to:
+        - operation:
+            ports:
+              - "20880"
+---
+apiVersion: security.istio.io/v1beta1
+kind: AuthorizationPolicy
+metadata:
+  name: allow-payment-to-order-rpc
+  labels:
+    {{- include "emall.labels" . | nindent 4 }}
+spec:
+  selector:
+    matchLabels:
+      app.kubernetes.io/instance: {{ .Release.Name }}
+      app.kubernetes.io/component: order
+  action: ALLOW
+  rules:
+    - from:
+        - source:
+            principals:
+              - {{ printf "%s/ns/%s/sa/payment" .Values.serviceMesh.trustDomain .Release.Namespace | quote }}
+      to:
+        - operation:
+            ports:
+              - "20880"
+---
+apiVersion: security.istio.io/v1beta1
+kind: AuthorizationPolicy
+metadata:
+  name: allow-observability-scraping
+  labels:
+    {{- include "emall.labels" . | nindent 4 }}
+spec:
+  selector:
+    matchLabels:
+      app.kubernetes.io/instance: {{ .Release.Name }}
+  action: ALLOW
+  rules:
+    - from:
+        - source:
+            principals:
+              - {{ printf "%s/ns/%s/sa/%s" .Values.serviceMesh.trustDomain .Values.networkPolicy.monitoringNamespace .Values.networkPolicy.prometheusServiceAccount | quote }}
+      to:
+        - operation:
+            paths:
+              - /actuator/health/*
+              - /actuator/prometheus
+{{- end }}

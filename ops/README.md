@@ -1,6 +1,6 @@
 ﻿# 运维配置索引
 
-[项目首页](../README.md) | [文档索引](../docs/README.md) | [Kubernetes 基线](k8s/README.md) | [Helm 基线](helm/emall)
+[项目首页](../README.md) | [文档索引](../docs/README.md) | [Kubernetes 辅助资产](k8s/README.md) | [生产部署 Chart](helm/emall/README.md)
 
 `ops` 目录保存本地运行、部署、可观测、混沌、MySQL 和压测相关配置。这里是配置入口说明。
 
@@ -20,10 +20,9 @@
 
 ## Kubernetes
 
-- `k8s`：Kubernetes 部署基线。
-- `helm/emall`：Helm Chart 部署基线，适合把稳定运行模块统一发布到 Kubernetes。
-- 包含 Deployment、Service、PDB、HPA、探针、资源配置、安全上下文、网络策略和 Gateway API HTTPS/TLS 入口。
-- `k8s/gateway-api.yml`：公网 HTTPS 入口基线，使用 Gateway API `Gateway` 和 `HTTPRoute` 转发到 Java `gateway` 服务。
+- `helm/emall`：38 个在线服务的唯一生产部署事实源，统一生成 Rollout、Service、PDB、HPA、探针、资源、RBAC、
+  NetworkPolicy 和 Gateway API。
+- `k8s`：只保存 ExternalSecret、迁移过渡入口和非生产混沌演练，不再保存第二套在线服务清单。
 - 真实集群使用前需要修改镜像仓库、域名、证书、Secret 和资源规格。
 
 ## HTTPS/TLS 接入
@@ -35,8 +34,8 @@
 
 ## 压测
 
-- `loadtest/p2-capacity-baseline-template.md`：容量基线记录模板。
-- Java 压测工具位于 `loadtest` Maven 模块。
+- [loadtest](loadtest/README.md)：分布式 Java 17 压测 Helm Chart、部署步骤和容量人工复核模板。
+- Java 压测工具位于 `loadtest` Maven 模块，支持 Indexed Job worker、HdrHistogram 聚合和预生产证据门禁。
 
 ## 验证
 

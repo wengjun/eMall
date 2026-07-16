@@ -1,0 +1,4 @@
+CREATE TABLE user_account (
+    id BIGINT NOT NULL PRIMARY KEY,
+    mobile VARCHAR(32) NOT NULL
+);

@@ -1,0 +1,79 @@
+{
+    "$schema": "http://json-schema.org/draft-07/schema#",
+    "type": "object",
+    "required": ["image", "global", "database", "migration", "serviceDefaults", "capacityTiers", "services"],
+    "properties": {
+        "image": {
+            "type": "object",
+            "required": ["repositoryPrefix", "tag", "pullPolicy"],
+            "properties": {
+                "repositoryPrefix": {"type": "string", "minLength": 1},
+                "tag": {"type": "string", "minLength": 1, "not": {"enum": ["latest"]}},
+                "pullPolicy": {"enum": ["Always", "IfNotPresent", "Never"]}
+            }
+        },
+        "global": {
+            "type": "object",
+            "required": ["existingSecret", "runtimeConfigName", "springProfiles", "env"],
+            "properties": {
+                "existingSecret": {"type": "string", "minLength": 1},
+                "runtimeConfigName": {"type": "string", "minLength": 1},
+                "springProfiles": {"type": "string", "pattern": "(^|,)production(,|$)"},
+                "env": {"type": "object"}
+            }
+        },
+        "migration": {
+            "type": "object",
+            "required": [
+                "enabled", "imageTag", "region", "shardedShards", "canaryShardCount", "batchSize",
+                "maxParallelism", "batchTimeout", "activeDeadlineSeconds", "backoffLimit", "waiterImage", "phase",
+                "allowDestructiveChanges", "externalSecrets", "resources"
+            ],
+            "properties": {
+                "enabled": {"type": "boolean"},
+                "imageTag": {"type": "string", "minLength": 1, "not": {"enum": ["latest"]}},
+                "region": {"type": "string", "minLength": 1},
+                "shardedShards": {"type": "string", "pattern": "^[0-9]+(?:,[0-9]+)*$"},
+                "canaryShardCount": {"type": "integer", "minimum": 1},
+                "batchSize": {"type": "integer", "minimum": 1},
+                "maxParallelism": {"type": "integer", "minimum": 1, "maximum": 16},
+                "batchTimeout": {"type": "string", "minLength": 2},
+                "activeDeadlineSeconds": {"type": "integer", "minimum": 60},
+                "backoffLimit": {"type": "integer", "minimum": 0, "maximum": 3},
+                "waiterImage": {"type": "string", "minLength": 1, "pattern": ":[^:]+$"},
+                "phase": {"enum": ["EXPAND", "CONTRACT"]},
+                "allowDestructiveChanges": {"type": "boolean"},
+                "externalSecrets": {
+                    "type": "object",
+                    "required": ["enabled", "storeKind", "storeName", "remoteKeyPrefix"],
+                    "properties": {
+                        "enabled": {"type": "boolean"},
+                        "storeKind": {"enum": ["SecretStore", "ClusterSecretStore"]},
+                        "storeName": {"type": "string", "minLength": 1},
+                        "remoteKeyPrefix": {"type": "string", "minLength": 1}
+                    }
+                },
+                "resources": {"type": "object"}
+            }
+        },
+        "services": {
+            "type": "array",
+            "minItems": 38,
+            "maxItems": 38,
+            "items": {
+                "type": "object",
+                "required": ["name", "port", "tier"],
+                "properties": {
+                    "name": {"type": "string", "pattern": "^[a-z0-9]+(?:-[a-z0-9]+)*$"},
+                    "port": {"type": "integer", "minimum": 1, "maximum": 65535},
+                    "tier": {"enum": ["edge", "transaction", "burst", "core", "high", "standard", "control"]},
+                    "database": {"type": "boolean"},
+                    "sharding": {"type": "boolean"},
+                    "rpcProvider": {"type": "boolean"},
+                    "kubernetesApiAccess": {"type": "boolean"},
+                    "rbacRules": {"type": "array"}
+                }
+            }
+        }
+    }
+}
