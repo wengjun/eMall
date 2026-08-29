@@ -67,47 +67,10 @@
 
 要通过压测和监控定位具体瓶颈，再做热点库存预扣、令牌限流和异步削峰。
 
-## 深度增强：一致性和补偿图
+## 共性一致性模型
 
-![交易一致性、对账和补偿闭环](../assets/consistency-compensation-loop.svg)
-
-分布式一致性题要先区分事实来源、状态流转和补偿责任。
-订单、库存、支付、优惠和消息不可能总靠一个本地事务完成，
-所以要用幂等、状态机、Outbox、重试、对账和补偿形成闭环。
-
-## 深度增强：Java 17 状态机示例
-
-```java
-enum TradeState {
-    INIT,
-    RESERVED,
-    PAID,
-    CLOSED
-}
-
-record TradeTransition(TradeState from, TradeState to, String reason) {
-
-    boolean valid() {
-        return switch (from) {
-            case INIT -> to == TradeState.RESERVED || to == TradeState.CLOSED;
-            case RESERVED -> to == TradeState.PAID || to == TradeState.CLOSED;
-            case PAID, CLOSED -> false;
-        };
-    }
-}
-```
-
-状态机的价值是防止非法跳转。生产事故中很多错误不是技术异常，而是状态被重复推进、逆向推进或越级推进。
-
-## 深度增强：生产边界
-
-最终一致不是“最终随便一致”。每个异步环节都要有唯一业务键、幂等处理、重试策略、死信、补偿任务和对账报表。
-涉及资金和库存时，宁可慢一点，也要保证事实可追踪、可审计、可修复。
-
-## 深度增强：面试高分表达
-
-我会先承认分布式系统无法用一个本地事务覆盖所有服务，再说明如何把不确定性收敛：
-本地事务写事实和 Outbox，消费者幂等处理，失败进入重试和死信，后台对账发现差异并补偿。
+状态机、Outbox、幂等、重试、对账和补偿的统一闭环及 Java 17 示例见
+[共享模型：最终一致、状态机和补偿](../shared-answer-models.md#最终一致状态机和补偿)。
 
 ## 专家级完整回答
 

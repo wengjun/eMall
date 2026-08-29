@@ -85,52 +85,10 @@ eMall 中推荐、广告、营销是非核心能力，订单、库存、支付�
 
 订单服务内部也要把库存、支付、风控调用隔离，防止一个下游拖垮全链路。
 
-## 深度增强：并发治理图
+## 共性并发模型
 
-![Java 并发从线程安全到容量保护](../assets/concurrency-governance.svg)
-
-并发题不能只回答 API 用法。生产系统要同时考虑线程安全、资源隔离、超时、拒绝、幂等和分布式多实例。
-单机锁只能保护当前 JVM，不能保护整个集群；线程池满也不是小问题，而是容量和可用性风险。
-
-## 深度增强：Java 17 有界并发示例
-
-```java
-import java.util.concurrent.Semaphore;
-import java.util.function.Supplier;
-
-final class BulkheadGuard {
-    private final Semaphore permits;
-
-    BulkheadGuard(int maxConcurrentCalls) {
-        this.permits = new Semaphore(maxConcurrentCalls);
-    }
-
-    <T> T execute(Supplier<T> supplier) {
-        if (!permits.tryAcquire()) {
-            throw new IllegalStateException("Bulkhead rejected the call");
-        }
-        try {
-            return supplier.get();
-        } finally {
-            permits.release();
-        }
-    }
-}
-```
-
-这段代码展示了并发控制的生产思路：不是让所有请求无限进入系统，而是在入口保护共享资源。
-真实项目还要加超时、指标、降级和按下游隔离。
-
-## 深度增强：生产边界
-
-线程安全不等于系统安全。`ConcurrentHashMap` 只能保护当前进程内的数据结构，
-不能替代数据库唯一键、幂等表或分布式一致性。线程池也不能使用无界队列，
-否则会把过载转化成内存上涨和 P99 恶化。
-
-## 深度增强：面试高分表达
-
-我会把并发问题分成三层：JMM 和锁保证单机正确性，线程池和隔离保证资源不被拖垮，
-幂等和唯一键保证分布式正确性。这样能体现我理解 Java 并发，也理解微服务生产稳定性。
+有界并发、舱壁隔离和多实例正确性的统一说明及 Java 17 示例见
+[共享模型：有界并发和舱壁隔离](../shared-answer-models.md#有界并发和舱壁隔离)。
 
 ## 专家级完整回答
 
