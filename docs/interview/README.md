@@ -21,11 +21,7 @@
 031. [Java 反射的成本和风险是什么？](answers/031-reflection-cost-risk.md)
 032. [注解是如何在运行时生效的？](answers/032-annotation-runtime.md)
 033. [SPI 机制适合解决什么扩展问题？](answers/033-spi-extension.md)
-034. [如何设计一个可扩展的插件机制？](answers/034-plugin-mechanism.md)
 035. [为什么工程代码要重视不可变对象？](answers/035-immutable-objects.md)
-036. [如何判断一段代码是否可测试？](answers/036-testable-code.md)
-037. [如何设计稳定的公共库 API？](answers/037-stable-public-api.md)
-038. [公共库升级如何保证向后兼容？](answers/038-public-library-compatibility.md)
 039. [为什么大型项目要限制循环依赖？](answers/039-cyclic-dependencies.md)
 040. [如何做模块边界和依赖方向治理？](answers/040-module-boundary-governance.md)
 
@@ -73,7 +69,6 @@
 
 [有界并发和舱壁隔离共享模型](shared-answer-models.md#有界并发和舱壁隔离)
 
-078. [线程和进程有什么区别？](answers/078-thread-vs-process.md)
 079. [Java 线程状态有哪些？](answers/079-java-thread-states.md)
 080. [`synchronized` 的原理是什么？](answers/080-synchronized-principle.md)
 081. [偏向锁、轻量级锁、重量级锁是什么？](answers/081-lock-upgrade.md)
@@ -82,15 +77,12 @@
 084. [`volatile` 解决什么问题，不能解决什么问题？](answers/084-volatile.md)
 085. [happens-before 规则是什么？](answers/085-happens-before.md)
 086. [Java 内存模型解决什么问题？](answers/086-java-memory-model.md)
-087. [CAS 是什么？](answers/087-cas.md)
-088. [ABA 问题是什么，如何解决？](answers/088-aba-problem.md)
 089. [`AtomicInteger` 和 `LongAdder` 如何取舍？](answers/089-atomicinteger-vs-longadder.md)
 090. [`CountDownLatch`、`CyclicBarrier`、`Semaphore` 分别适合什么场景？](answers/090-latch-barrier-semaphore.md)
 091. [`CompletableFuture` 如何处理异步编排？](answers/091-completablefuture-async-composition.md)
 092. [`CompletableFuture` 默认线程池有什么风险？](answers/092-completablefuture-default-pool-risk.md)
 093. [为什么生产代码不能随意使用公共 ForkJoinPool？](answers/093-avoid-common-forkjoinpool.md)
 094. [线程池核心参数如何设置？](answers/094-threadpool-core-parameters.md)
-095. [CPU 密集型和 IO 密集型线程池如何估算大小？](answers/095-cpu-io-threadpool-size.md)
 096. [线程池队列应该用有界还是无界？](answers/096-bounded-vs-unbounded-queue.md)
 097. [拒绝策略怎么选？](answers/097-rejection-policy.md)
 098. [如何避免线程池雪崩？](answers/098-avoid-threadpool-avalanche.md)
@@ -100,8 +92,6 @@
 102. [任务超时后线程是否真的停止？](answers/102-timeout-does-not-stop-thread.md)
 103. [Java 中断机制如何正确使用？](answers/103-java-interruption.md)
 104. [如何设计可取消的异步任务？](answers/104-cancellable-async-task.md)
-105. [如何避免死锁？](answers/105-avoid-deadlock.md)
-106. [如何减少锁粒度？](answers/106-reduce-lock-granularity.md)
 107. [分段锁和库存桶有什么相似点？](answers/107-segment-lock-and-stock-bucket.md)
 108. [单机锁为什么不能解决多实例并发？](answers/108-local-lock-not-for-multi-instance.md)
 109. [分布式锁适合哪些场景？](answers/109-distributed-lock-use-cases.md)
@@ -197,7 +187,6 @@
 189. [为什么服务之间不应该共享数据库表？](answers/189-no-shared-database-tables.md)
 190. [拆库后跨服务查询怎么做？](answers/190-cross-service-query.md)
 191. [跨服务事务怎么处理？](answers/191-cross-service-transaction.md)
-192. [同步调用和异步事件如何取舍？](answers/192-sync-vs-async-events.md)
 193. [服务调用链过长有什么风险？](answers/193-long-service-call-chain-risk.md)
 194. [如何避免分布式单体？](answers/194-avoid-distributed-monolith.md)
 195. [如何识别错误的服务边界？](answers/195-identify-wrong-service-boundary.md)
@@ -274,10 +263,6 @@
 258. [推荐服务故障如何降级？](answers/258-recommendation-failure-degradation.md)
 259. [价格服务故障能不能降级？](answers/259-price-service-failure-degradation.md)
 260. [库存服务故障能不能继续下单？](answers/260-inventory-failure-continue-order.md)
-261. [如何设置超时？](answers/261-timeout-design.md)
-262. [如何设计重试？](answers/262-retry-design.md)
-263. [为什么重试可能放大故障？](answers/263-retry-amplifies-failure.md)
-264. [什么是指数退避和 jitter？](answers/264-exponential-backoff-jitter.md)
 265. [如何做请求合并？](answers/265-request-coalescing.md)
 266. [如何做热点隔离？](answers/266-hotspot-isolation.md)
 267. [热点 SKU 为什么会拖垮数据库？](answers/267-hot-sku-database-risk.md)
@@ -287,8 +272,6 @@
 271. [秒杀如何防止超卖？](answers/271-flash-sale-oversell-prevention.md)
 272. [秒杀如何防止黄牛？](answers/272-flash-sale-bot-prevention.md)
 273. [如何保护普通下单不被秒杀拖垮？](answers/273-protect-normal-order-from-flash-sale.md)
-274. [优雅关闭的流程和正确性边界是什么？](answers/274-graceful-shutdown.md)
-275. [服务关闭时如何处理正在执行的请求？](answers/275-inflight-request-on-shutdown.md)
 276. [如何设计下游自动平滑恢复？](answers/276-downstream-smooth-recovery.md)
 278. [如何做预热？](answers/278-warmup-design.md)
 279. [如何做过载保护？](answers/279-overload-protection.md)
@@ -296,12 +279,7 @@
 
 ### 04 数据库、SQL 和数据建模
 
-281. [关系型数据库适合解决什么问题？](answers/281-relational-database-use-cases.md)
 282. [MySQL InnoDB 的索引结构是什么？](answers/282-innodb-index-structure.md)
-283. [B+Tree 为什么适合数据库索引？](answers/283-bplus-tree-database-index.md)
-284. [聚簇索引和二级索引有什么区别？](answers/284-clustered-vs-secondary-index.md)
-285. [回表是什么？](answers/285-bookmark-lookup.md)
-286. [覆盖索引是什么？](answers/286-covering-index.md)
 287. [联合索引最左前缀是什么？](answers/287-leftmost-prefix.md)
 288. [索引下推是什么？](answers/288-index-condition-pushdown.md)
 289. [什么情况下索引会失效？](answers/289-index-invalid-cases.md)
@@ -312,8 +290,6 @@
 294. [如何设计订单表索引？](answers/294-order-table-index-design.md)
 295. [如何设计支付表唯一约束？](answers/295-payment-table-unique-constraints.md)
 296. [如何设计 Outbox 扫描索引？](answers/296-outbox-scan-index-design.md)
-297. [事务 ACID 分别是什么？](answers/297-acid.md)
-298. [脏读、不可重复读、幻读是什么？](answers/298-dirty-nonrepeatable-phantom-read.md)
 299. [MVCC 是什么？](answers/299-mvcc.md)
 300. [快照读和当前读有什么区别？](answers/300-snapshot-read-vs-current-read.md)
 301. [间隙锁是什么？](answers/301-gap-lock.md)
@@ -342,15 +318,6 @@
 
 ### 05 Redis 和缓存体系
 
-324. [Redis 常用数据结构有哪些？](answers/324-redis-data-structures.md)
-325. [String、Hash、List、Set、ZSet 分别适合什么场景？](answers/325-redis-structure-use-cases.md)
-326. [Redis 单线程为什么还能很快？](answers/326-redis-single-thread-fast.md)
-327. [Redis IO 多路复用是什么？](answers/327-redis-io-multiplexing.md)
-328. [Redis 持久化 RDB 和 AOF 有什么区别？](answers/328-redis-rdb-vs-aof.md)
-329. [Redis 主从复制如何工作？](answers/329-redis-replication.md)
-330. [Redis Sentinel 解决什么问题？](answers/330-redis-sentinel.md)
-331. [Redis Cluster 如何分片？](answers/331-redis-cluster-sharding.md)
-332. [一致性哈希和 Redis Cluster slot 有什么区别？](answers/332-consistent-hash-vs-redis-slot.md)
 333. [缓存穿透是什么？](answers/333-cache-penetration.md)
 334. [缓存击穿是什么？](answers/334-cache-breakdown.md)
 335. [缓存雪崩是什么？](answers/335-cache-avalanche.md)
@@ -467,8 +434,6 @@
 
 431. [日志、指标、Trace 分别解决什么问题？](answers/431-logs-metrics-traces.md)
 432. [为什么三者都需要？](answers/432-why-need-logs-metrics-traces.md)
-434. [日志中必须包含哪些业务字段？](answers/434-log-business-fields.md)
-435. [结构化日志有什么好处？](answers/435-structured-logging-benefits.md)
 436. [什么信息不能写入日志？](answers/436-what-not-to-log.md)
 437. [RED 指标是什么？](answers/437-red-metrics.md)
 438. [USE 指标是什么？](answers/438-use-metrics.md)
@@ -507,7 +472,6 @@
 468. [PodDisruptionBudget 解决什么问题？](answers/468-pod-disruption-budget.md)
 469. [滚动升级如何保证可用性？](answers/469-rolling-upgrade-availability.md)
 470. [Kubernetes 中如何配置并验证优雅关闭？](answers/470-graceful-shutdown-config.md)
-471. [服务发现如何工作？](answers/471-service-discovery.md)
 472. [Ingress 和 API Gateway 有什么区别？](answers/472-ingress-vs-api-gateway.md)
 473. [NetworkPolicy 解决什么问题？](answers/473-network-policy.md)
 474. [多可用区部署要考虑什么？](answers/474-multi-az-deployment.md)
@@ -523,12 +487,10 @@
 
 ### 04 测试、质量和工程治理
 
-485. [单元测试、集成测试、端到端测试有什么区别？](answers/485-unit-integration-e2e-tests.md)
 486. [哪些逻辑必须有单元测试？](answers/486-logic-needs-unit-tests.md)
 487. [哪些逻辑必须有集成测试？](answers/487-logic-needs-integration-tests.md)
 488. [Mock 的优点和风险是什么？](answers/488-mock-benefits-risks.md)
 489. [Testcontainers 适合验证什么？](answers/489-testcontainers-use-cases.md)
-490. [为什么只测 happy path 不够？](answers/490-happy-path-not-enough.md)
 491. [如何测试幂等？](answers/491-test-idempotency.md)
 492. [如何测试库存防超卖？](answers/492-test-inventory-oversell.md)
 493. [如何测试支付重复回调？](answers/493-test-payment-duplicate-callback.md)
@@ -537,7 +499,6 @@
 496. [如何测试补偿任务？](answers/496-test-compensation-job.md)
 497. [如何测试限流和熔断？](answers/497-test-rate-limit-circuit-breaker.md)
 498. [如何测试降级逻辑？](answers/498-test-degradation.md)
-499. [Smoke 测试应该覆盖哪些链路？](answers/499-smoke-test-chains.md)
 500. [压测前要准备什么？](answers/500-before-load-test.md)
 501. [压测结果如何分析？](answers/501-analyze-load-test-results.md)
 502. [如何定位压测瓶颈？](answers/502-find-load-test-bottleneck.md)
@@ -574,7 +535,6 @@
 526. [设计商家入驻和商品审核系统。](answers/526-merchant-onboarding-review.md)
 527. [设计开放平台 API。](answers/527-openapi.md)
 528. [设计风控系统。](answers/528-risk-system.md)
-529. [设计推荐系统的在线服务部分。](answers/529-recommendation-online.md)
 530. [设计广告投放系统的核心链路。](answers/530-ad-delivery.md)
 
 ### 02 平台和基础设施设计
@@ -588,7 +548,6 @@
 537. [设计限流系统。](answers/537-rate-limit-system.md)
 538. [设计熔断降级平台。](answers/538-circuit-degrade-platform.md)
 539. [设计灰度发布平台。](answers/539-canary-release-platform.md)
-540. [设计日志采集和查询平台。](answers/540-log-collection-query.md)
 541. [设计指标和告警平台。](answers/541-metrics-alerting.md)
 
 ### 03 大规模容量和多活设计
@@ -654,7 +613,6 @@
 585. [你为什么选择微服务而不是单体？](answers/585-microservices-vs-monolith.md)
 586. [你为什么选择本地事务加 Outbox，而不是 TCC？](answers/586-outbox-vs-tcc.md)
 587. [你为什么不使用全局分布式事务？](answers/587-avoid-global-transaction.md)
-589. [你为什么用 Redis 缓存，而不是只靠数据库？](answers/589-redis-cache.md)
 590. [你为什么用 OpenSearch，而不是 MySQL like 查询？](answers/590-opensearch-vs-mysql.md)
 591. [你为什么要做库存预占，而不是支付时再扣库存？](answers/591-inventory-reservation.md)
 592. [你为什么要保存价格快照？](answers/592-price-snapshot.md)
@@ -722,19 +680,13 @@
 
 [现场编码答题框架](shared-answer-models.md#现场编码答题框架)
 
-### 01 基础数据结构和算法
+### 01 限流与重试算法
 
-636. [手写 LRU Cache。](answers/636-lru-cache.md)
 637. [手写令牌桶限流器。](answers/637-token-bucket.md)
 638. [手写滑动窗口限流器。](answers/638-sliding-window-limiter.md)
-639. [手写线程安全单例。](answers/639-thread-safe-singleton.md)
-640. [手写阻塞队列。](answers/640-blocking-queue.md)
-641. [手写生产者消费者模型。](answers/641-producer-consumer.md)
-642. [手写简化线程池。](answers/642-simple-thread-pool.md)
-643. [手写延迟队列。](answers/643-delay-queue.md)
 644. [手写重试工具，支持指数退避和 jitter。](answers/644-retry-backoff-jitter.md)
 
-### 02 后端基础组件实现
+### 02 电商后端核心组件
 
 645. [手写熔断器状态机。](answers/645-circuit-breaker.md)
 646. [手写幂等处理器。](answers/646-idempotency-processor.md)
@@ -747,17 +699,10 @@
 653. [手写统一异常处理。](answers/653-exception-handler.md)
 654. [手写分页查询接口。](answers/654-pagination-api.md)
 
-### 03 分布式可靠性组件实现
+### 03 分布式 ID 与对账 SQL
 
 655. [手写分布式 ID 生成器简化版。](answers/655-distributed-id.md)
-656. [手写一致性 hash。](answers/656-consistent-hash.md)
-657. [手写 Top K 统计。](answers/657-top-k.md)
-658. [手写限时任务执行器。](answers/658-timed-task-executor.md)
-659. [手写一个可关闭的后台 worker。](answers/659-closeable-worker.md)
-660. [手写 SQL 查询最近 30 天每天下单量。](answers/660-sql-daily-orders.md)
 661. [手写 SQL 查询支付对账差异。](answers/661-sql-reconciliation-differences.md)
-662. [手写 SQL 找出重复 request_id。](answers/662-sql-duplicate-request-id.md)
-663. [手写 Java 代码解析并聚合日志错误码。](answers/663-log-error-aggregation.md)
 
 ## 09 反问面试官
 
@@ -779,6 +724,63 @@
 672. [新人加入后前三个月通常会负责什么？](answers/672-new-hire-ramp.md)
 673. [团队当前最需要解决的技术债是什么？](answers/673-team-technical-debt.md)
 
+## 10 面向 Java 电商的增量补强
+
+本章默认读者已有 C++ 服务端、中间件、高并发网络和工程实践经验，不再重复网络、RPC、缓存、消息队列、
+多线程、通用算法与自动化测试基础，只补充难以直接迁移到 Java 电商系统的知识。
+
+### 01 分布式理论：从工程经验到可证明模型
+
+674. [线性一致、顺序一致、因果一致和最终一致有什么区别？](answers/674-consistency-models.md)
+675. [CAP 和 PACELC 应该如何正确理解？](answers/675-cap-pacelc.md)
+676. [Quorum 的 N、W、R 如何影响一致性和可用性？](answers/676-quorum-read-write.md)
+677. [Raft 如何完成选主、日志复制和安全提交？](answers/677-raft-consensus.md)
+678. [租约和 fencing token 为什么比单纯分布式锁更安全？](answers/678-lease-fencing-token.md)
+679. [为什么不能依赖本地时钟判断分布式事件顺序？](answers/679-distributed-clock-order.md)
+680. [故障检测为什么不可靠，脑裂如何形成？](answers/680-split-brain-failure-detection.md)
+681. [如何设计不会产生双主写入的领导者选举？](answers/681-leader-election-safety.md)
+
+### 02 MySQL 存储引擎和高可用内核
+
+682. [InnoDB Buffer Pool 如何工作？](answers/682-innodb-buffer-pool.md)
+683. [redo log、undo log 和 binlog 分别解决什么问题？](answers/683-redo-undo-binlog.md)
+684. [MySQL 一次事务提交经历什么过程？](answers/684-mysql-transaction-commit.md)
+685. [MySQL 崩溃恢复如何保证已提交事务不丢？](answers/685-mysql-crash-recovery.md)
+686. [binlog 复制、GTID 和半同步复制如何工作？](answers/686-mysql-replication-gtid-semisync.md)
+687. [MySQL 主库切换如何控制数据丢失和脑裂？](answers/687-mysql-failover-data-loss-split-brain.md)
+688. [MySQL 优化器如何使用统计信息选择执行计划？](answers/688-mysql-optimizer-statistics.md)
+689. [InnoDB 页、行格式和页分裂如何影响性能？](answers/689-innodb-page-row-split.md)
+
+### 03 Java 国内框架特有机制
+
+690. [MyBatis 从 Mapper 调用到 SQL 执行经历什么过程？](answers/690-mybatis-execution-pipeline.md)
+691. [MyBatis 一级、二级缓存的事务边界和风险是什么？](answers/691-mybatis-cache-transaction-boundary.md)
+692. [MyBatis 插件和 MyBatis-Plus 拦截器如何工作？](answers/692-mybatis-plugin-mybatisplus-interceptor.md)
+693. [Dubbo 从代理调用到 Provider 执行经历什么过程？](answers/693-dubbo-invocation-pipeline.md)
+694. [Dubbo 超时、重试、负载均衡和容错如何配合？](answers/694-dubbo-timeout-retry-loadbalance.md)
+695. [Dubbo SPI 的自适应扩展和自动激活如何工作？](answers/695-dubbo-spi-extension.md)
+696. [Nacos 服务发现的一致性、订阅和本地缓存如何工作？](answers/696-nacos-discovery-consistency.md)
+697. [Nacos 配置发布、推送、回滚和故障恢复如何设计？](answers/697-nacos-config-push-recovery.md)
+
+### 04 搜索引擎内核
+
+698. [OpenSearch Segment、Refresh、Flush 和 Merge 如何工作？](answers/698-opensearch-segment-refresh-merge.md)
+699. [OpenSearch Doc Values、Fielddata 和 Routing 如何影响查询？](answers/699-opensearch-docvalues-routing.md)
+
+### 05 可观测性和供应链安全
+
+700. [OpenTelemetry Context 和 Baggage 如何跨线程、跨服务传播？](answers/700-otel-context-baggage.md)
+701. [Head Sampling 和 Tail Sampling 如何取舍？](answers/701-trace-head-tail-sampling.md)
+702. [指标基数、Histogram 和 Exemplar 如何正确设计？](answers/702-metric-cardinality-histogram-exemplar.md)
+703. [OAuth2、OIDC 和 PKCE 分别解决什么问题？](answers/703-oauth2-oidc-pkce.md)
+704. [SBOM、制品签名和构建来源证明如何保护供应链？](answers/704-sbom-signature-provenance.md)
+705. [如何用威胁建模推动一次安全设计评审？](answers/705-threat-modeling-security-review.md)
+
+### 06 SQL 实战补强
+
+706. [用 SQL 窗口函数查询每组 Top N。](answers/706-sql-window-topn.md)
+707. [用 SQL 解决连续日期区间问题。](answers/707-sql-gaps-islands.md)
+
 ## 使用建议
 
 - 基础不稳时先读 01、02、03，补齐 Java 后端和分布式底层能力。
@@ -786,3 +788,4 @@
 - 面生产经验时重点读 05，把回答组织成止血、定位、恢复、复盘四段。
 - 面高级岗位时重点读 06 和 07，体现判断力、影响力和跨团队推动能力。
 - 面现场编码时重点读 08，先实现小而正确的核心逻辑，再补并发和异常场景。
+- 有成熟 C++ 服务端经验时补充学习 10，重点掌握 Java 电商体系独有的机制和失败边界。
