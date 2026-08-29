@@ -1,6 +1,6 @@
 # 数据库和持久化
 
-[返回学习手册首页](README.md) | [返回技术能力地图](../technical-skill-map.md)
+[返回学习手册首页](README.md) | [返回文档索引](../README.md)
 
 ## 数据库和持久化
 

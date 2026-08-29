@@ -1,6 +1,6 @@
 # 系统总览和学习方法
 
-[返回学习手册首页](README.md) | [返回技术能力地图](../technical-skill-map.md)
+[返回学习手册首页](README.md) | [返回文档索引](../README.md)
 
 ## 如何使用本文
 

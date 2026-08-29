@@ -1,6 +1,6 @@
 # 零基础概念详解
 
-[返回学习手册首页](README.md) | [返回技术能力地图](../technical-skill-map.md)
+[返回学习手册首页](README.md) | [返回文档索引](../README.md)
 
 ## 零基础知识点详解总纲
 

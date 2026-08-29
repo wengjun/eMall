@@ -385,7 +385,7 @@ Invoke-RestMethod -Method Post -Headers $headers `
 - [文档索引](docs/README.md)
 - [架构设计](docs/architecture.md)
 - [设计深度说明](docs/design-deep-dive.md)
-- [技术能力地图](docs/technical-skill-map.md)
+- [Java 后端学习手册](docs/learning/README.md)
 - [学习手册](docs/learning/README.md)
 - [模块清单](docs/modules.md)
 - [数据平台](docs/data-platform.md)

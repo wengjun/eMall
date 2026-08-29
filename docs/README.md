@@ -8,7 +8,6 @@
 
 - [架构设计](architecture.md)：系统目标、分层、服务边界、交易链路和一致性策略。
 - [设计深度说明](design-deep-dive.md)：设计思路、数据流图、关键技术细节、竞品对比和面试讲法。
-- [技术能力地图](technical-skill-map.md)：手动实现本工程需要掌握的 Java 后端技术点导航。
 - [学习手册](learning/README.md)：按主题拆分后的深入学习文档，适合系统学习。
 - [国内互联网技术栈适配](domestic-stack.md)：Sentinel、MyBatis-Plus、Nacos、Dubbo、Elasticsearch、ClickHouse 和 ELK 的接入说明。
 - [持久层规范](persistence-conventions.md)：MyBatis-Plus、强类型 Mapper、审计字段、乐观锁和 SQL 约定。
@@ -17,9 +16,7 @@
 - [国内生产扩展说明](domestic-stack.md#生产扩展基线)：分库分表、多级缓存、Redis Cluster 和 Helm 部署基线。
 - [模块清单](modules.md)：所有 Maven 模块、职责分组和构建 profile。
 - [生产检查清单](production-checklist.md)：上线前需要检查的核心事项。
-- [架构设计审查问题清单](architecture-review-issues.md)：2026 年 7 月 15 日确认的待处理 P0/P1 架构问题、证据、
-  修复方向和验收标准。
-- [历史生产就绪审查问题清单](project-review-issues.md)：2026 年 7 月 11 日审查且已经关闭的代码和部署问题。
+- [工程审查历史记录](review-history.md)：按日期归档已经完成的生产就绪和架构问题、修复证据与验证边界。
 
 ## 构建和验证
 

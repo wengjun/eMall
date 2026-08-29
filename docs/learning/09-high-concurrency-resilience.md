@@ -1,6 +1,6 @@
 # 高并发和稳定性
 
-[返回学习手册首页](README.md) | [返回技术能力地图](../technical-skill-map.md)
+[返回学习手册首页](README.md) | [返回文档索引](../README.md)
 
 ## 高并发和稳定性
 
