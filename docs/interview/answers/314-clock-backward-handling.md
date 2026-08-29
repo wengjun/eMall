@@ -2,10 +2,6 @@
 
 [返回按分类学习面试题](../README.md)
 
-## 题目
-
-时钟回拨如何处理？
-
 ## 先给面试官的短答案
 
 时钟回拨会让依赖时间生成 ID 或判断顺序的系统出现重复、乱序和过期判断错误。
@@ -51,61 +47,3 @@
 订单 ID 服务发现当前时间小于上次发号时间时，先计算回拨差值。
 
 小于阈值则等待，大于阈值则拒绝发号并告警，避免生成重复订单 ID。
-
-## 深度增强：数据访问和扩展图
-
-![数据库、缓存和消息一致性链路](../assets/data-cache-mq.svg)
-
-数据库题要从访问路径、索引、锁、事务和容量出发。电商系统的数据层既要支撑高并发读写，
-又要保证订单、库存、支付等事实数据可追踪。缓存和消息可以提升性能，但不能替代数据库事实来源。
-
-## 深度增强：Java 17 数据访问策略示例
-
-```java
-record QueryPlan(String accessPath, boolean usesIndex, boolean requiresPagination) {
-
-    boolean safeForOnlineTraffic() {
-        return usesIndex && requiresPagination;
-    }
-}
-
-final class OnlineQueryPolicy {
-
-    void verify(QueryPlan plan) {
-        if (!plan.safeForOnlineTraffic()) {
-            throw new IllegalArgumentException("Online query must use index and pagination");
-        }
-    }
-}
-```
-
-这段代码体现线上查询治理：不是 SQL 能跑就可以上线，而是要确认走索引、可分页、可限流、可观测。
-
-## 深度增强：生产边界
-
-核心表设计要从典型查询倒推索引，避免全表扫描、深分页和大事务。分库分表要先选好分片键，
-避免跨分片事务和热点分片。任何数据迁移都要支持灰度、校验、回滚或修复。
-
-## 深度增强：面试高分表达
-
-我会从访问模式回答数据题：谁查、按什么条件查、QPS 多少、数据量多大、是否强一致、是否需要分页和排序。
-然后再决定索引、分片、缓存、读写分离和归档策略。
-
-## 专家级完整回答
-
-```text
-时钟回拨对 Snowflake 这类时间型 ID 很危险，可能导致重复 ID 或顺序异常。
-生产系统应记录上次发号时间并检测回拨。小幅回拨可以等待，大幅回拨应拒绝发号、切换 workerId 或进入保护模式。
-
-同时要做好 NTP 监控、禁止手工改时钟和多机房时钟偏差治理。
-```
-
-## 回答评分点
-
-高分答案应该覆盖：
-
-- 时钟回拨可能导致重复 ID。
-- 小幅回拨可以等待。
-- 大幅回拨应拒绝或切换。
-- 要记录上次发号时间。
-- NTP 和运维治理很重要。

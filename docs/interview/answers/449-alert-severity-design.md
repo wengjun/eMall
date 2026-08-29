@@ -2,10 +2,6 @@
 
 [返回按分类学习面试题](../README.md)
 
-## 题目
-
-如何设计告警级别？
-
 ## 先给面试官的短答案
 
 告警级别应按用户影响、业务损失、影响范围、持续时间和是否需要立即人工介入来设计。常见级别是
@@ -58,55 +54,3 @@ P3：
 eMall 支付成功率大面积下降应定为 P0。推荐服务失败但可降级为空，通常是 P2。
 
 磁盘容量未来三天可能不足，可以是 P3 容量预警，但如果已经影响 Kafka 写入，就要升级。
-
-## 深度增强：Kubernetes 运维治理图
-
-![Kubernetes 生产运行和故障治理](../assets/kubernetes-operations.svg)
-
-Kubernetes 题不能只背 Deployment、Service 和 Ingress。生产稳定性还取决于资源 requests/limits、探针、HPA、PDB、
-灰度发布、配置回滚、日志指标 Trace 和故障 Runbook。
-
-## 深度增强：Java 17 发布门禁示例
-
-```java
-record ReleaseSignal(double errorRate, long p99Millis, double cpuThrottleRate, boolean rollbackSafe) {
-
-    boolean canContinue() {
-        return errorRate < 0.001
-                && p99Millis < 300
-                && cpuThrottleRate < 0.05
-                && rollbackSafe;
-    }
-}
-```
-
-这段代码表达发布平台的核心：放量不是人工拍脑袋，而是由错误率、延迟、资源和回滚安全共同决定。
-
-## 深度增强：生产边界
-
-K8s 会重启失败容器，但不保证业务一定恢复。错误的 liveness probe 可能造成重启风暴；
-过低的 CPU limit 会造成 throttling；不兼容数据库变更会让回滚失效。平台能力要和应用设计配合。
-
-## 深度增强：面试高分表达
-
-我会把 K8s 视为运行平台，而不是稳定性的全部答案。真正生产级要有容量规划、灰度门禁、配置治理、可观测性、
-自动回滚和数据库兼容检查，才能支撑核心交易链路。
-
-## 专家级完整回答
-
-```text
-告警级别要按业务影响设计，而不是只看指标数值。P0 是全站、资金、数据和核心交易大面积故障；
-P1 是核心链路局部严重故障；P2 是非核心或有降级的故障；P3 是趋势和容量类风险。
-
-每个级别要绑定响应时间、通知对象、升级路径和 Runbook。
-```
-
-## 回答评分点
-
-高分答案应该覆盖：
-
-- 按业务影响分级。
-- P0 代表核心大面积事故。
-- 不同级别不同响应。
-- 告警级别和升级路径绑定。
-- 非核心可降级故障级别较低。

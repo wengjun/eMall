@@ -2,10 +2,6 @@
 
 [返回按分类学习面试题](../README.md)
 
-## 题目
-
-`synchronized` 的原理是什么？
-
 ## 先给面试官的短答案
 
 `synchronized` 是 Java 内置锁机制，用对象 monitor 实现互斥和可见性。修饰代码块时，字节码会使用
@@ -146,30 +142,3 @@ Java 17 中偏向锁已经被废弃并默认不可用，但理解锁优化仍有
 更合理的是按商品 ID 分段、使用数据库条件更新、Redis 原子操作或库存桶。
 
 `synchronized` 可以用于保护本地小范围状态，但不能粗暴保护整个核心交易流程。
-
-## 共性并发模型
-
-有界并发、舱壁隔离和多实例正确性的统一说明及 Java 17 示例见
-[共享模型：有界并发和舱壁隔离](../shared-answer-models.md#有界并发和舱壁隔离)。
-
-## 专家级完整回答
-
-```text
-synchronized 基于对象 monitor 实现。同步代码块在字节码中使用 monitorenter/monitorexit，
-同步方法通过方法访问标志实现。它既提供互斥，也提供可见性：对同一 monitor 的 unlock
-happens-before 后续 lock。它还是可重入锁，同一线程可以重复进入同一把锁。
-
-工程上我会控制锁粒度，避免锁内 IO 和多锁嵌套。对库存、秒杀这类热点场景，不会用全局
-synchronized，而会按 key 拆分、使用数据库原子条件更新或库存桶。
-```
-
-## 回答评分点
-
-高分答案应该覆盖：
-
-- 锁的是对象 monitor。
-- 同步代码块对应 `monitorenter`/`monitorexit`。
-- 同步方法锁 `this` 或 `Class` 对象。
-- `synchronized` 可重入。
-- 提供互斥和可见性。
-- 能联系锁粒度和热点业务。

@@ -2,10 +2,6 @@
 
 [返回按分类学习面试题](../README.md)
 
-## 题目
-
-支付回调延迟升高如何排查？
-
 ## 先给面试官的短答案
 
 支付回调延迟升高要先判断延迟发生在第三方通知、网关接入、签名验签、支付服务处理、订单状态更新、
@@ -60,55 +56,3 @@ eMall 支付回调变慢时，先按支付通道和错误码拆分。如果成�
 订单表索引、状态机条件更新和数据库锁等待。
 
 如果第三方重复回调增加，要确认幂等表和支付单唯一约束是否有效。
-
-## 深度增强：Kubernetes 运维治理图
-
-![Kubernetes 生产运行和故障治理](../assets/kubernetes-operations.svg)
-
-Kubernetes 题不能只背 Deployment、Service 和 Ingress。生产稳定性还取决于资源 requests/limits、探针、HPA、PDB、
-灰度发布、配置回滚、日志指标 Trace 和故障 Runbook。
-
-## 深度增强：Java 17 发布门禁示例
-
-```java
-record ReleaseSignal(double errorRate, long p99Millis, double cpuThrottleRate, boolean rollbackSafe) {
-
-    boolean canContinue() {
-        return errorRate < 0.001
-                && p99Millis < 300
-                && cpuThrottleRate < 0.05
-                && rollbackSafe;
-    }
-}
-```
-
-这段代码表达发布平台的核心：放量不是人工拍脑袋，而是由错误率、延迟、资源和回滚安全共同决定。
-
-## 深度增强：生产边界
-
-K8s 会重启失败容器，但不保证业务一定恢复。错误的 liveness probe 可能造成重启风暴；
-过低的 CPU limit 会造成 throttling；不兼容数据库变更会让回滚失效。平台能力要和应用设计配合。
-
-## 深度增强：面试高分表达
-
-我会把 K8s 视为运行平台，而不是稳定性的全部答案。真正生产级要有容量规划、灰度门禁、配置治理、可观测性、
-自动回滚和数据库兼容检查，才能支撑核心交易链路。
-
-## 专家级完整回答
-
-```text
-支付回调延迟排查要拆链路：第三方通知、网关、验签、幂等、支付单更新、订单状态更新、Outbox 和
-响应第三方。先按支付通道、时间线、错误码和 Trace 定位是哪一段慢。
-
-处理时不能跳过验签和幂等。支付回调宁可慢一些，也要保证金额、状态和第三方流水正确。
-```
-
-## 回答评分点
-
-高分答案应该覆盖：
-
-- 按支付通道和时间线排查。
-- 拆回调处理链路。
-- 关注验签、幂等和状态机。
-- 检查数据库和 Outbox。
-- 不能牺牲正确性换速度。

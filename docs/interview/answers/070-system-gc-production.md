@@ -2,10 +2,6 @@
 
 [返回按分类学习面试题](../README.md)
 
-## 题目
-
-线上是否应该主动调用 `System.gc()`？
-
 ## 先给面试官的短答案
 
 线上业务代码不应该主动调用 `System.gc()`。它只是向 JVM 建议执行 GC，具体是否执行由 JVM 决定；
@@ -116,63 +112,3 @@ GC 应该由 JVM 根据堆使用、分配速率和 GC 策略决定，而不是�
 - 监控 heap 和 GC。
 
 核心交易服务更不能在请求链路里调用显式 GC，否则可能影响所有用户请求。
-
-## 深度增强：JVM 生产运行图
-
-![Java 17 容器内 JVM 内存结构](../assets/jvm-runtime-memory.svg)
-
-JVM 题要从运行时资源解释到业务影响。堆、直接内存、元空间、线程栈和容器 memory limit 共同决定服务稳定性；
-GC、CPU throttling、线程池队列和下游超时会一起影响 P99，而不是孤立存在。
-
-## 深度增强：Java 17 诊断模型示例
-
-```java
-record RuntimeSignal(
-        double heapUsage,
-        double containerMemoryUsage,
-        long gcPauseMillis,
-        int threadCount,
-        int queuedTasks) {
-
-    boolean requiresTriage() {
-        return heapUsage > 0.85
-                || containerMemoryUsage > 0.90
-                || gcPauseMillis > 500
-                || threadCount > 800
-                || queuedTasks > 1_000;
-    }
-}
-```
-
-这个模型强调线上诊断要看组合信号。只看 heap 不够，只看 GC 也不够；
-要把 JVM、容器、线程池和业务延迟放到同一条时间线。
-
-## 深度增强：生产边界
-
-JVM 调优不能靠背参数。要先明确服务目标：低延迟、吞吐、容器资源、对象分配速率和 P99 SLO。
-然后通过 GC 日志、JFR、指标和压测验证。错误地调大 `-Xmx` 可能挤压堆外内存，导致容器 OOMKilled。
-
-## 深度增强：面试高分表达
-
-我会用证据链回答 JVM 问题：先看业务影响，再看 JVM 指标、GC 日志、线程栈、heap dump、容器事件和最近变更。
-结论要能解释现象，并能给出降级、扩容、参数调整或代码优化方案。
-
-## 专家级完整回答
-
-```text
-线上业务代码不应该主动调用 System.gc()。它只是建议 JVM 执行 GC，具体行为取决于 JVM，
-但可能触发 Full GC 或明显停顿，导致 P99/P999 抖动。内存问题应该通过对象生命周期治理、
-缓存上限、分批处理、GC 参数和泄漏排查解决，而不是用手动 GC 掩盖。
-
-如果第三方库频繁显式 GC，可以评估 -XX:+DisableExplicitGC，但要验证 direct memory 等场景是否受影响。
-```
-
-## 回答评分点
-
-高分答案应该覆盖：
-
-- `System.gc()` 不是强制命令。
-- 显式 GC 可能导致 Full GC 或停顿。
-- 业务代码不应调用。
-- 可以评估 `DisableExplicitGC`。
-- 内存高要查对象生命周期和泄漏。

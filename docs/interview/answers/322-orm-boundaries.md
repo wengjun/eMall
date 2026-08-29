@@ -2,10 +2,6 @@
 
 [返回按分类学习面试题](../README.md)
 
-## 题目
-
-ORM 能解决哪些问题，不能解决哪些问题？
-
 ## 先给面试官的短答案
 
 ORM 解决的是对象和关系表之间的映射、基础 CRUD、参数绑定、结果集封装和部分 SQL 复用问题。
@@ -60,62 +56,3 @@ eMall 中用户、地址、基础配置等简单表适合使用 MyBatis Plus 提
 
 订单列表、库存扣减、对账扫描、Outbox 扫描这类关键路径要明确 SQL、索引和事务边界。
 这些场景可以使用 Mapper，但不能让 ORM 自动生成不可控查询。
-
-## 深度增强：数据访问和扩展图
-
-![数据库、缓存和消息一致性链路](../assets/data-cache-mq.svg)
-
-数据库题要从访问路径、索引、锁、事务和容量出发。电商系统的数据层既要支撑高并发读写，
-又要保证订单、库存、支付等事实数据可追踪。缓存和消息可以提升性能，但不能替代数据库事实来源。
-
-## 深度增强：Java 17 数据访问策略示例
-
-```java
-record QueryPlan(String accessPath, boolean usesIndex, boolean requiresPagination) {
-
-    boolean safeForOnlineTraffic() {
-        return usesIndex && requiresPagination;
-    }
-}
-
-final class OnlineQueryPolicy {
-
-    void verify(QueryPlan plan) {
-        if (!plan.safeForOnlineTraffic()) {
-            throw new IllegalArgumentException("Online query must use index and pagination");
-        }
-    }
-}
-```
-
-这段代码体现线上查询治理：不是 SQL 能跑就可以上线，而是要确认走索引、可分页、可限流、可观测。
-
-## 深度增强：生产边界
-
-核心表设计要从典型查询倒推索引，避免全表扫描、深分页和大事务。分库分表要先选好分片键，
-避免跨分片事务和热点分片。任何数据迁移都要支持灰度、校验、回滚或修复。
-
-## 深度增强：面试高分表达
-
-我会从访问模式回答数据题：谁查、按什么条件查、QPS 多少、数据量多大、是否强一致、是否需要分页和排序。
-然后再决定索引、分片、缓存、读写分离和归档策略。
-
-## 专家级完整回答
-
-```text
-ORM 的价值是提高工程效率，减少对象和表之间的重复映射，并统一基础 CRUD、参数绑定和分页。
-但 ORM 不会自动解决数据库性能和一致性问题。
-
-生产级系统要把 ORM 当工具使用。简单查询可以交给 ORM，核心链路和复杂查询要看实际 SQL、
-执行计划、索引命中、锁范围和事务耗时。
-```
-
-## 回答评分点
-
-高分答案应该覆盖：
-
-- ORM 提升开发效率。
-- ORM 不能替代数据库能力。
-- 核心 SQL 要显式评审。
-- 复杂查询要关注执行计划。
-- 能结合电商关键链路说明取舍。

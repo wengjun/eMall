@@ -2,10 +2,6 @@
 
 [返回按分类学习面试题](../README.md)
 
-## 题目
-
-泛型擦除是什么？
-
 ## 先给面试官的短答案
 
 Java 泛型主要在编译期提供类型检查。编译后，大部分泛型类型信息会被擦除，
@@ -135,24 +131,3 @@ class 文件里可能保留 Signature 元数据，反射有时能读到声明信
 ### 泛型是不是没有用？
 
 不是。泛型在编译期非常有用，可以提前发现类型错误，减少强制类型转换。
-
-## 专家级完整回答
-
-```text
-Java 泛型主要是编译期类型安全机制，编译后大部分泛型类型会被擦除。
-所以运行时通常只能看到原始类型，例如 ArrayList，而不知道它是 List<String> 还是 List<Long>。
-
-这会影响 new T、泛型数组、instanceof 参数化类型和 JSON 反序列化。
-在后端框架或通用 HTTP 客户端中，如果要处理 ApiResponse<List<OrderDto>>，
-需要 TypeReference 或 ParameterizedTypeReference 保留完整类型信息。
-```
-
-## 回答评分点
-
-高分答案应该覆盖：
-
-- 泛型主要提供编译期类型安全。
-- 运行时大部分泛型信息被擦除。
-- 能举 `List<String>` 和 `List<Long>` 例子。
-- 能说明 new T、泛型数组、instanceof 限制。
-- 能联系 JSON 反序列化和通用客户端。

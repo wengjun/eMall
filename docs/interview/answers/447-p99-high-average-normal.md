@@ -2,10 +2,6 @@
 
 [返回按分类学习面试题](../README.md)
 
-## 题目
-
-P99 升高但平均延迟正常说明什么？
-
 ## 先给面试官的短答案
 
 P99 升高但平均延迟正常，说明大多数请求仍然快，但少量尾部请求变慢。问题可能来自局部热点、锁
@@ -58,56 +54,3 @@ P99 升高但平均延迟正常，说明大多数请求仍然快，但少量尾�
 eMall 下单接口平均 80ms，但 P99 到 3s，可能只有秒杀 SKU 的库存扣减慢。
 
 需要按 SKU 和库存桶拆分延迟，并用 Trace 看是否卡在库存服务、数据库锁还是 Redis 令牌。
-
-## 深度增强：Kubernetes 运维治理图
-
-![Kubernetes 生产运行和故障治理](../assets/kubernetes-operations.svg)
-
-Kubernetes 题不能只背 Deployment、Service 和 Ingress。生产稳定性还取决于资源 requests/limits、探针、HPA、PDB、
-灰度发布、配置回滚、日志指标 Trace 和故障 Runbook。
-
-## 深度增强：Java 17 发布门禁示例
-
-```java
-record ReleaseSignal(double errorRate, long p99Millis, double cpuThrottleRate, boolean rollbackSafe) {
-
-    boolean canContinue() {
-        return errorRate < 0.001
-                && p99Millis < 300
-                && cpuThrottleRate < 0.05
-                && rollbackSafe;
-    }
-}
-```
-
-这段代码表达发布平台的核心：放量不是人工拍脑袋，而是由错误率、延迟、资源和回滚安全共同决定。
-
-## 深度增强：生产边界
-
-K8s 会重启失败容器，但不保证业务一定恢复。错误的 liveness probe 可能造成重启风暴；
-过低的 CPU limit 会造成 throttling；不兼容数据库变更会让回滚失效。平台能力要和应用设计配合。
-
-## 深度增强：面试高分表达
-
-我会把 K8s 视为运行平台，而不是稳定性的全部答案。真正生产级要有容量规划、灰度门禁、配置治理、可观测性、
-自动回滚和数据库兼容检查，才能支撑核心交易链路。
-
-## 专家级完整回答
-
-```text
-P99 升高但平均值正常，说明尾部少量请求变慢。平均值掩盖了长尾问题，而用户感知和 SLO 往往更受
-P95/P99 影响。
-
-排查要按接口、实例、业务维度和下游依赖拆分，看 Trace、GC、线程池、连接池、慢 SQL、缓存击穿和
-热点数据。尾延迟通常来自局部热点或资源排队。
-```
-
-## 回答评分点
-
-高分答案应该覆盖：
-
-- P99 代表尾延迟。
-- 平均值会掩盖问题。
-- 局部热点和资源排队。
-- 按实例、接口和业务维度拆分。
-- Trace 能定位慢 span。

@@ -2,10 +2,6 @@
 
 [返回按分类学习面试题](../README.md)
 
-## 题目
-
-`CompletableFuture` 默认线程池有什么风险？
-
 ## 先给面试官的短答案
 
 `CompletableFuture.supplyAsync` 如果不指定 Executor，默认使用公共 `ForkJoinPool.commonPool()`。
@@ -89,28 +85,3 @@ CompletableFuture.supplyAsync(() -> loadOrder(orderId), orderQueryExecutor);
 - afterSalesExecutor。
 
 支付查询慢不应该拖垮物流和售后查询。
-
-## 共性并发模型
-
-有界并发、舱壁隔离和多实例正确性的统一说明及 Java 17 示例见
-[共享模型：有界并发和舱壁隔离](../shared-answer-models.md#有界并发和舱壁隔离)。
-
-## 专家级完整回答
-
-```text
-CompletableFuture 不指定 Executor 时会使用公共 ForkJoinPool，这在生产中风险很大。
-公共池被多个业务共享，阻塞 IO 或慢任务会占满线程，导致无关业务互相影响，而且缺少队列、
-拒绝、指标和隔离控制。
-
-我的原则是所有生产异步任务都显式指定有界业务线程池，并按业务或下游隔离，配合超时和监控。
-```
-
-## 回答评分点
-
-高分答案应该覆盖：
-
-- 默认使用 commonPool。
-- 公共池共享导致互相影响。
-- 阻塞 IO 不适合 commonPool。
-- 生产要指定 Executor。
-- 线程池要有界和可观测。

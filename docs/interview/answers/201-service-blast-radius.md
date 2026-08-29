@@ -2,10 +2,6 @@
 
 [返回按分类学习面试题](../README.md)
 
-## 题目
-
-如何评估一个服务的故障半径？
-
 ## 先给面试官的短答案
 
 故障半径是一个服务故障后会影响多少用户、业务、下游、收入和 SLA。
@@ -61,65 +57,3 @@
 支付服务故障会影响订单转化和收入，故障半径很大。
 
 推荐服务故障通常可以降级为热门商品，故障半径较小。两者的发布门禁、容量冗余和应急预案不应相同。
-
-## 深度增强：可观测与配置治理图
-
-![指标、日志、Trace 和告警平台](../assets/observability-platform.svg)
-
-配置、日志、指标和 Trace 不是附属能力，而是生产系统定位问题和控制变更风险的基础。
-没有可观测性，限流、熔断、回滚和补偿都很难判断是否有效。
-
-## 深度增强：Java 17 观测信号示例
-
-```java
-import java.time.Instant;
-import java.util.Map;
-
-record ObservabilityEvent(
-        Instant time,
-        String traceId,
-        String service,
-        String eventType,
-        Map<String, String> tags) {
-}
-
-final class TraceTagPolicy {
-
-    boolean shouldKeep(String key) {
-        return !key.equalsIgnoreCase("password")
-                && !key.equalsIgnoreCase("secret")
-                && !key.equalsIgnoreCase("token");
-    }
-}
-```
-
-这段代码体现生产观测的两个重点：所有关键事件要能关联 traceId，敏感信息不能进入日志和标签。
-
-## 深度增强：生产边界
-
-日志越多不代表越好。核心链路要控制日志成本、采样率、脱敏和索引字段。告警也不能只看机器指标，
-还要看下单成功率、支付成功率、库存失败率、Outbox 积压和用户投诉。
-
-## 深度增强：面试高分表达
-
-我会把可观测性讲成故障闭环：指标发现异常，Trace 定位慢在哪里，日志解释发生了什么，
-告警和 Runbook 指导恢复。配置变更也要有版本、审批、灰度、审计和回滚，避免配置事故变成全站事故。
-
-## 专家级完整回答
-
-```text
-评估故障半径要看服务处于哪些业务链路、被多少上游强依赖、是否影响交易正确性和收入、是否有降级方案，
-以及故障后 RTO 和 RPO 要求。
-
-我会结合依赖拓扑、链路追踪、QPS、错误率和业务指标评估影响面，再通过隔离、限流、熔断、降级、多可用区和灰度降低半径。
-```
-
-## 回答评分点
-
-高分答案应该覆盖：
-
-- 故障半径不是只看 QPS。
-- 要看业务链路、依赖和数据影响。
-- 强弱依赖决定扩散风险。
-- 降级能力会降低故障半径。
-- 大半径服务需要更严格治理。

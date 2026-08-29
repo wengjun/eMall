@@ -2,10 +2,6 @@
 
 [返回按分类学习面试题](../README.md)
 
-## 题目
-
-缓存命中率下降如何排查？
-
 ## 先给面试官的短答案
 
 缓存命中率下降要从流量变化、key 命名变化、TTL 设置、缓存失效策略、热点变化、Redis 淘汰、
@@ -63,62 +59,3 @@ eMall 商品详情命中率下降时，先按 `product:detail` 前缀看命中�
 
 如果新版本把 key 从 `skuId` 改成 `productId`，会导致整体缓存失效。应立即回滚或兼容旧 key，
 并执行分批预热，避免数据库被打满。
-
-## 深度增强：缓存和消息治理图
-
-![数据库、缓存和消息一致性链路](../assets/data-cache-mq.svg)
-
-缓存和消息题要关注一致性、削峰、延迟、积压和恢复。
-Redis 很快，但会遇到穿透、击穿、雪崩、热点 key 和内存淘汰；
-MQ 能解耦和削峰，但会带来重复消费、乱序、积压和死信处理。
-
-## 深度增强：Java 17 幂等消费示例
-
-```java
-import java.util.Set;
-import java.util.concurrent.ConcurrentHashMap;
-
-final class LocalIdempotentConsumer {
-    private final Set<String> processedKeys = ConcurrentHashMap.newKeySet();
-
-    boolean tryHandle(String messageKey, Runnable handler) {
-        if (!processedKeys.add(messageKey)) {
-            return false;
-        }
-        handler.run();
-        return true;
-    }
-}
-```
-
-这个示例只适合解释幂等思想。生产环境不能用本地内存做全局幂等，要使用数据库唯一键、Redis 原子操作或业务状态机。
-
-## 深度增强：生产边界
-
-缓存要有 TTL、容量、降级和回源保护；消息要有重试、死信、延迟队列、消费幂等和积压告警。
-缓存不一致要能修复，消息失败要能回放，不能只依赖人工查日志。
-
-## 深度增强：面试高分表达
-
-我会把缓存和消息都看成性能与稳定性工具，而不是正确性事实来源。
-正确性由数据库事实、状态机、幂等和对账保证；缓存和 MQ 负责降低延迟、削峰填谷和解耦系统。
-
-## 专家级完整回答
-
-```text
-缓存命中率下降要按接口、key 前缀和时间线定位。常见原因包括发布改了 key、TTL 变短、批量删除、
-预热失败、Redis 淘汰、穿透攻击和热点切换。
-
-排查时不能只看全局命中率，要看具体业务和回源数据库压力。处理上要修复 key 逻辑、预热热点、
-控制回源并发，并用空值缓存和布隆过滤器防穿透。
-```
-
-## 回答评分点
-
-高分答案应该覆盖：
-
-- 按接口和 key 前缀排查。
-- 结合发布时间线。
-- 检查 TTL、删除、淘汰和预热。
-- 关注穿透攻击。
-- 处理时保护数据库。

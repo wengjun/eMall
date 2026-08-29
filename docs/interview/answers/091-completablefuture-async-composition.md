@@ -2,10 +2,6 @@
 
 [返回按分类学习面试题](../README.md)
 
-## 题目
-
-`CompletableFuture` 如何处理异步编排？
-
 ## 先给面试官的短答案
 
 `CompletableFuture` 用来表达一个未来完成的异步结果，并提供串行、并行、合并、异常处理和超时控制能力。
@@ -114,28 +110,3 @@ future.completeOnTimeout(defaultValue, 200, TimeUnit.MILLISECONDS);
 这些查询相互独立，可以用 `CompletableFuture` 并行编排，最后合并结果。
 
 但创建订单链路涉及库存一致性和支付状态，不能为了并行而破坏业务顺序。
-
-## 共性并发模型
-
-有界并发、舱壁隔离和多实例正确性的统一说明及 Java 17 示例见
-[共享模型：有界并发和舱壁隔离](../shared-answer-models.md#有界并发和舱壁隔离)。
-
-## 专家级完整回答
-
-```text
-CompletableFuture 适合表达异步结果并做串行、并行和合并编排。thenApply 做同步转换，
-thenCompose 处理异步依赖，thenCombine 合并两个结果，allOf 等待多个任务，exceptionally/handle
-处理异常，orTimeout/completeOnTimeout 控制超时。
-
-生产中我一定会指定业务线程池、设置超时和异常处理，并控制队列和下游并发，避免异步任务把线程池和下游打爆。
-```
-
-## 回答评分点
-
-高分答案应该覆盖：
-
-- 知道常用编排方法。
-- 区分 `thenApply` 和 `thenCompose`。
-- 能处理并行合并。
-- 必须有异常和超时。
-- 必须指定业务线程池。

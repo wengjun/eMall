@@ -2,10 +2,6 @@
 
 [返回按分类学习面试题](../README.md)
 
-## 题目
-
-哪些逻辑必须有集成测试？
-
 ## 先给面试官的短答案
 
 必须有集成测试的是依赖真实中间件行为才能验证的逻辑，例如数据库事务、唯一索引幂等、MyBatis 映射、
@@ -39,66 +35,3 @@ Redis Lua、Kafka 生产消费、Outbox、分布式锁、HTTP 超时重试、配
 
 eMall 的 `order`、`inventory`、`payment`、`event-platform`、`common` 和 `gateway` 模块中，涉及事务、消息、
 安全过滤、签名校验和 Outbox 的部分都应该有集成测试。
-
-## 深度增强：现场编码工程化图
-
-![现场编码题的工程化解法](../assets/coding-patterns.svg)
-
-现场编码题不只是写出算法，还要说明输入输出、边界条件、复杂度、线程安全和可测试性。
-面试官通常更看重思考过程、代码结构和验证意识，而不是只看最终代码。
-
-## 深度增强：Java 17 编码模板示例
-
-```java
-import java.util.LinkedHashMap;
-import java.util.Map;
-
-final class LruCache<K, V> extends LinkedHashMap<K, V> {
-    private final int capacity;
-
-    LruCache(int capacity) {
-        super(capacity, 0.75f, true);
-        this.capacity = capacity;
-    }
-
-    @Override
-    protected boolean removeEldestEntry(Map.Entry<K, V> eldest) {
-        return size() > capacity;
-    }
-}
-```
-
-这段代码展示现场编码的表达方式：先选合适数据结构，再说明复杂度和边界。
-若用于生产，还要考虑并发、监控、容量和淘汰策略。
-
-## 深度增强：生产边界
-
-面试中的简化实现通常不是生产实现。生产需要线程安全、容量限制、指标、异常处理、单元测试和压测验证。
-如果题目涉及分布式场景，还要说明单机实现和多实例实现的差异。
-
-## 深度增强：面试高分表达
-
-我会先澄清需求和边界，再写最小正确实现，最后补充复杂度、测试用例和生产化改造。
-这样即使代码题不复杂，也能体现工程成熟度。
-
-## 专家级完整回答
-
-```text
-凡是正确性依赖真实基础设施语义的逻辑，都应该有集成测试。
-
-例如数据库事务、锁、唯一索引、MyBatis 映射、Redis Lua、Kafka 消费、Outbox 重试和 HTTP 超时重试，
-这些行为用 mock 很容易测出虚假的安全感。
-
-我的原则是：纯规则用单元测试，和数据库、缓存、消息、网络、安全过滤链交互的关键路径用集成测试。
-对电商系统来说，下单、库存、支付、Outbox 和重复消费都必须覆盖。
-```
-
-## 回答评分点
-
-高分答案应该覆盖：
-
-- 说明集成测试验证真实依赖协作。
-- 能列出数据库、缓存、消息、HTTP、安全过滤链等场景。
-- 知道 mock 不能证明事务、索引和消息行为。
-- 能结合下单、库存、支付、Outbox 举例。
-- 知道 Testcontainers 的价值。

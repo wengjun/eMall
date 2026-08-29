@@ -2,10 +2,6 @@
 
 [返回按分类学习面试题](../README.md)
 
-## 题目
-
-checked exception 和 unchecked exception 如何取舍？
-
 ## 先给面试官的短答案
 
 checked exception 会强制调用方在编译期处理，适合底层 API 明确要求调用方处理的外部资源失败，
@@ -39,7 +35,7 @@ try {
 unchecked exception：
 
 ```java
-throw new BusinessException(ErrorCode.CONFLICT, "order cannot be paid");
+throw new OrderStateException(orderId, currentStatus);
 ```
 
 方法签名不强制写 `throws`，由上层统一处理。
@@ -119,25 +115,3 @@ throw new BusinessException(ErrorCode.CONFLICT, "order cannot be paid from " + o
 这是业务异常，用 unchecked 更合适。
 
 库存服务超时、支付渠道失败，可以转换成下游不可用错误码，再由补偿、熔断、告警处理。
-
-## 专家级完整回答
-
-```text
-checked exception 适合底层 API 把外部资源失败作为契约强制调用方处理，
-但在业务服务层，如果大量 checked exception 穿透方法签名，会污染业务语义。
-
-在 Spring 分布式服务中，我更倾向用 unchecked BusinessException 表达库存不足、
-订单状态冲突、支付金额不一致这类业务错误，并通过 ControllerAdvice 统一转换响应。
-系统异常和下游异常则记录日志、指标和 traceId，必要时触发熔断、补偿或告警。
-如果 checked exception 需要触发事务回滚，要显式配置 rollbackFor。
-```
-
-## 回答评分点
-
-高分答案应该覆盖：
-
-- 能解释 checked 和 unchecked 的编译期差异。
-- 能说明底层资源失败和业务异常的不同。
-- 能联系 Spring 事务默认回滚规则。
-- 能说明统一异常处理的重要性。
-- 能避免把底层异常直接暴露到 API。

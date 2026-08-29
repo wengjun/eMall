@@ -2,10 +2,6 @@
 
 [返回按分类学习面试题](../README.md)
 
-## 题目
-
-运维接口为什么不能暴露公网？
-
 ## 先给面试官的短答案
 
 运维接口通常具备刷新配置、清缓存、重放消息、补偿订单等高权限能力，一旦暴露公网，攻击者可能直接影响生产状态。
@@ -53,65 +49,3 @@ Spring Actuator 端点要谨慎开放。
 订单补偿、库存修复、缓存刷新、消息重放接口必须只允许运维平台在内网调用。
 
 公网 API 网关不应路由这些接口，也不应让普通用户凭证访问。
-
-## 深度增强：可观测与配置治理图
-
-![指标、日志、Trace 和告警平台](../assets/observability-platform.svg)
-
-配置、日志、指标和 Trace 不是附属能力，而是生产系统定位问题和控制变更风险的基础。
-没有可观测性，限流、熔断、回滚和补偿都很难判断是否有效。
-
-## 深度增强：Java 17 观测信号示例
-
-```java
-import java.time.Instant;
-import java.util.Map;
-
-record ObservabilityEvent(
-        Instant time,
-        String traceId,
-        String service,
-        String eventType,
-        Map<String, String> tags) {
-}
-
-final class TraceTagPolicy {
-
-    boolean shouldKeep(String key) {
-        return !key.equalsIgnoreCase("password")
-                && !key.equalsIgnoreCase("secret")
-                && !key.equalsIgnoreCase("token");
-    }
-}
-```
-
-这段代码体现生产观测的两个重点：所有关键事件要能关联 traceId，敏感信息不能进入日志和标签。
-
-## 深度增强：生产边界
-
-日志越多不代表越好。核心链路要控制日志成本、采样率、脱敏和索引字段。告警也不能只看机器指标，
-还要看下单成功率、支付成功率、库存失败率、Outbox 积压和用户投诉。
-
-## 深度增强：面试高分表达
-
-我会把可观测性讲成故障闭环：指标发现异常，Trace 定位慢在哪里，日志解释发生了什么，
-告警和 Runbook 指导恢复。配置变更也要有版本、审批、灰度、审计和回滚，避免配置事故变成全站事故。
-
-## 专家级完整回答
-
-```text
-运维接口不能暴露公网，因为它们通常具备修改生产状态和查看敏感诊断信息的能力。
-公网暴露会扩大攻击面，即使有鉴权也会面临凭证泄露、漏洞利用和误操作风险。
-
-我会把运维接口放在内网、VPN、堡垒机或统一运维平台后面，并叠加 mTLS、细粒度授权、审批、限流和审计。
-```
-
-## 回答评分点
-
-高分答案应该覆盖：
-
-- 运维接口是高权限入口。
-- 公网暴露会扩大攻击面。
-- 网络隔离和鉴权都需要。
-- Actuator 敏感端点不能公网开放。
-- 运维操作要通过受控平台和审计。

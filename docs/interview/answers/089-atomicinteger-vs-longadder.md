@@ -2,10 +2,6 @@
 
 [返回按分类学习面试题](../README.md)
 
-## 题目
-
-`AtomicInteger` 和 `LongAdder` 如何取舍？
-
 ## 先给面试官的短答案
 
 `AtomicInteger` 基于单个变量 CAS，适合低竞争、需要立即获取精确值或需要 CAS 条件更新的场景。
@@ -106,28 +102,3 @@ eMall 网关统计请求数、限流命中数、错误数，可以用 `LongAdder
 本地状态开关、简单版本号、CAS 状态切换可以用 `AtomicInteger`。
 
 商品库存不能用这两个直接解决跨实例一致性，需要持久化原子更新或库存中心。
-
-## 共性并发模型
-
-有界并发、舱壁隔离和多实例正确性的统一说明及 Java 17 示例见
-[共享模型：有界并发和舱壁隔离](../shared-answer-models.md#有界并发和舱壁隔离)。
-
-## 专家级完整回答
-
-```text
-AtomicInteger 基于单变量 CAS，适合低竞争、精确读取和条件更新；LongAdder 通过分散到多个 cell
-降低热点竞争，适合高并发统计累加，但 sum 不是严格线性一致快照，也不支持 compareAndSet。
-
-所以指标计数、QPS 统计、错误次数用 LongAdder 更合适；状态更新、版本号、CAS 条件修改用 Atomic。
-库存这类业务一致性问题不能用单机原子类直接解决。
-```
-
-## 回答评分点
-
-高分答案应该覆盖：
-
-- `AtomicInteger` 单变量 CAS。
-- `LongAdder` 分散热点。
-- `LongAdder` 适合高并发统计。
-- `AtomicInteger` 适合精确状态和 CAS。
-- 库存不能靠单机原子类。

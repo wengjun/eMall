@@ -2,10 +2,6 @@
 
 [返回按分类学习面试题](../README.md)
 
-## 题目
-
-Java 线程状态有哪些？
-
 ## 先给面试官的短答案
 
 Java 线程状态包括 `NEW`、`RUNNABLE`、`BLOCKED`、`WAITING`、`TIMED_WAITING` 和 `TERMINATED`。
@@ -109,28 +105,3 @@ Thread thread = new Thread(task);
 - 大量 `TIMED_WAITING` 在下游调用，说明超时等待。
 
 线程状态能帮助快速缩小排查方向。
-
-## 共性并发模型
-
-有界并发、舱壁隔离和多实例正确性的统一说明及 Java 17 示例见
-[共享模型：有界并发和舱壁隔离](../shared-answer-models.md#有界并发和舱壁隔离)。
-
-## 专家级完整回答
-
-```text
-Java 线程状态有 NEW、RUNNABLE、BLOCKED、WAITING、TIMED_WAITING 和 TERMINATED。
-排查时不能只看状态名，必须结合调用栈。RUNNABLE 可能是正在运行，也可能在 native IO；
-BLOCKED 通常是 synchronized 锁竞争；WAITING 和 TIMED_WAITING 可能是队列、park、sleep 或超时等待。
-
-生产上我会连续抓多次 jstack，看异常状态是否集中在同一段代码或同一个下游。
-```
-
-## 回答评分点
-
-高分答案应该覆盖：
-
-- 六种线程状态。
-- `RUNNABLE` 不一定真正占 CPU。
-- `BLOCKED` 对应 synchronized 等 monitor。
-- `WAITING` 和 `TIMED_WAITING` 要看调用栈。
-- 能用线程状态定位生产问题。

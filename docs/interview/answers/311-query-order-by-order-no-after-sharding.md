@@ -2,10 +2,6 @@
 
 [返回按分类学习面试题](../README.md)
 
-## 题目
-
-分库分表后如何按订单号查订单？
-
 ## 先给面试官的短答案
 
 分库分表后按订单号查订单，最好让订单号或订单 ID 中携带分片路由信息，直接定位到目标分片。
@@ -50,61 +46,3 @@ order_route(order_no, shard_id, table_id, user_id, created_at)
 eMall 订单号可以用趋势递增 ID，并在 ID 中保留分片位。
 
 客服按订单号查询时，系统从订单号解析分片，直接路由到对应订单表，避免扫所有分片。
-
-## 深度增强：数据访问和扩展图
-
-![数据库、缓存和消息一致性链路](../assets/data-cache-mq.svg)
-
-数据库题要从访问路径、索引、锁、事务和容量出发。电商系统的数据层既要支撑高并发读写，
-又要保证订单、库存、支付等事实数据可追踪。缓存和消息可以提升性能，但不能替代数据库事实来源。
-
-## 深度增强：Java 17 数据访问策略示例
-
-```java
-record QueryPlan(String accessPath, boolean usesIndex, boolean requiresPagination) {
-
-    boolean safeForOnlineTraffic() {
-        return usesIndex && requiresPagination;
-    }
-}
-
-final class OnlineQueryPolicy {
-
-    void verify(QueryPlan plan) {
-        if (!plan.safeForOnlineTraffic()) {
-            throw new IllegalArgumentException("Online query must use index and pagination");
-        }
-    }
-}
-```
-
-这段代码体现线上查询治理：不是 SQL 能跑就可以上线，而是要确认走索引、可分页、可限流、可观测。
-
-## 深度增强：生产边界
-
-核心表设计要从典型查询倒推索引，避免全表扫描、深分页和大事务。分库分表要先选好分片键，
-避免跨分片事务和热点分片。任何数据迁移都要支持灰度、校验、回滚或修复。
-
-## 深度增强：面试高分表达
-
-我会从访问模式回答数据题：谁查、按什么条件查、QPS 多少、数据量多大、是否强一致、是否需要分页和排序。
-然后再决定索引、分片、缓存、读写分离和归档策略。
-
-## 专家级完整回答
-
-```text
-分库分表后按订单号查询，最佳方式是订单号或订单 ID 自带分片路由信息，查询时直接计算库表。
-如果没有路由信息，就需要订单路由表或全局索引表，先定位分片再查询订单。
-
-不能每次按订单号查询都广播所有分片。路由信息要在订单创建时可靠写入，并有补偿和校验。
-```
-
-## 回答评分点
-
-高分答案应该覆盖：
-
-- 订单号查询应尽量单分片定位。
-- 订单号可携带分片信息。
-- 路由表和全局索引是替代方案。
-- 避免广播所有分片。
-- 路由数据要保证一致性。

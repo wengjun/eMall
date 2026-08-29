@@ -2,10 +2,6 @@
 
 [返回按分类学习面试题](../README.md)
 
-## 题目
-
-如何设计商品详情缓存？
-
 ## 先给面试官的短答案
 
 商品详情缓存要按读多写少、强展示、可短暂不一致的特点设计。通常使用多级缓存，包括本地缓存、
@@ -59,62 +55,3 @@ eMall 的商品详情页可以缓存 `product:detail:{skuId}`，value 是基础�
 
 价格使用 `pricing` 服务实时或短 TTL 缓存，库存展示使用 `inventory` 的可售快照，下单时仍要走
 库存条件扣减。这样展示缓存可以弱一致，交易判断仍由核心服务保证。
-
-## 深度增强：缓存和消息治理图
-
-![数据库、缓存和消息一致性链路](../assets/data-cache-mq.svg)
-
-缓存和消息题要关注一致性、削峰、延迟、积压和恢复。
-Redis 很快，但会遇到穿透、击穿、雪崩、热点 key 和内存淘汰；
-MQ 能解耦和削峰，但会带来重复消费、乱序、积压和死信处理。
-
-## 深度增强：Java 17 幂等消费示例
-
-```java
-import java.util.Set;
-import java.util.concurrent.ConcurrentHashMap;
-
-final class LocalIdempotentConsumer {
-    private final Set<String> processedKeys = ConcurrentHashMap.newKeySet();
-
-    boolean tryHandle(String messageKey, Runnable handler) {
-        if (!processedKeys.add(messageKey)) {
-            return false;
-        }
-        handler.run();
-        return true;
-    }
-}
-```
-
-这个示例只适合解释幂等思想。生产环境不能用本地内存做全局幂等，要使用数据库唯一键、Redis 原子操作或业务状态机。
-
-## 深度增强：生产边界
-
-缓存要有 TTL、容量、降级和回源保护；消息要有重试、死信、延迟队列、消费幂等和积压告警。
-缓存不一致要能修复，消息失败要能回放，不能只依赖人工查日志。
-
-## 深度增强：面试高分表达
-
-我会把缓存和消息都看成性能与稳定性工具，而不是正确性事实来源。
-正确性由数据库事实、状态机、幂等和对账保证；缓存和 MQ 负责降低延迟、削峰填谷和解耦系统。
-
-## 专家级完整回答
-
-```text
-商品详情缓存要分层和分域设计。基础信息、图片、描述可以长 TTL 缓存，价格、库存、促销和
-上下架状态要独立处理，因为它们的一致性要求更高。
-
-系统上使用 CDN、本地缓存、Redis 和数据库多级缓存，配合 TTL 抖动、空值缓存、逻辑过期、
-异步刷新和变更事件失效。关键原则是展示可以短暂不一致，下单不能依赖旧缓存做最终判断。
-```
-
-## 回答评分点
-
-高分答案应该覆盖：
-
-- 商品详情读多写少。
-- 多级缓存。
-- 按字段一致性拆分。
-- TTL 抖动和热点保护。
-- 下单正确性不能依赖展示缓存。

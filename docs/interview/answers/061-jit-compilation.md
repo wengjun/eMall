@@ -2,10 +2,6 @@
 
 [返回按分类学习面试题](../README.md)
 
-## 题目
-
-JIT 编译是什么？
-
 ## 先给面试官的短答案
 
 JIT 是 Just-In-Time Compilation，即即时编译。Java 程序启动后，字节码先由解释器执行，
@@ -125,64 +121,3 @@ eMall 的订单计算、价格规则、优惠匹配、库存扣减和风控判�
 这些代码在服务运行一段时间后会成为热点，JIT 可能对它们做方法内联、逃逸分析和锁优化。
 
 因此压测时不能只看冷启动后的前几秒，而要区分冷态性能和预热后的稳定态性能。
-
-## 深度增强：JVM 生产运行图
-
-![Java 17 容器内 JVM 内存结构](../assets/jvm-runtime-memory.svg)
-
-JVM 题要从运行时资源解释到业务影响。堆、直接内存、元空间、线程栈和容器 memory limit 共同决定服务稳定性；
-GC、CPU throttling、线程池队列和下游超时会一起影响 P99，而不是孤立存在。
-
-## 深度增强：Java 17 诊断模型示例
-
-```java
-record RuntimeSignal(
-        double heapUsage,
-        double containerMemoryUsage,
-        long gcPauseMillis,
-        int threadCount,
-        int queuedTasks) {
-
-    boolean requiresTriage() {
-        return heapUsage > 0.85
-                || containerMemoryUsage > 0.90
-                || gcPauseMillis > 500
-                || threadCount > 800
-                || queuedTasks > 1_000;
-    }
-}
-```
-
-这个模型强调线上诊断要看组合信号。只看 heap 不够，只看 GC 也不够；
-要把 JVM、容器、线程池和业务延迟放到同一条时间线。
-
-## 深度增强：生产边界
-
-JVM 调优不能靠背参数。要先明确服务目标：低延迟、吞吐、容器资源、对象分配速率和 P99 SLO。
-然后通过 GC 日志、JFR、指标和压测验证。错误地调大 `-Xmx` 可能挤压堆外内存，导致容器 OOMKilled。
-
-## 深度增强：面试高分表达
-
-我会用证据链回答 JVM 问题：先看业务影响，再看 JVM 指标、GC 日志、线程栈、heap dump、容器事件和最近变更。
-结论要能解释现象，并能给出降级、扩容、参数调整或代码优化方案。
-
-## 专家级完整回答
-
-```text
-JIT 是 JVM 在运行时把热点字节码编译成本地机器码的机制。Java 先用解释器保证快速启动，
-再通过运行时 profiling 找到热点方法和热点循环，之后由 C1/C2 分层编译器做方法内联、
-逃逸分析、锁消除和循环优化。
-
-对微服务来说，JIT 解释了为什么服务需要预热，也解释了为什么压测要区分冷态和稳定态。
-我会通过 readiness、预热请求和灰度引流，避免刚启动实例直接承接高峰流量。
-```
-
-## 回答评分点
-
-高分答案应该覆盖：
-
-- JIT 是运行时编译热点字节码。
-- 解释执行启动快，编译执行长期性能好。
-- 知道分层编译。
-- 能说出方法内联、逃逸分析等优化。
-- 能联系服务预热和压测稳定态。

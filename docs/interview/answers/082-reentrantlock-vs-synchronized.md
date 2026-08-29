@@ -2,10 +2,6 @@
 
 [返回按分类学习面试题](../README.md)
 
-## 题目
-
-`ReentrantLock` 和 `synchronized` 怎么选？
-
 ## 先给面试官的短答案
 
 简单同步优先用 `synchronized`，因为语法简单、自动释放、JVM 优化充分。需要可中断获取锁、超时尝试、
@@ -121,29 +117,3 @@ eMall 中简单本地状态保护可以用 `synchronized`。
 如果秒杀热点商品需要获取锁失败后快速降级，可以用 `ReentrantLock.tryLock(timeout)`，避免请求无限等待。
 
 如果是跨实例库存一致性，单机锁都不够，要使用数据库条件更新、Redis 原子操作或消息串行化。
-
-## 共性并发模型
-
-有界并发、舱壁隔离和多实例正确性的统一说明及 Java 17 示例见
-[共享模型：有界并发和舱壁隔离](../shared-answer-models.md#有界并发和舱壁隔离)。
-
-## 专家级完整回答
-
-```text
-简单互斥优先 synchronized，因为它语义简单、自动释放、JVM 优化充分。只有当我需要 tryLock、
-超时获取、可中断等待、公平锁或多个 Condition 时，才选择 ReentrantLock。ReentrantLock 必须在
-finally 中 unlock，否则会造成严重故障。
-
-锁选择还要看边界：单机锁只能保护当前 JVM，不能解决多实例并发。库存这类跨实例一致性问题，
-通常需要数据库条件更新、Redis 原子操作或消息化设计。
-```
-
-## 回答评分点
-
-高分答案应该覆盖：
-
-- 简单场景优先 `synchronized`。
-- `ReentrantLock` 支持超时、中断、公平和 Condition。
-- 显式锁必须 finally 解锁。
-- 公平锁吞吐通常更低。
-- 单机锁不能解决分布式并发。

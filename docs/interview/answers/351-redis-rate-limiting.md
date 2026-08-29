@@ -2,10 +2,6 @@
 
 [返回按分类学习面试题](../README.md)
 
-## 题目
-
-Redis 限流如何实现？
-
 ## 先给面试官的短答案
 
 Redis 限流常用固定窗口、滑动窗口、令牌桶和漏桶。实现上通常使用计数器、ZSet 或 Lua 脚本保证
@@ -51,62 +47,3 @@ eMall 可以在网关按用户、IP、接口和商家维度限流。例如下单
 
 秒杀接口更适合令牌桶和活动令牌，普通查询接口可以固定窗口或滑动窗口。Redis 故障时，网关要有
 本地限流兜底，不能完全失去保护。
-
-## 深度增强：缓存和消息治理图
-
-![数据库、缓存和消息一致性链路](../assets/data-cache-mq.svg)
-
-缓存和消息题要关注一致性、削峰、延迟、积压和恢复。
-Redis 很快，但会遇到穿透、击穿、雪崩、热点 key 和内存淘汰；
-MQ 能解耦和削峰，但会带来重复消费、乱序、积压和死信处理。
-
-## 深度增强：Java 17 幂等消费示例
-
-```java
-import java.util.Set;
-import java.util.concurrent.ConcurrentHashMap;
-
-final class LocalIdempotentConsumer {
-    private final Set<String> processedKeys = ConcurrentHashMap.newKeySet();
-
-    boolean tryHandle(String messageKey, Runnable handler) {
-        if (!processedKeys.add(messageKey)) {
-            return false;
-        }
-        handler.run();
-        return true;
-    }
-}
-```
-
-这个示例只适合解释幂等思想。生产环境不能用本地内存做全局幂等，要使用数据库唯一键、Redis 原子操作或业务状态机。
-
-## 深度增强：生产边界
-
-缓存要有 TTL、容量、降级和回源保护；消息要有重试、死信、延迟队列、消费幂等和积压告警。
-缓存不一致要能修复，消息失败要能回放，不能只依赖人工查日志。
-
-## 深度增强：面试高分表达
-
-我会把缓存和消息都看成性能与稳定性工具，而不是正确性事实来源。
-正确性由数据库事实、状态机、幂等和对账保证；缓存和 MQ 负责降低延迟、削峰填谷和解耦系统。
-
-## 专家级完整回答
-
-```text
-Redis 限流可以用固定窗口、滑动窗口、令牌桶和漏桶。固定窗口简单但有边界突刺，滑动窗口更平滑，
-令牌桶允许可控突发。
-
-实现时要用 Lua 保证检查和扣减原子性，并明确限流维度、拒绝策略和 Redis 故障兜底。电商下单、
-登录、领券和秒杀都需要不同限流策略。
-```
-
-## 回答评分点
-
-高分答案应该覆盖：
-
-- 固定窗口、滑动窗口、令牌桶。
-- Lua 保证原子性。
-- 限流维度要清晰。
-- 拒绝和降级策略。
-- Redis 故障要有本地兜底。

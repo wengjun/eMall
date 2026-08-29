@@ -2,10 +2,6 @@
 
 [返回按分类学习面试题](../README.md)
 
-## 题目
-
-分库分表后如何按用户查订单？
-
 ## 先给面试官的短答案
 
 如果订单主表按用户 ID 分片，按用户查订单可以直接路由到单分片。
@@ -48,61 +44,3 @@ user_order_index(user_id, order_id, created_at, status)
 用户订单列表是高频读接口，可以维护按 `user_id` 分片的订单列表读模型。
 
 订单主表按订单 ID 均匀写入，读模型通过订单事件异步更新，并支持状态和时间游标分页。
-
-## 深度增强：数据访问和扩展图
-
-![数据库、缓存和消息一致性链路](../assets/data-cache-mq.svg)
-
-数据库题要从访问路径、索引、锁、事务和容量出发。电商系统的数据层既要支撑高并发读写，
-又要保证订单、库存、支付等事实数据可追踪。缓存和消息可以提升性能，但不能替代数据库事实来源。
-
-## 深度增强：Java 17 数据访问策略示例
-
-```java
-record QueryPlan(String accessPath, boolean usesIndex, boolean requiresPagination) {
-
-    boolean safeForOnlineTraffic() {
-        return usesIndex && requiresPagination;
-    }
-}
-
-final class OnlineQueryPolicy {
-
-    void verify(QueryPlan plan) {
-        if (!plan.safeForOnlineTraffic()) {
-            throw new IllegalArgumentException("Online query must use index and pagination");
-        }
-    }
-}
-```
-
-这段代码体现线上查询治理：不是 SQL 能跑就可以上线，而是要确认走索引、可分页、可限流、可观测。
-
-## 深度增强：生产边界
-
-核心表设计要从典型查询倒推索引，避免全表扫描、深分页和大事务。分库分表要先选好分片键，
-避免跨分片事务和热点分片。任何数据迁移都要支持灰度、校验、回滚或修复。
-
-## 深度增强：面试高分表达
-
-我会从访问模式回答数据题：谁查、按什么条件查、QPS 多少、数据量多大、是否强一致、是否需要分页和排序。
-然后再决定索引、分片、缓存、读写分离和归档策略。
-
-## 专家级完整回答
-
-```text
-分库分表后按用户查订单，最直接方案是订单按 userId 分片，用户查询单分片完成。
-如果主表按 orderId 分片，则需要用户订单索引表或 CQRS 读模型，按 userId 分片保存列表所需字段。
-
-不能每次查询都广播所有分片。读模型要接受最终一致，并通过事件重试、补偿和对账保证收敛。
-```
-
-## 回答评分点
-
-高分答案应该覆盖：
-
-- 用户分片可单分片查询。
-- 订单分片需要用户索引表或读模型。
-- 避免广播所有分片。
-- 读模型要处理最终一致。
-- 列表字段可用覆盖设计。

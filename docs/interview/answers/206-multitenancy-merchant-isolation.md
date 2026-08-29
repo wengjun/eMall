@@ -2,10 +2,6 @@
 
 [返回按分类学习面试题](../README.md)
 
-## 题目
-
-如何做多租户或商家隔离？
-
 ## 先给面试官的短答案
 
 多租户隔离要防止一个商家看到、修改或拖垮另一个商家的数据和资源。
@@ -57,65 +53,3 @@
 商家后台查询商品、订单、结算单时，必须从登录身份解析 `merchantId`，并在数据访问、缓存和消息中持续传递。
 
 运营人员跨商家操作必须有授权、审批和审计。
-
-## 深度增强：可观测与配置治理图
-
-![指标、日志、Trace 和告警平台](../assets/observability-platform.svg)
-
-配置、日志、指标和 Trace 不是附属能力，而是生产系统定位问题和控制变更风险的基础。
-没有可观测性，限流、熔断、回滚和补偿都很难判断是否有效。
-
-## 深度增强：Java 17 观测信号示例
-
-```java
-import java.time.Instant;
-import java.util.Map;
-
-record ObservabilityEvent(
-        Instant time,
-        String traceId,
-        String service,
-        String eventType,
-        Map<String, String> tags) {
-}
-
-final class TraceTagPolicy {
-
-    boolean shouldKeep(String key) {
-        return !key.equalsIgnoreCase("password")
-                && !key.equalsIgnoreCase("secret")
-                && !key.equalsIgnoreCase("token");
-    }
-}
-```
-
-这段代码体现生产观测的两个重点：所有关键事件要能关联 traceId，敏感信息不能进入日志和标签。
-
-## 深度增强：生产边界
-
-日志越多不代表越好。核心链路要控制日志成本、采样率、脱敏和索引字段。告警也不能只看机器指标，
-还要看下单成功率、支付成功率、库存失败率、Outbox 积压和用户投诉。
-
-## 深度增强：面试高分表达
-
-我会把可观测性讲成故障闭环：指标发现异常，Trace 定位慢在哪里，日志解释发生了什么，
-告警和 Runbook 指导恢复。配置变更也要有版本、审批、灰度、审计和回滚，避免配置事故变成全站事故。
-
-## 专家级完整回答
-
-```text
-多租户隔离要覆盖身份、权限、数据、缓存、消息、文件、限流和运维操作。
-基础方案是在所有数据上携带 tenant_id，并由数据访问层和权限层强制校验，不能依赖开发者手写条件。
-
-缓存 key、MQ 消息、日志和文件存储也要包含租户上下文。高价值或合规要求高的商家可以采用独立库或独立集群。
-```
-
-## 回答评分点
-
-高分答案应该覆盖：
-
-- 隔离不只是数据库字段。
-- `tenant_id` 要强制传递和校验。
-- 缓存、MQ、文件和日志都要隔离。
-- 限流和配额应按租户维度。
-- 高风险租户可以物理隔离。

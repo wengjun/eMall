@@ -2,10 +2,6 @@
 
 [返回按分类学习面试题](../README.md)
 
-## 题目
-
-什么情况下索引会失效？
-
 ## 先给面试官的短答案
 
 索引失效通常是因为查询条件无法按索引有序结构定位数据，或者优化器判断走索引成本更高。
@@ -55,61 +51,3 @@ WHERE created_at >= '2026-04-30 00:00:00'
 订单表按 `created_at` 建索引后，如果后台查询使用 `DATE(created_at)`，可能无法有效使用索引。
 
 应改成时间范围查询，并限制查询时间窗口。
-
-## 深度增强：数据访问和扩展图
-
-![数据库、缓存和消息一致性链路](../assets/data-cache-mq.svg)
-
-数据库题要从访问路径、索引、锁、事务和容量出发。电商系统的数据层既要支撑高并发读写，
-又要保证订单、库存、支付等事实数据可追踪。缓存和消息可以提升性能，但不能替代数据库事实来源。
-
-## 深度增强：Java 17 数据访问策略示例
-
-```java
-record QueryPlan(String accessPath, boolean usesIndex, boolean requiresPagination) {
-
-    boolean safeForOnlineTraffic() {
-        return usesIndex && requiresPagination;
-    }
-}
-
-final class OnlineQueryPolicy {
-
-    void verify(QueryPlan plan) {
-        if (!plan.safeForOnlineTraffic()) {
-            throw new IllegalArgumentException("Online query must use index and pagination");
-        }
-    }
-}
-```
-
-这段代码体现线上查询治理：不是 SQL 能跑就可以上线，而是要确认走索引、可分页、可限流、可观测。
-
-## 深度增强：生产边界
-
-核心表设计要从典型查询倒推索引，避免全表扫描、深分页和大事务。分库分表要先选好分片键，
-避免跨分片事务和热点分片。任何数据迁移都要支持灰度、校验、回滚或修复。
-
-## 深度增强：面试高分表达
-
-我会从访问模式回答数据题：谁查、按什么条件查、QPS 多少、数据量多大、是否强一致、是否需要分页和排序。
-然后再决定索引、分片、缓存、读写分离和归档策略。
-
-## 专家级完整回答
-
-```text
-索引失效通常因为查询条件无法利用 B+Tree 的有序性，或优化器判断走索引成本更高。
-常见原因是函数计算、隐式类型转换、前置模糊匹配、违反最左前缀、低选择性和返回大量数据。
-
-排查时要看 explain 和实际执行情况，不能只看表上是否有索引。
-```
-
-## 回答评分点
-
-高分答案应该覆盖：
-
-- 函数计算会影响索引使用。
-- 隐式类型转换很常见。
-- 前置模糊匹配难用 B+Tree。
-- 违反最左前缀会影响联合索引。
-- 优化器可能因成本选择全表扫描。

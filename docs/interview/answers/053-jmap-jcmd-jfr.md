@@ -2,10 +2,6 @@
 
 [返回按分类学习面试题](../README.md)
 
-## 题目
-
-`jmap`、`jcmd`、JFR 分别适合什么场景？
-
 ## 先给面试官的短答案
 
 `jmap` 更偏传统内存排查，常用于生成 heap dump 和查看堆对象概况。
@@ -167,64 +163,3 @@ thread stack 和 metaspace。
 如果订单服务疑似 Java heap 泄漏，导出 heap dump 后用 MAT 查引用链。
 
 如果秒杀接口 P99 飙升但没有明显错误，使用 JFR 记录高峰 2 分钟，看锁竞争、对象分配、GC 和 socket IO。
-
-## 深度增强：JVM 生产运行图
-
-![Java 17 容器内 JVM 内存结构](../assets/jvm-runtime-memory.svg)
-
-JVM 题要从运行时资源解释到业务影响。堆、直接内存、元空间、线程栈和容器 memory limit 共同决定服务稳定性；
-GC、CPU throttling、线程池队列和下游超时会一起影响 P99，而不是孤立存在。
-
-## 深度增强：Java 17 诊断模型示例
-
-```java
-record RuntimeSignal(
-        double heapUsage,
-        double containerMemoryUsage,
-        long gcPauseMillis,
-        int threadCount,
-        int queuedTasks) {
-
-    boolean requiresTriage() {
-        return heapUsage > 0.85
-                || containerMemoryUsage > 0.90
-                || gcPauseMillis > 500
-                || threadCount > 800
-                || queuedTasks > 1_000;
-    }
-}
-```
-
-这个模型强调线上诊断要看组合信号。只看 heap 不够，只看 GC 也不够；
-要把 JVM、容器、线程池和业务延迟放到同一条时间线。
-
-## 深度增强：生产边界
-
-JVM 调优不能靠背参数。要先明确服务目标：低延迟、吞吐、容器资源、对象分配速率和 P99 SLO。
-然后通过 GC 日志、JFR、指标和压测验证。错误地调大 `-Xmx` 可能挤压堆外内存，导致容器 OOMKilled。
-
-## 深度增强：面试高分表达
-
-我会用证据链回答 JVM 问题：先看业务影响，再看 JVM 指标、GC 日志、线程栈、heap dump、容器事件和最近变更。
-结论要能解释现象，并能给出降级、扩容、参数调整或代码优化方案。
-
-## 专家级完整回答
-
-```text
-jmap 更偏堆内存诊断，适合对象直方图和 heap dump。jcmd 是更现代的统一诊断入口，
-可以看 JVM 参数、类加载、heap dump、native memory，也能控制 JFR。JFR 是低开销事件记录，
-适合生产性能分析，尤其是 CPU、锁、GC、分配和 IO 的时间序列分析。
-
-我的原则是：先用指标和 JFR 做低风险定位，再在必要时对特定实例做 heap dump。生产环境要考虑
-STW、磁盘空间和对线上流量的影响。
-```
-
-## 回答评分点
-
-高分答案应该覆盖：
-
-- `jmap` 主要面向堆。
-- `jcmd` 是统一诊断入口。
-- JFR 适合生产低开销性能分析。
-- 知道 heap dump 有风险。
-- 能结合 native memory、GC、CPU、P99 场景选工具。

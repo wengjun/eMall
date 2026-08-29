@@ -2,10 +2,6 @@
 
 [返回按分类学习面试题](../README.md)
 
-## 题目
-
-happens-before 规则是什么？
-
 ## 先给面试官的短答案
 
 happens-before 是 Java 内存模型中判断可见性和有序性的规则。如果操作 A happens-before 操作 B，
@@ -109,30 +105,3 @@ A happens-before C
 构造对象时的写入 happens-before volatile 写，后续请求线程 volatile 读后就能看到完整配置。
 
 如果没有这些规则，请求线程可能看到未正确发布的对象。
-
-## 共性并发模型
-
-有界并发、舱壁隔离和多实例正确性的统一说明及 Java 17 示例见
-[共享模型：有界并发和舱壁隔离](../shared-answer-models.md#有界并发和舱壁隔离)。
-
-## 专家级完整回答
-
-```text
-happens-before 是 Java 内存模型中的可见性和有序性规则，不是简单的物理时间先后。
-如果 A happens-before B，那么 A 的写入对 B 可见，并且内存语义上 A 先于 B。
-常见规则有程序顺序、unlock 先于后续 lock、volatile 写先于后续读、Thread.start 和 Thread.join，
-并且 happens-before 具有传递性。
-
-理解它能帮助判断 synchronized、volatile、线程启动和线程结束为什么能安全发布数据。
-```
-
-## 回答评分点
-
-高分答案应该覆盖：
-
-- happens-before 是内存可见性规则。
-- 不等于简单时间顺序。
-- 锁规则。
-- volatile 规则。
-- start/join 规则。
-- 传递性。

@@ -2,10 +2,6 @@
 
 [返回按分类学习面试题](../README.md)
 
-## 题目
-
-2PC 有哪些可用性问题？
-
 ## 先给面试官的短答案
 
 2PC 的主要问题是阻塞、协调者单点、资源锁定时间长和网络故障下状态不确定。
@@ -51,65 +47,3 @@
 秒杀下单如果用 2PC 锁库存，协调者一旦抖动，大量库存记录会处于 prepare 状态，后续用户无法购买。
 
 更合理的是库存预占、本地事务、事件确认和超时释放。
-
-## 深度增强：可观测与配置治理图
-
-![指标、日志、Trace 和告警平台](../assets/observability-platform.svg)
-
-配置、日志、指标和 Trace 不是附属能力，而是生产系统定位问题和控制变更风险的基础。
-没有可观测性，限流、熔断、回滚和补偿都很难判断是否有效。
-
-## 深度增强：Java 17 观测信号示例
-
-```java
-import java.time.Instant;
-import java.util.Map;
-
-record ObservabilityEvent(
-        Instant time,
-        String traceId,
-        String service,
-        String eventType,
-        Map<String, String> tags) {
-}
-
-final class TraceTagPolicy {
-
-    boolean shouldKeep(String key) {
-        return !key.equalsIgnoreCase("password")
-                && !key.equalsIgnoreCase("secret")
-                && !key.equalsIgnoreCase("token");
-    }
-}
-```
-
-这段代码体现生产观测的两个重点：所有关键事件要能关联 traceId，敏感信息不能进入日志和标签。
-
-## 深度增强：生产边界
-
-日志越多不代表越好。核心链路要控制日志成本、采样率、脱敏和索引字段。告警也不能只看机器指标，
-还要看下单成功率、支付成功率、库存失败率、Outbox 积压和用户投诉。
-
-## 深度增强：面试高分表达
-
-我会把可观测性讲成故障闭环：指标发现异常，Trace 定位慢在哪里，日志解释发生了什么，
-告警和 Runbook 指导恢复。配置变更也要有版本、审批、灰度、审计和回滚，避免配置事故变成全站事故。
-
-## 专家级完整回答
-
-```text
-2PC 的可用性问题主要是阻塞。参与者 prepare 后锁住资源并等待协调者决策，如果协调者故障或网络分区，
-参与者无法独立判断提交还是回滚，会造成资源长时间不可用。
-
-另外 2PC 需要两轮通信和多节点日志，参与者越多延迟越高，吞吐越低，不适合高并发长链路交易。
-```
-
-## 回答评分点
-
-高分答案应该覆盖：
-
-- prepare 后参与者会阻塞等待。
-- 协调者故障会放大问题。
-- 网络分区导致状态不确定。
-- 长锁降低吞吐。
-- 高并发交易链路通常避免 2PC。

@@ -2,10 +2,6 @@
 
 [返回按分类学习面试题](../README.md)
 
-## 题目
-
-为什么可变对象不适合作为 `HashMap` 的 key？
-
 ## 先给面试官的短答案
 
 `HashMap` 根据 key 的 `hashCode` 定位桶，再用 `equals` 找具体 entry。
@@ -98,24 +94,3 @@ public final class IdempotencyKey {
     private final String requestId;
 }
 ```
-
-## 专家级完整回答
-
-```text
-可变对象不适合作为 HashMap key，因为 HashMap 依赖 key 的 hashCode 定位桶。
-如果 key 放入后参与 hashCode 或 equals 的字段发生变化，查找时会去错误的桶，
-导致 entry 找不到。
-
-在分布式服务里，缓存 key、幂等 key、限流 key、消息去重 key 都必须稳定。
-我会使用 String、Long 或不可变 record 作为 key，避免 setter 和可变集合参与 hash。
-```
-
-## 回答评分点
-
-高分答案应该覆盖：
-
-- 能解释 HashMap 查找依赖 hashCode 和 equals。
-- 能说明字段变化导致查找失败。
-- 能联系缓存、幂等、限流、去重。
-- 能提出不可变 key 和 record。
-- 能指出内存泄漏风险。

@@ -2,10 +2,6 @@
 
 [返回按分类学习面试题](../README.md)
 
-## 题目
-
-`CountDownLatch`、`CyclicBarrier`、`Semaphore` 分别适合什么场景？
-
 ## 先给面试官的短答案
 
 `CountDownLatch` 适合一个线程等待多个任务完成，一次性使用；`CyclicBarrier` 适合一组线程互相等待，
@@ -112,29 +108,3 @@ if (semaphore.tryAcquire()) {
 `CyclicBarrier` 在业务服务中相对少见，更常用于并行计算或测试场景。
 
 分布式秒杀限流不能只靠单 JVM `Semaphore`，需要网关、Redis、令牌桶或流量平台。
-
-## 共性并发模型
-
-有界并发、舱壁隔离和多实例正确性的统一说明及 Java 17 示例见
-[共享模型：有界并发和舱壁隔离](../shared-answer-models.md#有界并发和舱壁隔离)。
-
-## 专家级完整回答
-
-```text
-CountDownLatch 用于一个或多个线程等待一批任务完成，是一次性的；CyclicBarrier 用于一组线程
-互相等待到齐后一起进入下一阶段，可以复用；Semaphore 用许可数限制并发访问，适合保护本地资源
-或做单实例舱壁隔离。
-
-生产中要给 await 设置超时，Semaphore 要 finally release，并且要清楚这些工具只在单 JVM 内有效，
-不能替代分布式限流或分布式协调。
-```
-
-## 回答评分点
-
-高分答案应该覆盖：
-
-- `CountDownLatch` 一次性等待多个任务。
-- `CyclicBarrier` 多线程到齐继续且可复用。
-- `Semaphore` 控制并发许可。
-- 等待要有超时。
-- 单机工具不能解决分布式协调。

@@ -1,10 +1,6 @@
-# 274 如何做优雅关闭？
+# 274 优雅关闭的流程和正确性边界是什么？
 
 [返回按分类学习面试题](../README.md)
-
-## 题目
-
-如何做优雅关闭？
 
 ## 先给面试官的短答案
 
@@ -55,61 +51,3 @@
 订单服务发布时，实例先 readiness 失败，从网关摘除，再等待当前下单请求完成。
 
 MQ 消费者停止拉取新消息，当前消息处理完成后提交 ack，然后实例退出。
-
-## 深度增强：数据访问和扩展图
-
-![数据库、缓存和消息一致性链路](../assets/data-cache-mq.svg)
-
-数据库题要从访问路径、索引、锁、事务和容量出发。电商系统的数据层既要支撑高并发读写，
-又要保证订单、库存、支付等事实数据可追踪。缓存和消息可以提升性能，但不能替代数据库事实来源。
-
-## 深度增强：Java 17 数据访问策略示例
-
-```java
-record QueryPlan(String accessPath, boolean usesIndex, boolean requiresPagination) {
-
-    boolean safeForOnlineTraffic() {
-        return usesIndex && requiresPagination;
-    }
-}
-
-final class OnlineQueryPolicy {
-
-    void verify(QueryPlan plan) {
-        if (!plan.safeForOnlineTraffic()) {
-            throw new IllegalArgumentException("Online query must use index and pagination");
-        }
-    }
-}
-```
-
-这段代码体现线上查询治理：不是 SQL 能跑就可以上线，而是要确认走索引、可分页、可限流、可观测。
-
-## 深度增强：生产边界
-
-核心表设计要从典型查询倒推索引，避免全表扫描、深分页和大事务。分库分表要先选好分片键，
-避免跨分片事务和热点分片。任何数据迁移都要支持灰度、校验、回滚或修复。
-
-## 深度增强：面试高分表达
-
-我会从访问模式回答数据题：谁查、按什么条件查、QPS 多少、数据量多大、是否强一致、是否需要分页和排序。
-然后再决定索引、分片、缓存、读写分离和归档策略。
-
-## 专家级完整回答
-
-```text
-优雅关闭要先摘流量，再停应用。实例关闭前先让 readiness 失败并从注册中心或负载均衡摘除，
-停止接收新请求，等待在途请求、后台任务和 MQ 消费完成，最后关闭线程池、连接池和进程。
-
-所有等待都要有超时，任务要可恢复，避免发布时丢请求或产生半处理状态。
-```
-
-## 回答评分点
-
-高分答案应该覆盖：
-
-- 先摘流量再关闭。
-- 等待在途请求完成。
-- MQ 和后台任务也要优雅停止。
-- 关闭流程要有超时。
-- readiness 和注册中心摘除很重要。

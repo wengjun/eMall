@@ -2,10 +2,6 @@
 
 [返回按分类学习面试题](../README.md)
 
-## 题目
-
-为什么生产代码不能随意使用公共 ForkJoinPool？
-
 ## 先给面试官的短答案
 
 公共 `ForkJoinPool` 是 JVM 级共享资源，多个框架和业务都可能使用。随意把阻塞 IO、慢任务、
@@ -80,28 +76,3 @@ orders.parallelStream().map(this::calculate).toList();
 此时订单详情页的 `CompletableFuture` 默认任务也使用 commonPool，就会被营销计算拖慢。
 
 这就是典型的共享池故障扩散。
-
-## 共性并发模型
-
-有界并发、舱壁隔离和多实例正确性的统一说明及 Java 17 示例见
-[共享模型：有界并发和舱壁隔离](../shared-answer-models.md#有界并发和舱壁隔离)。
-
-## 专家级完整回答
-
-```text
-公共 ForkJoinPool 是 JVM 级共享资源，CompletableFuture 默认异步方法和 parallelStream 都可能使用它。
-如果把阻塞 IO、慢任务或重计算放进去，会造成线程饥饿和跨业务影响，并且缺少业务级队列、拒绝、
-指标和隔离能力。
-
-生产代码应显式使用命名、有界、可监控的业务线程池。核心链路不要随意 parallelStream。
-```
-
-## 回答评分点
-
-高分答案应该覆盖：
-
-- commonPool 是共享资源。
-- `CompletableFuture` 和 parallel stream 可能使用它。
-- 阻塞 IO 会占满线程。
-- 缺少隔离和监控。
-- 生产使用业务线程池。

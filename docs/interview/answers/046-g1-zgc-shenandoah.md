@@ -2,10 +2,6 @@
 
 [返回按分类学习面试题](../README.md)
 
-## 题目
-
-G1、ZGC、Shenandoah 的设计目标有什么不同？
-
 ## 先给面试官的短答案
 
 G1 是面向服务端的通用低停顿收集器，目标是在吞吐和可预测暂停之间取得平衡。
@@ -76,63 +72,3 @@ Shenandoah 也是低暂停 GC，和 ZGC 类似，目标是减少停顿时间。
 - 吞吐优先。
 - 暂停敏感度较低。
 - 不一定需要最强低延迟 GC。
-
-## 深度增强：JVM 生产运行图
-
-![Java 17 容器内 JVM 内存结构](../assets/jvm-runtime-memory.svg)
-
-JVM 题要从运行时资源解释到业务影响。堆、直接内存、元空间、线程栈和容器 memory limit 共同决定服务稳定性；
-GC、CPU throttling、线程池队列和下游超时会一起影响 P99，而不是孤立存在。
-
-## 深度增强：Java 17 诊断模型示例
-
-```java
-record RuntimeSignal(
-        double heapUsage,
-        double containerMemoryUsage,
-        long gcPauseMillis,
-        int threadCount,
-        int queuedTasks) {
-
-    boolean requiresTriage() {
-        return heapUsage > 0.85
-                || containerMemoryUsage > 0.90
-                || gcPauseMillis > 500
-                || threadCount > 800
-                || queuedTasks > 1_000;
-    }
-}
-```
-
-这个模型强调线上诊断要看组合信号。只看 heap 不够，只看 GC 也不够；
-要把 JVM、容器、线程池和业务延迟放到同一条时间线。
-
-## 深度增强：生产边界
-
-JVM 调优不能靠背参数。要先明确服务目标：低延迟、吞吐、容器资源、对象分配速率和 P99 SLO。
-然后通过 GC 日志、JFR、指标和压测验证。错误地调大 `-Xmx` 可能挤压堆外内存，导致容器 OOMKilled。
-
-## 深度增强：面试高分表达
-
-我会用证据链回答 JVM 问题：先看业务影响，再看 JVM 指标、GC 日志、线程栈、heap dump、容器事件和最近变更。
-结论要能解释现象，并能给出降级、扩容、参数调整或代码优化方案。
-
-## 专家级完整回答
-
-```text
-G1 是通用服务端 GC，目标是在吞吐和可预测暂停之间平衡，适合大多数微服务。
-ZGC 和 Shenandoah 更偏低延迟，目标是把暂停时间控制得很短，适合大堆和 P99/P999 敏感服务。
-
-我不会脱离场景选 GC。对于订单、支付、网关这类核心低延迟服务，我会通过压测比较 G1 和低延迟 GC
-在 P99、CPU、内存和吞吐上的表现；对于批处理服务，吞吐和成本可能更重要。
-```
-
-## 回答评分点
-
-高分答案应该覆盖：
-
-- G1 平衡吞吐和暂停。
-- ZGC/Shenandoah 面向低延迟。
-- 能说明选择要看场景和压测。
-- 能联系核心交易服务 P99。
-- 能指出低延迟 GC 可能有额外成本。

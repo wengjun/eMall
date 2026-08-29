@@ -2,10 +2,6 @@
 
 [返回按分类学习面试题](../README.md)
 
-## 题目
-
-如何定位死锁？
-
 ## 先给面试官的短答案
 
 定位死锁首先看线程 dump，`jstack` 通常能识别 Java monitor 死锁，并输出 involved threads。
@@ -127,64 +123,3 @@ Java 线程 dump 不一定能直接看出数据库死锁，只能看到线程卡
 例如库存扣减和订单状态更新，如果两个流程以不同顺序操作库存和订单资源，就可能出现死锁或数据库锁等待。
 
 解决方式是统一资源更新顺序，缩短事务，避免在事务中调用远程服务，把复杂流程拆成状态机和异步补偿。
-
-## 深度增强：JVM 生产运行图
-
-![Java 17 容器内 JVM 内存结构](../assets/jvm-runtime-memory.svg)
-
-JVM 题要从运行时资源解释到业务影响。堆、直接内存、元空间、线程栈和容器 memory limit 共同决定服务稳定性；
-GC、CPU throttling、线程池队列和下游超时会一起影响 P99，而不是孤立存在。
-
-## 深度增强：Java 17 诊断模型示例
-
-```java
-record RuntimeSignal(
-        double heapUsage,
-        double containerMemoryUsage,
-        long gcPauseMillis,
-        int threadCount,
-        int queuedTasks) {
-
-    boolean requiresTriage() {
-        return heapUsage > 0.85
-                || containerMemoryUsage > 0.90
-                || gcPauseMillis > 500
-                || threadCount > 800
-                || queuedTasks > 1_000;
-    }
-}
-```
-
-这个模型强调线上诊断要看组合信号。只看 heap 不够，只看 GC 也不够；
-要把 JVM、容器、线程池和业务延迟放到同一条时间线。
-
-## 深度增强：生产边界
-
-JVM 调优不能靠背参数。要先明确服务目标：低延迟、吞吐、容器资源、对象分配速率和 P99 SLO。
-然后通过 GC 日志、JFR、指标和压测验证。错误地调大 `-Xmx` 可能挤压堆外内存，导致容器 OOMKilled。
-
-## 深度增强：面试高分表达
-
-我会用证据链回答 JVM 问题：先看业务影响，再看 JVM 指标、GC 日志、线程栈、heap dump、容器事件和最近变更。
-结论要能解释现象，并能给出降级、扩容、参数调整或代码优化方案。
-
-## 专家级完整回答
-
-```text
-定位死锁我会先抓 jstack，看是否有 Found one Java-level deadlock，分析参与线程持有什么锁、
-等待什么锁和对应代码行。对于 ReentrantLock 也要看 ownable synchronizer 和等待栈。
-如果线程卡在 JDBC，还要排查数据库死锁和行锁等待。
-
-修复上优先固定加锁和资源访问顺序，减少嵌套锁，缩小锁粒度，避免锁内调用外部系统，
-必要时使用 tryLock 超时和业务补偿。
-```
-
-## 回答评分点
-
-高分答案应该覆盖：
-
-- 用 `jstack` 定位 Java 死锁。
-- 分析持有锁和等待锁。
-- 知道 ReentrantLock 和数据库也会死锁。
-- 修复要固定加锁顺序。
-- 避免锁内 IO 和嵌套锁。

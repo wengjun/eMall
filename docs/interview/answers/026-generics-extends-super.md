@@ -2,10 +2,6 @@
 
 [返回按分类学习面试题](../README.md)
 
-## 题目
-
-泛型通配符 `extends` 和 `super` 怎么理解？
-
 ## 先给面试官的短答案
 
 可以用 PECS 原则理解：Producer Extends, Consumer Super。
@@ -117,24 +113,3 @@ void collectPaidOrders(List<? super PaidOrder> target, PaidOrder paidOrder) {
 业务代码可读性很重要。如果泛型写得太复杂，新人很难理解。
 
 公共库和框架层可以适当使用通配符提升扩展性；普通业务代码优先简单清晰。
-
-## 专家级完整回答
-
-```text
-extends 和 super 可以用 PECS 理解。一个集合如果主要被我读取，它生产 T，
-就用 ? extends T；如果主要被我写入，它消费 T，就用 ? super T。
-
-? extends Order 能让我安全读出 Order，但不能安全写入具体 Order；
-? super PaidOrder 能让我安全写入 PaidOrder，但读出来只能当 Object 处理。
-在公共库 API 中合理使用通配符能提升扩展性，但业务代码要避免过度复杂。
-```
-
-## 回答评分点
-
-高分答案应该覆盖：
-
-- 能说出 PECS。
-- 能解释 extends 适合读。
-- 能解释 super 适合写。
-- 能举父类子类集合例子。
-- 能强调业务代码可读性。

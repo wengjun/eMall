@@ -2,10 +2,6 @@
 
 [返回按分类学习面试题](../README.md)
 
-## 题目
-
-Redisson 看门狗解决什么问题？
-
 ## 先给面试官的短答案
 
 Redisson 看门狗解决的是业务执行时间不确定时，Redis 锁 TTL 过期导致锁被其他线程提前获取的问题。
@@ -54,62 +50,3 @@ eMall 后台运营活动发布、报表生成互斥任务可以使用 Redisson �
 提前释放。
 
 但核心下单扣库存不能只依赖看门狗。库存正确性仍由库存服务的条件扣减、幂等号和订单状态机保证。
-
-## 深度增强：缓存和消息治理图
-
-![数据库、缓存和消息一致性链路](../assets/data-cache-mq.svg)
-
-缓存和消息题要关注一致性、削峰、延迟、积压和恢复。
-Redis 很快，但会遇到穿透、击穿、雪崩、热点 key 和内存淘汰；
-MQ 能解耦和削峰，但会带来重复消费、乱序、积压和死信处理。
-
-## 深度增强：Java 17 幂等消费示例
-
-```java
-import java.util.Set;
-import java.util.concurrent.ConcurrentHashMap;
-
-final class LocalIdempotentConsumer {
-    private final Set<String> processedKeys = ConcurrentHashMap.newKeySet();
-
-    boolean tryHandle(String messageKey, Runnable handler) {
-        if (!processedKeys.add(messageKey)) {
-            return false;
-        }
-        handler.run();
-        return true;
-    }
-}
-```
-
-这个示例只适合解释幂等思想。生产环境不能用本地内存做全局幂等，要使用数据库唯一键、Redis 原子操作或业务状态机。
-
-## 深度增强：生产边界
-
-缓存要有 TTL、容量、降级和回源保护；消息要有重试、死信、延迟队列、消费幂等和积压告警。
-缓存不一致要能修复，消息失败要能回放，不能只依赖人工查日志。
-
-## 深度增强：面试高分表达
-
-我会把缓存和消息都看成性能与稳定性工具，而不是正确性事实来源。
-正确性由数据库事实、状态机、幂等和对账保证；缓存和 MQ 负责降低延迟、削峰填谷和解耦系统。
-
-## 专家级完整回答
-
-```text
-Redisson 看门狗用于自动续期 Redis 锁，解决业务耗时不确定导致锁 TTL 提前过期的问题。只要当前
-线程仍持有锁，看门狗就会周期性延长锁过期时间。
-
-但它不是强一致锁协议。进程崩溃、网络异常、Redis 主从切换和业务非幂等仍会带来风险。因此锁
-只能做互斥控制，最终正确性还要靠数据库约束、幂等和状态机。
-```
-
-## 回答评分点
-
-高分答案应该覆盖：
-
-- 看门狗负责自动续期。
-- 解决业务耗时不确定问题。
-- 没有显式 lease time 时生效。
-- 进程崩溃后锁会过期。
-- 不能替代业务幂等和一致性设计。

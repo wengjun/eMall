@@ -2,10 +2,6 @@
 
 [返回按分类学习面试题](../README.md)
 
-## 题目
-
-事故复盘应该关注什么？
-
 ## 先给面试官的短答案
 
 事故复盘应关注事实时间线、用户和业务影响、根因、触发因素、检测和响应过程、缓解动作、恢复验证
@@ -57,55 +53,3 @@
 eMall 如果发生支付回调延迟事故，复盘要记录从第三方异常开始到订单状态恢复的完整时间线。
 
 还要确认有多少订单状态延迟、是否影响履约、是否需要补偿用户，以及后续如何缩短检测和恢复时间。
-
-## 深度增强：Kubernetes 运维治理图
-
-![Kubernetes 生产运行和故障治理](../assets/kubernetes-operations.svg)
-
-Kubernetes 题不能只背 Deployment、Service 和 Ingress。生产稳定性还取决于资源 requests/limits、探针、HPA、PDB、
-灰度发布、配置回滚、日志指标 Trace 和故障 Runbook。
-
-## 深度增强：Java 17 发布门禁示例
-
-```java
-record ReleaseSignal(double errorRate, long p99Millis, double cpuThrottleRate, boolean rollbackSafe) {
-
-    boolean canContinue() {
-        return errorRate < 0.001
-                && p99Millis < 300
-                && cpuThrottleRate < 0.05
-                && rollbackSafe;
-    }
-}
-```
-
-这段代码表达发布平台的核心：放量不是人工拍脑袋，而是由错误率、延迟、资源和回滚安全共同决定。
-
-## 深度增强：生产边界
-
-K8s 会重启失败容器，但不保证业务一定恢复。错误的 liveness probe 可能造成重启风暴；
-过低的 CPU limit 会造成 throttling；不兼容数据库变更会让回滚失效。平台能力要和应用设计配合。
-
-## 深度增强：面试高分表达
-
-我会把 K8s 视为运行平台，而不是稳定性的全部答案。真正生产级要有容量规划、灰度门禁、配置治理、可观测性、
-自动回滚和数据库兼容检查，才能支撑核心交易链路。
-
-## 专家级完整回答
-
-```text
-事故复盘关注事实、影响、原因、响应和改进。要建立完整时间线，量化用户和业务影响，区分根因和
-触发因素，评估检测、告警、Runbook、缓解和恢复是否有效。
-
-复盘不是追责，而是让系统更可靠。最终必须产出有 owner、有截止时间、可验证的行动项。
-```
-
-## 回答评分点
-
-高分答案应该覆盖：
-
-- 事实时间线。
-- 量化业务影响。
-- 根因和触发因素。
-- 检测和恢复过程。
-- 行动项要可跟踪。

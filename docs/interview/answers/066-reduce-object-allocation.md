@@ -2,10 +2,6 @@
 
 [返回按分类学习面试题](../README.md)
 
-## 题目
-
-如何减少不必要的对象分配？
-
 ## 先给面试官的短答案
 
 减少对象分配要先用 JFR 或 allocation profiler 找热点，再针对性优化。常见手段包括避免循环内重复创建对象、
@@ -160,63 +156,3 @@ long total = 0L;
 - 对热点路径做容量预估、缓存不可变对象和减少中间对象。
 
 这样比盲目重写所有代码更有效。
-
-## 深度增强：JVM 生产运行图
-
-![Java 17 容器内 JVM 内存结构](../assets/jvm-runtime-memory.svg)
-
-JVM 题要从运行时资源解释到业务影响。堆、直接内存、元空间、线程栈和容器 memory limit 共同决定服务稳定性；
-GC、CPU throttling、线程池队列和下游超时会一起影响 P99，而不是孤立存在。
-
-## 深度增强：Java 17 诊断模型示例
-
-```java
-record RuntimeSignal(
-        double heapUsage,
-        double containerMemoryUsage,
-        long gcPauseMillis,
-        int threadCount,
-        int queuedTasks) {
-
-    boolean requiresTriage() {
-        return heapUsage > 0.85
-                || containerMemoryUsage > 0.90
-                || gcPauseMillis > 500
-                || threadCount > 800
-                || queuedTasks > 1_000;
-    }
-}
-```
-
-这个模型强调线上诊断要看组合信号。只看 heap 不够，只看 GC 也不够；
-要把 JVM、容器、线程池和业务延迟放到同一条时间线。
-
-## 深度增强：生产边界
-
-JVM 调优不能靠背参数。要先明确服务目标：低延迟、吞吐、容器资源、对象分配速率和 P99 SLO。
-然后通过 GC 日志、JFR、指标和压测验证。错误地调大 `-Xmx` 可能挤压堆外内存，导致容器 OOMKilled。
-
-## 深度增强：面试高分表达
-
-我会用证据链回答 JVM 问题：先看业务影响，再看 JVM 指标、GC 日志、线程栈、heap dump、容器事件和最近变更。
-结论要能解释现象，并能给出降级、扩容、参数调整或代码优化方案。
-
-## 专家级完整回答
-
-```text
-减少对象分配必须先 profiling。确认 allocation hotspot 后，我会从循环内重复创建、集合扩容、
-中间集合、字符串和日志、装箱、大对象加载、JSON 重复序列化等方向优化。对于连接、线程、
-Pattern、ObjectMapper 这类昂贵对象可以复用，但普通业务 DTO 不建议复杂对象池化。
-
-目标不是消灭对象，而是降低真正影响 GC 和 P99 的分配速率，同时保持代码可读性。
-```
-
-## 回答评分点
-
-高分答案应该覆盖：
-
-- 先用工具定位热点。
-- 优化循环、集合容量、中间集合、字符串和装箱。
-- 分页处理大数据。
-- 区分普通对象和昂贵资源。
-- 强调不要盲目对象池。

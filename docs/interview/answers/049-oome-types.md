@@ -2,10 +2,6 @@
 
 [返回按分类学习面试题](../README.md)
 
-## 题目
-
-`OutOfMemoryError` 常见类型有哪些？
-
 ## 先给面试官的短答案
 
 常见 OOM 包括 Java heap space、GC overhead limit exceeded、Metaspace、Direct buffer memory、
@@ -186,46 +182,3 @@ final class OomClassifier {
 我会先问 OOM 是 JVM 抛出的，还是容器杀掉的。然后根据错误信息和内存区域分类：
 堆、元空间、直接内存、线程和容器总内存。每类 OOM 都有不同证据和修复方式，
 所以不能简单说“加内存”或“调大 Xmx”。
-
-## 专家级完整回答
-
-```text
-常见 OOM 包括 Java heap space、GC overhead limit exceeded、Metaspace、
-Direct buffer memory、unable to create native thread，以及 Kubernetes OOMKilled。
-每种 OOM 的排查方向不同。
-
-堆 OOM 看 heap dump 和对象引用；Metaspace 看类加载器和动态类；
-Direct memory 看 NIO/Netty 和 MaxDirectMemorySize；native thread 看线程数、栈大小和 OS 限制；
-容器 OOMKilled 要看整个进程内存，而不是只看 Xmx。
-```
-
-## 回答评分点
-
-高分答案应该覆盖：
-
-- 能列出多种 OOM。
-- 能说明不同 OOM 原因不同。
-- 能指出不能只加 Xmx。
-- 能联系容器 OOMKilled。
-- 能给出排查方向。
-## 深度完善：专项验收清单
-
-围绕「`OutOfMemoryError` 常见类型有哪些？」，这道题原本已经有专题深度增强；这里再补一层面向生产和 L6 面试的验收口径。
-回答时要把概念、代码、数据、失败路径和指标串起来，证明自己不是只理解单点知识。
-
-### 项目落点
-
-- 先说明它在 eMall 哪个模块或链路中出现，例如交易、库存、支付、搜索、风控、发布或可观测性。
-- 再说明它保护的核心目标：正确性、可用性、延迟、成本、安全或协作效率。
-- 最后补失败场景：超时、重试、重复请求、状态不一致、热点流量、配置错误或发布回滚。
-
-### 验收证据
-
-- 代码证据：关键类、状态机、唯一约束、事务边界、线程池隔离或配置项。
-- 测试证据：单元测试、集成测试、契约测试、压测、故障注入或回归用例。
-- 运行证据：指标看板、Trace、结构化日志、告警、Runbook、对账结果或补偿记录。
-
-### 高分收束
-
-面试最后要回到取舍：当前方案为什么足够简单可靠，什么时候需要升级，升级时如何灰度、回滚和验证。
-这样回答能体现生产系统判断力，而不是只罗列技术名词。

@@ -2,10 +2,6 @@
 
 [返回按分类学习面试题](../README.md)
 
-## 题目
-
-Outbox 历史数据如何清理？
-
 ## 先给面试官的短答案
 
 Outbox 历史数据要按状态、时间、业务审计要求和回放需求分层清理。已成功发送的数据可以保留一段
@@ -62,62 +58,3 @@ eMall 可以保留已发送订单事件 7 到 30 天用于排查和回放，然�
 
 清理任务按 `created_at` 和 `status` 小批量删除，不能清理未发送事件。核心订单事件保留期应满足
 审计和对账要求。
-
-## 深度增强：缓存和消息治理图
-
-![数据库、缓存和消息一致性链路](../assets/data-cache-mq.svg)
-
-缓存和消息题要关注一致性、削峰、延迟、积压和恢复。
-Redis 很快，但会遇到穿透、击穿、雪崩、热点 key 和内存淘汰；
-MQ 能解耦和削峰，但会带来重复消费、乱序、积压和死信处理。
-
-## 深度增强：Java 17 幂等消费示例
-
-```java
-import java.util.Set;
-import java.util.concurrent.ConcurrentHashMap;
-
-final class LocalIdempotentConsumer {
-    private final Set<String> processedKeys = ConcurrentHashMap.newKeySet();
-
-    boolean tryHandle(String messageKey, Runnable handler) {
-        if (!processedKeys.add(messageKey)) {
-            return false;
-        }
-        handler.run();
-        return true;
-    }
-}
-```
-
-这个示例只适合解释幂等思想。生产环境不能用本地内存做全局幂等，要使用数据库唯一键、Redis 原子操作或业务状态机。
-
-## 深度增强：生产边界
-
-缓存要有 TTL、容量、降级和回源保护；消息要有重试、死信、延迟队列、消费幂等和积压告警。
-缓存不一致要能修复，消息失败要能回放，不能只依赖人工查日志。
-
-## 深度增强：面试高分表达
-
-我会把缓存和消息都看成性能与稳定性工具，而不是正确性事实来源。
-正确性由数据库事实、状态机、幂等和对账保证；缓存和 MQ 负责降低延迟、削峰填谷和解耦系统。
-
-## 专家级完整回答
-
-```text
-Outbox 清理要按状态和保留期设计。已发送并超过保留期的事件可以归档或删除，NEW、PROCESSING、
-FAILED 等未完成事件不能直接删除。
-
-清理要分批限速，最好使用分区表或按索引小批量删除，并监控表大小、最老未发送事件和失败事件数。
-核心事件还要满足审计、排查和回放需求。
-```
-
-## 回答评分点
-
-高分答案应该覆盖：
-
-- 按状态和保留期清理。
-- 未发送和失败事件不能直接删。
-- 分批限速或分区清理。
-- 归档满足审计和回放。
-- 监控 Outbox 表膨胀。

@@ -2,10 +2,6 @@
 
 [返回按分类学习面试题](../README.md)
 
-## 题目
-
-TTL 如何设置？
-
 ## 先给面试官的短答案
 
 TTL 要根据数据变化频率、一致性要求、回源成本、热点程度和故障兜底能力来设置。不是所有缓存都
@@ -58,62 +54,3 @@ eMall 商品基础信息可以设置 30 分钟到数小时 TTL，并通过商品
 
 价格可以设置几十秒到几分钟，库存展示更短。空值缓存设置几分钟。所有 TTL 加随机抖动，避免
 大促前后大量 key 同时失效。
-
-## 深度增强：缓存和消息治理图
-
-![数据库、缓存和消息一致性链路](../assets/data-cache-mq.svg)
-
-缓存和消息题要关注一致性、削峰、延迟、积压和恢复。
-Redis 很快，但会遇到穿透、击穿、雪崩、热点 key 和内存淘汰；
-MQ 能解耦和削峰，但会带来重复消费、乱序、积压和死信处理。
-
-## 深度增强：Java 17 幂等消费示例
-
-```java
-import java.util.Set;
-import java.util.concurrent.ConcurrentHashMap;
-
-final class LocalIdempotentConsumer {
-    private final Set<String> processedKeys = ConcurrentHashMap.newKeySet();
-
-    boolean tryHandle(String messageKey, Runnable handler) {
-        if (!processedKeys.add(messageKey)) {
-            return false;
-        }
-        handler.run();
-        return true;
-    }
-}
-```
-
-这个示例只适合解释幂等思想。生产环境不能用本地内存做全局幂等，要使用数据库唯一键、Redis 原子操作或业务状态机。
-
-## 深度增强：生产边界
-
-缓存要有 TTL、容量、降级和回源保护；消息要有重试、死信、延迟队列、消费幂等和积压告警。
-缓存不一致要能修复，消息失败要能回放，不能只依赖人工查日志。
-
-## 深度增强：面试高分表达
-
-我会把缓存和消息都看成性能与稳定性工具，而不是正确性事实来源。
-正确性由数据库事实、状态机、幂等和对账保证；缓存和 MQ 负责降低延迟、削峰填谷和解耦系统。
-
-## 专家级完整回答
-
-```text
-TTL 不是统一配置，而是按数据特性设计。要看数据变化频率、一致性要求、回源成本、热点程度和
-是否有主动失效机制。
-
-在电商里，商品基础信息可以中长 TTL，价格和库存短 TTL，空值缓存短 TTL，热点 key 用逻辑过期。
-同时 TTL 要加随机抖动，避免缓存雪崩。
-```
-
-## 回答评分点
-
-高分答案应该覆盖：
-
-- TTL 是一致性和性能权衡。
-- 不同数据不同 TTL。
-- 热点 key 特殊处理。
-- 空值缓存短 TTL。
-- TTL 要加随机抖动。

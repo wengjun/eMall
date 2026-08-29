@@ -2,10 +2,6 @@
 
 [返回按分类学习面试题](../README.md)
 
-## 题目
-
-OpenSearch 分片和副本如何设置？
-
 ## 先给面试官的短答案
 
 OpenSearch 分片和副本要根据数据量、查询 QPS、写入吞吐、节点数量、可用性要求和未来增长设置。
@@ -55,62 +51,3 @@ eMall 商品搜索索引如果商品量很大，可以按数据规模设置多�
 高可用。
 
 大促期间搜索 QPS 升高，可以通过增加副本扩展读能力，但如果分片设计过细，查询协调开销也会上升。
-
-## 深度增强：缓存和消息治理图
-
-![数据库、缓存和消息一致性链路](../assets/data-cache-mq.svg)
-
-缓存和消息题要关注一致性、削峰、延迟、积压和恢复。
-Redis 很快，但会遇到穿透、击穿、雪崩、热点 key 和内存淘汰；
-MQ 能解耦和削峰，但会带来重复消费、乱序、积压和死信处理。
-
-## 深度增强：Java 17 幂等消费示例
-
-```java
-import java.util.Set;
-import java.util.concurrent.ConcurrentHashMap;
-
-final class LocalIdempotentConsumer {
-    private final Set<String> processedKeys = ConcurrentHashMap.newKeySet();
-
-    boolean tryHandle(String messageKey, Runnable handler) {
-        if (!processedKeys.add(messageKey)) {
-            return false;
-        }
-        handler.run();
-        return true;
-    }
-}
-```
-
-这个示例只适合解释幂等思想。生产环境不能用本地内存做全局幂等，要使用数据库唯一键、Redis 原子操作或业务状态机。
-
-## 深度增强：生产边界
-
-缓存要有 TTL、容量、降级和回源保护；消息要有重试、死信、延迟队列、消费幂等和积压告警。
-缓存不一致要能修复，消息失败要能回放，不能只依赖人工查日志。
-
-## 深度增强：面试高分表达
-
-我会把缓存和消息都看成性能与稳定性工具，而不是正确性事实来源。
-正确性由数据库事实、状态机、幂等和对账保证；缓存和 MQ 负责降低延迟、削峰填谷和解耦系统。
-
-## 专家级完整回答
-
-```text
-OpenSearch 主分片决定数据如何切分和并行处理，副本用于高可用和读扩展。设置时要考虑数据量、
-QPS、写入速率、节点数、单分片大小和未来增长。
-
-分片不是越多越好。过多 shard 会增加内存、文件句柄、集群状态和查询协调成本。生产中应结合容量
-规划和压测确定。
-```
-
-## 回答评分点
-
-高分答案应该覆盖：
-
-- 主分片影响数据分布。
-- 副本提升读能力和高可用。
-- 分片过多有成本。
-- 根据数据量、QPS 和节点数设置。
-- 需要压测和监控验证。

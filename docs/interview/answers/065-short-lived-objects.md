@@ -2,10 +2,6 @@
 
 [返回按分类学习面试题](../README.md)
 
-## 题目
-
-为什么频繁创建短生命周期对象不一定总是坏事？
-
 ## 先给面试官的短答案
 
 短生命周期对象通常分配在年轻代，分配快，回收也快。JVM 的分代 GC、TLAB 和逃逸分析都让小对象创建成本较低。
@@ -102,63 +98,3 @@ record SkuQuantity(long skuId, int quantity) {
 它们能提升业务表达力，并且 JVM 对小对象很友好。
 
 但如果营销规则一次计算创建几十万个中间对象，或者 JSON 序列化产生大量大字符串，就要通过 JFR 找热点并优化。
-
-## 深度增强：JVM 生产运行图
-
-![Java 17 容器内 JVM 内存结构](../assets/jvm-runtime-memory.svg)
-
-JVM 题要从运行时资源解释到业务影响。堆、直接内存、元空间、线程栈和容器 memory limit 共同决定服务稳定性；
-GC、CPU throttling、线程池队列和下游超时会一起影响 P99，而不是孤立存在。
-
-## 深度增强：Java 17 诊断模型示例
-
-```java
-record RuntimeSignal(
-        double heapUsage,
-        double containerMemoryUsage,
-        long gcPauseMillis,
-        int threadCount,
-        int queuedTasks) {
-
-    boolean requiresTriage() {
-        return heapUsage > 0.85
-                || containerMemoryUsage > 0.90
-                || gcPauseMillis > 500
-                || threadCount > 800
-                || queuedTasks > 1_000;
-    }
-}
-```
-
-这个模型强调线上诊断要看组合信号。只看 heap 不够，只看 GC 也不够；
-要把 JVM、容器、线程池和业务延迟放到同一条时间线。
-
-## 深度增强：生产边界
-
-JVM 调优不能靠背参数。要先明确服务目标：低延迟、吞吐、容器资源、对象分配速率和 P99 SLO。
-然后通过 GC 日志、JFR、指标和压测验证。错误地调大 `-Xmx` 可能挤压堆外内存，导致容器 OOMKilled。
-
-## 深度增强：面试高分表达
-
-我会用证据链回答 JVM 问题：先看业务影响，再看 JVM 指标、GC 日志、线程栈、heap dump、容器事件和最近变更。
-结论要能解释现象，并能给出降级、扩容、参数调整或代码优化方案。
-
-## 专家级完整回答
-
-```text
-频繁创建短生命周期对象不一定坏，因为现代 JVM 的年轻代、TLAB 和分代 GC 就是为这种对象模式优化的。
-小对象分配通常很快，年轻代 GC 只复制少量存活对象，死亡对象回收成本低。逃逸分析还可能消除部分分配。
-
-但我会监控 allocation rate、young GC 频率、对象大小和晋升情况。如果对象创建导致 GC 抖动或 P99 升高，
-再基于 JFR 和 allocation profile 优化，而不是提前牺牲代码可读性。
-```
-
-## 回答评分点
-
-高分答案应该覆盖：
-
-- 年轻代适合短生命周期对象。
-- TLAB 和指针碰撞让分配快。
-- 年轻代 GC 回收死亡对象成本低。
-- 不要盲目牺牲可读性。
-- 仍要关注高分配速率和大对象。

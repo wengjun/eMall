@@ -2,10 +2,6 @@
 
 [返回按分类学习面试题](../README.md)
 
-## 题目
-
-`equals` 和 `hashCode` 的契约是什么？
-
 ## 先给面试官的短答案
 
 核心契约是：如果两个对象 `equals` 返回 true，它们的 `hashCode` 必须相同。
@@ -122,25 +118,3 @@ public record SkuBucketKey(long skuId, int bucketNo) {
 - 有稳定 ID 后，用 ID。
 - ID 未生成前，避免放入 HashSet/HashMap。
 - 不要让可变业务字段参与 hash key。
-
-## 专家级完整回答
-
-```text
-equals 和 hashCode 的核心契约是 equals 为 true 的对象 hashCode 必须相同。
-equals 还要满足自反、对称、传递、一致和 null 返回 false。
-
-这对 HashMap、HashSet、缓存 key、幂等 key 都很重要。
-在业务系统里，我会让值对象使用不可变字段生成 equals/hashCode；
-实体对象如果用数据库 ID，要注意 ID 生成前不要放入哈希集合。
-也不会无脑用 Lombok @Data 生成领域对象的 equals/hashCode。
-```
-
-## 回答评分点
-
-高分答案应该覆盖：
-
-- equals true 必须 hashCode 相同。
-- 能说出 equals 五个规则。
-- 能解释 HashMap/HashSet 依赖。
-- 能指出可变字段和实体 ID 的坑。
-- 能提到 Lombok 自动生成风险。

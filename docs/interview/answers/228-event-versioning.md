@@ -2,10 +2,6 @@
 
 [返回按分类学习面试题](../README.md)
 
-## 题目
-
-如何设计事件版本？
-
 ## 先给面试官的短答案
 
 事件版本要同时解决 schema 演进和业务状态演进。
@@ -59,27 +55,3 @@
 订单事件应同时带 `schemaVersion` 和 `orderVersion`。
 
 履约服务消费订单事件时，如果事件 schema 不兼容则进入死信；如果 `orderVersion` 低于已处理版本则忽略。
-
-## 共性一致性模型
-
-状态机、Outbox、幂等、重试、对账和补偿的统一闭环及 Java 17 示例见
-[共享模型：最终一致、状态机和补偿](../shared-answer-models.md#最终一致状态机和补偿)。
-
-## 专家级完整回答
-
-```text
-事件版本分两类：schemaVersion 管事件结构兼容，aggregateVersion 管业务对象状态顺序。
-事件还应包含 eventId、eventType、aggregateId、occurredAt 和 traceId，支持幂等、追踪和重放。
-
-消费者通过 schemaVersion 判断能否解析，通过 aggregateVersion 防止旧事件覆盖新状态。
-```
-
-## 回答评分点
-
-高分答案应该覆盖：
-
-- 事件版本包括 schema 和业务对象版本。
-- `eventId` 支持幂等。
-- `aggregateVersion` 支持顺序判断。
-- `schemaVersion` 支持兼容治理。
-- 事件应包含时间和 trace 信息。

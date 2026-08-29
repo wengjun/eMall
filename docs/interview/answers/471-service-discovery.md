@@ -2,10 +2,6 @@
 
 [返回按分类学习面试题](../README.md)
 
-## 题目
-
-服务发现如何工作？
-
 ## 先给面试官的短答案
 
 服务发现解决的是“调用方如何找到目标服务实例”的问题。它通常由服务注册、健康检查、服务查询、负载均衡、
@@ -47,63 +43,3 @@ eMall 的订单、库存、支付、促销、风控等服务可以通过 Kuberne
 还可以在网关或服务治理层叠加灰度标签、区域优先和异常实例摘除。
 
 面试时可以强调：服务发现只是入口，真正的稳定性来自发现、路由、健康检查、熔断和自动恢复的组合。
-
-## 深度增强：Kubernetes 运维治理图
-
-![Kubernetes 生产运行和故障治理](../assets/kubernetes-operations.svg)
-
-Kubernetes 题不能只背 Deployment、Service 和 Ingress。生产稳定性还取决于资源 requests/limits、探针、HPA、PDB、
-灰度发布、配置回滚、日志指标 Trace 和故障 Runbook。
-
-## 深度增强：Java 17 发布门禁示例
-
-```java
-record ReleaseSignal(double errorRate, long p99Millis, double cpuThrottleRate, boolean rollbackSafe) {
-
-    boolean canContinue() {
-        return errorRate < 0.001
-                && p99Millis < 300
-                && cpuThrottleRate < 0.05
-                && rollbackSafe;
-    }
-}
-```
-
-这段代码表达发布平台的核心：放量不是人工拍脑袋，而是由错误率、延迟、资源和回滚安全共同决定。
-
-## 深度增强：生产边界
-
-K8s 会重启失败容器，但不保证业务一定恢复。错误的 liveness probe 可能造成重启风暴；
-过低的 CPU limit 会造成 throttling；不兼容数据库变更会让回滚失效。平台能力要和应用设计配合。
-
-## 深度增强：面试高分表达
-
-我会把 K8s 视为运行平台，而不是稳定性的全部答案。真正生产级要有容量规划、灰度门禁、配置治理、可观测性、
-自动回滚和数据库兼容检查，才能支撑核心交易链路。
-
-## 专家级完整回答
-
-```text
-服务发现本质上是动态环境中的地址管理问题。云原生系统里实例会扩缩容、重启、迁移和滚动发布，
-所以调用方不能写死 IP，而是通过服务名获得可用实例。
-
-我会把服务发现拆成四层：注册层维护实例元数据，健康层判断实例是否可接流量，查询层向调用方提供稳定视图，
-路由层根据负载、区域、版本和灰度策略选择目标实例。
-
-在 Kubernetes 中，Service 提供稳定抽象，EndpointSlice 记录后端 Pod，CoreDNS 做名称解析。
-如果需要更强的流量治理，可以通过网关或 Service Mesh 做权重、mTLS、熔断、重试和可观测性。
-
-生产上我最关注两个风险：第一是发现结果滞后导致流量打到已下线实例，第二是刚恢复实例被瞬时流量打垮。
-所以要配合 readinessProbe、preStop、连接池淘汰、熔断半开探测和渐进式恢复。
-```
-
-## 回答评分点
-
-高分答案应该覆盖：
-
-- 说明服务发现解决动态实例地址问题。
-- 区分注册、健康检查、查询、负载均衡和摘除。
-- 能讲清 Kubernetes Service、EndpointSlice 和 CoreDNS。
-- 知道客户端发现和服务端发现的区别。
-- 能指出缓存、DNS TTL、连接池和灰度路由的生产风险。
-- 能把服务发现和熔断、限流、优雅关闭结合起来。

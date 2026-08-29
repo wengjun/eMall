@@ -2,10 +2,6 @@
 
 [返回按分类学习面试题](../README.md)
 
-## 题目
-
-如何设计高危操作双人审批？
-
 ## 先给面试官的短答案
 
 高危操作双人审批要把申请、审批、执行和审计分离。申请人不能审批自己的请求，审批人要有对应权限，
@@ -59,55 +55,3 @@ eMall 批量改价时，运营提交商品列表、原价、新价和生效时�
 中的商品和价格执行。
 
 执行完成后记录变更前后值、审批人、执行人和 trace ID，支持回滚。
-
-## 深度增强：Kubernetes 运维治理图
-
-![Kubernetes 生产运行和故障治理](../assets/kubernetes-operations.svg)
-
-Kubernetes 题不能只背 Deployment、Service 和 Ingress。生产稳定性还取决于资源 requests/limits、探针、HPA、PDB、
-灰度发布、配置回滚、日志指标 Trace 和故障 Runbook。
-
-## 深度增强：Java 17 发布门禁示例
-
-```java
-record ReleaseSignal(double errorRate, long p99Millis, double cpuThrottleRate, boolean rollbackSafe) {
-
-    boolean canContinue() {
-        return errorRate < 0.001
-                && p99Millis < 300
-                && cpuThrottleRate < 0.05
-                && rollbackSafe;
-    }
-}
-```
-
-这段代码表达发布平台的核心：放量不是人工拍脑袋，而是由错误率、延迟、资源和回滚安全共同决定。
-
-## 深度增强：生产边界
-
-K8s 会重启失败容器，但不保证业务一定恢复。错误的 liveness probe 可能造成重启风暴；
-过低的 CPU limit 会造成 throttling；不兼容数据库变更会让回滚失效。平台能力要和应用设计配合。
-
-## 深度增强：面试高分表达
-
-我会把 K8s 视为运行平台，而不是稳定性的全部答案。真正生产级要有容量规划、灰度门禁、配置治理、可观测性、
-自动回滚和数据库兼容检查，才能支撑核心交易链路。
-
-## 专家级完整回答
-
-```text
-高危操作双人审批要分离申请、审批和执行。申请人不能审批自己，审批人必须有对应权限，执行时要
-校验审批单状态、有效期、范围和参数摘要，防止审批内容和实际执行内容不一致。
-
-所有步骤都要审计，记录变更前后值、操作人、审批人和 trace ID，并提供回滚或补偿方案。
-```
-
-## 回答评分点
-
-高分答案应该覆盖：
-
-- 申请人和审批人分离。
-- 审批人也要有权限。
-- 执行参数要和审批一致。
-- 审批单有有效期。
-- 全流程审计和回滚。

@@ -2,10 +2,6 @@
 
 [返回按分类学习面试题](../README.md)
 
-## 题目
-
-什么场景需要自定义 ClassLoader？
-
 ## 先给面试官的短答案
 
 需要自定义 ClassLoader 的场景通常是运行时扩展和隔离，例如插件系统、脚本或规则引擎、
@@ -164,66 +160,3 @@ eMall 可以在这些模块中使用插件思路：
 
 但核心交易链路不建议随意运行不受控插件。更稳妥的做法是先用配置化规则、DSL 或独立策略服务。
 只有当扩展能力和隔离需求非常明确时，才引入自定义 ClassLoader。
-
-## 深度增强：JVM 生产运行图
-
-![Java 17 容器内 JVM 内存结构](../assets/jvm-runtime-memory.svg)
-
-JVM 题要从运行时资源解释到业务影响。堆、直接内存、元空间、线程栈和容器 memory limit 共同决定服务稳定性；
-GC、CPU throttling、线程池队列和下游超时会一起影响 P99，而不是孤立存在。
-
-## 深度增强：Java 17 诊断模型示例
-
-```java
-record RuntimeSignal(
-        double heapUsage,
-        double containerMemoryUsage,
-        long gcPauseMillis,
-        int threadCount,
-        int queuedTasks) {
-
-    boolean requiresTriage() {
-        return heapUsage > 0.85
-                || containerMemoryUsage > 0.90
-                || gcPauseMillis > 500
-                || threadCount > 800
-                || queuedTasks > 1_000;
-    }
-}
-```
-
-这个模型强调线上诊断要看组合信号。只看 heap 不够，只看 GC 也不够；
-要把 JVM、容器、线程池和业务延迟放到同一条时间线。
-
-## 深度增强：生产边界
-
-JVM 调优不能靠背参数。要先明确服务目标：低延迟、吞吐、容器资源、对象分配速率和 P99 SLO。
-然后通过 GC 日志、JFR、指标和压测验证。错误地调大 `-Xmx` 可能挤压堆外内存，导致容器 OOMKilled。
-
-## 深度增强：面试高分表达
-
-我会用证据链回答 JVM 问题：先看业务影响，再看 JVM 指标、GC 日志、线程栈、heap dump、容器事件和最近变更。
-结论要能解释现象，并能给出降级、扩容、参数调整或代码优化方案。
-
-## 专家级完整回答
-
-```text
-自定义 ClassLoader 适合插件、热部署、依赖版本隔离、加密 class 和非标准来源加载类。
-普通业务服务不应该轻易使用，因为 JVM 中类身份由类名和 ClassLoader 决定，错误隔离会导致
-ClassCastException、依赖冲突和类加载器泄漏。
-
-如果我要在电商系统中设计插件能力，会把平台 API 放在父加载器，插件实现和依赖放在独立
-插件加载器中，同时限制可加载包、校验签名、隔离异常、关闭插件线程并清理 ThreadLocal。
-核心交易链路优先使用配置化或独立策略服务，避免把不受控插件放进主进程。
-```
-
-## 回答评分点
-
-高分答案应该覆盖：
-
-- 插件、热部署、依赖隔离是核心场景。
-- 普通业务不要随意自定义。
-- 知道 `findClass` 和 `defineClass`。
-- 知道类加载器泄漏。
-- 知道父加载器放公共 API。
-- 能联系电商规则和风控插件。

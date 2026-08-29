@@ -2,10 +2,6 @@
 
 [返回按分类学习面试题](../README.md)
 
-## 题目
-
-`ArrayList`、`LinkedList`、`HashMap`、`TreeMap` 分别适合什么场景？
-
 ## 先给面试官的短答案
 
 `ArrayList` 基于数组，适合随机访问、遍历和尾部追加，是最常用的 List。
@@ -119,24 +115,3 @@ TreeMap<Instant, List<Task>> tasksByTime = new TreeMap<>();
 - 库存桶编号到桶：`HashMap<Integer, InventoryBucket>`。
 - 定时任务按执行时间排序：`TreeMap<Instant, Task>` 或数据库扫描。
 - 高并发共享 Map：`ConcurrentHashMap`。
-
-## 专家级完整回答
-
-```text
-ArrayList 适合大多数顺序列表和遍历场景，因为数组内存局部性好。
-LinkedList 理论上插入删除快，但实际业务中随机访问慢、对象开销大，队列场景我更倾向 ArrayDeque。
-HashMap 适合按 key 快速查找，但 key 必须稳定并正确实现 equals/hashCode。
-TreeMap 保持 key 有序，适合排序遍历和范围查询。
-
-集合选择要基于访问模式、数据量、有序性和并发需求，而不是只背复杂度。
-```
-
-## 回答评分点
-
-高分答案应该覆盖：
-
-- 能说明四种集合底层特点。
-- 能说明 LinkedList 的现实局限。
-- 能联系业务场景。
-- 能提到 key 稳定和 equals/hashCode。
-- 能补充并发场景要考虑并发集合。

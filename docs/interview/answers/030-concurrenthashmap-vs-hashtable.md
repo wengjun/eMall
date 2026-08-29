@@ -2,10 +2,6 @@
 
 [返回按分类学习面试题](../README.md)
 
-## 题目
-
-`ConcurrentHashMap` 为什么比 `Hashtable` 更适合并发场景？
-
 ## 先给面试官的短答案
 
 `Hashtable` 通过 synchronized 锁住大部分方法，锁粒度粗，并发性能差。
@@ -116,25 +112,3 @@ Map 结构安全，但 `List` 不是线程安全的。
 - 支付回调去重最终兜底。
 
 这些必须依赖数据库唯一约束、持久化记录或分布式协调。
-
-## 专家级完整回答
-
-```text
-Hashtable 通过 synchronized 锁住方法，锁粒度粗，并发性能差。
-ConcurrentHashMap 是为并发访问设计的，读操作通常不阻塞，写操作尽量局部化，
-并提供 putIfAbsent、computeIfAbsent 这类原子复合操作。
-
-但 ConcurrentHashMap 只保证当前 JVM 内 Map 结构的线程安全，不代表 value 线程安全，
-也不能解决多实例分布式并发。在电商系统里，它适合本地缓存和本地限流器，
-但订单幂等、库存防超卖、支付回调去重必须由数据库约束或持久化幂等记录兜底。
-```
-
-## 回答评分点
-
-高分答案应该覆盖：
-
-- Hashtable 锁粒度粗。
-- ConcurrentHashMap 并发度更高。
-- 能说出 putIfAbsent、computeIfAbsent。
-- 能指出 value 不一定线程安全。
-- 能指出它不能解决分布式并发。

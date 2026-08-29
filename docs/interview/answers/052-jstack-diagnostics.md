@@ -2,10 +2,6 @@
 
 [返回按分类学习面试题](../README.md)
 
-## 题目
-
-`jstack` 可以定位哪些问题？
-
 ## 先给面试官的短答案
 
 `jstack` 用来抓取 Java 进程的线程快照。它可以帮助定位死锁、锁竞争、线程池耗尽、
@@ -160,64 +156,3 @@ CPU 飙高时，常见流程是：
 如果卡在数据库连接池获取，说明数据库慢或连接池容量不足。
 
 `jstack` 能帮助把“接口慢”落到具体代码栈上。
-
-## 深度增强：JVM 生产运行图
-
-![Java 17 容器内 JVM 内存结构](../assets/jvm-runtime-memory.svg)
-
-JVM 题要从运行时资源解释到业务影响。堆、直接内存、元空间、线程栈和容器 memory limit 共同决定服务稳定性；
-GC、CPU throttling、线程池队列和下游超时会一起影响 P99，而不是孤立存在。
-
-## 深度增强：Java 17 诊断模型示例
-
-```java
-record RuntimeSignal(
-        double heapUsage,
-        double containerMemoryUsage,
-        long gcPauseMillis,
-        int threadCount,
-        int queuedTasks) {
-
-    boolean requiresTriage() {
-        return heapUsage > 0.85
-                || containerMemoryUsage > 0.90
-                || gcPauseMillis > 500
-                || threadCount > 800
-                || queuedTasks > 1_000;
-    }
-}
-```
-
-这个模型强调线上诊断要看组合信号。只看 heap 不够，只看 GC 也不够；
-要把 JVM、容器、线程池和业务延迟放到同一条时间线。
-
-## 深度增强：生产边界
-
-JVM 调优不能靠背参数。要先明确服务目标：低延迟、吞吐、容器资源、对象分配速率和 P99 SLO。
-然后通过 GC 日志、JFR、指标和压测验证。错误地调大 `-Xmx` 可能挤压堆外内存，导致容器 OOMKilled。
-
-## 深度增强：面试高分表达
-
-我会用证据链回答 JVM 问题：先看业务影响，再看 JVM 指标、GC 日志、线程栈、heap dump、容器事件和最近变更。
-结论要能解释现象，并能给出降级、扩容、参数调整或代码优化方案。
-
-## 专家级完整回答
-
-```text
-jstack 的价值是把 JVM 当前线程状态和调用栈暴露出来。它可以定位死锁、锁竞争、
-线程池耗尽、请求阻塞、下游慢调用，以及 CPU 飙高时具体哪个 Java 栈在运行。
-
-但我不会只看一次 jstack，因为它只是瞬时快照。生产上会连续抓多次，把线程 nid 和
-系统 CPU 线程对应起来，再结合线程池指标、GC、链路追踪和下游监控判断根因。
-```
-
-## 回答评分点
-
-高分答案应该覆盖：
-
-- `jstack` 是线程快照。
-- 能定位死锁和锁竞争。
-- 能辅助定位 CPU 高线程。
-- 能看到请求卡在哪个调用栈。
-- 知道要连续抓多次。
-- 知道要结合指标和链路追踪。

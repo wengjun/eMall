@@ -2,10 +2,6 @@
 
 [返回按分类学习面试题](../README.md)
 
-## 题目
-
-Java 服务启动慢可能有哪些原因？
-
 ## 先给面试官的短答案
 
 Java 服务启动慢可能来自 JVM 初始化、类加载、Spring Bean 创建、依赖扫描、数据库连接初始化、
@@ -166,64 +162,3 @@ eMall 有很多模块。订单、支付、库存这类核心服务启动时不�
 商家配置可以异步加载，并通过 readiness 确认核心能力可用后再接入流量。
 
 这样扩容时不会因为非核心依赖拖慢核心交易链路。
-
-## 深度增强：JVM 生产运行图
-
-![Java 17 容器内 JVM 内存结构](../assets/jvm-runtime-memory.svg)
-
-JVM 题要从运行时资源解释到业务影响。堆、直接内存、元空间、线程栈和容器 memory limit 共同决定服务稳定性；
-GC、CPU throttling、线程池队列和下游超时会一起影响 P99，而不是孤立存在。
-
-## 深度增强：Java 17 诊断模型示例
-
-```java
-record RuntimeSignal(
-        double heapUsage,
-        double containerMemoryUsage,
-        long gcPauseMillis,
-        int threadCount,
-        int queuedTasks) {
-
-    boolean requiresTriage() {
-        return heapUsage > 0.85
-                || containerMemoryUsage > 0.90
-                || gcPauseMillis > 500
-                || threadCount > 800
-                || queuedTasks > 1_000;
-    }
-}
-```
-
-这个模型强调线上诊断要看组合信号。只看 heap 不够，只看 GC 也不够；
-要把 JVM、容器、线程池和业务延迟放到同一条时间线。
-
-## 深度增强：生产边界
-
-JVM 调优不能靠背参数。要先明确服务目标：低延迟、吞吐、容器资源、对象分配速率和 P99 SLO。
-然后通过 GC 日志、JFR、指标和压测验证。错误地调大 `-Xmx` 可能挤压堆外内存，导致容器 OOMKilled。
-
-## 深度增强：面试高分表达
-
-我会用证据链回答 JVM 问题：先看业务影响，再看 JVM 指标、GC 日志、线程栈、heap dump、容器事件和最近变更。
-结论要能解释现象，并能给出降级、扩容、参数调整或代码优化方案。
-
-## 专家级完整回答
-
-```text
-Java 服务启动慢要按阶段拆解：JVM 初始化和类加载、Spring 自动配置和 Bean 创建、业务初始化、
-外部依赖连接、容器镜像和探针。很多启动慢不是 JVM 本身慢，而是启动路径里做了过多远程调用、
-全量缓存加载或复杂初始化。
-
-生产上我会记录启动阶段耗时，区分强依赖和弱依赖，必要初始化同步完成，非核心预热异步化，
-再用 readiness/startup probe 控制接流量时机，避免服务看似启动但实际不可用。
-```
-
-## 回答评分点
-
-高分答案应该覆盖：
-
-- 区分进程启动、健康检查通过和首次请求慢。
-- 解释 JVM、Spring、业务、外部依赖和容器原因。
-- 提到强依赖和弱依赖。
-- 提到 readiness、startup probe 和预热。
-- 能结合扩容和流量接入。

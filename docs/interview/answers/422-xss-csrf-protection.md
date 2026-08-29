@@ -2,10 +2,6 @@
 
 [返回按分类学习面试题](../README.md)
 
-## 题目
-
-XSS 和 CSRF 在前后端系统中如何防护？
-
 ## 先给面试官的短答案
 
 XSS 是攻击者把恶意脚本注入页面，防护重点是输出编码、输入清洗、CSP、HttpOnly Cookie 和避免
@@ -57,28 +53,3 @@ eMall 商品评价富文本必须清洗，不能允许用户提交 `<script>`。
 Secure 和 SameSite。
 
 批量退款、改价和下架商品等状态变更接口必须使用 POST，并校验 CSRF token 或 Origin。
-
-## 共性安全模型
-
-认证、资源级授权、数据保护、审计和风控的分层方法及 Java 17 最小权限示例见
-[共享模型：安全分层和最小权限](../shared-answer-models.md#安全分层和最小权限)。
-
-## 专家级完整回答
-
-```text
-XSS 是脚本注入，防护重点是输出编码、富文本清洗、CSP、HttpOnly Cookie 和避免危险渲染。CSRF
-是借用户登录态发起伪造请求，防护重点是 CSRF token、SameSite Cookie、Origin 校验和高危操作
-二次确认。
-
-两者都不能只靠前端解决。后端必须做鉴权、资源校验、安全头和审计。
-```
-
-## 回答评分点
-
-高分答案应该覆盖：
-
-- XSS 是脚本注入。
-- CSRF 是伪造用户请求。
-- XSS 防输出编码和 CSP。
-- CSRF 防 token、SameSite 和 Origin。
-- 高危操作要二次确认。

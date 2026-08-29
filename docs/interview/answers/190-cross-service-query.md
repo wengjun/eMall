@@ -2,10 +2,6 @@
 
 [返回按分类学习面试题](../README.md)
 
-## 题目
-
-拆库后跨服务查询怎么做？
-
 ## 先给面试官的短答案
 
 拆库后不能再用数据库 Join 跨服务查询。常见方案是 API 聚合、CQRS 读模型、事件驱动冗余、搜索索引和数仓报表。
@@ -60,65 +56,3 @@
 用户订单列表可以使用订单读模型，异步接收支付和物流事件更新摘要字段。
 
 商家经营报表应进入数据仓库，而不是跨多个交易库实时 Join。
-
-## 深度增强：可观测与配置治理图
-
-![指标、日志、Trace 和告警平台](../assets/observability-platform.svg)
-
-配置、日志、指标和 Trace 不是附属能力，而是生产系统定位问题和控制变更风险的基础。
-没有可观测性，限流、熔断、回滚和补偿都很难判断是否有效。
-
-## 深度增强：Java 17 观测信号示例
-
-```java
-import java.time.Instant;
-import java.util.Map;
-
-record ObservabilityEvent(
-        Instant time,
-        String traceId,
-        String service,
-        String eventType,
-        Map<String, String> tags) {
-}
-
-final class TraceTagPolicy {
-
-    boolean shouldKeep(String key) {
-        return !key.equalsIgnoreCase("password")
-                && !key.equalsIgnoreCase("secret")
-                && !key.equalsIgnoreCase("token");
-    }
-}
-```
-
-这段代码体现生产观测的两个重点：所有关键事件要能关联 traceId，敏感信息不能进入日志和标签。
-
-## 深度增强：生产边界
-
-日志越多不代表越好。核心链路要控制日志成本、采样率、脱敏和索引字段。告警也不能只看机器指标，
-还要看下单成功率、支付成功率、库存失败率、Outbox 积压和用户投诉。
-
-## 深度增强：面试高分表达
-
-我会把可观测性讲成故障闭环：指标发现异常，Trace 定位慢在哪里，日志解释发生了什么，
-告警和 Runbook 指导恢复。配置变更也要有版本、审批、灰度、审计和回滚，避免配置事故变成全站事故。
-
-## 专家级完整回答
-
-```text
-拆库后跨服务查询不能依赖数据库 Join。简单低频实时查询可以 API 聚合；高频页面查询可以用 CQRS 读模型；
-搜索筛选走搜索引擎；运营分析走数仓。
-
-关键是区分写模型和读模型。写模型由各服务拥有，读模型可以为了查询效率做冗余，但要接受并治理最终一致。
-```
-
-## 回答评分点
-
-高分答案应该覆盖：
-
-- 拆库后不能跨服务 Join。
-- API 聚合适合简单实时查询。
-- CQRS 读模型适合高频聚合查询。
-- 搜索和数仓分别处理搜索与分析。
-- 读模型冗余要接受最终一致。

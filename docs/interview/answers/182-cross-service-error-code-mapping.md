@@ -2,10 +2,6 @@
 
 [返回按分类学习面试题](../README.md)
 
-## 题目
-
-如何设计跨服务错误码映射？
-
 ## 先给面试官的短答案
 
 跨服务错误码不能简单把下游原始错误透传给上游或客户端。每个服务应把下游错误映射为本服务语义下的稳定错误码，
@@ -59,65 +55,3 @@
 
 订单服务应返回 `ORDER_PAYMENT_TEMPORARILY_UNAVAILABLE`，标记 `retryable=true`，内部日志记录支付服务原始错误码、
 HTTP 状态、耗时和 traceId。
-
-## 深度增强：可观测与配置治理图
-
-![指标、日志、Trace 和告警平台](../assets/observability-platform.svg)
-
-配置、日志、指标和 Trace 不是附属能力，而是生产系统定位问题和控制变更风险的基础。
-没有可观测性，限流、熔断、回滚和补偿都很难判断是否有效。
-
-## 深度增强：Java 17 观测信号示例
-
-```java
-import java.time.Instant;
-import java.util.Map;
-
-record ObservabilityEvent(
-        Instant time,
-        String traceId,
-        String service,
-        String eventType,
-        Map<String, String> tags) {
-}
-
-final class TraceTagPolicy {
-
-    boolean shouldKeep(String key) {
-        return !key.equalsIgnoreCase("password")
-                && !key.equalsIgnoreCase("secret")
-                && !key.equalsIgnoreCase("token");
-    }
-}
-```
-
-这段代码体现生产观测的两个重点：所有关键事件要能关联 traceId，敏感信息不能进入日志和标签。
-
-## 深度增强：生产边界
-
-日志越多不代表越好。核心链路要控制日志成本、采样率、脱敏和索引字段。告警也不能只看机器指标，
-还要看下单成功率、支付成功率、库存失败率、Outbox 积压和用户投诉。
-
-## 深度增强：面试高分表达
-
-我会把可观测性讲成故障闭环：指标发现异常，Trace 定位慢在哪里，日志解释发生了什么，
-告警和 Runbook 指导恢复。配置变更也要有版本、审批、灰度、审计和回滚，避免配置事故变成全站事故。
-
-## 专家级完整回答
-
-```text
-跨服务错误码要在服务边界做语义映射。上游不应该直接透传下游原始错误，否则会泄露内部实现并形成错误码耦合。
-每个服务对外返回自己领域语义下的稳定错误码，同时在日志和 tracing 中保留下游原始错误。
-
-错误码还要标识是否可重试、是否用户可修复、是否降级结果。这样调用方能正确处理，内部也能通过 traceId 定位。
-```
-
-## 回答评分点
-
-高分答案应该覆盖：
-
-- 下游错误不能无脑透传。
-- 错误码要表达当前服务语义。
-- 原始错误保留在内部日志和追踪中。
-- 要区分业务失败和系统失败。
-- `retryable` 对调用方处理很重要。
