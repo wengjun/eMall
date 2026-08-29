@@ -9,21 +9,11 @@
 
 生产中要区分业务错误和系统错误，不能把堆栈直接返回给前端。
 
-## 基本写法
+## 处理链路
 
-示例：
-
-```java
-@RestControllerAdvice
-public class GlobalExceptionHandler {
-    @ExceptionHandler(BusinessException.class)
-    public ApiResponse<?> handleBusiness(BusinessException ex) {
-        return ApiResponse.fail(ex.code(), ex.getMessage());
-    }
-}
-```
-
-`@RestControllerAdvice` 等于 `@ControllerAdvice` 加 `@ResponseBody`。
+Controller 和应用服务只抛出语义明确的异常，`@RestControllerAdvice` 集中选择对应的
+`@ExceptionHandler`，再映射 HTTP 状态、稳定错误码和安全消息。`@RestControllerAdvice` 等于
+`@ControllerAdvice` 加 `@ResponseBody`，完整代码见[手写统一异常处理](653-exception-handler.md)。
 
 ## 应该处理哪些异常？
 

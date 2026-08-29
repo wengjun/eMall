@@ -94,17 +94,8 @@ ORDER BY next_retry_at, id
 LIMIT 100;
 ```
 
-如果多实例并发投递，可以增加抢占字段：
-
-```sql
-UPDATE outbox_event
-SET status = 'SENDING',
-    locked_until = DATE_ADD(CURRENT_TIMESTAMP, INTERVAL 30 SECOND)
-WHERE id = ?
-  AND status = 'PENDING';
-```
-
-应用根据影响行数判断是否抢占成功。
+多实例的状态抢占 SQL 和租约恢复属于 Relay 并发控制，见
+[Outbox Relay 多实例如何避免重复抢事件](386-outbox-relay-multi-instance.md)。本题只围绕扫描访问路径设计索引。
 
 ## 深度增强：生产边界
 
@@ -113,11 +104,3 @@ WHERE id = ?
 - 多实例要通过状态抢占、分片或 `skip locked` 避免重复投递。
 - `event_id` 要唯一，方便生产排查和消费者幂等。
 - 投递失败要更新 `next_retry_at`，支持指数退避和告警。
-
-## 深度增强：面试高分表达
-
-```text
-Outbox 索引要服务 relay 的固定查询：按 status 找待发送消息，按 next_retry_at 判断是否到期，
-按 id 稳定分页取一小批。因此常用 status + next_retry_at + id。多实例投递时还要做状态抢占，
-发送成功后标记 SENT，历史数据定期归档，否则 outbox 会从可靠性组件变成性能瓶颈。
-```

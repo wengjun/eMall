@@ -110,11 +110,3 @@ public OrderResult createOrder(CreateOrderCommand command) {
     return OrderResult.pendingPayment(order.id());
 }
 ```
-
-## 深度增强：面试高分表达
-
-```text
-库存不足是业务失败，不应该反复重试；库存服务超时是系统不确定状态，不能直接当作失败或成功。
-我会让订单状态机显式记录库存结果，库存不足时取消订单并释放优惠，超时时进入处理中并由补偿任务查询确认。
-核心是用户能看到明确状态，系统能通过补偿和对账收敛。
-```

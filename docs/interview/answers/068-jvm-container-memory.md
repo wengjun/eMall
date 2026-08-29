@@ -167,9 +167,3 @@ record ContainerMemoryPlan(
 
 要区分 Java OOM 和 OOMKilled。Java OOM 通常有异常和 dump；OOMKilled 可能只有 Pod event 和退出码。
 如果日志中没有 `OutOfMemoryError`，但 Pod reason 是 OOMKilled，就要看进程总内存，而不是只看 heap。
-
-## 深度增强：面试高分表达
-
-我会说 Java 17 已经支持容器感知，但这只是基础能力。生产上要用 `MaxRAMPercentage` 或 `-Xmx`
-控制 heap，并为 direct memory、metaspace、线程栈和 native 开销留余量。排查时同时看 JVM 指标和
-container memory，避免把容器 OOMKilled 误判成单纯 heap OOM。

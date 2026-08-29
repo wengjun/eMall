@@ -4,8 +4,8 @@
 
 ## 先给面试官的短答案
 
-分布式 ID 服务要生成全局唯一、趋势递增、高性能、可用性高、可反解部分信息的 ID。常见方案有数据库号段、
-Snowflake、Redis 自增和 UUID。电商订单号通常需要高吞吐、趋势递增和业务可读性，可以使用号段或 Snowflake 变体。
+分布式 ID 服务要把策略选择、节点身份或号段分配、故障保护和观测统一治理，同时让数据面能够本地低延迟发号。
+电商订单号通常要求高吞吐、趋势递增和可路由，但内部主键与外部展示号不必采用同一种格式。
 
 ## 需求
 
@@ -14,17 +14,26 @@ ID 生成要满足全局唯一、低延迟、高可用、可水平扩展和不�
 
 不同业务可以使用不同 ID。订单号、支付单号、用户 ID、消息 ID 不一定使用同一个生成策略。
 
-## 方案比较
+## 服务架构
 
-UUID 简单但太长、无序，对数据库索引不友好。Redis 自增简单，但 Redis 可用性和持久化要谨慎。
+控制面负责分配 workerId 或号段、记录租约和冲突、发布策略并提供审计；数据面在业务实例内本地生成 ID，
+避免每次请求都远程调用中心服务。控制面短时不可用时，尚未过期的租约或已领取号段仍可继续工作。
 
-数据库号段通过一次取一批 ID 到本地缓存，性能高、趋势递增、实现稳定，但需要处理号段耗尽和服务重启浪费。
+关键设计包括：
 
-Snowflake 通过时间戳、机器号和序列号生成 ID，性能高、无中心依赖，但要处理时钟回拨和机器号分配。
+- workerId 使用带期限租约，过期后必须经过隔离窗口才能重新分配。
+- 号段模式使用双 buffer，在当前号段耗尽前异步预取下一段。
+- 策略和租约持久化多副本，防止控制面恢复后分配重复身份。
+- 客户端导出生成失败、时钟回拨、序列耗尽、租约剩余时间和号段余量指标。
+- 生成器按业务隔离，避免一个热点业务耗尽其他业务的号码预算。
+
+ID 方案的横向比较见[全局唯一 ID 如何生成](312-global-unique-id.md)，Snowflake 位结构与风险见
+[Snowflake ID 的结构和风险](313-snowflake-id.md)。
 
 ## 生产设计
 
-如果使用 Snowflake，要监控时钟回拨，机器号不能冲突。可以通过注册中心或配置中心分配 workerId。
+如果使用 Snowflake，要监控时钟回拨，机器号不能冲突。workerId 不能只靠静态配置复制到所有实例，
+应由带持久化和租约语义的控制面分配。
 
 如果使用号段，要双 buffer 预取，避免号段耗尽时阻塞。号段表要高可用，步长要根据业务峰值调整。
 
@@ -40,61 +49,6 @@ eMall 的订单、支付、退款、履约、消息都需要稳定 ID。订单�
 分布式 ID 不是只要唯一就行。订单、支付、消息、用户对 ID 的要求不同：
 内部主键关注索引友好和路由，对外订单号关注可读性、客服查询和不暴露敏感信息。
 
-## 深度增强：Java 17 Snowflake 变体
-
-```java
-public final class SnowflakeIdGenerator {
-
-    private static final long EPOCH = 1_700_000_000_000L;
-    private static final long WORKER_BITS = 10L;
-    private static final long SEQUENCE_BITS = 12L;
-    private static final long MAX_SEQUENCE = (1L << SEQUENCE_BITS) - 1;
-
-    private final long workerId;
-    private long lastTimestamp = -1L;
-    private long sequence = 0L;
-
-    public SnowflakeIdGenerator(long workerId) {
-        long maxWorkerId = (1L << WORKER_BITS) - 1;
-        if (workerId < 0 || workerId > maxWorkerId) {
-            throw new IllegalArgumentException("Invalid workerId.");
-        }
-        this.workerId = workerId;
-    }
-
-    public synchronized long nextId() {
-        long timestamp = currentTimeMillis();
-        if (timestamp < lastTimestamp) {
-            throw new IllegalStateException("Clock moved backwards.");
-        }
-        if (timestamp == lastTimestamp) {
-            sequence = (sequence + 1) & MAX_SEQUENCE;
-            if (sequence == 0) {
-                timestamp = waitNextMillis(lastTimestamp);
-            }
-        } else {
-            sequence = 0L;
-        }
-        lastTimestamp = timestamp;
-        return ((timestamp - EPOCH) << (WORKER_BITS + SEQUENCE_BITS))
-                | (workerId << SEQUENCE_BITS)
-                | sequence;
-    }
-
-    private long waitNextMillis(long previousTimestamp) {
-        long timestamp = currentTimeMillis();
-        while (timestamp <= previousTimestamp) {
-            timestamp = currentTimeMillis();
-        }
-        return timestamp;
-    }
-
-    private long currentTimeMillis() {
-        return System.currentTimeMillis();
-    }
-}
-```
-
 ## 深度增强：生产边界
 
 - workerId 必须统一分配，不能两个实例拿到同一个 workerId。
@@ -103,10 +57,4 @@ public final class SnowflakeIdGenerator {
 - 对外订单号和内部主键建议分离，避免暴露分片和业务规模。
 - ID 服务要监控生成 QPS、时钟回拨、worker 冲突和号段剩余量。
 
-## 深度增强：面试高分表达
-
-```text
-我不会直接说用 Snowflake。先看业务诉求：订单 ID 要全局唯一、趋势递增、索引友好、可排查；
-对外订单号还要避免暴露分片规则。Snowflake 性能高，但要处理 workerId 冲突和时钟回拨；
-号段方案稳定，但要双 buffer 和步长治理。不同业务可以选择不同 ID 策略。
-```
+简化编码实现见[手写分布式 ID 生成器](655-distributed-id.md)。

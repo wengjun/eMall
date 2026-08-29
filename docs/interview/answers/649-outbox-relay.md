@@ -11,6 +11,11 @@ final class OutboxRelay {
     private final OutboxRepository repository;
     private final MessagePublisher publisher;
 
+    OutboxRelay(OutboxRepository repository, MessagePublisher publisher) {
+        this.repository = repository;
+        this.publisher = publisher;
+    }
+
     void publishBatch(int limit) {
         for (OutboxEvent event : repository.lockPending(limit)) {
             try {
@@ -34,3 +39,4 @@ final class OutboxRelay {
 
 - 需要分片或租约抢占、指数退避、毒消息隔离、积压告警和历史清理。
 - Outbox 提供至少一次投递，不承诺业务恰好一次。
+- 数据库事务不能覆盖 MQ 发送；发送成功但状态更新失败时必须允许重复，并由消费者幂等收敛。

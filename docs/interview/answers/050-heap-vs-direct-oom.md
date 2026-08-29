@@ -139,9 +139,3 @@ final class DirectBufferPressure {
 
 容器内 `-Xmx` 要给堆外留余量。网关类服务 direct memory 占比可能比普通业务服务更高；
 订单服务可能更多是堆对象和缓存压力。不同服务不能使用完全相同的内存比例。
-
-## 深度增强：面试高分表达
-
-我会先看错误信息，再看 heap used 和容器总内存。如果是 `Java heap space`，重点分析 heap dump；
-如果是 `Direct buffer memory` 或 heap 不高但 Pod 内存很高，重点看 NIO、Netty、NMT 和 direct buffer。
-这说明我能区分 JVM 内部堆问题和容器进程级内存问题。

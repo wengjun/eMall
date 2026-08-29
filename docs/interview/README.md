@@ -58,7 +58,6 @@
 069. [`-Xmx` 设置过大或过小分别有什么风险？](answers/069-xmx-too-large-or-small.md)
 070. [线上是否应该主动调用 `System.gc()`？](answers/070-system-gc-production.md)
 071. [如何做 JVM 指标监控？](answers/071-jvm-metrics-monitoring.md)
-072. [需要重点监控哪些 JVM 指标？](answers/072-key-jvm-metrics.md)
 073. [GC 日志如何阅读？](answers/073-read-gc-log.md)
 074. [线程池队列堆积和 JVM 内存上涨有什么关系？](answers/074-threadpool-queue-memory.md)
 075. [如何定位死锁？](answers/075-diagnose-deadlock.md)
@@ -107,7 +106,6 @@
 116. [`@SpringBootApplication` 包含哪些注解？](answers/116-springbootapplication.md)
 117. [Bean 的生命周期是什么？](answers/117-spring-bean-lifecycle.md)
 118. [构造函数注入、字段注入、Setter 注入如何取舍？](answers/118-injection-styles.md)
-119. [为什么推荐构造函数注入？](answers/119-why-constructor-injection.md)
 120. [Spring AOP 的代理机制是什么？](answers/120-spring-aop-proxy.md)
 121. [JDK 动态代理和 CGLIB 有什么区别？](answers/121-jdk-proxy-vs-cglib.md)
 122. [`@Transactional` 为什么有时不生效？](answers/122-transactional-not-effective.md)
@@ -181,7 +179,6 @@
 ### 01 微服务拆分和架构治理
 
 184. [什么情况下应该或不应该拆微服务？](answers/184-when-to-split-microservices.md)
-186. [微服务和模块化单体如何取舍？](answers/186-microservice-vs-modular-monolith.md)
 187. [服务边界应该按业务域还是技术层拆？](answers/187-service-boundary-business-vs-technical.md)
 188. [什么是数据所有权？](answers/188-data-ownership.md)
 189. [为什么服务之间不应该共享数据库表？](answers/189-no-shared-database-tables.md)
@@ -218,7 +215,6 @@
 216. [Saga 适合哪些场景？](answers/216-saga-scenarios.md)
 217. [本地事务加 Outbox 解决什么问题？](answers/217-local-transaction-outbox.md)
 218. [Outbox 不能解决什么问题？](answers/218-outbox-limitations.md)
-219. [业务数据写成功但 MQ 发送失败怎么办？](answers/219-business-success-mq-send-failed.md)
 220. [MQ 发送成功但业务事务回滚怎么办？](answers/220-mq-sent-business-rollback.md)
 221. [消息重复投递怎么办？](answers/221-duplicate-message-delivery.md)
 222. [消费成功但 ack 失败怎么办？](answers/222-consume-success-ack-failed.md)
@@ -370,7 +366,6 @@
 379. [重试 topic 和死信 topic 如何设计？](answers/379-retry-and-dead-letter-topic.md)
 380. [消费者幂等表如何设计？](answers/380-consumer-idempotency-table.md)
 381. [消费端如何保证业务写入和去重记录原子性？](answers/381-consumer-write-dedup-atomicity.md)
-382. [消息 schema 如何演进？](answers/382-message-schema-evolution.md)
 383. [如何处理消息反序列化失败？](answers/383-message-deserialization-failure.md)
 384. [Kafka 和 RabbitMQ 如何取舍？](answers/384-kafka-vs-rabbitmq.md)
 385. [MQ 故障时核心链路怎么办？](answers/385-mq-failure-core-flow.md)
@@ -433,7 +428,6 @@
 ### 02 可观测性、告警和故障处理
 
 431. [日志、指标、Trace 分别解决什么问题？](answers/431-logs-metrics-traces.md)
-432. [为什么三者都需要？](answers/432-why-need-logs-metrics-traces.md)
 436. [什么信息不能写入日志？](answers/436-what-not-to-log.md)
 437. [RED 指标是什么？](answers/437-red-metrics.md)
 438. [USE 指标是什么？](answers/438-use-metrics.md)
@@ -443,7 +437,6 @@
 442. [库存预占失败率升高如何排查？](answers/442-inventory-reservation-failure-rate.md)
 443. [Outbox 积压如何排查？](answers/443-outbox-backlog-troubleshooting.md)
 444. [Kafka lag 增长如何排查？](answers/444-kafka-lag-growth.md)
-445. [Redis 命中率下降如何排查？](answers/445-redis-hit-rate-drop-troubleshooting.md)
 446. [数据库连接池耗尽如何排查？](answers/446-db-connection-pool-exhaustion.md)
 447. [P99 升高但平均延迟正常说明什么？](answers/447-p99-high-average-normal.md)
 448. [告警为什么不能太多？](answers/448-alert-fatigue.md)
@@ -480,7 +473,6 @@
 477. [回滚前为什么要考虑数据库兼容？](answers/477-rollback-db-compatibility.md)
 478. [数据库迁移如何配合应用发布？](answers/478-db-migration-with-release.md)
 479. [什么是 expand-contract 发布模式？](answers/479-expand-contract-release.md)
-480. [配置错误导致故障如何快速回滚？](answers/480-config-rollback.md)
 482. [Service Mesh 解决什么问题？](answers/482-service-mesh.md)
 483. [mTLS 在服务间调用中有什么价值？](answers/483-mtls-value.md)
 484. [什么时候不应该引入 Service Mesh？](answers/484-when-not-to-use-service-mesh.md)
@@ -557,12 +549,10 @@
 544. [设计异地多活订单系统。](answers/544-active-active-order.md)
 546. [设计大促容量保障方案。](answers/546-promotion-capacity.md)
 547. [设计热点 SKU 保护方案。](answers/547-hot-sku-protection.md)
-548. [设计商品缓存系统。](answers/548-product-cache.md)
 549. [设计 Kafka Outbox 可靠事件系统。](answers/549-kafka-outbox-events.md)
 550. [设计面向 10 亿用户的用户中心。](answers/550-billion-user-center.md)
 551. [设计支持 100 万峰值并发的网关。](answers/551-million-concurrency-gateway.md)
 552. [设计支持 10 万下单 QPS 的交易链路。](answers/552-order-qps-transaction.md)
-553. [设计一次数据库扩容和迁移方案。](answers/553-database-expansion-migration.md)
 554. [设计一次从单体到微服务的演进方案。](answers/554-monolith-to-microservices.md)
 
 ## 05 生产事故和排障
@@ -595,7 +585,6 @@
 576. [配置中心推错配置，如何回滚？](answers/576-config-rollback.md)
 577. [Secret 泄露后如何应急？](answers/577-secret-leak.md)
 578. [日志系统故障是否会影响交易链路？](answers/578-logging-outage.md)
-579. [监控告警误报太多，如何治理？](answers/579-alert-noise.md)
 
 ### 04 大促、容量和恢复决策
 
@@ -610,21 +599,16 @@
 
 ### 01 架构演进和技术选型
 
-585. [你为什么选择微服务而不是单体？](answers/585-microservices-vs-monolith.md)
 586. [你为什么选择本地事务加 Outbox，而不是 TCC？](answers/586-outbox-vs-tcc.md)
-587. [你为什么不使用全局分布式事务？](answers/587-avoid-global-transaction.md)
-590. [你为什么用 OpenSearch，而不是 MySQL like 查询？](answers/590-opensearch-vs-mysql.md)
 591. [你为什么要做库存预占，而不是支付时再扣库存？](answers/591-inventory-reservation.md)
 592. [你为什么要保存价格快照？](answers/592-price-snapshot.md)
 593. [你为什么要做支付流水，而不是只更新支付状态？](answers/593-payment-ledger.md)
-594. [你为什么要做对账？](answers/594-reconciliation.md)
 
 ### 02 一致性、成本和技术债
 
 595. [你为什么要做补偿任务，而不是人工处理所有异常？](answers/595-compensation-jobs.md)
 596. [你为什么要做幂等表，而不是只在代码里判断状态？](answers/596-idempotency-table.md)
 597. [你为什么要引入 Kubernetes？](answers/597-kubernetes.md)
-598. [你为什么要拆 common？](answers/598-common-module.md)
 599. [你如何避免 common 变成强耦合中心？](answers/599-common-coupling.md)
 600. [你如何判断一个方案过度设计？](answers/600-overengineering.md)
 601. [你如何在交付速度和架构质量之间取舍？](answers/601-speed-vs-quality.md)

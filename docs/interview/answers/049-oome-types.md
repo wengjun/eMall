@@ -176,9 +176,3 @@ final class OomClassifier {
 
 对于 Kubernetes 服务，建议开启 OOM heap dump、保留 GC 日志、采集 container memory working set，
 并记录 Pod termination reason。否则重启后现场丢失，事故复盘只能靠猜。
-
-## 深度增强：面试高分表达
-
-我会先问 OOM 是 JVM 抛出的，还是容器杀掉的。然后根据错误信息和内存区域分类：
-堆、元空间、直接内存、线程和容器总内存。每类 OOM 都有不同证据和修复方式，
-所以不能简单说“加内存”或“调大 Xmx”。

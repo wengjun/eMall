@@ -119,11 +119,6 @@ final class UnsafeRequestContextHolder {
 实际排查顺序可以是：先看 heap used、old gen、GC pause 和容器 memory；再导出 heap dump；
 用 Dominator Tree 找 retained size 最大对象；最后看 Path to GC Roots，确认是哪条引用链让对象不可回收。
 
-## 深度增强：面试高分表达
-
-我不会看到内存高就说泄漏。我的判断标准是对象已经没有业务价值，但仍从 GC Roots 可达。
-证据上看 GC 后基线、old gen 趋势和 heap dump 引用链；修复上处理无界缓存、无界队列、
-ThreadLocal、监听器和大批量加载。这样回答能体现我会用证据定位，而不是靠经验猜。
 
 ## 如何修复？
 

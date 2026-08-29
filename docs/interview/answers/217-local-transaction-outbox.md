@@ -128,35 +128,8 @@ public class OrderApplicationService {
 }
 ```
 
-投递器的重点不是“扫描一遍发送 MQ”这么简单，而是要支持抢占、重试、幂等和失败可观测。
-
-```java
-public final class OutboxRelay {
-
-    private final OutboxRepository outboxRepository;
-    private final MessagePublisher publisher;
-
-    public OutboxRelay(OutboxRepository outboxRepository, MessagePublisher publisher) {
-        this.outboxRepository = outboxRepository;
-        this.publisher = publisher;
-    }
-
-    public void publishBatch(int batchSize) {
-        List<OutboxEvent> events = outboxRepository.lockNextBatch(batchSize);
-        for (OutboxEvent event : events) {
-            try {
-                publisher.publish(event.eventType(), event.eventId(), event.payload());
-                outboxRepository.markSent(event.eventId());
-            } catch (RuntimeException ex) {
-                outboxRepository.markFailedForRetry(event.eventId(), ex.getMessage());
-            }
-        }
-    }
-}
-```
-
-面试里要补一句：真实生产中 `lockNextBatch` 需要防止多个 relay 实例重复抢同一批数据。
-MySQL 可以用状态条件更新、版本号、`select for update skip locked` 或分片扫描来实现。
+Relay 的完整实现见[手写 Outbox Relay](649-outbox-relay.md)，多实例抢占和重复投递边界见
+[Outbox Relay 多实例如何避免重复抢事件](386-outbox-relay-multi-instance.md)。
 
 ## 深度增强：失败场景和边界
 
@@ -169,13 +142,3 @@ Outbox 能解决“业务提交成功但消息没发出去”，但不能解决�
 - 表无限增长：outbox 需要按状态和创建时间归档。
 - 毒消息：反序列化失败或业务字段异常时要进入死信和人工处理。
 - 端到端失败：Outbox 只保证事件最终发布，不保证消费者一定处理成功。
-
-## 深度增强：面试高分表达
-
-回答时不要只说“写 outbox 表”。更好的表达是：
-
-```text
-我把跨系统原子性拆成两段：第一段用本地事务保证业务状态和待发布事件同时提交；
-第二段用可重试 relay 保证事件最终投递。因为投递和消费都可能重复，所以事件要有全局唯一 eventId，
-消费者要用幂等表或业务唯一键去重。最后用 outbox 积压量、最老未发送时间、失败重试次数和死信数量做监控。
-```
