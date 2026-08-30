@@ -41,7 +41,7 @@ ExtensionFactory 可为扩展 setter 注入依赖。多层 wrapper 的顺序和�
 - Filter 顺序是否与认证、限流、trace、超时和业务调用一致。
 - 是否有兼容旧配置的灰度与回滚路径。
 
-## 在 eMall 中怎么讲
+## 电商系统实践
 
 我会用 Dubbo SPI 承载协议级、框架级扩展，例如统一 deadline Filter；业务促销策略仍用 Spring Bean 组合，
 避免把领域逻辑绑到 RPC 框架。测试应启动真实 Consumer/Provider，验证扩展装配和调用顺序，

@@ -47,9 +47,9 @@ CSRF 利用的是浏览器自动携带 Cookie。
 
 前后端要共同防护。
 
-## 在 eMall 项目中怎么讲？
+## 电商系统实践
 
-eMall 商品评价富文本必须清洗，不能允许用户提交 `<script>`。后台管理系统 Cookie 设置 HttpOnly、
+大型电商系统商品评价富文本必须清洗，不能允许用户提交 `<script>`。后台管理系统 Cookie 设置 HttpOnly、
 Secure 和 SameSite。
 
 批量退款、改价和下架商品等状态变更接口必须使用 POST，并校验 CSRF token 或 Origin。

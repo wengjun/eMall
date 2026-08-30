@@ -77,9 +77,9 @@ Feign 是声明式 HTTP 客户端。
 
 客户端类型不是生产能力的全部。
 
-## 在 eMall 项目中怎么讲？
+## 电商系统实践
 
-eMall 内部服务如果采用 Spring Cloud，可以用 Feign 做声明式调用并统一治理。
+大型电商系统内部服务如果采用 Spring Cloud，可以用 Feign 做声明式调用并统一治理。
 
 网关或高并发流式场景可以用 WebClient。
 

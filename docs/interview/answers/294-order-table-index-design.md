@@ -48,7 +48,7 @@ KEY idx_status_created (status, created_at, id)
 
 订单表增长很快，索引成本会持续放大。
 
-## 在 eMall 项目中怎么讲？
+## 电商系统实践
 
 用户订单列表按 `user_id + created_at` 查，商家后台按 `merchant_id + status + created_at` 查。
 

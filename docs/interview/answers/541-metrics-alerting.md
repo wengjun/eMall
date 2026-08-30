@@ -31,9 +31,9 @@ GMV、退款率和 Outbox 积压。
 
 告警规则也要版本化和评审，避免错误规则制造告警风暴。
 
-## 在 eMall 项目中怎么讲？
+## 电商系统实践
 
-eMall 应为 `order`、`payment`、`inventory`、`gateway` 建立核心看板，覆盖成功率、P99、错误率、库存失败率、
+大型电商系统应为 `order`、`payment`、`inventory`、`gateway` 建立核心看板，覆盖成功率、P99、错误率、库存失败率、
 支付回调延迟和 Outbox 积压。`operations` 可以承载告警治理。
 
 ## 深度增强：可观测平台图

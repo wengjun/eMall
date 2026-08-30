@@ -82,7 +82,7 @@ order by created_at desc, order_id desc
 - 异步统计。
 - 近似统计。
 
-## 在 eMall 项目中怎么讲？
+## 电商系统实践
 
 用户订单列表可以用 cursor 分页，按创建时间和订单 ID 排序。
 

@@ -83,9 +83,9 @@ spring.datasource.url=...
 
 当自动配置不符合预期时，不要猜，要看条件是否匹配。
 
-## 在 eMall 项目中怎么讲？
+## 电商系统实践
 
-eMall 使用 Spring Boot 启动多个微服务。
+大型电商系统使用 Spring Boot 启动多个微服务。
 
 数据源、Web、Validation、Actuator、HTTP client、MyBatis Plus 等都可以通过自动配置减少样板代码。
 

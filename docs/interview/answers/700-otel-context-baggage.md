@@ -49,7 +49,7 @@ Producer 将 Context 注入消息 header，Consumer 提取后创建 `CONSUMER` S
 消息可能排队数小时，不能一直维持进程内 Scope；应传播序列化上下文。
 批量消费多个独立 trace 时可使用 Span Link，而不是强行选择一个父 Span。
 
-## eMall 验收标准
+## 电商系统验收标准
 
 从网关下单到订单、库存、支付和 outbox/Kafka 的 trace ID 应连续；线程池切换后父子关系不丢，
 重试 attempt 可区分，日志自动带 trace/span ID。还要测试恶意超长 baggage、无 trace header 和错误 header，

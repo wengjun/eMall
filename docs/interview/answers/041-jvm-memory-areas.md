@@ -109,9 +109,9 @@ OutOfMemoryError: Metaspace
 
 容器环境里，直接内存也会占用 Pod memory limit。如果只看 `-Xmx`，可能低估总内存。
 
-## 在 eMall 项目中怎么讲？
+## 电商系统实践
 
-eMall 这类微服务在 Kubernetes 中运行时，不能只配置堆。
+大型电商系统中的微服务在 Kubernetes 中运行时，不能只配置堆。
 
 需要考虑：
 

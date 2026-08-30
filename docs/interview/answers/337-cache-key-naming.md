@@ -48,9 +48,9 @@ flash-sale:token:v1:activity:90001
 
 但版本切换会导致缓存重建，要控制雪崩风险。
 
-## 在 eMall 项目中怎么讲？
+## 电商系统实践
 
-eMall 可以约定 key 格式：
+大型电商系统可以约定 key 格式：
 
 ```text
 {domain}:{object}:v{version}:{id-type}:{id}

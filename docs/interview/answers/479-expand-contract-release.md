@@ -30,9 +30,9 @@ expand-contract 是一种面向兼容性的发布模式。expand 阶段先扩展
 expand-contract 不只用于数据库。API 新增字段时要保证老客户端能忽略；消息 schema 新增字段要有默认值；
 删除接口前要先下线调用方；改变字段语义前要提供新字段，而不是复用旧字段。
 
-## 在 eMall 项目中怎么讲？
+## 电商系统实践
 
-eMall 的订单、支付、库存、促销和开放平台都应该采用 expand-contract。尤其是开放平台 API 和 Kafka 事件，
+大型电商系统的订单、支付、库存、促销和开放平台都应该采用 expand-contract。尤其是开放平台 API 和 Kafka 事件，
 存在外部或异步消费者，不能假设所有调用方能同时升级。
 
 ## 深度增强：expand-contract 发布图

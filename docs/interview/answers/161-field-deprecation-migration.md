@@ -69,7 +69,7 @@ amountCents
 
 只在代码里加注解不够。
 
-## 在 eMall 项目中怎么讲？
+## 电商系统实践
 
 订单金额从 `amountYuan` 迁移到 `amountCents`。
 

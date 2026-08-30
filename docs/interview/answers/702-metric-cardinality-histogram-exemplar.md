@@ -30,7 +30,7 @@ Exemplar 在某个 histogram 观测样本旁附带 trace/span 引用。值班人
 
 Exemplar 只保存少量样本，不替代 trace 采样，也不能证明 bucket 内所有请求具有相同根因。
 
-## eMall 指标契约
+## 电商系统指标契约
 
 ```text
 http.server.duration{service,route,method,status_class,region}

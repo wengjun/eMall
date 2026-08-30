@@ -76,7 +76,7 @@ segment = hash(key) % segmentCount
 
 不能只拆桶，不设计一致性。
 
-## 在 eMall 项目中怎么讲？
+## 电商系统实践
 
 秒杀商品可以把库存按桶拆分到多个 Redis key 或数据库行。
 

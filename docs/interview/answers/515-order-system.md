@@ -40,7 +40,7 @@
 热点 SKU 下单要结合库存服务限流和排队。普通下单要有线程池隔离、下游超时、支付通道隔离和降级策略。
 价格、促销、库存下游异常时，不能默认创建错误订单，应返回明确失败或进入待确认流程。
 
-## 在 eMall 项目中怎么讲？
+## 电商系统实践
 
-eMall 的 `order` 模块可以作为交易编排中心，配合 `inventory`、`pricing`、`promotion`、`payment` 和 `event-platform`。
+大型电商系统的 `order` 模块可以作为交易编排中心，配合 `inventory`、`pricing`、`promotion`、`payment` 和 `event-platform`。
 核心亮点是订单状态机、幂等创建、库存预占、Outbox 事件和补偿任务。

@@ -108,9 +108,9 @@ HTTP 状态码表达协议层语义：
 - 有测试覆盖。
 - 老客户端能处理未知错误码。
 
-## 在 eMall 项目中怎么讲？
+## 电商系统实践
 
-eMall 中统一 `ErrorCode` 可以支持：
+大型电商系统中统一 `ErrorCode` 可以支持：
 
 - `BusinessException` 携带错误码。
 - `CommonExceptionHandlerSupport` 统一映射 HTTP 状态。

@@ -28,9 +28,9 @@
 
 回滚前要检查数据库和消息兼容性，避免代码回滚后旧版本无法读取新数据。
 
-## 在 eMall 项目中怎么讲？
+## 电商系统实践
 
-eMall 的 `release` 模块负责发布策略，`traffic` 控制灰度流量，`analytics` 和 `operations` 提供指标和门禁。
+大型电商系统的 `release` 模块负责发布策略，`traffic` 控制灰度流量，`analytics` 和 `operations` 提供指标和门禁。
 `order`、`payment`、`inventory` 的发布必须绑定业务指标观察。
 
 ## 深度增强：灰度发布闭环图

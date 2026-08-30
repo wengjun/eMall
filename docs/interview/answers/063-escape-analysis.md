@@ -118,7 +118,7 @@ String buildKey(long userId, long skuId) {
 
 但不要过度优化。现代 JVM 对短生命周期对象分配和回收很快，应该先通过 profiling 找热点。
 
-## 在 eMall 项目中怎么讲？
+## 电商系统实践
 
 价格计算和订单金额计算会创建很多小值对象。
 

@@ -60,7 +60,7 @@ WHERE user_id = ?
 
 索引字段顺序非常重要。
 
-## 在 eMall 项目中怎么讲？
+## 电商系统实践
 
 用户订单列表常按 `user_id` 查询，再按 `created_at` 排序。
 

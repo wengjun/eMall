@@ -46,8 +46,8 @@ nonce 重复是严重风险。
 
 如果还需要精确查询，可以额外保存 HMAC hash。
 
-## 在 eMall 项目中怎么讲？
+## 电商系统实践
 
-eMall 用户手机号可以用 AES-GCM 加密保存，同时保存 `phone_hash` 用于精确查询。
+大型电商系统用户手机号可以用 AES-GCM 加密保存，同时保存 `phone_hash` 用于精确查询。
 
 密文字段保存 nonce、ciphertext、tag 和 key version。密钥由 KMS 管理，轮换时按版本逐步重加密。

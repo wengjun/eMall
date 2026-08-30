@@ -40,5 +40,5 @@ Collector 重启、Span 晚到或负载不均会造成不完整 trace；需要�
 
 基于错误和延迟过采样后的 trace 集合不是总体流量的无偏样本，不能直接用其中 50% 错误推断线上错误率。SLO 来自全量或统计正确的指标，trace 用于解释案例。
 
-在 eMall 中，正常商品浏览低比例 head sample，订单支付错误、超时和补偿链路由 tail policy 强制保留；
+在大型电商系统中，正常商品浏览低比例 head sample，订单支付错误、超时和补偿链路由 tail policy 强制保留；
 发布前根据峰值 trace 大小压测 Collector，并告警 dropped spans、decision latency 和内存使用。

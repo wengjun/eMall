@@ -42,7 +42,7 @@ WHERE id = ?
 
 如果订单是 `CANCELED`，收到支付成功事件则要进入异常处理或退款流程，不能直接改成已支付。
 
-## 在 eMall 项目中怎么讲？
+## 电商系统实践
 
 订单允许 `PENDING_PAYMENT -> PAID`，但不允许 `CANCELED -> PAID`。
 

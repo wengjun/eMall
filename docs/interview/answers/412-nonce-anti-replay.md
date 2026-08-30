@@ -43,9 +43,9 @@ replay:{appKey}:{nonce}
 
 使用 `SET NX PX` 写入。写入成功表示首次请求，写入失败表示 nonce 已被使用。
 
-## 在 eMall 项目中怎么讲？
+## 电商系统实践
 
-eMall 开放平台支付回调或商家订单接口，应要求请求携带 nonce。服务端用 Redis 记录 `appKey` 和
+大型电商系统开放平台支付回调或商家订单接口，应要求请求携带 nonce。服务端用 Redis 记录 `appKey` 和
 nonce，TTL 与 timestamp 窗口一致。
 
 如果同一 nonce 再次出现，即使签名正确，也拒绝执行，避免重复改价或重复回调。

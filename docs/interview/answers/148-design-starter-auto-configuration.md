@@ -67,8 +67,8 @@ starter 要测试：
 - properties 能正确绑定。
 - 多模块使用不冲突。
 
-## 在 eMall 项目中怎么讲？
+## 电商系统实践
 
-eMall 可以把统一 HTTP client、trace 透传、错误码、限流、熔断、审计日志封装成 starter。
+大型电商系统可以把统一 HTTP client、trace 透传、错误码、限流、熔断、审计日志封装成 starter。
 
 业务模块引入 starter 后获得默认能力，但仍可覆盖超时、线程池和降级策略。

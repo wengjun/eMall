@@ -69,7 +69,7 @@ orders.parallelStream().map(this::calculate).toList();
 
 除非明确评估，否则核心链路应避免随意使用 parallel stream。
 
-## 在 eMall 项目中怎么讲？
+## 电商系统实践
 
 营销规则计算如果使用 parallel stream，可能占满 commonPool。
 

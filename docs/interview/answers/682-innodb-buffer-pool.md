@@ -52,6 +52,6 @@ Performance Schema、redo/undo 元数据、操作系统页缓存以及备份代�
 - LRU eviction、read ahead 有效性和 pending read/write。
 - 数据集增长、热点集合大小、存储设备 IO 延迟。
 
-99.9% 命中率在每秒一百万逻辑读时仍有每秒一千次物理读。eMall 大促前应按订单与库存热点工作集验证容量，并隔离报表全扫，避免分析查询污染交易 Buffer Pool。
+99.9% 命中率在每秒一百万逻辑读时仍有每秒一千次物理读。大型电商系统大促前应按订单与库存热点工作集验证容量，并隔离报表全扫，避免分析查询污染交易 Buffer Pool。
 
 参考：[MySQL 8.4 Buffer Pool](https://dev.mysql.com/doc/refman/8.4/en/innodb-buffer-pool.html)

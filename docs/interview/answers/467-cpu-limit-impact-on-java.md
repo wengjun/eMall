@@ -41,9 +41,9 @@ CPU limit 通过 CFS 配额控制。
 
 不能只看 CPU 平均使用率。
 
-## 在 eMall 项目中怎么讲？
+## 电商系统实践
 
-eMall 订单服务在高峰期 P99 抖动，如果 CPU throttling 明显，即使平均 CPU 只有 60%，也可能是
+大型电商系统订单服务在高峰期 P99 抖动，如果 CPU throttling 明显，即使平均 CPU 只有 60%，也可能是
 CPU limit 太紧造成。
 
 可以提高 limit、优化线程池、降低同步计算或调整 HPA 指标。

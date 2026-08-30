@@ -27,9 +27,9 @@
 
 广告必须过滤下架商品、违规商品和预算耗尽广告。广告系统不能为了收入突破平台规则。
 
-## 在 eMall 项目中怎么讲？
+## 电商系统实践
 
-eMall 的 `advertising` 模块负责广告投放，`risk` 做反作弊，`experiment` 做投放实验，`analytics` 做效果分析，
+大型电商系统的 `advertising` 模块负责广告投放，`risk` 做反作弊，`experiment` 做投放实验，`analytics` 做效果分析，
 `product` 和 `merchant` 提供商品与商家审核状态。
 
 ## 深度增强：广告在线链路图

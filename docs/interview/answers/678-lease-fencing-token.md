@@ -53,7 +53,7 @@ public void persistResult(long taskId, Lease lease, String result) {
 
 当下游是无法验证 token 的外部 HTTP API 或物理设备时，fencing 无法凭空成立。可以改为单写网关、把命令先写入有序日志，或让下游支持幂等版本条件。
 
-## 在 eMall 中的落点
+## 电商系统落点
 
 结算任务、补偿任务和批量对账只能有一个执行者时，协调层发放租约和 token；任务表用 token 条件更新保护最终结果。
 还应监控租约续期失败、过期后仍执行、stale token 拒绝次数，并用“暂停旧持有者超过 TTL”的故障注入测试证明安全性。

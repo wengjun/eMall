@@ -110,9 +110,9 @@ new ReentrantLock(true)
 
 生产业务通常优先使用成熟并发工具，而不是自己写复杂条件同步。
 
-## 在 eMall 项目中怎么讲？
+## 电商系统实践
 
-eMall 中简单本地状态保护可以用 `synchronized`。
+大型电商系统中简单本地状态保护可以用 `synchronized`。
 
 如果秒杀热点商品需要获取锁失败后快速降级，可以用 `ReentrantLock.tryLock(timeout)`，避免请求无限等待。
 

@@ -42,7 +42,7 @@ JWT 只是 Token 格式，不等同于 OAuth/OIDC。Resource Server 也不能只
 
 回调 URI 使用预注册精确匹配；`state`/`nonce` 按协议绑定会话，防 CSRF、重放和混淆。不要使用 implicit flow，也不要把 Access Token 放 URL。
 
-## eMall 的授权模型
+## 电商系统的授权模型
 
 网关完成 Token 密码学验证后，下游仍按资源和动作授权，例如“只能读取自己的订单”“客服需特定 role 且操作留审计”。不能信任客户端传入的 `userId`，应从已验证 subject 映射内部用户。
 

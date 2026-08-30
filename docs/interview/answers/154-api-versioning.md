@@ -69,7 +69,7 @@ X-API-Version: 1
 
 没有治理的版本会越积越多。
 
-## 在 eMall 项目中怎么讲？
+## 电商系统实践
 
 对外开放平台可以使用 `/openapi/v1` 和 `/openapi/v2`。
 

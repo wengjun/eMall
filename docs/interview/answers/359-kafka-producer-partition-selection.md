@@ -37,7 +37,7 @@ Kafka Producer 选择 partition 通常有几种方式：消息指定 partition�
 
 但如果某个 key 特别热，例如秒杀 SKU，可能导致单个 partition 压力过大。顺序和并发之间需要权衡。
 
-## 在 eMall 项目中怎么讲？
+## 电商系统实践
 
 订单状态事件可以用 `orderId` 作为 key，保证同一订单的创建、支付、取消、发货事件按顺序处理。
 

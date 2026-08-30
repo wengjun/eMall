@@ -39,7 +39,7 @@ user_order_index(user_id, order_id, created_at, status)
 
 读模型允许最终一致，但要有补偿和对账。
 
-## 在 eMall 项目中怎么讲？
+## 电商系统实践
 
 用户订单列表是高频读接口，可以维护按 `user_id` 分片的订单列表读模型。
 

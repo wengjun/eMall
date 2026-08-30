@@ -48,9 +48,9 @@
 
 死信不是终点，要能修复和回放。
 
-## 在 eMall 项目中怎么讲？
+## 电商系统实践
 
-eMall 订单事件反序列化失败时，消费者应把原始消息写入 `order-events-dlq`，并记录 offset 和
+大型电商系统订单事件反序列化失败时，消费者应把原始消息写入 `order-events-dlq`，并记录 offset 和
 trace ID。
 
 修复 schema 后，通过运维工具从死信 Topic 回放，不能直接丢弃核心订单事件。

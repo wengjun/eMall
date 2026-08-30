@@ -39,9 +39,9 @@ HMAC hash：
 
 密钥仍必须保护。
 
-## 在 eMall 项目中怎么讲？
+## 电商系统实践
 
-eMall 保存手机号时，可以保存 `phone_ciphertext` 和 `phone_hash`。
+大型电商系统保存手机号时，可以保存 `phone_ciphertext` 和 `phone_hash`。
 
 登录或客服按手机号查用户时，先用 HMAC 计算输入手机号的 hash，再按 `phone_hash` 索引查询，查到
 后按权限解密展示脱敏手机号。

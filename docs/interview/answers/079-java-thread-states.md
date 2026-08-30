@@ -95,7 +95,7 @@ Thread thread = new Thread(task);
 
 状态只是入口，调用栈才是证据。
 
-## 在 eMall 项目中怎么讲？
+## 电商系统实践
 
 订单服务 P99 升高时，抓 `jstack`：
 

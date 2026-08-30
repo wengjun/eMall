@@ -51,7 +51,7 @@
 
 之后迟到 Try 看到 CANCELED，就直接拒绝，避免悬挂。
 
-## 在 eMall 项目中怎么讲？
+## 电商系统实践
 
 库存 TCC 中，Cancel 可能先于 Try 到达。
 

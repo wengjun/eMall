@@ -45,7 +45,7 @@ SELECT available FROM stock WHERE sku_id = ?;
 
 库存扣减应使用当前读或条件更新。
 
-## 在 eMall 项目中怎么讲？
+## 电商系统实践
 
 用户订单列表使用快照读即可，避免阻塞订单更新。
 

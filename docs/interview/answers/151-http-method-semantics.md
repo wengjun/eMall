@@ -74,7 +74,7 @@ DELETE /cart/items/{itemId}
 
 重复删除同一资源，最终结果都是资源不存在，因此通常视为幂等。
 
-## 在 eMall 项目中怎么讲？
+## 电商系统实践
 
 订单查询用 `GET /orders/{orderId}`。
 

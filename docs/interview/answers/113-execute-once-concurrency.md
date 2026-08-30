@@ -78,7 +78,7 @@ where order_id = ? and status = 'CREATED'
 分布式锁降低冲突 + 数据库唯一键兜底
 ```
 
-## 在 eMall 项目中怎么讲？
+## 电商系统实践
 
 支付回调只处理一次：
 

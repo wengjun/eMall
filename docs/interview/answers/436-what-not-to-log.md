@@ -50,9 +50,9 @@
 
 敏感字段可能从很多入口进入日志。
 
-## 在 eMall 项目中怎么讲？
+## 电商系统实践
 
-eMall 支付回调日志不能打印完整支付凭证和签名 secret。开放平台请求日志不能打印 Authorization
+大型电商系统支付回调日志不能打印完整支付凭证和签名 secret。开放平台请求日志不能打印 Authorization
 header。
 
 订单日志可记录 orderNo 和 userId，但手机号、地址和支付信息必须脱敏或不记录。

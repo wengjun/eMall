@@ -49,9 +49,9 @@
 
 发布成功不等于 Pod 全部 Running。
 
-## 在 eMall 项目中怎么讲？
+## 电商系统实践
 
-eMall 订单服务升级时，设置 `maxUnavailable: 0` 和合理 `maxSurge`，让新 Pod 通过 readiness 后再接
+大型电商系统订单服务升级时，设置 `maxUnavailable: 0` 和合理 `maxSurge`，让新 Pod 通过 readiness 后再接
 流量。
 
 旧 Pod 收到终止信号后先从流量中摘除，等待正在执行的下单请求完成，再退出。

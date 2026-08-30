@@ -52,9 +52,9 @@
 
 展示字段包括主图、标题、价格摘要和促销标签，但大字段不要放太多。
 
-## 在 eMall 项目中怎么讲？
+## 电商系统实践
 
-eMall 的搜索文档可以由 `product`、`pricing`、`inventory`、`review` 和 `merchant` 多个服务数据
+大型电商系统的搜索文档可以由 `product`、`pricing`、`inventory`、`review` 和 `merchant` 多个服务数据
 聚合生成。
 
 商品库是事实来源，搜索文档是面向查询优化的读模型。下单时仍要回到价格和库存服务做最终校验。

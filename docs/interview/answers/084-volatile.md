@@ -112,7 +112,7 @@ private volatile PricingConfig currentConfig;
 - 可保护复杂临界区。
 - 成本相对更高。
 
-## 在 eMall 项目中怎么讲？
+## 电商系统实践
 
 营销配置热更新可以用 volatile 保存不可变配置引用。
 

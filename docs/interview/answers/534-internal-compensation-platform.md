@@ -28,7 +28,7 @@
 
 平台不应直接开放任意 SQL。修复动作要封装为明确业务 API 或受控任务，避免误操作扩大事故。
 
-## 在 eMall 项目中怎么讲？
+## 电商系统实践
 
-eMall 的 `operations` 模块可以承载补偿平台，调用 `order`、`payment`、`inventory`、`event-platform` 和 `fulfillment`
+大型电商系统的 `operations` 模块可以承载补偿平台，调用 `order`、`payment`、`inventory`、`event-platform` 和 `fulfillment`
 提供的受控补偿接口。`risk` 可参与高危操作审批。

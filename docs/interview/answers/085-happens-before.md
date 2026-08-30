@@ -98,7 +98,7 @@ A happens-before C
 
 传递性让复杂并发程序可以通过多个规则组合推导可见性。
 
-## 在 eMall 项目中怎么讲？
+## 电商系统实践
 
 配置中心推送新优惠规则时，可以构造不可变 `PromotionRules`，然后赋值给 volatile 引用。
 

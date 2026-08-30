@@ -49,7 +49,7 @@
 
 一个 `FAILED` 状态通常不够表达生产问题。
 
-## 在 eMall 项目中怎么讲？
+## 电商系统实践
 
 退款流程应包含 `REFUND_REQUESTED`、`REFUNDING`、`REFUND_SUCCEEDED`、`REFUND_FAILED`、
 `MANUAL_REVIEW_REQUIRED` 等状态。

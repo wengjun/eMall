@@ -49,9 +49,9 @@
 
 不能只看写入成功数量。
 
-## 在 eMall 项目中怎么讲？
+## 电商系统实践
 
-eMall 重建商品索引时，先创建 `product_search_v3`，从商品库和相关读模型全量构建。
+大型电商系统重建商品索引时，先创建 `product_search_v3`，从商品库和相关读模型全量构建。
 
 构建开始时记录 Kafka offset，全量完成后消费这之后的商品变更事件追平。校验通过后切换
 `product_search_current` 别名。

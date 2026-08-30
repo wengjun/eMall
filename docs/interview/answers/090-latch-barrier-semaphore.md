@@ -99,7 +99,7 @@ if (semaphore.tryAcquire()) {
 
 这些工具只在当前 JVM 内有效。
 
-## 在 eMall 项目中怎么讲？
+## 电商系统实践
 
 `CountDownLatch` 可以用于集成测试中等待多个异步消息处理完成。
 

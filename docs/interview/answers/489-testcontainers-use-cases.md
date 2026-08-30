@@ -29,7 +29,7 @@ Testcontainers 适合在测试中启动真实中间件容器，验证代码和 M
 Testcontainers 不适合替代单元测试。它启动成本更高，运行速度更慢，也不应该用于覆盖所有业务分支。
 复杂的跨服务端到端测试也不能只靠 Testcontainers，还需要服务编排、测试数据和环境治理。
 
-## 在 eMall 项目中怎么讲？
+## 电商系统实践
 
-eMall 可以用 Testcontainers 验证订单事务、库存防超卖、支付回调幂等、Outbox 事件、Kafka 消费、Redis 限流和
+大型电商系统可以用 Testcontainers 验证订单事务、库存防超卖、支付回调幂等、Outbox 事件、Kafka 消费、Redis 限流和
 搜索索引查询。这样比纯 mock 更接近生产依赖行为。

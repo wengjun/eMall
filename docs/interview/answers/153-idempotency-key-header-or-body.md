@@ -75,7 +75,7 @@ Header 幂等键不能替代业务唯一键。
 
 幂等键要有有效期和命名空间，避免不同接口冲突。
 
-## 在 eMall 项目中怎么讲？
+## 电商系统实践
 
 创建订单可以要求 Header 传 `Idempotency-Key`，Body 中也有 `clientRequestId`。
 

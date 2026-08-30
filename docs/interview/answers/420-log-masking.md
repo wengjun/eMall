@@ -48,9 +48,9 @@ token 和 secret 通常应完全移除。
 
 越靠近源头越好。
 
-## 在 eMall 项目中怎么讲？
+## 电商系统实践
 
-eMall 订单日志可以记录 `orderId`、`userId` 和 trace ID，但不能记录完整手机号、地址、身份证和
+大型电商系统订单日志可以记录 `orderId`、`userId` 和 trace ID，但不能记录完整手机号、地址、身份证和
 支付凭证。
 
 开放平台请求日志要移除 `Authorization`、`secret` 和签名原文，只保留必要摘要用于排查。

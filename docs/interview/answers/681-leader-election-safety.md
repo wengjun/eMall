@@ -43,5 +43,5 @@ WHERE shard_id = ? AND accepted_term <= ?;
 
 安全不变量是“对每个资源，成功写入的 term 单调不降，且同一业务版本至多提交一次”。测试应随机暂停 Leader 超过 TTL、切断不同方向网络、延迟复制、并发强制切换，再审计所有成功写入的 term 和业务版本。
 
-在 eMall 的分片任务调度中，Nacos/数据库可提供候选协调，但任务表必须保存 `owner_term` 并条件更新。
+在大型电商系统的分片任务调度中，Nacos/数据库可提供候选协调，但任务表必须保存 `owner_term` 并条件更新。
 这样即使旧 JVM 因 Stop-The-World 恢复，仍只能收到 stale-term 拒绝，不能执行第二次结算。

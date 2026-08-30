@@ -163,9 +163,9 @@ class name + defining class loader
 
 这对插件隔离、热部署、容器隔离和依赖冲突排查非常关键。
 
-## 在 eMall 项目中怎么讲？
+## 电商系统实践
 
-eMall 普通微服务主要依赖 Application ClassLoader。
+大型电商系统普通微服务主要依赖 Application ClassLoader。
 
 但如果要做营销规则插件、商家自定义扩展、搜索排序插件或风控策略插件，就可能涉及自定义类加载器。
 

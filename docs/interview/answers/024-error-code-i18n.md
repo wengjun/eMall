@@ -113,9 +113,9 @@ Accept-Language: zh-CN
 - 需要客户端特殊处理的错误码进入契约文档。
 - 开放平台错误码要长期稳定。
 
-## 在 eMall 项目中怎么讲？
+## 电商系统实践
 
-eMall 可以返回统一 `ApiResponse`：
+大型电商系统可以返回统一 `ApiResponse`：
 
 ```json
 {

@@ -42,9 +42,9 @@ ISR 过小代表副本同步能力下降。
 
 ISR 波动需要告警。
 
-## 在 eMall 项目中怎么讲？
+## 电商系统实践
 
-eMall 的订单事件 Topic 应配置合理副本数和 `min.insync.replicas`。如果 ISR 数量不足，核心事件写入
+大型电商系统的订单事件 Topic 应配置合理副本数和 `min.insync.replicas`。如果 ISR 数量不足，核心事件写入
 应该失败或降级，而不是假装写入成功。
 
 这样可以避免 Broker 故障后丢失订单事件。

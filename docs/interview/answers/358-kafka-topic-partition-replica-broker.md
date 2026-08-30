@@ -42,9 +42,9 @@ Replica 是 Partition 的副本。
 Broker 是 Kafka 服务器节点。一个 Partition 有一个 leader replica 和多个 follower replica。
 生产和消费通常访问 leader，follower 从 leader 复制数据。
 
-## 在 eMall 项目中怎么讲？
+## 电商系统实践
 
-eMall 可以把订单创建事件写入 `order-created` Topic。该 Topic 按 `orderId` 或 `userId` 分配到
+大型电商系统可以把订单创建事件写入 `order-created` Topic。该 Topic 按 `orderId` 或 `userId` 分配到
 不同 Partition，提升并发处理能力。
 
 每个 Partition 配置多个 Replica，某个 Broker 宕机后，其他副本可以选出新 leader 保持可用。

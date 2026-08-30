@@ -98,7 +98,7 @@ future.completeOnTimeout(defaultValue, 200, TimeUnit.MILLISECONDS);
 
 异步不是免费并发，背后仍然消耗线程和下游资源。
 
-## 在 eMall 项目中怎么讲？
+## 电商系统实践
 
 订单详情页可以并行查询：
 

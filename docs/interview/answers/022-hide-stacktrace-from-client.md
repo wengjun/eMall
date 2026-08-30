@@ -16,8 +16,8 @@
 
 ```text
 java.lang.NullPointerException
-    at com.emall.payment.service.PaymentService.callback(PaymentService.java:54)
-    at com.emall.payment.api.PaymentController.callback(PaymentController.java:31)
+    at com.example.mall.payment.service.PaymentService.callback(PaymentService.java:54)
+    at com.example.mall.payment.api.PaymentController.callback(PaymentController.java:31)
 ```
 
 它对研发很有用，但对用户没意义。更糟糕的是，攻击者可以通过堆栈了解系统内部结构。
@@ -102,9 +102,9 @@ java.lang.NullPointerException
 - 密钥。
 - 支付完整敏感报文。
 
-## 在 eMall 项目中怎么讲？
+## 电商系统实践
 
-eMall 的统一异常处理应把 `BusinessException` 转成统一 `ApiResponse`，
+大型电商系统的统一异常处理应把 `BusinessException` 转成统一 `ApiResponse`，
 系统异常转成 `INTERNAL_ERROR`，日志里保留堆栈。
 
 这样：

@@ -44,9 +44,9 @@ Kafka Producer 幂等主要解决生产者重试导致同一条消息在同一 P
 
 不能用 Kafka Producer 幂等替代订单幂等。
 
-## 在 eMall 项目中怎么讲？
+## 电商系统实践
 
-eMall 订单服务发布 `order-created` 事件时应开启 Producer 幂等，降低网络抖动重试导致 Kafka 内部
+大型电商系统订单服务发布 `order-created` 事件时应开启 Producer 幂等，降低网络抖动重试导致 Kafka 内部
 重复消息的概率。
 
 但库存消费者仍要以 `order_no` 做幂等，因为重复消息、重放消息或人工补偿仍可能发生。

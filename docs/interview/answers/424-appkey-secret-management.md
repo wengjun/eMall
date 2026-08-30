@@ -49,9 +49,9 @@ appKey 应绑定：
 
 不是有 appKey 就能访问所有接口。
 
-## 在 eMall 项目中怎么讲？
+## 电商系统实践
 
-eMall 开放平台给商家应用发放 appKey 和 secret。商家调用订单接口时用 secret 做 HMAC 签名。
+大型电商系统开放平台给商家应用发放 appKey 和 secret。商家调用订单接口时用 secret 做 HMAC 签名。
 
 平台按 appKey 查权限、限流、IP 白名单和商家范围。secret 泄露时可禁用旧版本并生成新版本。
 

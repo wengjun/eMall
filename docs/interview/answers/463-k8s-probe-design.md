@@ -39,9 +39,9 @@ liveness 不应因为某个下游故障就失败，否则会导致无意义重�
 
 startup 成功后，liveness 才开始发挥作用。
 
-## 在 eMall 项目中怎么讲？
+## 电商系统实践
 
-eMall Spring Boot 服务可以用 `/actuator/health/readiness` 判断是否能接流量，用轻量本地检查作为
+大型电商系统的 Spring Boot 服务可以用 `/actuator/health/readiness` 判断是否能接流量，用轻量本地检查作为
 liveness，用 startupProbe 给 JVM 启动和缓存初始化足够时间。
 
 不能让 liveness 强依赖 MySQL、Redis、Kafka 全部健康。

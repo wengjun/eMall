@@ -91,7 +91,7 @@ record SkuQuantity(long skuId, int quantity) {
 
 普通业务对象更应该保持简单、不可变、短生命周期。
 
-## 在 eMall 项目中怎么讲？
+## 电商系统实践
 
 订单计算中创建 `Money`、`OrderLine`、`DiscountResult` 这类短生命周期值对象是可以接受的。
 

@@ -71,7 +71,7 @@ public record CartSnapshot(List<Long> skuIds) {
 }
 ```
 
-## 在 eMall 项目中怎么讲？
+## 电商系统实践
 
 适合不可变：
 

@@ -50,7 +50,7 @@ public final class RiskConfigHolder {
 配置中心不是秘密管理器的天然替代品。数据库密码、私钥等应由 KMS/Secret Manager 管理并按工作负载授权；
 Nacos 使用 TLS、认证、RBAC 和 namespace 隔离，发布操作进入审计日志。应用日志不得打印完整敏感配置。
 
-## eMall 故障演练
+## 电商系统故障演练
 
 测试 Nacos 不可达启动、运行时断连、坏格式、语义越界、监听器抛异常、灰度实例回滚和旧程序读取新 schema。关键指标包括配置版本分布、生效失败数、客户端滞后时间和回滚耗时。
 

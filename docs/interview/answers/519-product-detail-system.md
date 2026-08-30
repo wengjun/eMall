@@ -32,7 +32,7 @@ BFF 或商品详情聚合服务负责组装页面所需数据，避免前端直�
 详情页可以分层降级。推荐、评价、广告失败不影响商品基础信息展示。价格服务失败时可以提示暂不可购买，
 不能展示错误价格并允许下单。
 
-## 在 eMall 项目中怎么讲？
+## 电商系统实践
 
-eMall 的 `product`、`pricing`、`promotion`、`inventory`、`review`、`recommendation` 和 `advertising` 可以共同支撑详情页。
+大型电商系统的 `product`、`pricing`、`promotion`、`inventory`、`review`、`recommendation` 和 `advertising` 可以共同支撑详情页。
 商品详情聚合层要做缓存、降级、trace 和热点保护。

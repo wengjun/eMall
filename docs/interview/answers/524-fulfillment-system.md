@@ -32,7 +32,7 @@
 
 如果支付成功但履约创建失败，要补偿创建。若仓库缺货，要触发调仓、拆单、退款或客服介入。
 
-## 在 eMall 项目中怎么讲？
+## 电商系统实践
 
-eMall 的 `fulfillment` 模块消费订单已支付事件，创建履约单并模拟仓储物流状态。它和 `order`、`inventory`、
+大型电商系统的 `fulfillment` 模块消费订单已支付事件，创建履约单并模拟仓储物流状态。它和 `order`、`inventory`、
 `supply-chain`、`customer-service` 通过事件协作。

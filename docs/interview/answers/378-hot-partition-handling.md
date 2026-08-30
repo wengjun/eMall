@@ -49,9 +49,9 @@ skuId + ":" + bucketNo
 
 这样可以把同一热点 SKU 分散到多个 Partition。
 
-## 在 eMall 项目中怎么讲？
+## 电商系统实践
 
-eMall 秒杀库存事件如果都按 `skuId` 分区，爆品会压垮单个 Partition。
+大型电商系统秒杀库存事件如果都按 `skuId` 分区，爆品会压垮单个 Partition。
 
 可以按库存桶或令牌桶编号分区，例如 `skuId:bucketNo`。最终库存一致性由库存桶汇总、条件扣减和
 对账补偿保证，而不是依赖单 Partition 串行。

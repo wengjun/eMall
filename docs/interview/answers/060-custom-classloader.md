@@ -148,9 +148,9 @@ public final class PluginClassLoader extends ClassLoader {
 
 插件能力必须被治理，否则会变成平台稳定性风险。
 
-## 在 eMall 项目中怎么讲？
+## 电商系统实践
 
-eMall 可以在这些模块中使用插件思路：
+大型电商系统可以在这些模块中使用插件思路：
 
 - 营销规则插件。
 - 商家定制计费规则。

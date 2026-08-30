@@ -48,7 +48,7 @@ Provider 侧反向经过解码、线程派发、Provider Filter、代理调用�
 
 RPC 接口是跨进程协议，不应把数据库 Entity、异常堆栈或 Java 实现类型直接暴露出去。字段采用向后兼容演进，新增可选字段、保留旧语义；发布时先让 Provider 兼容新旧请求，再升级 Consumer。
 
-## eMall 排障定位
+## 电商系统排障定位
 
 一次调用慢，要按代理/filter、地址目录、路由与选择、连接池/排队、网络、Provider 线程池、业务执行和序列化拆解。只看 Provider 方法耗时会漏掉 Consumer 排队和重试放大。
 

@@ -46,8 +46,8 @@
 
 镜像和 Pod 安全上下文要同时配置。
 
-## 在 eMall 项目中怎么讲？
+## 电商系统实践
 
-eMall Java 服务只需要读取 jar、写临时目录和输出日志，不需要 root 权限。
+大型电商系统的 Java 服务只需要读取 jar、写临时目录和输出日志，不需要 root 权限。
 
 镜像中创建 `app` 用户，Kubernetes 设置 `runAsNonRoot: true`，并限制容器能力，降低被攻击后的影响。

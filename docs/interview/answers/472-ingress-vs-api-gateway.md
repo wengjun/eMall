@@ -39,8 +39,8 @@ API Gateway 面向业务 API 生命周期治理，通常是所有外部调用进
 如果只是内部系统入口，Ingress 可能已经足够。如果面向 App、小程序、商家、开放平台和第三方系统，
 就需要 API Gateway 统一处理安全、流控和审计。
 
-## 在 eMall 项目中怎么讲？
+## 电商系统实践
 
-eMall 适合把 `openapi`、`identity`、`risk`、`traffic` 等能力放在 API Gateway 或网关层。
+大型电商系统适合把 `openapi`、`identity`、`risk`、`traffic` 等能力放在 API Gateway 或网关层。
 Ingress 负责域名和证书入口，API Gateway 负责用户态和业务态控制，例如登录态校验、商家接口签名、
 接口限流、灰度路由和审计日志。

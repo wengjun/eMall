@@ -43,7 +43,7 @@ PAID -> REFUNDED
 
 如果收到 `PAID` 后又收到旧的 `CREATED` 事件，状态机应拒绝回退。
 
-## 在 eMall 项目中怎么讲？
+## 电商系统实践
 
 订单服务发布订单事件时使用 `orderId` 作为 MQ key。
 

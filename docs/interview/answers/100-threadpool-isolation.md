@@ -82,7 +82,7 @@ inventory slow -> shared pool full -> payment query blocked -> order page slow
 
 只建多个线程池但没有这些控制，仍然不算生产级隔离。
 
-## 在 eMall 项目中怎么讲？
+## 电商系统实践
 
 订单服务可以拆分：
 

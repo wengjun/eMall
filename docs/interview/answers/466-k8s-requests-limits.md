@@ -43,8 +43,8 @@ limits 太紧会导致性能抖动。
 
 不要拍脑袋设置。
 
-## 在 eMall 项目中怎么讲？
+## 电商系统实践
 
-eMall 订单服务如果稳定需要 1 核和 1.5GB 内存，可以把 request 设在接近这个水平，limit 给合理峰值。
+大型电商系统订单服务如果稳定需要 1 核和 1.5GB 内存，可以把 request 设在接近这个水平，limit 给合理峰值。
 
 同时 JVM `-Xmx` 要小于容器 memory limit，给 metaspace、线程栈和 direct memory 留空间。

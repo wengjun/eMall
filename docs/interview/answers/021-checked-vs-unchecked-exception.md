@@ -104,7 +104,7 @@ Spring 默认只对 unchecked exception 和 `Error` 回滚。
 
 所以在业务服务中使用 unchecked `BusinessException` 更常见。
 
-## 在 eMall 项目中怎么讲？
+## 电商系统实践
 
 例如订单状态不允许支付：
 

@@ -33,7 +33,7 @@
 
 高风险退款要接入风控和人工审核。
 
-## 在 eMall 项目中怎么讲？
+## 电商系统实践
 
-eMall 的 `after-sales` 模块负责售后申请、审核、退款状态和逆向流程，`payment` 执行退款，`inventory` 处理回补，
+大型电商系统的 `after-sales` 模块负责售后申请、审核、退款状态和逆向流程，`payment` 执行退款，`inventory` 处理回补，
 `finance` 做对账，`customer-service` 处理人工介入。

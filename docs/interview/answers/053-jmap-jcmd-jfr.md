@@ -155,9 +155,9 @@ JFR 比单次 `jstack` 或 heap dump 更适合回答“这两分钟到底发生�
 
 生产排查通常不是单一工具，而是多工具交叉验证。
 
-## 在 eMall 项目中怎么讲？
+## 电商系统实践
 
-如果 eMall 网关内存持续上涨但 heap used 不高，优先用 `jcmd VM.native_memory` 看 direct memory、
+如果大型电商系统的网关内存持续上涨但 heap used 不高，优先用 `jcmd VM.native_memory` 看 direct memory、
 thread stack 和 metaspace。
 
 如果订单服务疑似 Java heap 泄漏，导出 heap dump 后用 MAT 查引用链。

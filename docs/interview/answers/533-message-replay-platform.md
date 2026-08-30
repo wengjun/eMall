@@ -28,7 +28,7 @@
 
 对高风险 topic，可以要求双人审批、只允许重放到隔离 topic，或者先 dry run。
 
-## 在 eMall 项目中怎么讲？
+## 电商系统实践
 
-eMall 的 `event-platform` 可以提供消息检索和重放，`operations` 提供审批后台。
+大型电商系统的 `event-platform` 可以提供消息检索和重放，`operations` 提供审批后台。
 订单、支付、库存、履约的消息重放要受严格权限和限速控制。

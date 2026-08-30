@@ -31,7 +31,7 @@ Redis Lua、Kafka 生产消费、Outbox、分布式锁、HTTP 超时重试、配
 
 集成测试数量不需要像单元测试一样多，但核心交易链路必须覆盖。
 
-## 在 eMall 项目中怎么讲？
+## 电商系统实践
 
-eMall 的 `order`、`inventory`、`payment`、`event-platform`、`common` 和 `gateway` 模块中，涉及事务、消息、
+大型电商系统的 `order`、`inventory`、`payment`、`event-platform`、`common` 和 `gateway` 模块中，涉及事务、消息、
 安全过滤、签名校验和 Outbox 的部分都应该有集成测试。

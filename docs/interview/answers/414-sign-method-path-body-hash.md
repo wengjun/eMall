@@ -33,9 +33,9 @@ body hash 防止请求体被改。
 直接签 body 可能受大 body、编码和换行影响。常见做法是先计算 body hash，再把 hash 放入 canonical
 string 参与签名。
 
-## 在 eMall 项目中怎么讲？
+## 电商系统实践
 
-eMall 开放平台商家调用退款接口时，签名必须覆盖 `POST`、`/refunds`、timestamp、nonce 和 body
+大型电商系统开放平台商家调用退款接口时，签名必须覆盖 `POST`、`/refunds`、timestamp、nonce 和 body
 hash。
 
 如果攻击者修改退款金额、订单号或把请求挪到批量退款接口，签名验证会失败。

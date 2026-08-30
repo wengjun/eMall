@@ -33,7 +33,7 @@
 
 商品审核不是一次性动作。上架后也要支持巡检和用户投诉触发复审。
 
-## 在 eMall 项目中怎么讲？
+## 电商系统实践
 
-eMall 的 `merchant`、`catalog`、`product` 和 `risk` 可以协同实现商家入驻和商品审核。
+大型电商系统的 `merchant`、`catalog`、`product` 和 `risk` 可以协同实现商家入驻和商品审核。
 `operations` 提供内部审核后台，`openapi` 可提供商家系统接口。

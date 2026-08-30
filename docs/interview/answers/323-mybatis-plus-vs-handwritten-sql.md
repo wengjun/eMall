@@ -50,9 +50,9 @@ MyBatis Plus 适合标准 CRUD、简单条件查询、审计字段填充和通�
 
 越核心、越高并发、越复杂，就越应该手写和评审。
 
-## 在 eMall 项目中怎么讲？
+## 电商系统实践
 
-eMall 的 `user` 模块可以大量使用 MyBatis Plus 处理资料维护。
+大型电商系统的 `user` 模块可以大量使用 MyBatis Plus 处理资料维护。
 
 `inventory` 的扣库存必须手写：
 

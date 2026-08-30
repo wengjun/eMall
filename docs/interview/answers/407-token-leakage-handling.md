@@ -48,9 +48,9 @@ token 泄露后要立即缩小影响范围，包括撤销 token、提高 token �
 
 安全事件要有完整闭环。
 
-## 在 eMall 项目中怎么讲？
+## 电商系统实践
 
-eMall 如果发现用户 token 泄露，应立即撤销 refresh token，提高该用户 token version，让旧 access
+大型电商系统如果发现用户 token 泄露，应立即撤销 refresh token，提高该用户 token version，让旧 access
 token 校验失败。
 
 如果泄露来自日志，要删除日志中的敏感字段，补充日志脱敏规则，并审计泄露期间的订单、地址和支付

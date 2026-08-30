@@ -41,8 +41,8 @@
 
 它是核心事件的常用选择。
 
-## 在 eMall 项目中怎么讲？
+## 电商系统实践
 
-eMall 的 `order-created`、`payment-succeeded`、`refund-created` 这类核心事件应使用 `ack=all`。
+大型电商系统的 `order-created`、`payment-succeeded`、`refund-created` 这类核心事件应使用 `ack=all`。
 
 用户行为日志、曝光日志可以根据成本和重要性选择较低可靠性配置，但要明确丢失影响。

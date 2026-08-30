@@ -40,6 +40,6 @@
 不代表已经应用；备份还可能落后更久。因此要分别声明：单机故障 RPO、可用区故障 RPO、
 区域灾难 RPO 和人为误删恢复点。
 
-在 eMall 中，我会把订单成功响应 ID 与 outbox ID 一起纳入崩溃演练，恢复后检查业务行、binlog/CDC 和事件发布状态，而不是只看 MySQL 能否启动。
+在大型电商系统中，我会把订单成功响应 ID 与 outbox ID 一起纳入崩溃演练，恢复后检查业务行、binlog/CDC 和事件发布状态，而不是只看 MySQL 能否启动。
 
 参考：[MySQL 8.4 InnoDB Recovery](https://dev.mysql.com/doc/refman/8.4/en/innodb-recovery.html)

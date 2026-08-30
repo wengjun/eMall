@@ -65,7 +65,7 @@ ServiceAccount 与 RBAC 读取范围，并优先通过 External Secrets、CSI Dr
 
 如果系统不支持轮换，密钥泄漏时只能停机式修复。
 
-## 在 eMall 项目中怎么讲？
+## 电商系统实践
 
 支付渠道私钥、JWT 签名密钥、数据库和中间件凭证、短信供应商 token 都必须由密钥系统管理。
 

@@ -29,7 +29,7 @@
 
 自动能修的差异进入补偿任务，涉及资金或复杂状态的差异进入人工审核。
 
-## 在 eMall 项目中怎么讲？
+## 电商系统实践
 
-eMall 的 `finance` 和 `operations` 模块可以提供订单对账能力，消费 `order`、`payment`、`fulfillment`、`after-sales`
+大型电商系统的 `finance` 和 `operations` 模块可以提供订单对账能力，消费 `order`、`payment`、`fulfillment`、`after-sales`
 的数据快照，输出差异单和补偿任务。

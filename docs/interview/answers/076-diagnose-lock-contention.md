@@ -34,7 +34,7 @@
 
 ```text
 java.lang.Thread.State: BLOCKED
-    at com.emall.inventory.InventoryService.reserve(...)
+    at com.example.mall.inventory.InventoryService.reserve(...)
 ```
 
 说明它们在等待 synchronized monitor。
@@ -104,7 +104,7 @@ Java 线程可能是 `RUNNABLE`，但实际卡在 socket read 等待数据库返
 
 选择哪种方案取决于一致性要求和业务热点形态。
 
-## 在 eMall 项目中怎么讲？
+## 电商系统实践
 
 秒杀库存如果所有请求都竞争同一个商品锁，P99 会急剧升高。
 

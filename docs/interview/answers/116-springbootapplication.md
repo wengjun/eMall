@@ -57,10 +57,10 @@
 例如：
 
 ```text
-com.emall.order.OrderApplication
-com.emall.order.application
-com.emall.order.domain
-com.emall.order.infrastructure
+com.example.mall.order.OrderApplication
+com.example.mall.order.application
+com.example.mall.order.domain
+com.example.mall.order.infrastructure
 ```
 
 这样默认扫描能覆盖模块内部组件。
@@ -77,9 +77,9 @@ com.emall.order.infrastructure
 
 排查时先看启动类位置和 scan base packages。
 
-## 在 eMall 项目中怎么讲？
+## 电商系统实践
 
-每个 eMall 微服务模块的启动类应位于模块根包，例如 `com.emall.payment`。
+大型电商系统中，每个微服务模块的启动类应位于模块根包，例如 `com.example.mall.payment`。
 
 公共组件放在 `common` 时，要通过 starter、显式扫描或自动配置方式引入，不能依赖随意扩大扫描范围。
 

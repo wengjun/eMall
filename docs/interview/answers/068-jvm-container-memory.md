@@ -118,9 +118,9 @@ OOMKilled 是容器被操作系统杀掉，Java 进程可能没有机会打印 h
 
 如果 Pod 直接重启且日志中没有 Java OOM，要怀疑容器级 OOMKilled。
 
-## 在 eMall 项目中怎么讲？
+## 电商系统实践
 
-eMall 网关处理大量网络请求，direct memory 和连接缓冲占用较高。
+大型电商系统网关处理大量网络请求，direct memory 和连接缓冲占用较高。
 
 如果容器 1 GB 内存，不能把 `-Xmx` 设置为 900 MB，因为网关还需要堆外内存和线程栈。
 

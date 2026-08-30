@@ -44,9 +44,9 @@ Ingress 负责：
 
 Ingress 需要 Ingress Controller 实际执行。
 
-## 在 eMall 项目中怎么讲？
+## 电商系统实践
 
-eMall 的 `order` 服务用 Deployment 部署多个 Pod，用 Service 暴露集群内稳定地址。
+大型电商系统的 `order` 服务用 Deployment 部署多个 Pod，用 Service 暴露集群内稳定地址。
 
 外部用户请求先到 Ingress 或 API Gateway，再路由到 gateway 服务，最终由网关转发到订单、商品和
 支付等内部 Service。

@@ -71,7 +71,7 @@ timestamp 和 nonce 必须参与签名。
 
 否则 nonce 记录异常时仍可能重复执行。
 
-## 在 eMall 项目中怎么讲？
+## 电商系统实践
 
 开放平台商家调用创建售后单接口时，请求必须带 timestamp、nonce 和 signature。
 

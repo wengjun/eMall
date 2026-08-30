@@ -108,7 +108,7 @@ TreeMap<Instant, List<Task>> tasksByTime = new TreeMap<>();
 - 是否需要队列？优先 `ArrayDeque`。
 - 是否多线程并发访问？考虑并发集合或外部同步。
 
-## 在 eMall 项目中怎么讲？
+## 电商系统实践
 
 - 订单明细：`ArrayList`。
 - skuId 到数量聚合：`HashMap<Long, Integer>`。

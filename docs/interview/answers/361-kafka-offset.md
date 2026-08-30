@@ -38,9 +38,9 @@ committed offset 表示消费者组已经提交的消费位置。
 
 如果消费者重启，会从 committed offset 之后继续消费。提交过早可能丢消息，提交过晚可能重复消费。
 
-## 在 eMall 项目中怎么讲？
+## 电商系统实践
 
-eMall 的订单事件 Topic 有多个 Partition。`order-created` 某条消息在 Partition 3 的 offset 为
+大型电商系统的订单事件 Topic 有多个 Partition。`order-created` 某条消息在 Partition 3 的 offset 为
 1024，只表示它在 Partition 3 中的位置。
 
 `inventory-group` 和 `fulfillment-group` 是不同消费组，它们各自维护自己的 offset。

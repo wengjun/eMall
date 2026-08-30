@@ -42,9 +42,9 @@ JWT 要控制有效期和敏感信息。
 
 OAuth2 重点是授权委托，不只是登录。
 
-## 在 eMall 项目中怎么讲？
+## 电商系统实践
 
-eMall C 端登录可以使用 Session 或短期 access token 加 refresh token。内部微服务可以传递签名
+大型电商系统的 C 端登录可以使用 Session 或短期 access token 加 refresh token。内部微服务可以传递签名
 JWT 或网关注入的身份上下文。
 
 开放平台给第三方商家应用访问订单和商品接口时，更适合 OAuth2 授权码或客户端凭证模式。

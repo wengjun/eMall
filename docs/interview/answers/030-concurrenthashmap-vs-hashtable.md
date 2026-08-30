@@ -95,7 +95,7 @@ Map 结构安全，但 `List` 不是线程安全的。
 
 `ConcurrentHashMap` 只在当前 JVM 内有效。多个 Pod 各有一份 Map，不能用它做全局幂等。
 
-## 在 eMall 项目中怎么讲？
+## 电商系统实践
 
 适合用 `ConcurrentHashMap` 的地方：
 

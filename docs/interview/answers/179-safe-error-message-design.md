@@ -61,7 +61,7 @@
 
 日志要脱敏，并按权限访问。
 
-## 在 eMall 项目中怎么讲？
+## 电商系统实践
 
 用户下单失败时，不能返回“inventory_db lock wait timeout”。
 

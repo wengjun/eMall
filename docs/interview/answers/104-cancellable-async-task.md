@@ -96,7 +96,7 @@ if (Thread.currentThread().isInterrupted()) {
 
 否则取消后重试可能造成重复扣款、重复发货或重复扣库存。
 
-## 在 eMall 项目中怎么讲？
+## 电商系统实践
 
 订单超时关闭任务可以设计成可取消：
 

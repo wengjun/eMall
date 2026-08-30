@@ -86,9 +86,9 @@ Bean Validation 处理器读取字段上的校验注解，例如 `@NotBlank`、`
 - 缺少对应依赖或处理器。
 - AOP 代理类型和方法可见性不匹配。
 
-## 在 eMall 项目中怎么讲？
+## 电商系统实践
 
-eMall 中：
+大型电商系统中：
 
 - `@RestController` 让类成为 HTTP Controller。
 - `@Service` 注册业务服务。

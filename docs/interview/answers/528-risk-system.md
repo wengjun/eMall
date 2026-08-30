@@ -27,9 +27,9 @@
 
 风控结果要可解释，至少能说明命中了哪些规则、特征和策略版本。否则客服、运营和事故复盘无法处理。
 
-## 在 eMall 项目中怎么讲？
+## 电商系统实践
 
-eMall 的 `risk` 模块可以接入 `identity`、`order`、`payment`、`promotion`、`openapi` 的行为数据。
+大型电商系统的 `risk` 模块可以接入 `identity`、`order`、`payment`、`promotion`、`openapi` 的行为数据。
 `traffic` 做入口限流，`operations` 做规则审批和审计，`analytics` 做离线分析。
 
 ## 深度增强：风控系统架构图

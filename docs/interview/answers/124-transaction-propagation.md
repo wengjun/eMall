@@ -74,7 +74,7 @@ Spring 常见传播行为包括 `REQUIRED`、`REQUIRES_NEW`、`NESTED`、`SUPPOR
 
 使用较少。
 
-## 在 eMall 项目中怎么讲？
+## 电商系统实践
 
 订单创建主流程通常使用 `REQUIRED`。
 

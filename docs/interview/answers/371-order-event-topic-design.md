@@ -45,9 +45,9 @@ Topic 过细会增加治理成本，过粗会增加消费过滤和 schema 复杂
 
 订单事件不能静默丢失。
 
-## 在 eMall 项目中怎么讲？
+## 电商系统实践
 
-eMall 可以设计 `order-events-v1` Topic，key 使用 `orderId`，事件类型字段区分 created、paid、
+大型电商系统可以设计 `order-events-v1` Topic，key 使用 `orderId`，事件类型字段区分 created、paid、
 cancelled、shipped 和 refunded。
 
 订单服务本地事务写入订单表和 Outbox 表，Relay 再投递 Kafka。消费者通过事件 ID 做幂等。

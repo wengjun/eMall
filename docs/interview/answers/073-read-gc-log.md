@@ -117,7 +117,7 @@ User=0.20s Sys=0.02s Real=0.05s
 
 如果 Real 明显大于 User+Sys，可能有 CPU 不足、容器 throttling 或系统调度问题。
 
-## 在 eMall 项目中怎么讲？
+## 电商系统实践
 
 订单创建 P99 抖动时，可以对比 GC 日志和接口延迟。
 

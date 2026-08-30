@@ -27,7 +27,7 @@
 
 评估质量时要结合 mutation testing、缺陷逃逸率、评审质量、集成测试和生产事故数据。
 
-## 在 eMall 项目中怎么讲？
+## 电商系统实践
 
-eMall 应把覆盖率重点放在 `order`、`payment`、`inventory`、`pricing`、`promotion` 和 `common` 的核心规则。
+大型电商系统应把覆盖率重点放在 `order`、`payment`、`inventory`、`pricing`、`promotion` 和 `common` 的核心规则。
 不能为了数字去覆盖无意义代码，而要优先覆盖金额、状态机、幂等和库存并发。

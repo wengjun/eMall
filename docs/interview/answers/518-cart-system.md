@@ -33,7 +33,7 @@ Redis 适合存购物车热数据，例如按 userId 保存 hash 或 sorted set�
 
 如果价格或库存服务不可用，购物车展示可以降级为“暂不可结算”或展示上次缓存信息，但下单前必须强校验。
 
-## 在 eMall 项目中怎么讲？
+## 电商系统实践
 
-eMall 的 `cart` 模块负责用户购买意图，和 `product`、`pricing`、`promotion`、`inventory` 在结算页聚合。
+大型电商系统的 `cart` 模块负责用户购买意图，和 `product`、`pricing`、`promotion`、`inventory` 在结算页聚合。
 购物车可以偏高可用，订单创建则偏强正确性。

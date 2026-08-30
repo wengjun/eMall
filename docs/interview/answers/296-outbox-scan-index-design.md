@@ -51,7 +51,7 @@ Outbox 表字段：
 
 索引要支持按分片和状态快速定位。
 
-## 在 eMall 项目中怎么讲？
+## 电商系统实践
 
 订单服务 Outbox 可以按 `status + next_retry_at + id` 建索引。
 

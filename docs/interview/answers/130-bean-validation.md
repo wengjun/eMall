@@ -76,7 +76,7 @@ public record CreateOrderRequest(
 
 不建议在 Validator 中做复杂数据库查询或远程调用，否则会让参数校验变慢且难治理。
 
-## 在 eMall 项目中怎么讲？
+## 电商系统实践
 
 创建订单请求中：
 

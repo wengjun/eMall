@@ -103,9 +103,9 @@ order should not depend on payment.repository
 
 common 如果不治理，会变成所有模块互相耦合的中心。
 
-## 在 eMall 项目中怎么讲？
+## 电商系统实践
 
-eMall 现在有多个业务模块。治理重点是：
+在包含多个业务域的大型电商系统中，治理重点是：
 
 - 每个模块有自己的领域模型和 Repository。
 - 公共能力抽到 common，但不抽具体业务。

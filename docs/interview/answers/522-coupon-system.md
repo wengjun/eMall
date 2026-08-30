@@ -31,7 +31,7 @@
 
 规则引擎要可解释，不能只输出最终金额。面试时要强调“金额可追溯”。
 
-## 在 eMall 项目中怎么讲？
+## 电商系统实践
 
-eMall 的 `promotion` 和 `pricing` 模块可以共同处理优惠券。`promotion` 管券和规则，`pricing` 汇总价格计算，
+大型电商系统的 `promotion` 和 `pricing` 模块可以共同处理优惠券。`promotion` 管券和规则，`pricing` 汇总价格计算，
 `order` 保存优惠快照，`after-sales` 按快照退款。

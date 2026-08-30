@@ -78,7 +78,7 @@ Thread.currentThread().isInterrupted()
 
 这会放大雪崩风险。
 
-## 在 eMall 项目中怎么讲？
+## 电商系统实践
 
 订单创建调用库存超时后，不能只让前端超时返回。
 

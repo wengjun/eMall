@@ -36,7 +36,7 @@
 搜索引擎要分片副本、多可用区部署和限流保护。搜索失败时可以返回热门商品、类目兜底或提示稍后重试。
 但不能把下架或违规商品作为兜底结果。
 
-## 在 eMall 项目中怎么讲？
+## 电商系统实践
 
-eMall 的 `search` 模块负责查询，`product` 和 `catalog` 负责商品主数据，`event-platform` 负责同步事件，
+大型电商系统的 `search` 模块负责查询，`product` 和 `catalog` 负责商品主数据，`event-platform` 负责同步事件，
 `advertising` 和 `recommendation` 可参与排序和混排。

@@ -34,7 +34,7 @@
 
 测试中尽量避免复杂 mock。纯逻辑可以直接构造对象输入，断言输出和状态变化。
 
-## 在 eMall 项目中怎么讲？
+## 电商系统实践
 
-eMall 的 `order`、`payment`、`pricing`、`promotion`、`inventory` 和 `risk` 模块应优先保证核心规则有单元测试。
+大型电商系统的 `order`、`payment`、`pricing`、`promotion`、`inventory` 和 `risk` 模块应优先保证核心规则有单元测试。
 公共模块中的签名、脱敏、时间窗口、限流键和错误码映射也应该覆盖。

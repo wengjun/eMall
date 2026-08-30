@@ -102,7 +102,7 @@ Kubernetes 直接杀掉容器，不一定有 Java OOM 堆栈。
 - JVM native。
 - 其他 native 库。
 
-## 在 eMall 项目中怎么讲？
+## 电商系统实践
 
 订单服务 OOM 可能是：
 

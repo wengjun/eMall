@@ -43,6 +43,6 @@ shard 数也不是越多越好：更多 shard 增加集群状态、线程调度�
 - 聚合前用高选择性 filter 缩小文档集合，并限制用户可控 bucket 数。
 - 用 profile API 定位慢在 query、collector 还是 fetch，但只在诊断时开启以免额外开销。
 
-在 eMall 中，商品搜索以类目、品牌、价格的 keyword/数值 Doc Values 做筛选聚合；商家后台查询可评估商家 routing，但必须给头部商家设计拆分策略和热点告警。
+在大型电商系统中，商品搜索以类目、品牌、价格的 keyword/数值 Doc Values 做筛选聚合；商家后台查询可评估商家 routing，但必须给头部商家设计拆分策略和热点告警。
 
 参考：[OpenSearch Routing](https://docs.opensearch.org/latest/mappings/metadata-fields/routing/)

@@ -72,7 +72,7 @@ OrderPaidEvent -> listener updates order projection
 
 这些通常是在隐藏问题。
 
-## 在 eMall 项目中怎么讲？
+## 电商系统实践
 
 订单和支付不应互相直接调用。
 

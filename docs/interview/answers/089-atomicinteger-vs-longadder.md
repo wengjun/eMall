@@ -95,9 +95,9 @@ if stock > 0 then stock = stock - 1
 - 允许读取时轻微非瞬时一致。
 - 不需要基于当前值做条件更新。
 
-## 在 eMall 项目中怎么讲？
+## 电商系统实践
 
-eMall 网关统计请求数、限流命中数、错误数，可以用 `LongAdder`。
+大型电商系统网关统计请求数、限流命中数、错误数，可以用 `LongAdder`。
 
 本地状态开关、简单版本号、CAS 状态切换可以用 `AtomicInteger`。
 

@@ -44,9 +44,9 @@ Rebalance 发生在：
 
 Rebalance 期间可能短暂停止消费，所以要控制消费耗时和心跳配置。
 
-## 在 eMall 项目中怎么讲？
+## 电商系统实践
 
-eMall 的 `order-created` Topic 可以被多个消费组订阅。
+大型电商系统的 `order-created` Topic 可以被多个消费组订阅。
 
 `inventory-group` 扣减库存，`fulfillment-group` 创建履约任务，`search-group` 更新搜索索引。
 每个组都能看到完整订单创建事件，但组内多个实例会分摊 Partition。

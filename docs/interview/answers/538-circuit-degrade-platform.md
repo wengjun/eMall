@@ -27,9 +27,9 @@
 
 平台要观察恢复期错误率和延迟，避免下游刚恢复又被积压流量打挂。
 
-## 在 eMall 项目中怎么讲？
+## 电商系统实践
 
-eMall 的 `reliability` 和 `governance` 模块可以提供熔断降级策略，`traffic` 控制流量，`operations` 提供策略管理和告警。
+大型电商系统的 `reliability` 和 `governance` 模块可以提供熔断降级策略，`traffic` 控制流量，`operations` 提供策略管理和告警。
 订单、支付、库存要有不同的降级边界。
 
 ## 深度增强：平台架构图

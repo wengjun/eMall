@@ -74,7 +74,7 @@ CompletableFuture.supplyAsync(() -> loadOrder(orderId), orderQueryExecutor);
 - 和业务或下游隔离。
 - 设置超时。
 
-## 在 eMall 项目中怎么讲？
+## 电商系统实践
 
 订单详情并行查物流、支付和售后时，不应该都丢到默认 commonPool。
 

@@ -81,7 +81,7 @@ checked exception 默认不回滚。
 
 这会导致异步写库不在原事务内。
 
-## 在 eMall 项目中怎么讲？
+## 电商系统实践
 
 订单创建中，如果 `createOrder()` 内部直接调用同类 `deductInventoryInTx()`，后者事务可能不生效。
 
