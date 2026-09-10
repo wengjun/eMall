@@ -2,114 +2,29 @@
 
 [返回按分类学习面试题](../README.md)
 
-## 先给面试官的短答案
+## 只记 Java 的类型约束
 
-可以用 PECS 原则理解：Producer Extends, Consumer Super。
-如果一个泛型结构主要生产数据给你读取，用 `? extends T`；
-如果它主要消费你写入的数据，用 `? super T`。
+Java 泛型不协变：`List<Integer>` 不是 `List<Number>` 的子类型。与 C++ 模板实例化不同，
+Java 泛型主要通过类型擦除实现；通配符约束编译器允许的操作，不会生成一套新的容器实现。
 
-简单说：
+| 声明 | 读取类型 | 可安全写入的类型 |
+| --- | --- | --- |
+| `List<? extends Number>` | `Number` | 不能添加非 null 元素 |
+| `List<? super Integer>` | `Object` | `Integer` |
+| `List<Number>` | `Number` | `Number` 及其子类 |
 
-- `? extends Order`：可以安全读出 Order，但不适合写入具体对象。
-- `? super PaidOrder`：可以安全写入 PaidOrder，但读出来只能当 Object 或上界处理。
-
-## 从零基础理解
-
-假设：
+PECS：来源生产 T，使用 `extends T`；目标消费 T，使用 `super T`。
 
 ```java
-class Order {
-}
+import java.util.List;
 
-class PaidOrder extends Order {
-}
-```
-
-### `extends` 适合读取
-
-```java
-void printOrders(List<? extends Order> orders) {
-    for (Order order : orders) {
-        System.out.println(order);
+static <T> void copy(List<? extends T> source, List<? super T> target) {
+    for (T value : source) {
+        target.add(value);
     }
 }
 ```
 
-调用方可以传：
-
-```java
-List<Order>
-List<PaidOrder>
-```
-
-因为不管里面具体是哪种 Order 子类，读出来都至少是 Order。
-
-但你不能安全 add 一个普通 `Order`：
-
-```java
-orders.add(new Order()); // compile error
-```
-
-因为实际传入的可能是 `List<PaidOrder>`。
-
-### `super` 适合写入
-
-```java
-void addPaidOrder(List<? super PaidOrder> orders, PaidOrder paidOrder) {
-    orders.add(paidOrder);
-}
-```
-
-调用方可以传：
-
-```java
-List<PaidOrder>
-List<Order>
-List<Object>
-```
-
-因为这些集合都能接收一个 PaidOrder。
-
-但读出来时类型只能安全看作 Object：
-
-```java
-Object value = orders.get(0);
-```
-
-## PECS 原则
-
-```text
-Producer Extends
-Consumer Super
-```
-
-意思是：
-
-- 你从它里面读数据，它是生产者，用 extends。
-- 你往它里面写数据，它是消费者，用 super。
-
-## 后端工程中的例子
-
-### 批量处理订单只读
-
-```java
-void exportOrders(List<? extends Order> orders) {
-    for (Order order : orders) {
-        // Read order data.
-    }
-}
-```
-
-### 收集处理结果
-
-```java
-void collectPaidOrders(List<? super PaidOrder> target, PaidOrder paidOrder) {
-    target.add(paidOrder);
-}
-```
-
-## 不要过度使用复杂泛型
-
-业务代码可读性很重要。如果泛型写得太复杂，新人很难理解。
-
-公共库和框架层可以适当使用通配符提升扩展性；普通业务代码优先简单清晰。
+例如可把 `List<Integer>` 复制到可修改的 `List<Number>`，反方向不成立。
+`extends` 不是“只读容器”：仍可能允许 `clear()`、删除等操作；不可修改性要由容器实现保证。
+需要读写同一种确定类型时直接用 `List<T>`，不要机械地给所有泛型加通配符。

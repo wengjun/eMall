@@ -2,85 +2,30 @@
 
 [返回按分类学习面试题](../README.md)
 
-## 先给面试官的短答案
+## 一张对应表足够
 
-`@SpringBootApplication` 是组合注解，核心包含 `@SpringBootConfiguration`、`@EnableAutoConfiguration`
-和 `@ComponentScan`。它表示当前类是 Spring Boot 配置类，启用自动配置，并从当前包开始扫描组件。
+| 组成 | 用途 |
+| --- | --- |
+| @SpringBootConfiguration | 标记主配置，本质上基于 @Configuration |
+| @EnableAutoConfiguration | 根据 classpath、Bean 和属性导入自动配置 |
+| @ComponentScan | 扫描启动类所在包及其子包中的组件 |
 
-理解它有助于排查 Bean 扫描不到、自动配置不生效和包结构不合理问题。
+```java
+package example.order;
 
-## 三个核心注解
+import org.springframework.boot.SpringApplication;
+import org.springframework.boot.autoconfigure.SpringBootApplication;
 
-核心包括：
-
-- `@SpringBootConfiguration`。
-- `@EnableAutoConfiguration`。
-- `@ComponentScan`。
-
-它们共同完成启动配置、自动装配和组件扫描。
-
-## SpringBootConfiguration
-
-`@SpringBootConfiguration` 本质上是特殊的 `@Configuration`。
-
-它说明当前类是配置类，可以定义 Bean。
-
-一个应用通常只有一个主启动配置类。
-
-## EnableAutoConfiguration
-
-`@EnableAutoConfiguration` 启用 Spring Boot 自动配置。
-
-它会根据 classpath、配置属性和已有 Bean 自动创建默认 Bean。
-
-例如引入 Web 依赖后自动配置 MVC、Tomcat、Jackson 等。
-
-## ComponentScan
-
-`@ComponentScan` 从当前启动类所在包开始扫描组件。
-
-会扫描：
-
-- `@Component`。
-- `@Service`。
-- `@Repository`。
-- `@Controller`。
-- `@RestController`。
-- `@Configuration`。
-
-如果启动类包位置太深，其他包下 Bean 可能扫描不到。
-
-## 包结构建议
-
-启动类应放在业务根包。
-
-例如：
-
-```text
-com.example.mall.order.OrderApplication
-com.example.mall.order.application
-com.example.mall.order.domain
-com.example.mall.order.infrastructure
+@SpringBootApplication
+public class OrderApplication {
+    public static void main(String[] args) {
+        SpringApplication.run(OrderApplication.class, args);
+    }
+}
 ```
 
-这样默认扫描能覆盖模块内部组件。
+`example.order` 下的组件默认可被扫描，旁边的 `example.shared` 不会自动包含。
+需要显式 import 或指定扫描边界，不要把启动类放在默认包导致全 classpath 扫描。
 
-## 常见问题
-
-问题：
-
-- Bean 扫描不到。
-- Mapper 未扫描。
-- 自动配置被排除。
-- 多个启动类包结构混乱。
-- 测试启动上下文不完整。
-
-排查时先看启动类位置和 scan base packages。
-
-## 电商系统实践
-
-大型电商系统中，每个微服务模块的启动类应位于模块根包，例如 `com.example.mall.payment`。
-
-公共组件放在 `common` 时，要通过 starter、显式扫描或自动配置方式引入，不能依赖随意扩大扫描范围。
-
-否则模块边界会变混乱。
+`scanBasePackages` 调整的是组件扫描，不能想当然地代替 MyBatis 的 @MapperScan 或实体扫描。
+自动配置的加载机制看 [115](115-spring-boot-auto-configuration.md)，本题不用重复背一遍。

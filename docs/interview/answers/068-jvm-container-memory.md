@@ -2,7 +2,7 @@
 
 [返回按分类学习面试题](../README.md)
 
-## 先给面试官的短答案
+## 核心结论
 
 现代 JVM 能读取 cgroup 信息，感知容器的 CPU 和内存限制。Java 17 默认支持容器感知，
 可以根据容器 memory limit 计算默认堆大小，也可以通过 `MaxRAMPercentage` 控制堆占比。
@@ -18,20 +18,6 @@
 如果 JVM 不感知容器限制，可能按宿主机内存计算堆大小，导致容器内存超限。
 
 现代 JVM 已经解决了这个基础问题，但仍需要合理配置。
-
-## cgroup 是什么？
-
-cgroup 是 Linux 用来限制和统计进程资源的机制。
-
-Kubernetes 的 CPU 和内存限制最终会通过 cgroup 作用到容器进程。
-
-JVM 会读取 cgroup 信息来判断：
-
-- 可用内存限制。
-- CPU 配额。
-- CPU 核数。
-
-Java 17 对容器环境支持已经比较成熟。
 
 ## JVM 如何设置堆比例？
 
@@ -118,49 +104,14 @@ OOMKilled 是容器被操作系统杀掉，Java 进程可能没有机会打印 h
 
 如果 Pod 直接重启且日志中没有 Java OOM，要怀疑容器级 OOMKilled。
 
-## 电商系统实践
-
-大型电商系统网关处理大量网络请求，direct memory 和连接缓冲占用较高。
-
-如果容器 1 GB 内存，不能把 `-Xmx` 设置为 900 MB，因为网关还需要堆外内存和线程栈。
-
-订单服务可能 heap 占比更高，但也要给连接池、线程和元空间留余量。
-
-不同模块应该按资源模型设置 JVM 参数。
-
-## 深度增强：容器内 JVM 内存图
+## 容器内 JVM 内存图
 
 ![Java 17 容器内 JVM 内存结构](../assets/jvm-runtime-memory.svg)
 
 Java 17 能读 cgroup 限制，只解决“JVM 知道容器有多大”这个问题。它不能自动判断业务需要多少 direct memory、
 多少线程栈、多少 metaspace，也不能替你避免线程池和缓存把内存吃满。
 
-## 深度增强：Java 17 内存预算代码示例
-
-```java
-record ContainerMemoryPlan(
-        long limitMb,
-        long heapMb,
-        long directMb,
-        long metaspaceMb,
-        long threadStackMb,
-        long reservedMb) {
-
-    boolean fits() {
-        long total = heapMb + directMb + metaspaceMb + threadStackMb + reservedMb;
-        return total <= limitMb;
-    }
-
-    int heapPercentage() {
-        return Math.toIntExact(heapMb * 100 / limitMb);
-    }
-}
-```
-
-这段代码体现容器 JVM 的核心思路：先做总预算，再设 heap 比例。不能只说容器 2 GB，
-就把 `-Xmx` 设成 1800 MB。剩余空间不够时，heap 没满也可能被 OOMKilled。
-
-## 深度增强：生产边界
+## 生产边界
 
 容器 CPU limit 也会影响 JVM。CPU 被 throttle 时，GC 线程、JIT 编译和业务线程都会变慢，
 表现可能是 P99 升高而不是 CPU 使用率 100%。所以容器排障要看 `throttled_seconds` 和 CPU request/limit。

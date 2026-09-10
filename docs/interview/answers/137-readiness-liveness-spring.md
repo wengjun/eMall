@@ -2,7 +2,7 @@
 
 [返回按分类学习面试题](../README.md)
 
-## 先给面试官的短答案
+## 核心结论
 
 Spring Boot Actuator 支持 Kubernetes probes，可以通过 health groups 暴露 liveness 和 readiness。
 通常 liveness 表示应用进程是否存活，readiness 表示是否可以接流量。可以使用 Actuator 默认探针，
@@ -71,12 +71,3 @@ liveness 应轻量。
 不要检查数据库、Redis、支付下游。
 
 否则下游故障会导致应用被平台重启，造成更大故障。
-
-## 电商系统实践
-
-订单服务：
-
-- liveness：应用进程和 Web 容器存活。
-- readiness：订单库连接、核心配置、消息 outbox 可用。
-
-推荐服务不可用时，订单服务 readiness 不应失败，而应通过降级隐藏推荐信息。

@@ -2,97 +2,43 @@
 
 [返回按分类学习面试题](../README.md)
 
-## 先给面试官的短答案
+## 只补 Java 的发现和加载方式
 
-SPI 是 Service Provider Interface，适合框架定义扩展接口、第三方或不同模块提供实现的场景。
-它解决的是“核心流程稳定，但某些能力需要可插拔扩展”的问题。
-
-典型场景包括支付渠道、风控规则、物流承运商、数据导出格式、加密算法、ID 生成器。
-
-## 从零基础理解
-
-API 通常是调用别人提供的能力；SPI 是你定义扩展点，让别人来提供能力。
-
-例如支付服务定义接口：
+扩展接口设计你已经熟悉。JDK SPI 需要掌握的是 ServiceLoader 如何从 classpath 找到实现。
+以支付渠道接口为例，下面两个 public 类型分别放在同名 Java 文件中：
 
 ```java
+package example;
+
 public interface PaymentChannel {
-    String channelCode();
-
-    PaymentResult pay(PaymentCommand command);
+    String name();
 }
 ```
-
-支付宝、微信、银行卡分别提供实现。支付服务只依赖接口，不依赖具体实现细节。
-
-## SPI 适合的场景
-
-### 多支付渠道
-
-核心支付流程稳定：
-
-```text
-创建支付单 -> 调渠道 -> 接收回调 -> 入账 -> 对账
-```
-
-但渠道实现不同。适合用 SPI 或策略模式扩展。
-
-### 风控规则
-
-风控规则经常变：
-
-- 黑名单规则。
-- 设备风险规则。
-- IP 风险规则。
-- 金额阈值规则。
-
-可以定义统一规则接口。
-
-### 导出格式
-
-订单报表可能导出 CSV、Excel、JSON。核心数据查询稳定，导出格式可扩展。
-
-### 加密和签名算法
-
-不同场景可能使用不同算法，但调用方只依赖 `FieldEncryptor` 或 `Signer` 接口。
-
-## Java 原生 SPI
-
-Java 提供 `ServiceLoader`。
-
-大致流程：
-
-```text
-定义接口
-实现接口
-在 META-INF/services/接口全名 文件中写实现类全名
-运行时 ServiceLoader 加载
-```
-
-Spring 项目里也常用 Bean 注入实现类似机制：
 
 ```java
-public PaymentService(List<PaymentChannel> channels) {
-    this.channels = channels.stream()
-            .collect(Collectors.toMap(PaymentChannel::channelCode, Function.identity()));
+package example;
+
+public final class SandboxChannel implements PaymentChannel {
+    @Override
+    public String name() {
+        return "sandbox";
+    }
 }
 ```
 
-## SPI 的治理难点
+资源文件 `META-INF/services/example.PaymentChannel` 写入一行 `example.SandboxChannel`。
+classpath 模式的实现类需有可访问的 public 无参构造器。
 
-SPI 最大难点不是加载实现，而是扩展点治理：
+```java
+var loader = java.util.ServiceLoader.load(example.PaymentChannel.class);
+for (example.PaymentChannel channel : loader) {
+    System.out.println(channel.name());
+}
+```
 
-- 接口要稳定。
-- 输入输出要明确。
-- 异常和超时要统一。
-- 插件权限要受控。
-- 插件指标要独立。
-- 插件升级要可灰度和回滚。
+Provider 通常按需加载并缓存；ServiceLoader 本身不保证并发安全。
+找不到实现时检查资源打包、实现类可见性和线程上下文 ClassLoader。
+使用 JPMS 时改由 `uses`/`provides ... with ...` 声明，不能照搬 classpath 的全部规则。
+这些行为见 [Java 17 ServiceLoader](https://docs.oracle.com/en/java/javase/17/docs/api/java.base/java/util/ServiceLoader.html)。
 
-## 不适合 SPI 的场景
-
-- 核心业务规则还没稳定。
-- 扩展点边界不清楚。
-- 只是为了复用几行代码。
-- 插件需要随意访问核心数据库。
-- 每个实现差异过大，抽象不成立。
+Dubbo 的按名称查找、自适应扩展和自动激活另看 [695](695-dubbo-spi-extension.md)，不是 JDK SPI 自带功能。

@@ -2,89 +2,30 @@
 
 [返回按分类学习面试题](../README.md)
 
-## 先给面试官的短答案
+## 不重复讲设计价值，只看 Java 写法
 
-不可变对象创建后状态不再变化。它能降低并发风险、减少副作用、提升可读性和可测试性。
-在分布式系统中，请求 DTO、事件 payload、金额快照、价格快照、审计记录都应该尽量不可变。
-
-## 从零基础理解
-
-可变对象：
+Java 的 final 引用不能重新赋值，但引用指向的对象仍可能被修改。record 自动生成构造器、
+访问器、equals/hashCode/toString，也只提供浅层不可变性。
 
 ```java
-order.setStatus(OrderStatus.PAID);
-```
+import java.util.ArrayList;
+import java.util.List;
 
-不可变对象：
-
-```java
-Order paid = order.markPaid();
-```
-
-原对象不被修改，而是返回新对象或保存新状态。
-
-不可变的好处是：传给别的方法后，不用担心它被偷偷改掉。
-
-## 主要价值
-
-### 并发更安全
-
-多个线程读同一个不可变对象，不需要锁。
-
-### 更容易推理
-
-对象一旦创建，状态固定。排查问题时更容易判断数据来源。
-
-### 适合作为 key
-
-不可变对象适合作为 `HashMap` key、缓存 key、幂等 key。
-
-### 更适合事件和审计
-
-事件表示已经发生的事实，不应该被修改。
-
-### 更容易测试
-
-不可变输入输出让测试更稳定。
-
-## 不是所有对象都必须不可变
-
-数据库实体、批处理累加器、框架配置对象可能需要可变。
-关键是核心边界对象和事实对象尽量不可变。
-
-## Java 中如何实现不可变
-
-- 使用 `record`。
-- 字段 `final`。
-- 不提供 setter。
-- 集合字段使用 `List.copyOf`。
-- 类声明为 final 或限制继承。
-- 对可变对象做防御性拷贝。
-
-示例：
-
-```java
-public record CartSnapshot(List<Long> skuIds) {
-    public CartSnapshot {
-        skuIds = List.copyOf(skuIds);
+record OrderSnapshot(long orderId, List<String> skuCodes) {
+    OrderSnapshot {
+        skuCodes = List.copyOf(skuCodes);
     }
 }
+
+var source = new ArrayList<>(List.of("SKU-1"));
+var snapshot = new OrderSnapshot(42, source);
+source.add("SKU-2");
+System.out.println(snapshot.skuCodes()); // [SKU-1]
 ```
 
-## 电商系统实践
+`List.copyOf` 防止外部列表修改影响快照，同时返回不可修改列表，但不深复制元素。
+这里元素是不可变 String，因此足够；若是可变实体，需要转换为不可变值。
+它也拒绝 null 元素，不能随意替换允许 null 的旧接口。
 
-适合不可变：
-
-- 下单请求。
-- 支付回调请求。
-- Outbox 事件 payload。
-- 价格快照。
-- 优惠快照。
-- 支付流水。
-- 审计记录。
-
-不一定适合完全不可变：
-
-- ORM Entity。
-- 内存聚合器。
-- 框架绑定配置。
+`Collections.unmodifiableList(source)` 只是包装视图，source 后续修改仍可见。
+数组需要构造时复制、访问时也复制；不能只在构造器里克隆一次就把内部数组直接返回。

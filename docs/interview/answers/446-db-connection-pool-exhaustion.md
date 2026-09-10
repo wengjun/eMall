@@ -1,61 +1,31 @@
-# 446 数据库连接池耗尽如何排查？
+# 446 HikariCP 连接池耗尽时应检查哪些 Java 配置？
 
 [返回按分类学习面试题](../README.md)
 
-## 先给面试官的短答案
+## 参数不是同一种超时
 
-数据库连接池耗尽要检查连接是否被慢 SQL、长事务、连接泄露、突增流量、线程池堆积或数据库变慢占住。
-关键指标是活跃连接数、等待连接数、获取连接耗时、慢 SQL、事务耗时和数据库端连接数。
+| HikariCP 属性 | 含义 |
+| --- | --- |
+| maximumPoolSize | 池中总连接上限，不只是活跃连接 |
+| minimumIdle | 尽量维持的空闲连接数 |
+| connectionTimeout | 从池获取连接的等待上限，不是 SQL 超时 |
+| maxLifetime | 连接生命周期管理，不会强行关闭正在借用的连接 |
+| leakDetectionThreshold | 长时间借用的诊断阈值，不是自动回收机制 |
 
-不要第一反应只调大连接池，可能会把数据库压垮。
+属性契约见 [HikariCP 配置说明](https://github.com/brettwooldridge/HikariCP)。
+不能用降低 maxLifetime 治疗一个永远不返回的 SQL，也不能因为没看到泄漏日志就断言不存在长事务。
 
-## 应看指标
+## MyBatis 与 Spring 的连接归还
 
-指标：
+MyBatis-Spring 通常随 Spring 事务管理 SqlSession 和连接。Mapper 方法返回不等于外层事务结束：
+若 @Transactional 方法后面还在执行远程调用，连接仍可能被持有。
 
-- active connections。
-- idle connections。
-- pending threads。
-- connection acquire time。
-- connection timeout count。
-- SQL P99。
-- transaction duration。
+原生自行获得的 Connection 必须按生命周期关闭；通过 Spring 管理的会话则不能随意手动提交、回滚或关闭。
+`Connection.close()` 对池代理通常意味着归还连接，并不每次物理断开 TCP。
 
-连接池耗尽通常伴随等待队列增长。
+## 用 Java 证据定位
 
-## 常见原因
-
-原因：
-
-- 慢 SQL 增加。
-- 长事务占用连接。
-- 外部调用放在事务内。
-- 连接未关闭。
-- 请求流量突增。
-- 数据库 CPU 或 IO 高。
-- 连接池配置过小或过大。
-
-事务边界不合理很常见。
-
-## 处理方式
-
-处理：
-
-- 找出慢 SQL。
-- 缩短事务。
-- 禁止事务内远程调用。
-- 修复连接泄露。
-- 限流保护。
-- 优化索引。
-- 合理设置连接池大小。
-
-先降低连接占用时间，再谈扩容。
-
-止血时先限制新请求、暂停非核心任务并回滚问题版本。通过连接持有时间、线程栈和 Trace 找到长期占用者；
-只增大连接池会放大数据库总连接数，必须按数据库连接预算反推每实例池大小。
-
-## 电商系统实践
-
-大型电商系统订单服务连接池耗尽时，先看是否下单事务里调用了库存、支付或风控远程服务。
-
-如果远程调用在事务内，连接会长时间占用。应调整为先校验，再开启短事务写订单和 Outbox。
+线程 dump 出现大量 HikariPool.getConnection 等待时，先找已经借走连接的线程，
+结合事务栈、Hikari active/idle/pending 和泄漏诊断中的借用位置。
+REQUIRES_NEW 可能在外层持有连接时再借一条，见 [125](125-required-requires-new-nested.md)。
+不再重复慢 SQL 优化和数据库扩容方案。

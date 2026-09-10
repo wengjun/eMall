@@ -2,7 +2,7 @@
 
 [返回按分类学习面试题](../README.md)
 
-## 先给面试官的短答案
+## 核心结论
 
 `volatile` 解决可见性和一定的有序性问题，保证一个线程写入 volatile 变量后，其他线程能及时看到，
 并通过内存屏障限制相关指令重排序。但它不能保证复合操作的原子性，例如 `count++` 仍然不是线程安全的。
@@ -84,18 +84,6 @@ private volatile PricingConfig currentConfig;
 
 配置整体不可变，替换引用时用 volatile 保证可见。
 
-## 不适合场景
-
-不适合：
-
-- 并发累加。
-- 多字段一致更新。
-- 读改写复合逻辑。
-- 需要互斥的临界区。
-- 复杂状态机。
-
-这些场景需要锁、原子类或更高层并发结构。
-
 ## volatile 和 synchronized 的区别
 
 `volatile`：
@@ -112,7 +100,7 @@ private volatile PricingConfig currentConfig;
 - 可保护复杂临界区。
 - 成本相对更高。
 
-## 电商系统实践
+## Java 配置快照示例
 
 营销配置热更新可以用 volatile 保存不可变配置引用。
 

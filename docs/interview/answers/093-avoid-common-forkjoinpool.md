@@ -1,78 +1,28 @@
-# 093 为什么生产代码不能随意使用公共 ForkJoinPool？
+# 093 公共 ForkJoinPool 和 parallelStream 有哪些 Java 使用边界？
 
 [返回按分类学习面试题](../README.md)
 
-## 先给面试官的短答案
+## 关注隐式共享
 
-公共 `ForkJoinPool` 是 JVM 级共享资源，多个框架和业务都可能使用。随意把阻塞 IO、慢任务、
-大计算放进去，会造成线程饥饿和业务互相影响。它也不方便按业务设置队列、拒绝、限流和监控。
-
-生产服务应该使用显式、命名、有界、可监控的业务线程池。
-
-## commonPool 的定位
-
-`ForkJoinPool.commonPool()` 是公共共享池。
-
-它常被这些能力隐式使用：
-
-- `CompletableFuture` 默认异步方法。
-- parallel stream。
-- 某些框架内部任务。
-
-这意味着你不是唯一使用者。
-
-## 风险一：阻塞任务占满线程
-
-ForkJoinPool 适合 fork/join 风格的计算任务。
-
-如果放入阻塞 IO：
-
-- HTTP 调用。
-- 数据库查询。
-- Redis 调用。
-- 文件 IO。
-
-线程会被长时间占住，其他任务无法执行。
-
-## 风险二：缺少业务隔离
-
-公共池没有业务边界。
-
-推荐系统慢可能影响订单查询，报表任务可能影响实时请求。
-
-这类故障很难排查，因为表面看是“线程池慢”，本质是多个业务争抢同一公共资源。
-
-## 风险三：可观测性差
-
-生产线程池需要：
-
-- 线程名。
-- active count。
-- queue size。
-- rejected count。
-- task latency。
-- 业务标签。
-
-commonPool 很难按业务维度做精细治理。
-
-## parallelStream 的坑
-
-`parallelStream()` 默认也会使用 commonPool。
-
-在 Web 请求中随意使用：
+普通 parallelStream 通常使用公共 ForkJoinPool，调用线程也可能参与执行。
+没有显式 executor 参数并不代表不占用共享工作线程。
+不要依赖把 parallelStream 包进自建池这种做法作为跨 JDK 的稳定调度契约。
 
 ```java
-orders.parallelStream().map(this::calculate).toList();
+var pool = java.util.concurrent.ForkJoinPool.commonPool();
+System.out.println(pool.getParallelism());
+System.out.println(pool.getPoolSize());
+System.out.println(pool.getQueuedTaskCount());
 ```
 
-可能让请求线程把任务扔进公共池，和其他业务争抢资源。
+这些值表示不同状态，不能把 parallelism、当前线程数和排队量当成同一个数。
 
-除非明确评估，否则核心链路应避免随意使用 parallel stream。
+## 与普通 ThreadPoolExecutor 不同
 
-## 电商系统实践
+ForkJoinPool 面向可拆分计算，使用工作窃取；不能按 ThreadPoolExecutor 的队列加拒绝策略模型直接配置它。
+部分阻塞可通过 ManagedBlocker 等协作机制补偿，但不能指望任意 JDBC/HTTP 阻塞都被自动识别并无限补偿。
 
-营销规则计算如果使用 parallel stream，可能占满 commonPool。
-
-此时订单详情页的 `CompletableFuture` 默认任务也使用 commonPool，就会被营销计算拖慢。
-
-这就是典型的共享池故障扩散。
+parallelStream 适合无共享副作用的计算；不要直接在 forEach 中写共享 ArrayList。
+若需明确控制 IO 并发，使用显式执行器与 CompletableFuture，并处理完成结果，
+见 [091](091-completablefuture-async-composition.md)。
+公共池不是一概禁用，关键是清楚这次调用会把什么任务放进去。

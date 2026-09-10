@@ -1,49 +1,30 @@
-# 694 Dubbo 超时、重试、负载均衡和容错如何配合？
+# 694 Dubbo 的超时、重试和容错配置如何生效？
 
 [返回按分类学习面试题](../README.md)
 
-## 先建立一个端到端时间预算
+## 重点是 Java 配置语义
 
-Consumer 的总 deadline 应覆盖路由、连接、排队、每次 RPC 和有限重试，而不是给每一层都配置相同的 2 秒。
+Dubbo 的接口、方法级配置和 Consumer/Provider 默认值有覆盖关系。
+定位时看具体调用的最终 URL/配置，不能只确认 application.yml 里出现过 timeout。
 
-```text
-HTTP 剩余 800 ms
-  -> Dubbo 尝试 1：连接/排队/执行最多 300 ms
-  -> 退避 30 ms
-  -> Dubbo 尝试 2：使用剩余预算，不能重新获得 300 ms 之外的无限时间
+```java
+@DubboReference(timeout = 300, retries = 0, cluster = "failfast")
+private InventoryQueryService inventoryQueryService;
 ```
 
-若上游已取消，后台重试继续占用 Provider 资源只会制造幽灵流量。应传播绝对 deadline 或剩余预算，并在每一跳扣减。
+这是注入点片段，使用 Dubbo 3.x 的注解，接口定义由 API 模块提供。
+300 是演示超时毫秒数；retries 表示失败后的重试次数，不是包含首次调用的总次数。
+例如 failover 配置 retries=2 时，某些可重试失败最多可能触发 3 次尝试。
 
-## 重试必须先分类命令
+## 容错扩展不等于业务语义
 
-- 查询和带稳定幂等键的幂等写，可以在结果未知时有限重试。
-- 扣库存、支付、发券等非天然幂等操作，只有 Provider 建立幂等记录和结果查询后才可重试。
-- 参数错误、权限拒绝、库存不足等确定性业务失败不应重试。
-- 超时、连接断开属于结果未知，不等于 Provider 没有执行。
+failover 可重新选择 Provider 并重试；failfast 尽快报告一次调用失败；
+failsafe 可能吞掉失败，不能把返回“成功”当作写操作已落地。
+failback 的框架后台重试也不能直接当作持久任务系统。
 
-Dubbo 默认 failover 容错会在失败后尝试其他 Provider；如果外层 HTTP、业务 SDK 和 Service Mesh 都再重试，最坏尝试数是各层次数的乘积。
+超时不表示 Provider 没有执行，更不会自动回滚其事务。
+Dubbo timeout 是否覆盖到排队、传播或其他阶段，要结合版本和调用路径检查，不能当整个 HTTP 请求的总 deadline。
 
-## 负载均衡与重试相互影响
-
-随机加权、最少活跃、一致性哈希等策略解决不同问题。重试时若仍选中同一故障实例就没有价值；始终排除原实例又可能在全局过载时把压力扩散到健康节点。
-
-慢实例检测应结合并发活跃数、近期延迟和错误，但不能仅因一次超时永久摘除。预热权重可避免刚启动实例在 JIT、缓存和连接尚未稳定时被瞬间打满。
-
-## 容错模式不是越“可用”越好
-
-- Failover：适合可重试调用，但会增加尾延迟和流量。
-- Failfast：写命令或确定性失败快速返回，由业务决定补偿。
-- Failsafe：只适合允许丢失且有旁路审计的非关键动作。
-- Failback：后台重试必须持久化任务，否则进程重启即丢失。
-- Forking：并发请求多个实例降低尾延迟，但成倍消耗容量，写操作风险更高。
-
-## 电商系统配置原则
-
-库存预占使用请求 ID 幂等、短超时、最多一次受预算约束的重试；营销推荐可快速失败并降级；支付提交超时后先按商户订单号查询，不能盲目换 Provider 发起新支付。
-
-监控要带 attempt 维度区分逻辑请求数和物理调用数，并记录剩余 deadline、选中的 Provider、重试原因和最终结果。容量压测必须把重试放大算入，而不是只压正常成功路径。
-
-参考：
-
-- [Dubbo 官方文档](https://dubbo.apache.org/en/overview/mannual/java-sdk/tasks/framework/fault-tolerent-strategy/)
+负载均衡是选择 Invoker 的一环；重试、路由和 Directory 更新也会影响实际目标。
+从哪个配置读值、哪里创建集群 Invoker，沿 [693](693-dubbo-invocation-pipeline.md) 的链路阅读。
+此处不再展开幂等、重试风暴和容量预算的通用设计。

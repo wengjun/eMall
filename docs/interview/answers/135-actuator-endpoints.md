@@ -2,7 +2,7 @@
 
 [返回按分类学习面试题](../README.md)
 
-## 先给面试官的短答案
+## 核心结论
 
 生产环境 Actuator 应最小化暴露。通常可以暴露 `health`、`info`、`prometheus` 或 metrics 采集端点；
 `env`、`beans`、`configprops`、`heapdump`、`threaddump` 等敏感端点不应公网暴露，只能在内网、鉴权、
@@ -37,16 +37,6 @@ Actuator 是运维能力，也可能是安全风险。
 
 生产不能随便开放。
 
-## health 也要分层
-
-健康检查要区分：
-
-- liveness。
-- readiness。
-- startup。
-
-不要把所有下游都放进 liveness，否则下游短暂故障可能导致应用被 Kubernetes 重启。
-
 ## prometheus 端点
 
 `prometheus` 端点通常给监控系统抓取。
@@ -73,11 +63,3 @@ Actuator 是运维能力，也可能是安全风险。
 - 脱敏。
 
 排查结束后关闭。
-
-## 电商系统实践
-
-大型电商系统生产服务默认只暴露健康检查和 Prometheus 指标。
-
-配置、线程 dump、heap dump 通过运维平台临时授权获取。
-
-支付和用户服务尤其要避免泄漏密钥、token 和用户数据。

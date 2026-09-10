@@ -1,56 +1,34 @@
-# 383 如何处理消息反序列化失败？
+# 383 Spring Kafka 如何处理反序列化失败？
 
 [返回按分类学习面试题](../README.md)
 
-## 先给面试官的短答案
+## 为什么监听方法里的 catch 不够
 
-消息反序列化失败通常说明 schema 不兼容、消息损坏、字段类型变化或生产者发送了非法数据。
-处理时不能让消费者无限重试阻塞主链路，应记录原始消息、错误原因和位置，然后投递死信或隔离队列。
+Deserializer 在 KafkaConsumer.poll 过程中运行，失败时消息可能还没进入 @KafkaListener。
+因此需要在反序列化器外层使用 ErrorHandlingDeserializer，把错误交给 Spring 容器处理。
 
-同时要告警并推动 schema 修复。
+下面是 ConsumerFactory 的构造片段，OrderEvent 为明确的事件类型，properties 包含连接及消费组属性：
 
-## 常见原因
+```java
+var delegate = new JsonDeserializer<>(OrderEvent.class, false);
+var valueDeserializer = new ErrorHandlingDeserializer<>(delegate);
 
-原因：
+var consumerFactory = new DefaultKafkaConsumerFactory<>(
+        properties, new StringDeserializer(), valueDeserializer);
+```
 
-- 字段类型不兼容。
-- 必填字段缺失。
-- 消息不是预期格式。
-- 生产者版本错误。
-- 历史消息无法被新代码解析。
-- 编码或压缩配置错误。
+使用 Spring Kafka 的 JsonDeserializer、ErrorHandlingDeserializer，以及 Kafka 的 StringDeserializer。
+这里不依赖外部 header 任意选择 Java 类型，也不要为了省事将 trusted packages 设置成 *。
 
-反序列化失败通常不可通过立即重试解决。
+## 错误处理器的装配点
 
-## 处理方式
+非事务容器可在监听工厂上配置 DefaultErrorHandler，并用 DeadLetterPublishingRecoverer 隔离坏消息。
+ErrorHandlingDeserializer 保留错误信息及原始字节，recoverer 要保存 topic、partition、offset 等定位信息。
 
-方式：
+需要特别检查死信 Producer 的序列化器：反序列化失败的原始内容可能是 byte[]，
+不能一律再按正常业务对象 JSON 序列化。应按类型选择合适的 serializer。
+recoverer 的发送失败必须向上报告，不能在死信尚未可靠保存时把原消息视为恢复成功。
+相关扩展点见 [Spring Kafka 异常处理](https://docs.spring.io/spring-kafka/reference/kafka/annotation-error-handling.html)。
 
-- 捕获反序列化异常。
-- 记录 Topic、Partition、offset 和 key。
-- 保存原始 payload。
-- 发送到死信 Topic。
-- 提交或跳过该消息前要确保已隔离。
-- 触发告警。
-
-不要让毒消息反复阻塞消费。
-
-## 修复流程
-
-修复：
-
-- 确认生产者版本。
-- 对比 schema 变更。
-- 修复消费者兼容性。
-- 回放死信消息。
-- 增加契约测试。
-- 完善发布流程。
-
-死信不是终点，要能修复和回放。
-
-## 电商系统实践
-
-大型电商系统订单事件反序列化失败时，消费者应把原始消息写入 `order-events-dlq`，并记录 offset 和
-trace ID。
-
-修复 schema 后，通过运维工具从死信 Topic 回放，不能直接丢弃核心订单事件。
+事务容器还涉及回滚和 AfterRollbackProcessor，不能照搬非事务处理器的提交假设。
+测试时直接生产非法字节，而不是只让业务方法主动抛一个“模拟反序列化异常”。

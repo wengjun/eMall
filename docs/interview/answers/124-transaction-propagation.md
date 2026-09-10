@@ -2,7 +2,7 @@
 
 [返回按分类学习面试题](../README.md)
 
-## 先给面试官的短答案
+## 核心结论
 
 事务传播行为定义一个事务方法被另一个事务方法调用时，应该加入现有事务、创建新事务、挂起事务还是非事务执行。
 Spring 常见传播行为包括 `REQUIRED`、`REQUIRES_NEW`、`NESTED`、`SUPPORTS`、`NOT_SUPPORTED`、
@@ -73,11 +73,3 @@ Spring 常见传播行为包括 `REQUIRED`、`REQUIRES_NEW`、`NESTED`、`SUPPOR
 如果当前有事务，抛异常。
 
 使用较少。
-
-## 电商系统实践
-
-订单创建主流程通常使用 `REQUIRED`。
-
-审计日志如果希望主事务回滚后仍保留，可以使用 `REQUIRES_NEW`，但要注意连接池压力。
-
-不要用 `REQUIRES_NEW` 包远程调用，也不要用传播行为掩盖事务边界混乱。

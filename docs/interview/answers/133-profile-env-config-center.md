@@ -1,84 +1,36 @@
-# 133 profile、环境变量、配置中心如何配合？
+# 133 Spring profile、属性绑定和动态配置如何配合？
 
 [返回按分类学习面试题](../README.md)
 
-## 先给面试官的短答案
+## 不重讲配置治理，关注 Java 对象是否更新
 
-profile 用于选择环境配置基线，环境变量适合注入部署环境相关和敏感引用，配置中心适合集中管理可运维配置和动态开关。
-三者要有明确边界：代码仓库保存默认和非敏感配置，环境变量提供部署差异，配置中心管理线上可变配置并审计。
+profile 选择配置和 Bean 条件，不是一套把任意对象自动热更新的机制。
+@ConfigurationProperties 适合成组类型化绑定，比散落的 @Value 更容易校验和理解。
 
-不要让同一个配置到处都能改，必须有来源规则和变更流程。
+```java
+import java.time.Duration;
+import org.springframework.boot.context.properties.ConfigurationProperties;
 
-## profile 的作用
+@ConfigurationProperties("catalog.client")
+public record CatalogClientProperties(Duration timeout, int maxConnections) {
+    public CatalogClientProperties {
+        if (timeout == null || timeout.isZero() || timeout.isNegative() || maxConnections < 1) {
+            throw new IllegalArgumentException("invalid catalog client configuration");
+        }
+    }
+}
+```
 
-profile 适合表达环境差异：
+配置扫描或 @EnableConfigurationProperties 注册这个类型后，才能完成绑定。
+例如 catalog.client.timeout: 800ms 可以绑定 Duration；构造器校验让非法初始配置尽早暴露。
 
-- dev。
-- test。
-- staging。
-- prod。
+## 动态刷新并非自动重建所有依赖
 
-它提供配置基线。
+Nacos 收到新文本、Spring Environment 更新、属性对象重新绑定、
+HTTP 客户端重建是不同步骤。客户端在构造时复制了 timeout，修改属性对象不会自动改变已有连接池。
 
-例如生产默认日志级别、连接池基线、功能开关默认值。
+@RefreshScope 来自 Spring Cloud，不是 @ConfigurationProperties 的默认能力；
+代理重建的范围与依赖生命周期都要验证。
+不可变 record 很适合启动绑定或配置快照，但不能假设它天然支持所有 starter 的热刷新路径。
 
-## 环境变量的作用
-
-环境变量适合部署注入：
-
-- 当前环境。
-- Pod 名称。
-- region。
-- 数据库地址引用。
-- 密钥引用。
-- JVM 参数。
-
-容器化部署中，环境变量是平台和应用之间常用配置边界。
-
-## 配置中心的作用
-
-配置中心适合：
-
-- 限流阈值。
-- 熔断阈值。
-- 动态开关。
-- 灰度配置。
-- 业务规则开关。
-- 下游超时参数。
-
-配置中心必须有权限、审批、审计和回滚。
-
-## 边界设计
-
-推荐规则：
-
-- 默认值放代码仓库。
-- 环境基线用 profile。
-- 部署差异用环境变量。
-- 运行期可调参数用配置中心。
-- 密钥只保存引用，不直接明文保存。
-
-同一配置项最好只有一个主来源。
-
-## 动态刷新风险
-
-不是所有配置都适合动态刷新。
-
-例如：
-
-- 数据库连接参数。
-- 线程池核心参数。
-- 序列化策略。
-- 安全密钥。
-
-动态刷新要验证 Bean 是否真正更新，以及更新是否线程安全。
-
-## 电商系统实践
-
-大型电商系统的限流阈值和活动开关可以放配置中心。
-
-数据库连接地址通过环境变量或平台密钥注入。
-
-生产 profile 提供默认安全配置。
-
-大促时调整阈值必须有审批和回滚，而不是直接改 yml 重发版。
+Nacos Java Listener 和完整快照发布见 [697](697-nacos-config-push-recovery.md)。

@@ -1,101 +1,35 @@
-# 094 线程池核心参数如何设置？
+# 094 ThreadPoolExecutor 参数怎样影响实际执行顺序？
 
 [返回按分类学习面试题](../README.md)
 
-## 先给面试官的短答案
+## 先理解 execute 的接收流程
 
-线程池核心参数包括 corePoolSize、maximumPoolSize、keepAliveTime、workQueue、threadFactory 和 rejectedExecutionHandler。
-设置时要基于任务类型、平均耗时、目标 QPS、CPU 核数、下游容量和可接受排队时间。生产重点是有界队列、
-明确拒绝策略、线程命名和指标监控。
+常见执行顺序是：不足 corePoolSize 时创建工作线程；否则先尝试入队；
+队列无法接收时再尝试扩到 maximumPoolSize；仍失败或已经关闭时进入拒绝策略。
+并发状态变化还会触发内部复查，所以不能简单以某次 size 快照预测下一次提交一定成功。
 
-线程池参数不是拍脑袋，也不是越大越好。
+```java
+import java.util.concurrent.ArrayBlockingQueue;
+import java.util.concurrent.Executors;
+import java.util.concurrent.ThreadPoolExecutor;
+import java.util.concurrent.TimeUnit;
 
-## 核心参数
-
-`ThreadPoolExecutor` 主要参数：
-
-- corePoolSize：核心线程数。
-- maximumPoolSize：最大线程数。
-- keepAliveTime：非核心线程空闲存活时间。
-- workQueue：任务队列。
-- threadFactory：线程创建工厂。
-- rejectedExecutionHandler：拒绝策略。
-
-每个参数都影响过载行为。
-
-## corePoolSize
-
-核心线程数决定常态并发能力。
-
-CPU 密集任务通常接近 CPU 核数。
-
-IO 密集任务可以更大，因为线程会等待外部 IO。
-
-但线程数过大也会增加上下文切换和内存占用。
-
-## maximumPoolSize
-
-最大线程数决定突发流量时最多能扩到多少。
-
-如果队列是无界队列，maximumPoolSize 可能基本不起作用，因为任务一直进队列。
-
-所以要理解队列和最大线程数的配合。
-
-## workQueue
-
-队列是最关键参数之一。
-
-无界队列会把压力变成内存堆积。
-
-生产通常使用有界队列，并根据可接受排队时间设置容量。
-
-队列越大，不代表系统越稳，可能只是更晚失败。
-
-## rejectedExecutionHandler
-
-拒绝策略决定过载时如何保护系统。
-
-常见策略：
-
-- AbortPolicy：抛异常。
-- CallerRunsPolicy：调用方线程执行。
-- DiscardPolicy：直接丢弃。
-- DiscardOldestPolicy：丢弃最老任务。
-- 自定义策略：记录指标、返回降级。
-
-核心链路通常要自定义拒绝处理，不能静默丢任务。
-
-## threadFactory
-
-线程名非常重要。
-
-应该给线程池设置清晰线程名，例如：
-
-```text
-order-create-worker-1
-payment-query-worker-1
+var pool = new ThreadPoolExecutor(
+        4, 8, 30, TimeUnit.SECONDS,
+        new ArrayBlockingQueue<>(32),
+        Executors.defaultThreadFactory(),
+        new ThreadPoolExecutor.AbortPolicy());
 ```
 
-这样 `jstack` 和日志排查时能快速定位业务。
+数值只用于理解执行路径。没有队列容量边界时，maximumPoolSize 很可能没有你期待的扩容作用。
+具体契约见 [Java 17 ThreadPoolExecutor](https://docs.oracle.com/en/java/javase/17/docs/api/java.base/java/util/concurrent/ThreadPoolExecutor.html)。
 
-## 监控指标
+## 其余参数的边界
 
-必须监控：
+keepAliveTime 默认主要作用于非核心线程；allowCoreThreadTimeOut(true) 可让核心线程也按配置超时退出。
+核心线程一般按需创建，需提前创建时调用 prestartAllCoreThreads。
+示例使用默认 ThreadFactory，实际排障可以加业务线程名前缀，但不要在每次请求里重新创建整个池。
 
-- active count。
-- pool size。
-- queue size。
-- rejected count。
-- completed task count。
-- task wait time。
-- task execution time。
-
-没有监控的线程池无法生产治理。
-
-## 电商系统实践
-
-订单创建线程池要根据下单 QPS、库存和支付下游容量、订单处理耗时设置。
-
-如果库存下游最多支持单实例 200 并发，订单服务线程池不能无限放大库存调用。
-
-否则上游扩容会把下游打垮。
+execute 接收 Runnable；submit 包装任务并返回 Future，异常观察方式不同。
+任务的完成数不等于成功数，失败结果仍需记录。
+拒绝策略见 [097](097-rejection-policy.md)，关闭见 [470](470-graceful-shutdown-config.md)。

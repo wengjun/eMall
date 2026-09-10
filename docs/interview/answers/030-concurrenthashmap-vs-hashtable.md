@@ -2,113 +2,27 @@
 
 [返回按分类学习面试题](../README.md)
 
-## 先给面试官的短答案
+## 重点是原子操作，不是换个类名
 
-`Hashtable` 通过 synchronized 锁住大部分方法，锁粒度粗，并发性能差。
-`ConcurrentHashMap` 针对并发访问设计，读操作通常不阻塞，写操作也尽量局部化，
-并提供 `computeIfAbsent`、`putIfAbsent` 等原子复合操作。
-
-所以并发场景下，`ConcurrentHashMap` 通常比 `Hashtable` 更合适。
-
-## 从零基础理解
-
-多个线程同时访问 Map 时，普通 `HashMap` 不安全。
-早期 Java 提供 `Hashtable`，它通过给方法加锁保证线程安全：
+Hashtable 的单个方法主要通过整表对象锁同步。Java 17 ConcurrentHashMap 采用更细粒度的同步，
+读取通常不需要获取更新所用的锁；不要再按 Java 7 的 Segment 数组讲它的实现。
 
 ```java
-public synchronized V get(Object key) {
-}
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.atomic.LongAdder;
+
+var counts = new ConcurrentHashMap<String, LongAdder>();
+counts.computeIfAbsent("order.created", key -> new LongAdder()).increment();
 ```
 
-问题是锁太粗。一个线程写入时，其他线程读写也容易被阻塞。
+`computeIfAbsent` 将“检查并安装值”作为原子操作。这里 value 本身也是并发安全的；
+换成 ArrayList 后，后续 add 不会因外层 Map 安全而变安全。
 
-`ConcurrentHashMap` 的目标是提高并发度，让不同 key 的操作尽量不要互相阻塞。
+## 四个必须知道的边界
 
-## ConcurrentHashMap 的优势
+- `get` 再 `put` 是两次操作，计数累加应使用 `merge`、`compute` 或原子值。
+- 映射函数必须短小，不能在内部递归更新本 Map；慢 HTTP/SQL 会拖住相关更新。
+- null key/value 均不允许，`get == null` 才能清楚地表示当前未找到。
+- 迭代弱一致，不会像普通 HashMap 那样依赖 fail-fast；但也不是整个 Map 的原子快照。
 
-### 并发性能更好
-
-读操作通常不需要锁住整个 Map。写操作也不是锁整张表。
-
-### 提供原子复合操作
-
-并发代码中，先 get 再 put 不是原子的：
-
-```java
-if (!map.containsKey(key)) {
-    map.put(key, value);
-}
-```
-
-两个线程可能同时进入。
-
-更好的写法：
-
-```java
-map.putIfAbsent(key, value);
-```
-
-或：
-
-```java
-RateLimiter limiter = limiters.computeIfAbsent(key, ignored -> new RateLimiter());
-```
-
-### 迭代弱一致
-
-遍历时允许并发修改，不会像普通集合那样轻易抛 `ConcurrentModificationException`。
-但它也不保证遍历看到的是某一瞬间的完整快照。
-
-### 不允许 null
-
-`ConcurrentHashMap` 不允许 null key 和 null value，避免并发场景下无法区分不存在和 value 为 null。
-
-## Hashtable 的问题
-
-- 老旧。
-- 锁粒度粗。
-- API 设计过时。
-- 并发度低。
-- 现代项目基本不推荐新代码使用。
-
-## 需要注意的坑
-
-### Map 线程安全不代表 value 线程安全
-
-```java
-ConcurrentHashMap<String, List<String>> map = new ConcurrentHashMap<>();
-```
-
-Map 结构安全，但 `List` 不是线程安全的。
-
-### 多步骤业务逻辑仍要原子化
-
-如果逻辑是：
-
-```text
-读取库存 -> 判断 -> 修改库存
-```
-
-不能只靠 `ConcurrentHashMap`。多实例部署下还要依赖数据库条件更新、分布式锁或幂等。
-
-### 本地并发容器不能解决分布式并发
-
-`ConcurrentHashMap` 只在当前 JVM 内有效。多个 Pod 各有一份 Map，不能用它做全局幂等。
-
-## 电商系统实践
-
-适合用 `ConcurrentHashMap` 的地方：
-
-- 本地内存限流器缓存。
-- 本地测试用 InMemoryRepository。
-- 本地任务状态。
-- 非关键路径的进程内缓存。
-
-不适合：
-
-- 生产全局幂等。
-- 订单去重最终兜底。
-- 库存防超卖。
-- 支付回调去重最终兜底。
-
-这些必须依赖数据库唯一约束、持久化记录或分布式协调。
+`size()`、遍历结果与多个 key 的联合状态不构成事务，不能用于严格的并发准入判断。

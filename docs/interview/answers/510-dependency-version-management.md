@@ -1,33 +1,39 @@
-# 510 如何管理依赖版本？
+# 510 Maven 如何管理和排查 Java 依赖版本？
 
 [返回按分类学习面试题](../README.md)
 
-## 先给面试官的短答案
+## 只记 Maven 机制
 
-依赖版本要集中管理、可追踪、可升级、可回滚。Maven 多模块项目应在父 POM 的 `dependencyManagement` 和
-`pluginManagement` 中统一版本，业务模块只声明依赖，不分散写版本。升级时通过 CI、测试和兼容性验证控制风险。
+dependencyManagement 管理版本和相关约束，**不会自动把依赖加入模块**；
+模块仍需声明 dependency。导入 BOM 同理。
+pluginManagement 管理插件默认配置，也不表示任意插件都会自动执行。
 
-## 为什么要集中管理
+```xml
+<dependencyManagement>
+    <dependencies>
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-dependencies</artifactId>
+            <version>${spring.boot.version}</version>
+            <type>pom</type>
+            <scope>import</scope>
+        </dependency>
+    </dependencies>
+</dependencyManagement>
+```
 
-如果每个模块自己写版本，项目会出现同一个库多个版本、传递依赖冲突、插件行为不一致和安全漏洞难以修复。
-集中管理可以让版本升级和安全治理更可控。
+这里版本属性由父 POM 定义。继承父 POM 和导入 BOM 不完全等价，尤其不要假设 BOM 也管理构建插件。
 
-父 POM 负责统一版本，模块 POM 只负责声明“我需要这个依赖”。
+## 三条排查命令
 
-## 管理内容
+```text
+mvn dependency:tree
+mvn help:effective-pom
+mvn help:active-profiles
+```
 
-需要管理的不只是业务依赖，还包括 Maven 插件、测试库、编码插件、打包插件、静态检查插件和 Docker 构建插件。
+依赖树看传递依赖来源，effective-pom 看合并后的实际模型，active-profiles 看当前启用了什么配置。
+Maven 解析冲突不是简单“永远取最高版本”；依赖管理与依赖路径都会影响最终选择。
 
-还要关注传递依赖。某些库会间接引入旧版本组件，需要通过 exclusions 或 dependencyManagement 覆盖。
-
-## 升级策略
-
-依赖升级要分层处理。补丁版本可以更频繁，次版本需要回归测试，主版本要评估 API 兼容和行为变化。
-
-关键依赖如 Spring Boot、MyBatis Plus、数据库驱动、Kafka 客户端和 Netty，要阅读 release notes，
-并在核心模块跑集成测试。
-
-## 电商系统实践
-
-Maven 多模块电商项目应通过父 POM 统一公共依赖和插件版本，并配合版本更新检查、依赖树审计和安全扫描，
-确保各模块不会出现版本漂移。
+NoSuchMethodError 常是编译期与运行期实际加载版本不一致，先查依赖树、打包内容和 ClassLoader，
+不要直接归因于业务方法写错。多模块复用看 [149](149-reuse-common-config-in-multi-module.md)。

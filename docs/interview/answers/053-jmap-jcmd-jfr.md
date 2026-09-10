@@ -2,7 +2,7 @@
 
 [返回按分类学习面试题](../README.md)
 
-## 先给面试官的短答案
+## 核心结论
 
 `jmap` 更偏传统内存排查，常用于生成 heap dump 和查看堆对象概况。
 `jcmd` 是更通用的 JVM 诊断入口，可以触发 GC、查看 JVM 参数、生成 dump、查看 native memory、
@@ -154,12 +154,3 @@ JFR 比单次 `jstack` 或 heap dump 更适合回答“这两分钟到底发生�
 - 锁竞争：JFR、`jstack`。
 
 生产排查通常不是单一工具，而是多工具交叉验证。
-
-## 电商系统实践
-
-如果大型电商系统的网关内存持续上涨但 heap used 不高，优先用 `jcmd VM.native_memory` 看 direct memory、
-thread stack 和 metaspace。
-
-如果订单服务疑似 Java heap 泄漏，导出 heap dump 后用 MAT 查引用链。
-
-如果秒杀接口 P99 飙升但没有明显错误，使用 JFR 记录高峰 2 分钟，看锁竞争、对象分配、GC 和 socket IO。

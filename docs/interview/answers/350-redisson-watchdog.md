@@ -2,51 +2,36 @@
 
 [返回按分类学习面试题](../README.md)
 
-## 先给面试官的短答案
+## Java 调用方式决定租约模式
 
-Redisson 看门狗解决的是业务执行时间不确定时，Redis 锁 TTL 过期导致锁被其他线程提前获取的问题。
-当线程仍持有锁且没有显式指定租约时间时，看门狗会定期续期锁。
+不指定 leaseTime 获取 RLock 时，Redisson 可以通过 watchdog 自动续期；
+显式指定 leaseTime 时，锁通常在该固定租约结束后释放，不再由 watchdog 持续续期。
+默认 watchdog 超时为 30 秒，可配置；不要把默认值当业务执行上限。
 
-它降低锁过期风险，但不能解决所有分布式一致性问题。
+以下是方法片段，redisson 为复用的 RedissonClient，方法允许抛 InterruptedException：
 
-## 工作方式
+```java
+RLock lock = redisson.getLock("order:42");
+if (!lock.tryLock(200, TimeUnit.MILLISECONDS)) {
+    throw new IllegalStateException("lock not acquired");
+}
+try {
+    updateOrder();
+} finally {
+    if (lock.isHeldByCurrentThread()) {
+        lock.unlock();
+    }
+}
+```
 
-简化过程：
+这里 200 ms 是等待获取锁的时间，不是持有锁的租约。带 waitTime、leaseTime、unit 三个参数的
+重载含义不同，见 [Redisson 锁文档](https://redisson.pro/docs/data-and-services/locks-and-synchronizers/)。
 
-- 客户端获取锁。
-- Redisson 设置默认锁 TTL。
-- 看门狗定期检查锁是否仍被当前线程持有。
-- 如果仍持有，就自动延长 TTL。
-- 线程释放锁后停止续期并删除锁。
+## 续期不等于无限安全
 
-这样业务耗时超过初始 TTL 时，锁不会自动过期。
+长时间 GC 停顿、进程失联、Redis 故障都可能导致续期失败。
+本地代码不一定立刻停下，所以 watchdog **不能保证失去锁的旧持有者不再写入**。
+isHeldByCurrentThread 也不是业务写入的原子保护，检查后状态仍可能变化。
 
-## 解决的问题
-
-解决：
-
-- 业务执行时间波动。
-- GC 或短暂抖动导致锁过期。
-- TTL 难以准确估算。
-- 长任务需要自动续期。
-
-看门狗让锁生命周期跟随业务执行。
-
-## 风险和边界
-
-边界：
-
-- 进程崩溃后无法续期，锁最终过期。
-- 网络分区可能影响续期。
-- Redis 主从切换仍可能丢锁。
-- 锁粒度过粗仍会降低吞吐。
-- 业务仍然需要幂等。
-
-看门狗不是强一致锁协议。
-
-## 电商系统实践
-
-大型电商系统后台运营活动发布、报表生成互斥任务可以使用 Redisson 锁和看门狗，避免任务时间变长后锁
-提前释放。
-
-但核心下单扣库存不能只依赖看门狗。库存正确性仍由库存服务的条件扣减、幂等号和订单状态机保证。
+普通 RLock 有线程所有权，不能在任意异步回调线程随意 unlock。
+数据库版本校验或 fencing 属于写入侧约束，本题不重复分布式锁协议设计。

@@ -2,95 +2,35 @@
 
 [返回按分类学习面试题](../README.md)
 
-## 先给面试官的短答案
+## 风险在参与相等性判断的字段
 
-`HashMap` 根据 key 的 `hashCode` 定位桶，再用 `equals` 找具体 entry。
-如果 key 放入 Map 后，参与 `hashCode` 或 `equals` 的字段被修改，后续查找会计算出不同位置，
-导致这个 key 明明在 Map 里却找不到。
-
-所以 Map key 应该稳定，最好使用不可变对象，例如 `String`、`Long`、`record` 值对象。
-
-## 从零基础理解
-
-假设有一个可变 key：
+不是所有可变对象都不能当 key，而是**入表后不能改变影响 equals/hashCode 的状态**。
+HashMap 保存插入时的哈希信息，修改 key 不会自动把它搬到新位置。
 
 ```java
-class UserKey {
-    private String type;
-    private String value;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+
+var key = new ArrayList<>(List.of(1));
+var map = new HashMap<List<Integer>, String>();
+map.put(key, "order");
+
+key.add(2);
+System.out.println(map.get(key)); // null
+System.out.println(map.size()); // 1
+```
+
+同一个引用也找不回值，因为查找先按新的哈希定位。不要试图在修改后通过 remove/put 补救；
+若确实要修改，必须先用旧状态删除，但并发使用时仍很难维护。
+
+## Java 写法
+
+用稳定标识或不可变值对象作 key：
+
+```java
+record OrderKey(long tenantId, long orderId) {
 }
 ```
 
-放入 Map：
-
-```java
-Map<UserKey, String> map = new HashMap<>();
-UserKey key = new UserKey("mobile", "15500000000");
-map.put(key, "user-1");
-```
-
-如果之后改了 key：
-
-```java
-key.setValue("16600000000");
-```
-
-再查：
-
-```java
-map.get(key)
-```
-
-可能拿不到，因为 hash 位置变了。
-
-## 为什么这在生产中危险？
-
-在电商系统里，key 很多：
-
-- 缓存 key。
-- 幂等 key。
-- 限流 key。
-- 库存桶 key。
-- 用户会话 key。
-- MQ 去重 key。
-
-如果 key 不稳定，会导致：
-
-- 缓存命中率异常下降。
-- 幂等失效，重复下单。
-- 限流绕过。
-- 去重失败。
-- 内存泄漏，因为旧 key 找不到也删不掉。
-
-## 推荐写法
-
-使用不可变 record：
-
-```java
-public record InventoryBucketKey(long skuId, int bucketNo) {
-}
-```
-
-或使用字符串 key：
-
-```java
-String key = "inventory:" + skuId + ":" + bucketNo;
-```
-
-关键是 key 创建后不要再变化。
-
-## 如果必须使用对象作为 key？
-
-确保：
-
-- 字段 final。
-- 参与 equals/hashCode 的字段不可变。
-- 不暴露 setter。
-- 集合字段做防御性拷贝。
-
-```java
-public final class IdempotencyKey {
-    private final String service;
-    private final String requestId;
-}
-```
+record 只保证组件引用不可重新赋值。若组件是可变 List、数组或实体，仍需防御性复制并定义正确的相等性。

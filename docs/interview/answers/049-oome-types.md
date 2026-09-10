@@ -2,7 +2,7 @@
 
 [返回按分类学习面试题](../README.md)
 
-## 先给面试官的短答案
+## 核心结论
 
 常见 OOM 包括 Java heap space、GC overhead limit exceeded、Metaspace、Direct buffer memory、
 unable to create native thread，以及容器层面的 OOMKilled。
@@ -102,21 +102,7 @@ Kubernetes 直接杀掉容器，不一定有 Java OOM 堆栈。
 - JVM native。
 - 其他 native 库。
 
-## 电商系统实践
-
-订单服务 OOM 可能是：
-
-- 查询用户历史订单不分页。
-- Outbox 一次加载太多事件。
-- 本地缓存无限增长。
-
-网关 OOM 可能是：
-
-- 请求体缓存过大。
-- 连接数过多。
-- 线程或 Netty direct memory 问题。
-
-## 深度增强：JVM OOM 类型图
+## JVM OOM 类型图
 
 ![Java 17 容器内 JVM 内存结构](../assets/jvm-runtime-memory.svg)
 
@@ -124,7 +110,7 @@ OOM 类型要和 JVM 内存区域对应。`Java heap space` 指向堆对象，`M
 `Direct buffer memory` 指向堆外缓冲，`unable to create native thread` 指向线程和 native 资源。
 容器 `OOMKilled` 则表示整个进程超过 cgroup 限制，JVM 可能来不及抛异常。
 
-## 深度增强：Java 17 OOM 分类代码示例
+## Java 17 OOM 分类代码示例
 
 ```java
 enum OomCategory {
@@ -169,7 +155,7 @@ final class OomClassifier {
 这段代码可以作为面试表达辅助：不同错误信息背后是不同资源耗尽，排查工具也不同。
 堆看 heap dump，直接内存看 NMT 和 Netty 指标，线程看 `jstack` 和线程池，容器 OOM 看 Pod 事件。
 
-## 深度增强：生产边界
+## 生产边界
 
 不能把所有 OOM 都归结为内存太小。加大 `-Xmx` 可能掩盖泄漏，也可能挤压 direct memory 和线程栈，
 导致容器更容易 OOMKilled。正确做法是先分类，再用对应证据定位。

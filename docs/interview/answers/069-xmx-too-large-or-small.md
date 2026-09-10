@@ -2,29 +2,12 @@
 
 [返回按分类学习面试题](../README.md)
 
-## 先给面试官的短答案
+## 核心结论
 
 `-Xmx` 过小会导致频繁 GC、吞吐下降、对象晋升加快，甚至 Java heap OOM。`-Xmx` 过大虽然能容纳更多对象，
 但可能拉长 GC 暂停，并在容器中挤压 direct memory、线程栈和 metaspace，导致 OOMKilled。
 
 合适的堆大小要通过压测、GC 日志、对象分配速率和容器内存模型确定。
-
-## -Xmx 是什么？
-
-`-Xmx` 是 JVM 最大堆内存。
-
-堆主要存放 Java 对象。
-
-但 JVM 进程总内存不等于 `-Xmx`。
-
-进程总内存还包括：
-
-- metaspace。
-- direct memory。
-- thread stack。
-- code cache。
-- GC native memory。
-- JVM internal。
 
 ## 设置过小的风险
 
@@ -98,11 +81,3 @@ container memory = 1 GB
 - 是否允许内存弹性。
 
 核心交易服务通常更偏稳定，批处理或低频服务可以更弹性。
-
-## 电商系统实践
-
-订单服务 `-Xmx` 过小，可能在大促时频繁 young GC，订单创建 P99 抖动。
-
-搜索或网关服务 `-Xmx` 过大，可能挤压 direct memory，导致网络缓冲或客户端出现堆外内存问题。
-
-所以不同模块要按对象分配模型和堆外内存模型设置，而不是统一一个固定 Xmx。

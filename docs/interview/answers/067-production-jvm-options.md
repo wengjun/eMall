@@ -2,26 +2,12 @@
 
 [返回按分类学习面试题](../README.md)
 
-## 先给面试官的短答案
+## 核心结论
 
 生产 JVM 参数要围绕目标设置：内存上限、GC 策略、GC 日志、OOM 诊断、容器适配、编码时区和可观测性。
 Java 17 微服务通常可以使用 G1 默认配置作为起点，再根据延迟、吞吐、内存和容器限制调优。
 
 不要直接复制网上参数。参数必须和服务类型、流量模型、容器资源和 SLO 匹配。
-
-## 参数设计目标
-
-设置 JVM 参数前先确定目标：
-
-- 服务是低延迟还是高吞吐？
-- 容器内存限制是多少？
-- CPU 核数是多少？
-- 请求对象分配速率多高？
-- P99 目标是多少？
-- 是否需要快速 OOM 诊断？
-- 是否运行在 Kubernetes？
-
-没有目标的 JVM 调优通常是无效调优。
 
 ## 内存参数
 
@@ -145,56 +131,14 @@ Java 17 已经具备较好的容器感知能力，但参数仍要和资源配置
 
 这只是起点，不能替代压测和线上观测。
 
-## 电商系统实践
-
-大型电商系统交易服务更关注 P99 和稳定性，建议使用 G1、开启 GC 日志、设置 OOM dump，并为容器内存保留堆外余量。
-
-网关和搜索服务可能有更多 direct memory 和网络缓冲，要特别关注堆外内存。
-
-报表、离线任务、数据仓库模块可能更关注吞吐和批处理内存。
-
-不同模块不应该完全复制同一套参数。
-
-## 深度增强：JVM 容器内存预算图
+## JVM 容器内存预算图
 
 ![Java 17 容器内 JVM 内存结构](../assets/jvm-runtime-memory.svg)
 
 生产 JVM 参数首先是资源预算问题。容器内存不是只给 heap，用 `MaxRAMPercentage` 或 `-Xmx`
 设置堆时，要给 direct memory、metaspace、线程栈、code cache 和 JVM native 留空间。
 
-## 深度增强：Java 17 参数生成示例
-
-```java
-import java.util.List;
-
-record JvmProfile(int maxRamPercentage, String gc, boolean enableNmt) {
-}
-
-final class JvmOptionPlanner {
-
-    List<String> options(JvmProfile profile) {
-        List<String> base = new java.util.ArrayList<>();
-        base.add("-XX:+Use" + profile.gc() + "GC");
-        base.add("-XX:MaxRAMPercentage=" + profile.maxRamPercentage());
-        base.add("-XX:InitialRAMPercentage=" + profile.maxRamPercentage());
-        base.add("-Xlog:gc*,safepoint:file=/var/log/app/gc.log:time,uptime,level,tags:filecount=5,filesize=100m");
-        base.add("-XX:+HeapDumpOnOutOfMemoryError");
-        base.add("-XX:HeapDumpPath=/var/log/app");
-        base.add("-XX:+ExitOnOutOfMemoryError");
-        base.add("-Dfile.encoding=UTF-8");
-        base.add("-Duser.timezone=UTC");
-        if (profile.enableNmt()) {
-            base.add("-XX:NativeMemoryTracking=summary");
-        }
-        return base;
-    }
-}
-```
-
-这不是让生产动态拼 JVM 参数，而是表达参数应按服务画像生成。网关可以降低 heap 占比并关注 direct memory；
-订单服务关注 heap、GC pause 和 OOM dump；离线任务可能更关注吞吐和批处理内存。
-
-## 深度增强：生产边界
+## 生产边界
 
 JVM 参数不是越多越专业。很多参数会改变 GC 行为、JIT 行为或诊断开销。生产应以少量明确参数为基线，
 通过压测和线上指标验证，再逐步调整。参数变更本身也要灰度发布。

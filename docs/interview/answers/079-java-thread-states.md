@@ -2,106 +2,26 @@
 
 [返回按分类学习面试题](../README.md)
 
-## 先给面试官的短答案
+## JVM 状态不是操作系统状态的逐项映射
 
-Java 线程状态包括 `NEW`、`RUNNABLE`、`BLOCKED`、`WAITING`、`TIMED_WAITING` 和 `TERMINATED`。
-排查线程问题时，重点看大量线程是否集中在 `BLOCKED`、`WAITING` 或 `TIMED_WAITING`，
-以及它们的调用栈是否集中在锁、连接池、下游调用或队列等待。
+| Thread.State | 典型来源 | 排障注意 |
+| --- | --- | --- |
+| NEW | 已 new、未 start | start 只能成功调用一次 |
+| RUNNABLE | 执行字节码、部分 native IO | 不表示一定正在消耗 CPU |
+| BLOCKED | 等待进入 synchronized monitor | 查看锁对象和拥有者 |
+| WAITING | Object.wait、join、LockSupport.park | ReentrantLock 等待常见在这里 |
+| TIMED_WAITING | sleep、带超时的 wait/park/join | 正常空闲线程也可能在这里 |
+| TERMINATED | run 已结束 | 不能再次 start |
 
-## NEW
-
-`NEW` 表示线程对象创建了，但还没有调用 `start()`。
-
-示例：
+`getState()` 只返回一个瞬时快照，不是线程间同步协议。不要轮询某个状态代替 latch 或 Future。
+在 Java 17 中这里讨论的是平台线程，不使用后续版本的虚拟线程 API。
 
 ```java
-Thread thread = new Thread(task);
+Thread worker = new Thread(() -> System.out.println("running"));
+System.out.println(worker.getState()); // NEW
+worker.start();
+worker.join();
+System.out.println(worker.getState()); // TERMINATED
 ```
 
-此时线程还没有真正开始执行。
-
-## RUNNABLE
-
-`RUNNABLE` 表示线程可运行。
-
-注意它不一定正在占用 CPU，也可能正在等待操作系统调度，或者在 native IO 中等待。
-
-常见场景：
-
-- 正在执行 Java 代码。
-- 等待 CPU 时间片。
-- socket read 等 native 调用。
-
-所以看到 `RUNNABLE` 不一定代表它真的在消耗 CPU，要结合 CPU 线程和调用栈判断。
-
-## BLOCKED
-
-`BLOCKED` 表示线程正在等待进入 synchronized 临界区。
-
-典型原因：
-
-- 等待对象 monitor。
-- synchronized 锁竞争。
-
-如果大量线程 `BLOCKED` 在同一行，说明可能有锁竞争。
-
-`BLOCKED` 是排查 synchronized 问题的重点状态。
-
-## WAITING
-
-`WAITING` 表示线程无限期等待其他线程动作。
-
-常见原因：
-
-- `Object.wait()`。
-- `Thread.join()`。
-- `LockSupport.park()`。
-- 等待队列任务。
-
-线程池空闲线程通常可能处于等待状态，这是正常的。
-
-关键要看等待位置是否合理。
-
-## TIMED_WAITING
-
-`TIMED_WAITING` 表示带超时时间的等待。
-
-常见原因：
-
-- `Thread.sleep()`。
-- `Object.wait(timeout)`。
-- `Thread.join(timeout)`。
-- `LockSupport.parkNanos()`。
-- 带超时的阻塞队列操作。
-
-下游 HTTP 调用超时等待也可能表现为类似等待或 native IO。
-
-## TERMINATED
-
-`TERMINATED` 表示线程执行结束。
-
-线程结束后不能再次启动。
-
-如果频繁创建和销毁线程，可能造成性能问题。生产中通常用线程池复用线程。
-
-## 状态和问题的关系
-
-| 状态 | 可能含义 |
-| --- | --- |
-| 大量 RUNNABLE | CPU 热点、native IO、忙等 |
-| 大量 BLOCKED | synchronized 锁竞争 |
-| 大量 WAITING | 队列等待、park、条件等待 |
-| 大量 TIMED_WAITING | sleep、超时等待、定时任务 |
-
-状态只是入口，调用栈才是证据。
-
-## 电商系统实践
-
-订单服务 P99 升高时，抓 `jstack`：
-
-- 大量 `BLOCKED` 在库存本地锁，说明锁竞争。
-- 大量 `WAITING` 在连接池，说明资源不足。
-- 大量 `RUNNABLE` 在规则计算，说明 CPU 热点。
-- 大量 `TIMED_WAITING` 在下游调用，说明超时等待。
-
-线程状态能帮助快速缩小排查方向。
+大量 WAITING 未必异常；看线程名、调用栈和等待对象才能区分正常线程池空闲与任务相互等待。

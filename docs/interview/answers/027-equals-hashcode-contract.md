@@ -2,119 +2,30 @@
 
 [返回按分类学习面试题](../README.md)
 
-## 先给面试官的短答案
+## 与 C++ 使用习惯的差异
 
-核心契约是：如果两个对象 `equals` 返回 true，它们的 `hashCode` 必须相同。
-反过来不要求成立，也就是说 hash 相同不代表对象一定相等。
+Java 对象的 `==` 比较引用身份，值相等由 `equals` 定义。默认 `Object.equals` 仍比较身份。
+`equals` 必须满足自反、对称、传递、一致，且对 null 返回 false。
 
-此外 `equals` 要满足自反性、对称性、传递性、一致性，以及和 null 比较返回 false。
-这个契约对 `HashMap`、`HashSet`、缓存 key、幂等 key 都非常重要。
-
-## 从零基础理解
-
-`equals` 判断两个对象是否业务上相等。
-`hashCode` 用于哈希容器快速定位对象。
-
-例如：
+**相等对象必须有相同 hashCode，反过来不成立。** 覆写 `equals` 时必须配套覆写 `hashCode`，
+否则 `HashMap`、`HashSet` 的查找和去重会出错。
 
 ```java
-Set<SkuKey> set = new HashSet<>();
-set.add(new SkuKey(10001L, 1));
-```
-
-当你查找：
-
-```java
-set.contains(new SkuKey(10001L, 1));
-```
-
-HashSet 会先用 `hashCode` 找桶，再用 `equals` 判断是否相等。
-
-如果 `equals` 和 `hashCode` 不一致，就会出现放进去找不到的问题。
-
-## equals 的规则
-
-### 自反性
-
-```java
-a.equals(a) == true
-```
-
-### 对称性
-
-```java
-a.equals(b) == b.equals(a)
-```
-
-### 传递性
-
-如果：
-
-```text
-a equals b
-b equals c
-```
-
-那么：
-
-```text
-a equals c
-```
-
-### 一致性
-
-对象状态不变时，多次调用结果一致。
-
-### null
-
-```java
-a.equals(null) == false
-```
-
-## hashCode 的规则
-
-如果：
-
-```java
-a.equals(b)
-```
-
-那么必须：
-
-```java
-a.hashCode() == b.hashCode()
-```
-
-但 hash 相同不代表 equals 一定 true，因为不同对象可能 hash 冲突。
-
-## 业务系统里的坑
-
-### 可变字段参与 hash
-
-如果一个对象作为 HashMap key 后，参与 hash 的字段被修改，就可能找不到。
-
-### Entity 用 ID 判断相等
-
-数据库实体常用 ID 判断相等，但 ID 生成前怎么办？
-
-如果新对象 ID 为 null，两个新对象是否相等？这要谨慎设计。
-
-### Lombok 自动生成
-
-`@Data` 会自动生成 equals/hashCode，但可能把不该参与比较的字段放进去。
-例如订单对象如果把 updatedAt 放进去，更新时间变化会影响相等性。
-
-## 推荐实践
-
-值对象可以使用所有不可变字段：
-
-```java
-public record SkuBucketKey(long skuId, int bucketNo) {
+record OrderKey(long tenantId, long orderId) {
 }
+
+var first = new OrderKey(10, 42);
+var second = new OrderKey(10, 42);
+System.out.println(first == second); // false
+System.out.println(first.equals(second)); // true
+System.out.println(first.hashCode() == second.hashCode()); // true
 ```
 
-实体对象要谨慎：
+## 实际容易踩的坑
 
-- 有稳定 ID 后，用 ID。
-- ID 未生成前，避免放入 HashSet/HashMap。
-- 不要让可变业务字段参与 hash key。
+- record 自动生成按组件比较的实现，但数组组件默认仍按数组身份比较，不会自动深比较。
+- Lombok `@Data` 不只是 getter/setter，还生成相等性方法；不要默认让实体的所有可变字段参与比较。
+- `BigDecimal("1.0")` 与 `BigDecimal("1.00")` 的 `equals` 为 false，而 `compareTo` 为 0。
+- 数据库实体从“没有 ID”变成“已有 ID”时，相等性不能在哈希集合中随之改变。
+
+哈希 key 的可变性单独看 [028](028-mutable-hashmap-key.md)，不必重复学习哈希表原理。

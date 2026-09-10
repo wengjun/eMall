@@ -1,49 +1,26 @@
-# 467 CPU limit 对 Java 服务有什么影响？
+# 467 CPU 配额如何影响 Java 17 的并行度？
 
 [返回按分类学习面试题](../README.md)
 
-## 先给面试官的短答案
+## Java 侧先看这个值
 
-CPU limit 会让容器超过配额后被 throttling。对 Java 服务来说，这会导致请求延迟升高、GC 变慢、
-线程调度变慢、P99 抖动和吞吐下降。
+```java
+int processors = Runtime.getRuntime().availableProcessors();
+System.out.println(processors);
+```
 
-CPU 使用率看起来不一定满，但 throttling 已经在影响延迟。
+HotSpot 的容器感知会影响这个可用处理器数量；它不是简单等于宿主机核数。
+GC、JIT 和 ForkJoinPool 的默认策略可能参考处理器数量，具体行为还取决于 JDK 更新版本和显式参数。
 
-## throttling
+## 两个不要混淆的控制
 
-CPU limit 通过 CFS 配额控制。
+`-XX:ActiveProcessorCount=N` 可以覆盖 JVM 使用的处理器数量判断，
+但**不会给容器增加 CPU 配额，也不会取消 OS throttling**。
+把它设得很大可能只增加同时竞争配额的工作线程。
 
-当容器在一个周期内用完 CPU 配额后，会被暂停到下个周期。暂停期间应用线程无法继续执行。
+`ForkJoinPool.commonPool()` 的实际并行度要用 getParallelism 查看，
+不要根据核数猜测，更不要据此让阻塞 IO 都使用公共池。
 
-## 对 Java 的影响
-
-影响：
-
-- 业务线程执行变慢。
-- GC 线程执行变慢。
-- ForkJoinPool 并发度受影响。
-- 定时任务延迟。
-- P99 明显升高。
-- 超时和重试增加。
-
-尾延迟经常先暴露问题。
-
-## 排查指标
-
-看：
-
-- CPU throttled time。
-- CPU throttled periods。
-- P99 延迟。
-- GC pause。
-- 线程池队列。
-- 容器 CPU usage。
-
-不能只看 CPU 平均使用率。
-
-## 电商系统实践
-
-大型电商系统订单服务在高峰期 P99 抖动，如果 CPU throttling 明显，即使平均 CPU 只有 60%，也可能是
-CPU limit 太紧造成。
-
-可以提高 limit、优化线程池、降低同步计算或调整 HPA 指标。
+诊断时同时记录 JDK 发行版/更新号、JVM 看到的处理器数和容器配额。
+GC 日志中 wall-clock 暂停变长不一定代表 GC 工作量同比增加，也可能是 GC 线程得不到 CPU。
+具体 JVM 容器参数见 [068](068-jvm-container-memory.md)。

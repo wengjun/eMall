@@ -12,7 +12,7 @@ eMall 是一个基于 Java 17 的微服务电商平台，用来学习和展示�
 
 - [文档总目录](docs/README.md)：所有架构、测试、运维和学习文档入口。
 - [学习手册](docs/learning/README.md)：按主题系统学习 Java 17 电商系统实现。
-- [按分类学习面试题](docs/interview/README.md)：唯一的面试学习入口，按分类顺序学习全部题目。
+- [按分类学习 Java 技术栈](docs/interview/README.md)：面向已有服务端经验的开发者，聚焦 Java、JVM、Spring 与中间件接入。
 - [运维配置索引](ops/README.md)：Docker Compose、Kubernetes、可观测和压测配置入口。
 - [生产部署 Chart](ops/helm/emall/README.md)：38 个在线服务的唯一 Kubernetes 部署入口。
 - [Web/App 下单 API 契约](docs/api/web-app-checkout.openapi.yml)：浏览器和手机 App 共用的后端下单接口契约。

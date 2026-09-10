@@ -2,7 +2,7 @@
 
 [返回按分类学习面试题](../README.md)
 
-## 先给面试官的短答案
+## 核心结论
 
 堆 OOM 通常表现为 `java.lang.OutOfMemoryError: Java heap space`，问题在 Java 堆对象太多或无法回收；
 直接内存 OOM 常见为 `OutOfMemoryError: Direct buffer memory`，问题在堆外直接内存不足。
@@ -95,21 +95,14 @@ Xmx = 900 MB
 
 所以要留出堆外余量。
 
-## 电商系统实践
-
-网关或高性能 HTTP 客户端更可能遇到直接内存问题，因为它们处理大量网络缓冲。
-订单服务如果因为缓存或查询对象太多，更可能是堆 OOM。
-
-如果使用 WebFlux、Netty、Kafka 客户端、OpenSearch 客户端，都要关注堆外内存。
-
-## 深度增强：堆和直接内存图
+## 堆和直接内存图
 
 ![Java 17 容器内 JVM 内存结构](../assets/jvm-runtime-memory.svg)
 
 堆 OOM 和直接内存 OOM 的核心区别是“对象可见性”。堆对象完整存在于 heap dump 中；
 直接内存真正的大块内存在 native 区域，heap dump 通常只能看到引用它的 `DirectByteBuffer` 对象。
 
-## 深度增强：Java 17 直接内存风险示例
+## Java 17 直接内存风险示例
 
 ```java
 import java.nio.ByteBuffer;
@@ -132,7 +125,7 @@ final class DirectBufferPressure {
 这段代码会持续保留 direct buffer 引用。即使 heap 中只看到一批 `DirectByteBuffer` 小对象，
 它们背后可能挂着大量 native memory。Netty、网关、上传下载和高性能 HTTP client 都要特别关注。
 
-## 深度增强：生产判断方法
+## 生产判断方法
 
 如果 `heap used` 不高，但容器 memory working set 很高，要怀疑 direct memory、线程栈、metaspace
 或其他 native memory。此时不要只分析 heap dump，还要看 NMT、direct buffer metrics、线程数和 Pod 事件。

@@ -2,7 +2,7 @@
 
 [返回按分类学习面试题](../README.md)
 
-## 先给面试官的短答案
+## 核心结论
 
 分析 CPU 飙高要先判断是用户态 CPU、系统态 CPU、GC、锁自旋、热点计算还是外部压力导致。
 Java 服务常用流程是先定位进程，再定位高 CPU 线程，把线程 ID 转成十六进制后在 `jstack` 中找调用栈，
@@ -70,36 +70,6 @@ Windows 环境可以使用 Process Explorer、JFR 或 IDE profiler 辅助定位�
 
 如果 CPU 被 GC 消耗，大概率要优化对象分配、缓存大小、批量加载或 JVM 参数。
 
-## 第五步：区分流量上涨和代码问题
-
-CPU 飙高不一定是 bug，可能只是流量上涨。
-
-要对比：
-
-- QPS 是否同步上涨。
-- 每请求 CPU 成本是否上涨。
-- 最近是否发布新版本。
-- 是否有大促、爬虫、攻击或批量任务。
-- 是否有缓存失效导致计算回源。
-
-如果 QPS 没涨但 CPU 涨了，通常更像代码问题、重试风暴或依赖异常。
-
-如果 QPS 涨了且 CPU 线性上涨，要看容量是否不足。
-
-## 第六步：检查重试风暴
-
-下游慢或失败时，重试可能让 CPU 和流量同时放大。
-
-典型现象：
-
-- 错误率上升。
-- 下游超时上升。
-- 重试次数上升。
-- 入口 QPS 没明显涨，但内部调用 QPS 暴涨。
-- 日志量暴涨。
-
-这时不能只扩容，要先限制重试、开启熔断、降级非核心功能。
-
 ## 第七步：使用 JFR 或 profiler
 
 `jstack` 适合快速定位线程栈，但对持续热点分析不够完整。
@@ -114,56 +84,3 @@ JFR 可以记录：
 - IO。
 
 如果是生产问题，JFR 比侵入式 profiler 更安全。
-
-## 电商系统实践
-
-如果大型电商系统的价格服务 CPU 飙高，可以按顺序排查：
-
-- 价格计算 QPS 是否上涨。
-- 优惠规则是否发布了复杂表达式。
-- 缓存是否失效导致规则全量计算。
-- 是否有大量订单创建重试。
-- `jstack` 是否显示线程卡在规则计算或 JSON 解析。
-- JFR 是否显示 CPU 热点集中在规则匹配方法。
-
-修复可能是规则预编译、缓存热点结果、限流、减少重试和拆分计算线程池。
-
-## 深度增强：SRE 排障时间线图
-
-![SRE 延迟和 CPU 故障排查时间线](../assets/sre-triage-timeline.svg)
-
-CPU 飙高不能只看某一刻的 CPU 曲线，要把业务指标、JVM 指标、依赖指标和变更时间线放在一起。
-如果发布后每请求 CPU 成本上升，偏代码问题；如果下游超时先升高，随后重试和 CPU 升高，偏重试风暴。
-
-## 深度增强：Java 17 高 CPU 样本聚合示例
-
-```java
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-
-record StackSample(String threadName, String topFrame) {
-}
-
-final class CpuHotspotSummarizer {
-
-    Map<String, Integer> summarize(List<StackSample> samples) {
-        Map<String, Integer> counts = new HashMap<>();
-        for (StackSample sample : samples) {
-            counts.merge(sample.topFrame(), 1, Integer::sum);
-        }
-        return counts;
-    }
-}
-```
-
-真实生产会用 JFR 或 profiler 做采样，这段代码表达的是方法论：一次线程栈可能偶然，
-连续多次采样都命中同一段方法，才更像 CPU 热点。高 CPU 排查要用采样证据，而不是看一眼栈就下结论。
-
-## 深度增强：生产排查步骤
-
-Linux 上常见步骤是：定位进程，`top -H -p <pid>` 找高 CPU 线程，把线程 ID 转十六进制，
-再到 `jstack` 中匹配 `nid`。Windows 或容器平台可以用 JFR、APM、IDE profiler 或平台诊断工具。
-
-如果 CPU 高但吞吐没有提升，要重点看死循环、复杂正则、JSON 序列化、规则引擎、加密签名、日志风暴、
-GC 和重试风暴。若 CPU 高伴随 `container_cpu_cfs_throttled` 上升，还要考虑 CPU limit 过低。

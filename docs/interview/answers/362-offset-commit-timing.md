@@ -1,50 +1,38 @@
-# 362 消息提交 offset 的时机如何选择？
+# 362 Spring Kafka 如何决定 offset 提交时机？
 
 [返回按分类学习面试题](../README.md)
 
-## 先给面试官的短答案
+## 区分 Kafka 客户端与 Spring 容器
 
-offset 应该在业务处理成功之后提交。这样即使消费者在处理过程中宕机，消息也会被重新消费，最多
-造成重复，不会轻易丢失。
+原生 KafkaConsumer 的 enable.auto.commit 和 Spring 容器的 AckMode 是两套配置。
+使用同步 record listener 时，常见选择是关闭原生自动提交，让容器在监听器成功返回后提交。
 
-生产中通常选择手动提交 offset，并通过业务幂等处理重复消费。
+```yaml
+spring:
+  kafka:
+    consumer:
+      enable-auto-commit: false
+    listener:
+      ack-mode: record
+```
 
-## 提交太早
+```java
+@KafkaListener(topics = "orders", groupId = "order-projection")
+public void consume(String payload) {
+    projectionService.apply(payload);
+}
+```
 
-如果先提交 offset 再处理业务：
+这是监听 Bean 的片段，projectionService 是另一个 Bean；其事务方法完成提交后才返回。
+不要在监听器里提交异步任务后立即返回，也不要吞掉异常，否则容器可能把尚未成功处理的记录视为完成。
 
-- Kafka 认为消息已消费。
-- 消费者处理业务时宕机。
-- 重启后不会再消费这条消息。
-- 业务动作丢失。
+## AckMode 的具体区别
 
-这属于至多一次语义，风险较高。
+RECORD 按记录完成提交；BATCH 等一轮 poll 返回的记录处理完成后提交。
+MANUAL 的 acknowledge 不代表总是当场提交；MANUAL_IMMEDIATE 的即时行为还取决于是否在消费线程调用。
+不是所有生产消费都需要自己手写 commitSync。语义见
+[Spring Kafka 提交模式](https://docs.spring.io/spring-kafka/reference/kafka/receiving-messages/message-listener-container.html)。
 
-## 提交太晚
-
-如果业务成功后还没提交 offset 就宕机：
-
-- Kafka 认为消息未消费。
-- 重启后会再次拉取。
-- 业务可能重复执行。
-
-这属于至少一次语义，需要业务幂等。
-
-## 生产建议
-
-建议：
-
-- 关闭自动提交或谨慎使用。
-- 业务成功后手动提交。
-- 提交前确保本地事务完成。
-- 消费逻辑必须幂等。
-- 失败消息进入重试或死信。
-- 批量提交要控制重复范围。
-
-重复消费比消息丢失更容易治理。
-
-## 电商系统实践
-
-大型电商系统库存消费者处理 `order-created` 事件时，应先执行库存扣减和幂等记录，再提交 offset。
-
-如果提交前宕机，消息会重复消费，但库存扣减通过订单号幂等表或条件状态保证不会重复扣减。
+原生客户端提交的位置是“下一条要消费的 offset”，通常为最后连续处理成功的 offset + 1。
+KafkaConsumer 不能随意跨线程共享，不能让多个工作线程独立推进同一分区的提交位置。
+数据库成功而 offset 尚未提交仍可能重复消费，这一点不会因选择某个 AckMode 自动消失。

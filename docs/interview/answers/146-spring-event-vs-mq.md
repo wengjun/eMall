@@ -1,63 +1,31 @@
-# 146 Spring 事件和 MQ 事件有什么区别？
+# 146 Spring 事件如何绑定执行线程和事务阶段？
 
 [返回按分类学习面试题](../README.md)
 
-## 先给面试官的短答案
+## 学 Spring 的机制，不重讲 MQ 架构
 
-Spring 事件是进程内事件，通常用于同一应用内部模块解耦；MQ 事件是进程间事件，用于跨服务异步通信、削峰和最终一致。
-Spring 事件不提供跨实例可靠投递，应用重启后事件可能丢失；MQ 通常提供持久化、重试、消费组和堆积能力。
-
-不要用 Spring 事件替代跨服务消息。
-
-## Spring 事件
-
-Spring 事件特点：
-
-- 同 JVM 内。
-- 使用简单。
-- 适合模块内解耦。
-- 默认不保证跨进程可靠。
-- 可以同步或异步执行。
-
-适合本服务内部通知，例如刷新本地缓存、触发本地审计。
-
-## MQ 事件
-
-MQ 事件特点：
-
-- 跨服务。
-- 可持久化。
-- 支持重试。
-- 支持消费组。
-- 支持削峰。
-- 支持异步解耦。
-
-适合订单创建后通知库存、履约、积分、营销等服务。
-
-## 可靠性差异
-
-Spring 事件发布后，如果应用崩溃，事件可能丢失。
-
-MQ 事件通常写入 broker，可在消费者失败后重试。
-
-但 MQ 也不是绝对一次，消费者必须幂等。
-
-## 事务边界
-
-Spring 事件如果在事务提交前发布，监听器可能看到未提交数据。
-
-可以使用事务事件监听：
+默认 ApplicationEventPublisher 通过同步事件广播器调用监听器，发布调用可能直到监听器返回才结束。
+显式配置异步执行器或 @Async 后，线程、异常与事务传播规则会变化，不能再依赖发布线程的 ThreadLocal。
 
 ```java
+record ProductChanged(long productId) {
+}
+
 @TransactionalEventListener(phase = TransactionPhase.AFTER_COMMIT)
+public void onChanged(ProductChanged event) {
+    localCache.invalidate(event.productId());
+}
 ```
 
-跨服务事件更推荐 Outbox + MQ。
+这是监听 Bean 中的片段，需要事务事件注解的 imports，localCache 为注入依赖。
+默认只有发布时存在事务才会安排这个监听器；无事务时不会因为名字叫 AFTER_COMMIT 就立即执行。
+`fallbackExecution = true` 才允许无事务时也执行。
 
-## 电商系统实践
+## AFTER_COMMIT 最容易误用的点
 
-订单服务内部可以用 Spring 事件触发本地审计或缓存清理。
+监听器执行时数据库事务已经提交，不能靠抛异常撤销原提交。
+此时原事务资源可能仍可访问，但再写数据不能假定会被提交；
+确需新写入时，应通过另一个代理 Bean 的 REQUIRES_NEW 方法开启独立事务。
 
-订单创建后通知履约、积分、推荐，应该使用 MQ 事件。
-
-如果订单创建和消息发送要一致，使用 Outbox 模式。
+进程崩溃可能丢失尚未执行的监听器。事务事件用于阶段回调，不是持久消息，
+@Async 也不会给它增加落盘、重放或跨进程投递能力。

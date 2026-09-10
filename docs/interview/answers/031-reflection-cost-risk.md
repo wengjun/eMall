@@ -2,92 +2,30 @@
 
 [返回按分类学习面试题](../README.md)
 
-## 先给面试官的短答案
+## 关注调用链和模块边界
 
-反射允许程序在运行时读取类、字段、方法、注解，并动态调用方法。它是 Spring、Jackson、
-JUnit、ORM 等框架的重要基础，但业务代码不应该滥用。
-
-反射的主要成本是性能开销、编译期检查变弱、可读性下降、封装被破坏、运行时错误更晚暴露。
-在生产系统里，我会把反射限制在框架层或基础设施层，业务扩展优先使用接口、策略模式和 SPI。
-
-## 从零基础理解
-
-普通调用：
+反射把一部分编译期检查移到运行时。核心 API 是 `Class`、`Constructor`、`Method`、`Field`，
+Spring、MyBatis 常在启动时解析元数据，而不是每次请求重新扫描类。
 
 ```java
-order.markPaid();
+import java.lang.reflect.Method;
+
+record OrderView(long id) {
+}
+
+Method accessor = OrderView.class.getDeclaredMethod("id");
+Object value = accessor.invoke(new OrderView(42));
+System.out.println(value); // 42
 ```
 
-反射调用：
+返回基本类型会装箱；目标方法抛出的异常由 `InvocationTargetException` 包装，排障要看 cause。
+性能上先区分“重复查找方法”和“调用已缓存方法”，不能用一个固定倍数概括所有反射开销。
 
-```java
-Method method = Order.class.getDeclaredMethod("markPaid");
-Object result = method.invoke(order);
-```
+## Java 17 特别注意
 
-普通调用在编译期就能检查方法是否存在；反射调用可能运行到这行才发现方法名写错。
+`setAccessible(true)` 不是无条件绕过访问限制。模块没有开放包时可能抛出
+`InaccessibleObjectException`；`trySetAccessible()` 可以探测失败。
+优先使用公开 API，`--add-opens` 只应是范围明确的兼容措施，不要把依赖 JDK 私有字段当稳定方案。
 
-## 反射的价值
-
-反射不是坏东西。很多框架离不开它：
-
-- Spring 扫描 `@Service` 并创建 Bean。
-- Jackson 根据字段和构造函数做 JSON 序列化。
-- JUnit 找到 `@Test` 方法并执行。
-- MyBatis 或 ORM 把数据库行映射成对象。
-- 配置绑定根据属性名设置配置对象。
-
-没有反射，Java 框架会笨重很多。
-
-## 反射的成本
-
-### 性能开销
-
-反射调用通常比直接调用慢。现代 JVM 对反射有优化，但在高频热点路径仍要谨慎。
-
-例如每次请求都通过反射解析字段、调用方法，会增加 CPU 和延迟。
-
-### 编译期检查变弱
-
-```java
-getDeclaredMethod("markPiad")
-```
-
-方法名拼错，编译器发现不了。
-
-### 可读性差
-
-反射代码通常更难读。业务意图被字符串、类型转换和异常处理淹没。
-
-### 破坏封装
-
-反射可以访问私有字段和方法：
-
-```java
-field.setAccessible(true);
-```
-
-这可能绕过业务规则，破坏对象不变量。
-
-### 运行时兼容风险
-
-字段改名、方法改名、模块化限制、Native Image、框架升级，都可能让反射代码失败。
-
-## 生产系统里的风险
-
-在电商系统里，反射滥用可能导致：
-
-- 订单状态被绕过领域方法直接改字段。
-- 敏感字段被通用日志工具打印出来。
-- JSON 映射失败运行时才暴露。
-- Native Image 或强封装 JDK 下启动失败。
-- 插件通过反射访问不该访问的内部能力。
-
-## 推荐实践
-
-- 业务代码优先使用显式接口和方法调用。
-- 框架层反射要有单元测试和集成测试。
-- 反射访问敏感字段要有白名单。
-- 通用工具不要默认打印所有字段。
-- 避免用字符串方法名表达核心业务逻辑。
-- 需要扩展时优先接口、策略、SPI，而不是反射硬调。
+缓存反射元数据时要考虑 ClassLoader 生命周期：全局 Map 强引用插件 Class 可能阻止卸载。
+只有性能证据表明反射是热点，才考虑 MethodHandle 或生成代码；API 名称更“底层”不保证一定更快。

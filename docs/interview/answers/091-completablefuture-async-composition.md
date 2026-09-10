@@ -2,7 +2,7 @@
 
 [返回按分类学习面试题](../README.md)
 
-## 先给面试官的短答案
+## 核心结论
 
 `CompletableFuture` 用来表达一个未来完成的异步结果，并提供串行、并行、合并、异常处理和超时控制能力。
 常见方法包括 `thenApply`、`thenCompose`、`thenCombine`、`allOf`、`exceptionally`、`handle` 和 `orTimeout`。
@@ -97,16 +97,3 @@ future.completeOnTimeout(defaultValue, 200, TimeUnit.MILLISECONDS);
 - 避免异步任务无限扩散。
 
 异步不是免费并发，背后仍然消耗线程和下游资源。
-
-## 电商系统实践
-
-订单详情页可以并行查询：
-
-- 订单基础信息。
-- 物流信息。
-- 支付信息。
-- 售后状态。
-
-这些查询相互独立，可以用 `CompletableFuture` 并行编排，最后合并结果。
-
-但创建订单链路涉及库存一致性和支付状态，不能为了并行而破坏业务顺序。

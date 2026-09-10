@@ -1,62 +1,44 @@
-# 470 Kubernetes 中如何配置并验证优雅关闭？
+# 470 Spring Boot 和 Java 线程池如何优雅关闭？
 
 [返回按分类学习面试题](../README.md)
 
-## 先给面试官的短答案
+## Spring Boot 3.3 的显式配置
 
-优雅关闭要让服务先停止接收新流量，再等待正在处理的请求完成，最后释放资源并退出。Kubernetes 中
-通常结合 readiness 摘流量、preStop、terminationGracePeriod 和应用自身 shutdown hook。
+```yaml
+server:
+  shutdown: graceful
+spring:
+  lifecycle:
+    timeout-per-shutdown-phase: 30s
+```
 
-核心目标是避免正在执行的订单、支付和消息消费被强制中断。
+Boot 的 WebServer 生命周期会协调停止接收新请求并等待在途请求，具体停止方式取决于服务器实现。
+30 秒是每个 shutdown phase 的等待配置，不是整个进程退出的绝对上限。
+版本行为见 [Spring Boot 3.3 优雅关闭](https://docs.spring.io/spring-boot/3.3/reference/web/graceful-shutdown.html)。
 
-## Kubernetes 配置
+## 自建 Executor 仍需要管理
 
-配置：
+下面的方法适用于拥有该线程池生命周期的组件：
 
-- readinessProbe 失败后摘流量。
-- preStop hook 延迟或调用下线接口。
-- terminationGracePeriodSeconds 足够长。
-- 避免立即 `SIGKILL`。
-- PDB 控制同时中断数量。
+```java
+static void stop(java.util.concurrent.ExecutorService executor) {
+    executor.shutdown();
+    try {
+        if (!executor.awaitTermination(10, java.util.concurrent.TimeUnit.SECONDS)) {
+            executor.shutdownNow();
+        }
+    } catch (InterruptedException exception) {
+        executor.shutdownNow();
+        Thread.currentThread().interrupt();
+    }
+}
+```
 
-Kubernetes 只提供机制，应用也要配合。
+shutdown 拒绝新任务并允许已接收任务完成；shutdownNow 请求中断并返回尚未执行的排队任务。
+示例不保证不响应中断的任务已经退出，业务还需处理未执行任务。
+Java 17 ExecutorService 不是 AutoCloseable，不能照搬新版本的 try-with-resources 写法。
 
-## 应用侧处理
+SmartLifecycle 用于需要阶段协调的组件，@PreDestroy 用于销毁回调。
+依赖资源不能先于使用它的工作线程关闭；Kafka 容器、Dubbo 和自建池各有生命周期，不能只配 WebServer。
 
-应用要做：
-
-- 停止接收新请求。
-- 等待 in-flight 请求完成。
-- 停止拉取新消息。
-- 提交或回滚当前事务。
-- 关闭线程池。
-- 关闭连接池。
-
-消息消费者要特别注意 offset 提交。
-
-## 时间设置
-
-时间要参考：
-
-- 接口 P99。
-- 最长事务时间。
-- 消息处理最长时间。
-- 下游超时时间。
-- 发布速度要求。
-
-时间太短会中断请求，太长会拖慢发布。
-
-## 验证方法
-
-- 在持续流量下删除 Pod，确认 readiness 摘除后不再收到新请求。
-- 注入接近 P99 的请求和 Kafka 消费，确认在宽限期内完成并正确提交。
-- 模拟超过宽限期的任务，验证它会被中断、回滚或由幂等机制重新执行。
-- 连续滚动多个副本，检查 PDB、生效端点数、错误率和退出耗时。
-
-只有实际执行 Pod 终止测试，才能证明应用超时、网关摘流延迟和 Kubernetes 配置彼此匹配。
-
-## 电商系统实践
-
-大型电商系统订单服务关闭时，先通过 readiness 从 Service 端点摘除，再等待正在执行的下单请求完成。
-
-Kafka 消费者停止拉取新消息，处理完当前消息并提交 offset 后再退出，避免重复或半处理状态。
+容器强制终止时不会保证执行所有回调，因此部署的总宽限期必须覆盖这些阶段；此处不展开 Kubernetes 发布设计。

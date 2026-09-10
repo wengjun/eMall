@@ -1,110 +1,40 @@
-# 104 如何设计可取消的异步任务？
+# 104 如何设计可取消的 Java 异步任务？
 
 [返回按分类学习面试题](../README.md)
 
-## 先给面试官的短答案
+## 区分三个 API 的语义
 
-可取消异步任务要采用协作式取消：任务定期检查取消标记或中断状态，阻塞 IO 设置超时，取消时释放资源，
-并保证业务幂等和状态可恢复。对 `Future` 可以使用 `cancel(true)`，但任务代码必须响应中断才有效。
+`Future.get(timeout)` 只限制等待；常见 ExecutorService.submit 返回的 FutureTask 可以通过
+`cancel(true)` 请求中断执行线程；CompletableFuture 的 cancel 不保证中断执行中的计算。
+不要把这三者统一理解成“超时后自动停止”。
 
-取消设计要覆盖线程、IO、业务状态和补偿。
-
-## 取消标记
-
-可以使用取消标记：
+下面片段在拥有 Executor 生命周期的方法中执行，工作任务只做可中断的演示等待：
 
 ```java
-class JobContext {
-    private final AtomicBoolean cancelled = new AtomicBoolean();
+import java.util.concurrent.Executors;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.TimeoutException;
 
-    boolean isCancelled() {
-        return cancelled.get();
+var executor = Executors.newSingleThreadExecutor();
+try {
+    var future = executor.submit(() -> {
+        TimeUnit.SECONDS.sleep(10);
+        return "completed";
+    });
+    try {
+        future.get(100, TimeUnit.MILLISECONDS);
+    } catch (TimeoutException exception) {
+        future.cancel(true);
     }
-
-    void cancel() {
-        cancelled.set(true);
-    }
+} finally {
+    executor.shutdownNow();
 }
 ```
 
-任务循环中检查：
+片段所在方法需要处理或声明 InterruptedException、ExecutionException。
+若工作是 CPU 循环，应周期检查中断；若是 IO，要配置对应客户端超时，并确认它如何响应取消。
 
-```java
-if (context.isCancelled()) {
-    return;
-}
-```
+`shutdownNow` 只是尝试中断，不保证任务立刻退出。Java 17 的 ExecutorService 不能直接放入
+try-with-resources。资源清理和中断传播细节看 [103](103-java-interruption.md)。
 
-## 响应中断
-
-如果任务提交到线程池，取消时可以：
-
-```java
-future.cancel(true);
-```
-
-任务内部要响应：
-
-```java
-if (Thread.currentThread().isInterrupted()) {
-    return;
-}
-```
-
-阻塞方法捕获 `InterruptedException` 后要恢复中断状态并退出。
-
-## IO 超时
-
-异步任务经常调用外部系统。
-
-必须设置：
-
-- HTTP connect timeout。
-- HTTP read timeout。
-- DB query timeout。
-- Redis command timeout。
-- MQ send timeout。
-
-否则任务收到取消信号后，仍可能卡在不可中断 IO 上。
-
-## 分阶段提交
-
-长任务要拆成阶段。
-
-每个阶段完成后记录进度。
-
-取消发生时，任务可以：
-
-- 停止后续阶段。
-- 保存当前状态。
-- 释放资源。
-- 交给补偿任务恢复。
-
-这比一个巨大事务跑到底更稳定。
-
-## 幂等和补偿
-
-取消可能发生在业务操作中间。
-
-必须设计：
-
-- 幂等 key。
-- 状态机。
-- 操作日志。
-- 补偿任务。
-- 可重试边界。
-
-否则取消后重试可能造成重复扣款、重复发货或重复扣库存。
-
-## 电商系统实践
-
-订单超时关闭任务可以设计成可取消：
-
-- 扫描待关闭订单。
-- 每批处理前检查取消标记。
-- 数据库更新使用状态条件和幂等。
-- 调用库存释放时设置超时。
-- 记录处理进度。
-- 服务关闭时停止拉新任务。
-
-这样 Pod 下线不会留下不可控后台任务。
+取消是本地执行控制，不会回滚已提交的数据库更新；此处不重复分布式补偿设计。

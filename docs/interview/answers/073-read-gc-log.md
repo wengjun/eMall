@@ -2,7 +2,7 @@
 
 [返回按分类学习面试题](../README.md)
 
-## 先给面试官的短答案
+## 核心结论
 
 读 GC 日志要看时间、GC 类型、触发原因、暂停时间、回收前后内存变化、各代空间变化和频率。
 核心问题是判断 GC 是否频繁、暂停是否影响 P99、old gen 是否能回落、是否有 Full GC 或 humongous allocation。
@@ -117,24 +117,14 @@ User=0.20s Sys=0.02s Real=0.05s
 
 如果 Real 明显大于 User+Sys，可能有 CPU 不足、容器 throttling 或系统调度问题。
 
-## 电商系统实践
-
-订单创建 P99 抖动时，可以对比 GC 日志和接口延迟。
-
-如果 P99 高峰时正好出现长 GC pause，并且 old gen 持续上涨，就要进一步分析 heap dump。
-
-如果日志显示 humongous allocation，可能是订单导出、营销规则或大 JSON 响应导致。
-
-如果 GC 正常，则要转向线程池、数据库、锁竞争和下游慢。
-
-## 深度增强：GC 日志与延迟图
+## GC 日志与延迟图
 
 ![GC 暂停与尾延迟放大](../assets/gc-pause-latency.svg)
 
 读 GC 日志的关键不是背字段，而是回答三个问题：是否暂停太久，是否回收有效，是否和业务延迟峰值对齐。
 如果 GC 日志显示 pause 很长，但业务 P99 没变化，它可能不是当前用户影响的主因。
 
-## 深度增强：Java 17 GC 日志摘要模型
+## Java 17 GC 日志摘要模型
 
 ```java
 import java.time.Instant;
@@ -160,7 +150,7 @@ record GcEvent(
 这个模型表达 GC 分析思路：pause 是用户影响，before/after 是回收效果，reason 是定位方向。
 如果长暂停回收很少，要怀疑老年代压力、内存泄漏、缓存无界或大对象晋升。
 
-## 深度增强：生产边界
+## 生产边界
 
 GC 日志要看一段时间的趋势。一次 young GC 长暂停可能是偶发，频繁 mixed GC 或 Full GC 才说明系统接近失稳。
 如果看到 `humongous allocation`，要检查大数组、大 JSON、批量查询和大字符串拼接。

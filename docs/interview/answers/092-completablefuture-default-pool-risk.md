@@ -1,87 +1,28 @@
-# 092 CompletableFuture 默认线程池有什么风险？
+# 092 CompletableFuture 的回调到底在哪个线程执行？
 
 [返回按分类学习面试题](../README.md)
 
-## 先给面试官的短答案
+## 三种调用不能混为一谈
 
-`CompletableFuture.supplyAsync` 如果不指定 Executor，默认使用公共 `ForkJoinPool.commonPool()`。
-风险是多个业务共享同一个公共池，阻塞 IO、慢任务或突发流量会互相影响，导致线程饥饿、P99 升高和故障扩散。
+| 写法 | 执行位置 |
+| --- | --- |
+| thenApply 等非 Async 回调 | 可能由完成前序阶段的线程或参与完成的调用线程执行 |
+| supplyAsync / thenApplyAsync 无 Executor | 通常使用 commonPool |
+| Async 方法显式传 Executor | 使用给定执行器，仍需考虑它的拒绝策略 |
 
-生产代码应该为不同业务和下游指定有界线程池。
-
-## 默认行为
-
-示例：
-
-```java
-CompletableFuture.supplyAsync(() -> loadOrder(orderId));
-```
-
-没有传入 executor 时，会使用默认异步执行器，通常是 `ForkJoinPool.commonPool()`。
-
-这对 demo 方便，对生产服务有风险。
-
-## 风险一：业务互相影响
-
-公共池是共享的。
-
-如果订单查询、推荐计算、营销规则都用默认池，一个业务慢会占用公共线程，影响其他业务。
-
-这违反了隔离原则。
-
-## 风险二：阻塞 IO 不适合 commonPool
-
-`ForkJoinPool` 更适合 CPU 计算和拆分任务。
-
-如果里面执行阻塞 IO，例如 HTTP、数据库、Redis 调用，线程会被长时间占住。
-
-结果是：
-
-- 新任务无法调度。
-- 队列堆积。
-- P99 升高。
-- 故障扩散。
-
-## 风险三：不可控
-
-默认池参数不是按你的业务容量设计的。
-
-你很难针对某个下游设置：
-
-- 最大并发。
-- 队列长度。
-- 拒绝策略。
-- 线程名。
-- 指标标签。
-- 隔离策略。
-
-没有这些能力，就很难做生产治理。
-
-## 正确方式
-
-生产中显式指定线程池：
+Java 17 在公共池并行度不足 2 时，默认异步执行机制可能改为每任务新建线程，
+而不是你预想的固定公共线程池。契约见
+[CompletableFuture](https://docs.oracle.com/en/java/javase/17/docs/api/java.base/java/util/concurrent/CompletableFuture.html)。
 
 ```java
-CompletableFuture.supplyAsync(() -> loadOrder(orderId), orderQueryExecutor);
+var result = CompletableFuture.supplyAsync(() -> loadOrder(orderId), queryExecutor)
+        .thenApplyAsync(this::toView, mappingExecutor);
 ```
 
-并且线程池应该：
+这是局部片段，依赖与 Executor 由调用组件管理。
+第一阶段指定了 queryExecutor，不代表后续所有 Async 阶段会自动继承这个池；
+若第二阶段不传 mappingExecutor，仍可能回到默认执行器。
 
-- 有明确名称。
-- 有界队列。
-- 有拒绝策略。
-- 有指标监控。
-- 和业务或下游隔离。
-- 设置超时。
-
-## 电商系统实践
-
-订单详情并行查物流、支付和售后时，不应该都丢到默认 commonPool。
-
-更合理的是按下游或业务类型隔离：
-
-- logisticsExecutor。
-- paymentQueryExecutor。
-- afterSalesExecutor。
-
-支付查询慢不应该拖垮物流和售后查询。
+非 Async 回调中放慢 IO，可能阻塞正在完成结果的网络线程。
+上下文传播需要另行配置，见 [143](143-trace-id-propagation.md)。
+本题不重复隔离池和过载架构。
