@@ -8,11 +8,6 @@
 
 ### 01 Java 语言和工程基础
 
-021. [checked exception 和 unchecked exception 如何取舍？](answers/021-checked-vs-unchecked-exception.md)
-022. [为什么不能直接把异常堆栈返回给前端？](answers/022-hide-stacktrace-from-client.md)
-023. [如何设计统一错误码？](answers/023-error-code-design.md)
-024. [错误码如何兼容多语言和多端？](answers/024-error-code-i18n.md)
-025. [泛型擦除是什么？](answers/025-generic-type-erasure.md)
 026. [泛型通配符 `extends` 和 `super` 怎么理解？](answers/026-generics-extends-super.md)
 027. [`equals` 和 `hashCode` 的契约是什么？](answers/027-equals-hashcode-contract.md)
 028. [为什么可变对象不适合作为 `HashMap` 的 key？](answers/028-mutable-hashmap-key.md)
