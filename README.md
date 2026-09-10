@@ -11,7 +11,7 @@ eMall 是一个基于 Java 17 的微服务电商平台，用来学习和展示�
 ## 快速导航
 
 - [文档总目录](docs/README.md)：所有架构、测试、运维和学习文档入口。
-- [学习手册](docs/learning/README.md)：按主题系统学习 Java 17 电商系统实现。
+- [项目代码导读](docs/learning/README.md)：沿真实源码阅读下单恢复、持久化消息和运行验证。
 - [按分类学习 Java 技术栈](docs/interview/README.md)：面向已有服务端经验的开发者，聚焦 Java、JVM、Spring 与中间件接入。
 - [运维配置索引](ops/README.md)：Docker Compose、Kubernetes、可观测和压测配置入口。
 - [生产部署 Chart](ops/helm/emall/README.md)：38 个在线服务的唯一 Kubernetes 部署入口。
@@ -382,15 +382,8 @@ Invoke-RestMethod -Method Post -Headers $headers `
 
 ## 文档
 
-- [文档索引](docs/README.md)
-- [架构设计](docs/architecture.md)
-- [设计深度说明](docs/design-deep-dive.md)
-- [Java 后端学习手册](docs/learning/README.md)
-- [学习手册](docs/learning/README.md)
-- [模块清单](docs/modules.md)
-- [数据平台](docs/data-platform.md)
-- [集成测试](docs/integration-testing.md)
-- [生产检查清单](docs/production-checklist.md)
+完整分类见[文档索引](docs/README.md)。项目代码导读解释本仓库实现，Java 技术栈题库讲解通用原理，
+架构、测试和运维文档分别维护各自规范。
 
 ## Kubernetes 生产部署
 

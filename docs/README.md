@@ -1,6 +1,6 @@
 # 文档索引
 
-[项目首页](../README.md) | [学习手册](learning/README.md) | [运维配置索引](../ops/README.md)
+[项目首页](../README.md) | [项目代码导读](learning/README.md) | [运维配置索引](../ops/README.md)
 
 本文是项目文档入口。建议先从架构、深度设计、模块清单和生产检查清单读起，再看运维、测试、数据和安全文档。
 
@@ -8,7 +8,8 @@
 
 - [架构设计](architecture.md)：系统目标、分层、服务边界、交易链路和一致性策略。
 - [设计深度说明](design-deep-dive.md)：设计思路、数据流图、关键技术细节、竞品对比和面试讲法。
-- [学习手册](learning/README.md)：按主题拆分后的深入学习文档，适合系统学习。
+- [项目代码导读](learning/README.md)：真实源码中的下单恢复、持久化消息和运行验证，不重复基础教学。
+- [按分类学习 Java 技术栈](interview/README.md)：Java、JVM、Spring 和中间件接入原理，独立于项目代码导读。
 - [国内互联网技术栈适配](domestic-stack.md)：Sentinel、MyBatis-Plus、Nacos、Dubbo、Elasticsearch、ClickHouse 和 ELK 的接入说明。
 - [持久层规范](persistence-conventions.md)：MyBatis-Plus、强类型 Mapper、审计字段、乐观锁和 SQL 约定。
 - [Web/App 下单 API 契约](api/web-app-checkout.openapi.yml)：浏览器和手机 App 统一下单接口、请求头、请求体和响应结构。
@@ -16,7 +17,6 @@
 - [国内生产扩展说明](domestic-stack.md#生产扩展基线)：分库分表、多级缓存、Redis Cluster 和 Helm 部署基线。
 - [模块清单](modules.md)：所有 Maven 模块、职责分组和构建 profile。
 - [生产检查清单](production-checklist.md)：上线前需要检查的核心事项。
-- [工程审查历史记录](review-history.md)：按日期归档已经完成的生产就绪和架构问题、修复证据与验证边界。
 
 ## 构建和验证
 
@@ -48,3 +48,8 @@
 - [运维配置索引](../ops/README.md)：本地运行和部署配置地图。
 - `../docker-compose.yml`：本地运行拓扑。
 - `../ops/**`：Kubernetes、可观测、发布、混沌、MySQL 和压测基线。
+
+## 历史记录
+
+- [工程审查历史记录](review-history.md)：历次问题、修复决策及当时的验证证据，仅用于追溯，不作为当前实现指南。
+  尚缺外部验收证据的事项汇总在[生产检查清单](production-checklist.md#待补齐的验收证据)，不因归档而视为完成。

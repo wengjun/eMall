@@ -72,3 +72,19 @@
 当前工程已经具备很多生产基线能力，例如多模块微服务、MySQL/Flyway、Redis、Kafka Outbox、补偿、对账、
 可观测、Kubernetes 清单、单元测试和集成测试。但真实生产前仍需要真实基础设施、持续压测、安全合规、
 运维流程和团队值守体系。
+
+## 待补齐的验收证据
+
+[历史审查记录](review-history.md)仍有代码已修复但外部验收未闭环的事项。以下复选框记录发布前需补齐的证据，
+通过相应验收后，关联发布版本与报告再勾选；代码修复或历史测试通过数量不能代替当前发布验证。
+
+- [ ] 库存 MySQL 复验：执行
+  [InventoryRepositoryIT](../inventory/src/test/java/com/emall/inventory/repository/InventoryRepositoryIT.java)，
+  验证库存模式切换、补货幂等、并发预占及库存流水一致性，保留未跳过的测试报告。
+- [ ] 搜索真实组件与规模复验：执行
+  [ElasticsearchSearchRepositoryIT](../search/src/test/java/com/emall/search/repository/ElasticsearchSearchRepositoryIT.java)，
+  并在百万文档和目标中文分词配置下验证召回、稳定分页、索引切换及延迟，不能以默认小数据集替代。
+- [ ] 全组件和部署后链路验收：按[集成测试说明](integration-testing.md)启用 Docker 强制检查与所需 Smoke 开关，
+  保存 MySQL、Redis、Kafka、Elasticsearch 和下单支付、补偿等链路的执行结果，核对跳过项及原因。
+- [ ] 预生产容量与故障验收：按[容量验证说明](capacity-verification.md)记录流量模型、长时间稳定性、
+  多可用区及多区域恢复结果；关联镜像版本、部署配置、数据规模和原始报告后才能确认目标达标。

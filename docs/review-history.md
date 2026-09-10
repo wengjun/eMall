@@ -2,8 +2,12 @@
 
 [返回文档索引](README.md) | [架构设计](architecture.md) | [生产检查清单](production-checklist.md)
 
-本文按时间归档已经完成的生产就绪和架构审查。它用于保留问题证据、修复决策和验证边界，不作为当前上线状态的
+本文按时间归档历次生产就绪和架构审查。它用于保留问题证据、修复决策和验证边界，不作为当前上线状态的
 第二事实来源；当前要求以生产检查清单、架构文档和可重复执行的验证结果为准。
+
+正文中的代码行号、环境限制和通过数量均属于对应审查时点，不表示当前源码位置或执行环境。
+本记录保留原始状态；尚缺外部验收证据的事项及后续验收进度统一维护在
+[生产检查清单](production-checklist.md#待补齐的验收证据)。
 
 ## 2026-07-15 架构设计审查
 
@@ -372,8 +376,8 @@
 - 证据：[CheckoutLoadTestApplication.java](../loadtest/src/main/java/com/emall/loadtest/CheckoutLoadTestApplication.java#L34)、
   [CheckoutLoadTestApplication.java](../loadtest/src/main/java/com/emall/loadtest/CheckoutLoadTestApplication.java#L50)、
   [CheckoutLoadTestApplication.java](../loadtest/src/main/java/com/emall/loadtest/CheckoutLoadTestApplication.java#L216)、
-  [capacity-verification.md](capacity-verification.md#容量结论写法)、
-  [p2-capacity-baseline-template.md](../ops/loadtest/p2-capacity-baseline-template.md#场景)。
+  [capacity-verification.md](capacity-verification.md#报告状态)、
+  [p2-capacity-baseline-template.md](../ops/loadtest/p2-capacity-baseline-template.md#场景结果)。
 - 修复方向：使用分布式压测执行器；设置明确的在途请求信号量和背压；通过 HdrHistogram 等流式统计避免保留全部结果；
   建立符合真实流量比例、数据基数、热点分布和用户行为的模型；执行阶梯、尖峰、浸泡、故障、恢复和极限测试。
 - 验收标准：提交包含环境、Git 版本、资源、数据规模、QPS、并发、P50/P95/P99、错误率和各层饱和指标的容量报告；

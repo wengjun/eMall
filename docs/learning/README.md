@@ -1,30 +1,28 @@
-# eMall 学习手册
+# 项目代码导读
 
-[项目首页](../../README.md) | [文档索引](../README.md)
+[项目首页](../../README.md) | [文档索引](../README.md) | [Java 技术栈题库](../interview/README.md)
 
-本目录用于按主题学习大型 Java 电商系统。
-建议先按顺序阅读，再回到具体模块代码中手写和验证。
+本目录面向已有服务端开发经验、希望熟悉本工程 Java 实现的读者。只解释实际代码中的调用关系、
+事务边界和框架接入，不重复教授通用服务端设计、零基础语法或面试表达。
 
 ## 阅读顺序
 
-- [系统总览和学习方法](01-system-overview.md)
-- [Amazon L6 面试导向指南](02-amazon-l6-interview-guide.md)
-- [零基础概念详解](03-foundation-concepts.md)
-- [代码驱动实现讲解](04-code-walkthrough.md)
-- [Java、Spring Boot 和 Maven](05-java-spring-maven.md)
-- [数据库和持久化](06-database-persistence.md)
-- [电商核心业务建模](07-ecommerce-domain-model.md)
-- [分布式一致性](08-distributed-consistency.md)
-- [高并发和稳定性](09-high-concurrency-resilience.md)
-- [中间件、微服务和部署平台](10-middleware-microservices-platform.md)
-- [安全和可观测性](11-security-observability.md)
-- [测试、工程治理和生产就绪](12-testing-governance-readiness.md)
-- [从概念到实现的深度补强](13-concept-to-implementation.md)
-- [学习路径和面试表达](14-learning-path-interview.md)
+| 顺序 | 导读 | 阅读目标 |
+| --- | --- | --- |
+| 1 | [下单与恢复](checkout-and-recovery.md) | 从 HTTP 入口跟到幂等、Saga、短事务及失败恢复 |
+| 2 | [持久化与消息](persistence-and-messaging.md) | 跟踪 MyBatis-Plus 映射、条件更新、Outbox 发布和消费事务 |
+| 3 | [运行配置与验证](runtime-and-verification.md) | 找到 Spring 装配、HTTP/Dubbo 切换、恢复控制和测试入口 |
 
-## 学习建议
+每篇按“源码入口、关键行为、验证方式”组织。建议在 IDEA 中打开链接对应的类，沿调用链调试；
+代码片段只摘录局部机制，不是另一套可直接部署的实现。
 
-- 第一遍看整体，不纠结每个实现细节。
-- 第二遍结合 `order`、`inventory`、`payment`、`common`、`gateway` 等模块代码阅读。
-- 第三遍按文档中的关键链路手写一遍，再用单元测试、集成测试和 smoke 测试验证。
-- 面试准备时重点训练容量估算、取舍分析、失败恢复、观测排障和行为面试表达。
+## 文档分工
+
+- Java、JVM、Spring 和客户端 API 的原理：查[分类题库](../interview/README.md)。
+- 服务边界与整体架构图：查[架构设计](../architecture.md)；全部模块职责查[模块清单](../modules.md)。
+- 业务数据流图和设计取舍：查[设计深度说明](../design-deep-dive.md)及[架构决策](../README.md#架构决策)。
+- 构建、格式化和 Windows 启动：查[项目首页](../../README.md)，本目录不重复维护命令。
+- 配置值、部署、测试开关和验收要求：使用各篇链接到的专门文档，不以教学示例代替运行配置。
+
+本导读解释的是代码行为，不是生产规模验收报告；目标容量是否达标仍以
+[容量验证](../capacity-verification.md)和[生产检查清单](../production-checklist.md)要求的证据为准。
