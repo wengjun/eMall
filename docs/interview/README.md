@@ -3,7 +3,7 @@
 [返回工程 README](../../README.md)
 
 这是本题库唯一的学习入口，面向已有 C++ 服务端开发经验、有一定 Java 基础，但需要熟练掌握 Java 技术栈的开发者。
-当前保留 **116 道题**，按“一级技术方向 -> 二级专题 -> 具体题目”组织，原题号不重排。
+当前保留 **106 道题**，按“一级技术方向 -> 二级专题 -> 具体题目”组织，原题号不重排。
 
 ## 学习范围
 
@@ -20,31 +20,13 @@ Java 基础题只需快速核对语言差异、API 和常见坑，已经能写�
 
 ## 阅读顺序
 
-已有语言基础可以速读第一类，再重点学习第四、第五类以熟悉业务开发；第二、第三类用于理解运行机制和定位问题。
+重点学习第四、第五类以熟悉业务开发；第二、第三类用于理解运行机制和定位问题。
 第六类补齐 Java 项目的构建、测试与运行工具。不要求从头背诵，也不再设置完成标记。
-
-## 01 Java 语言差异速读
-
-### 类型与容器
-
-- [026. 泛型通配符 `extends` 和 `super` 怎么理解？](answers/026-generics-extends-super.md)
-- [027. `equals` 和 `hashCode` 的契约是什么？](answers/027-equals-hashcode-contract.md)
-- [028. 为什么可变对象不适合作为 `HashMap` 的 key？](answers/028-mutable-hashmap-key.md)
-- [029. `ArrayList`、`LinkedList`、`HashMap`、`TreeMap` 分别适合什么场景？](answers/029-java-collections-choice.md)
-- [030. `ConcurrentHashMap` 为什么比 `Hashtable` 更适合并发场景？](answers/030-concurrenthashmap-vs-hashtable.md)
-- [035. 为什么工程代码要重视不可变对象？](answers/035-immutable-objects.md)
-
-### 反射与扩展机制
-
-- [031. Java 反射的成本和风险是什么？](answers/031-reflection-cost-risk.md)
-- [032. 注解是如何在运行时生效的？](answers/032-annotation-runtime.md)
-- [033. SPI 机制适合解决什么扩展问题？](answers/033-spi-extension.md)
 
 ## 02 JVM 机制与诊断
 
 ### 内存、对象与垃圾回收
 
-- [041. JVM 内存区域包括哪些？](answers/041-jvm-memory-areas.md)
 - [042. 堆、栈、方法区、直接内存分别存什么？](answers/042-heap-stack-metaspace-direct-memory.md)
 - [043. 对象从创建到回收大致经历什么过程？](answers/043-object-lifecycle.md)
 - [044. GC Roots 包括哪些？](answers/044-gc-roots.md)
