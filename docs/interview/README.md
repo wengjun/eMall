@@ -3,7 +3,7 @@
 [返回工程 README](../../README.md)
 
 这是本题库唯一的学习入口，面向已有 C++ 服务端开发经验、有一定 Java 基础，但需要熟练掌握 Java 技术栈的开发者。
-当前保留 **106 道题**，按“一级技术方向 -> 二级专题 -> 具体题目”组织，原题号不重排。
+当前保留 **99 道题**，按“一级技术方向 -> 二级专题 -> 具体题目”组织，原题号不重排。
 
 ## 学习范围
 
@@ -27,13 +27,6 @@ Java 基础题只需快速核对语言差异、API 和常见坑，已经能写�
 
 ### 内存、对象与垃圾回收
 
-- [042. 堆、栈、方法区、直接内存分别存什么？](answers/042-heap-stack-metaspace-direct-memory.md)
-- [043. 对象从创建到回收大致经历什么过程？](answers/043-object-lifecycle.md)
-- [044. GC Roots 包括哪些？](answers/044-gc-roots.md)
-- [045. Minor GC、Major GC、Full GC 有什么区别？](answers/045-minor-major-full-gc.md)
-- [046. G1、ZGC、Shenandoah 的设计目标有什么不同？](answers/046-g1-zgc-shenandoah.md)
-- [047. 为什么低延迟服务要关注 GC 暂停？](answers/047-low-latency-gc-pause.md)
-- [048. 如何判断线上服务是否存在内存泄漏？](answers/048-detect-memory-leak.md)
 - [049. `OutOfMemoryError` 常见类型有哪些？](answers/049-oome-types.md)
 - [050. 堆 OOM 和直接内存 OOM 如何区分？](answers/050-heap-vs-direct-oom.md)
 - [051. 线程数过多时，Java 17 应检查什么？](answers/051-too-many-threads.md)
